@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}산출 방법 · {{ region }} 아파트 지수{% endblock %}
+{% block body %}
+<article class="prose">
+<h1>산출 방법</h1>
+
+<h2>종합 지수</h2>
+<p>종합 지수는 아래 세 항목을 0~100으로 맞춘 뒤 평균한 값입니다. 값이 없는 항목은 빼고 평균합니다. 예를 들어 준공 5년이 안 된 단지는 입지점수만으로 계산됩니다.</p>
+<pre>지수 = (입지점수 + {% for n in years %}{{ n }}년 수익률 백분위{{ " + " if not loop.last }}{% endfor %}) ÷ 항목 수</pre>
+
+<h2>가격</h2>
+<p>국토교통부 아파트 매매 실거래가를 씁니다. {{ "해제된 거래는 뺐습니다. " if cfg.filters.exclude_cancelled }}{{ "직거래는 가족 간 저가 거래가 섞이기 쉬워 뺐습니다. " if cfg.filters.exclude_direct }}
+면적이 다른 거래를 함께 비교하려고 ㎡당 가격으로 바꾼 뒤, 최근 {{ cfg.metrics.window_months }}개월 거래의 중위값에 전용 {{ ref_area }}㎡를 곱해 대표 가격으로 보여줍니다. 구간 안 거래가 {{ cfg.metrics.min_trades }}건 미만이면 가격을 계산하지 않습니다.</p>
+
+<h2>수익률</h2>
+<p>기준 시점과 n년 전 시점의 ㎡당 중위가격으로 연평균 수익률(CAGR)을 구합니다.
+{% if meta.real_returns %}소비자물가지수로 물가 상승분을 뺀 실질 수익률입니다.{% else %}현재 물가지수 파일이 없어 명목 수익률로 계산했습니다.{% endif %}
+수익률 자체는 시기마다 크게 달라지므로 지수에는 {{ region }} 전체 단지 중 백분위를 넣습니다.</p>
+
+<h2>입지점수</h2>
+<p>카카오 로컬 API로 단지 주변 시설을 조사하고, 항목마다 {{ region }} 전체 단지 중 백분위를 매긴 뒤 가중평균합니다.</p>
+<table>
+  <thead><tr><th>항목</th><th>기준</th><th>가중치</th></tr></thead>
+  <tbody>
+  {% for f in factors %}
+  <tr><td>{{ f.label }}</td><td>{{ "가까울수록 좋음" if f.kind == "nearest" else "많을수록 좋음" }} (반경 {{ f.radius }}m)</td><td>{{ "%.0f" | format(f.weight * 100) }}%</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p>반경 안에 해당 시설이 없으면 그 항목은 0점입니다.</p>
+
+<h2>한계</h2>
+<ul>
+  <li>실거래 신고는 계약 후 30일 안에 하므로 최근 1~2개월 거래는 덜 반영됩니다.</li>
+  <li>거래가 드문 소규모 단지는 가격과 수익률이 몇 건의 거래에 크게 흔들립니다.</li>
+  <li>입지 항목과 가중치는 운영자의 판단이며 정답이 아닙니다.</li>
+</ul>
+</article>
+{% endblock %}

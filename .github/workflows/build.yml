@@ -1,0 +1,65 @@
+name: daejeon-apt-index
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # 매월 20일 03:17 UTC
+  schedule:
+    - cron: "17 3 20 * *"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+      - run: python -m djdex demo
+
+  publish:
+    # 실제 데이터 수집과 배포는 예약 실행이나 수동 실행 때만
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      - name: 수집 캐시 복원
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            data/geo.json
+            data/poi.json
+          key: djdex-data-${{ github.run_id }}
+          restore-keys: djdex-data-
+      - name: 수집, 계산, 사이트 생성
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+        run: python -m djdex all
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

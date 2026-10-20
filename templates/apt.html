@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ c.name }} 시세·입지 분석 · 지수 {{ c.index | score }}{% endblock %}
+{% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }} ({{ meta.asof }} 기준), 입지점수 {{ c.location_score | score }}, 종합 지수 {{ c.index | score }}/100.{% endblock %}
+{% block body %}
+<p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c.gu }} {{ c.dong }}</p>
+<section class="apt-head">
+  <div>
+    <h1>{{ c.name }}</h1>
+    <p class="muted">{{ region }} {{ c.gu }} {{ c.dong }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건</p>
+  </div>
+  <div class="big-score">
+    <span class="value">{{ c.index | score }}</span>
+    <span class="label">종합 지수 · {{ meta.n_complexes }}개 중 {{ c.rank }}위</span>
+  </div>
+</section>
+
+<section class="cards">
+  <div class="card">
+    <span class="label">전용 {{ ref_area }}㎡ 환산가</span>
+    <span class="value">{{ c.price_ref | price }}</span>
+    <span class="muted">{% if c.price_ref == c.price_ref %}최근 {{ window }}개월 ㎡당 중위가격 기준{% else %}최근 {{ window }}개월 거래가 적어 계산하지 않음{% endif %}</span>
+  </div>
+  {% for n in years %}
+  <div class="card">
+    <span class="label">{{ n }}년 {{ "실질" if meta.real_returns else "명목" }} 연평균 수익률</span>
+    <span class="value">{{ c["cagr_%dy" % n] | pct }}</span>
+    <span class="muted">대전 백분위 {{ c["cagr_%dy_pct" % n] | score }}</span>
+  </div>
+  {% endfor %}
+  <div class="card">
+    <span class="label">입지점수</span>
+    <span class="value">{{ c.location_score | score }}</span>
+    <span class="muted">대전 중위값 {{ meta.median_location | score }}</span>
+  </div>
+</section>
+
+{% if c.index_parts < 3 %}
+<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>
+{% endif %}
+
+<section>
+  <h2>연도별 {{ ref_area }}㎡ 환산가</h2>
+  {{ chart | safe }}
+</section>
+
+<section>
+  <h2>입지 항목</h2>
+  {% if c.location_score is not none and c.location_score == c.location_score %}
+  <div class="bars">
+  {% for f in factors %}{% set v = c.get(f.key ~ "_pct") %}{% set w = v if (v is not none and v == v) else 0 %}
+    <div class="bar-row">
+      <span class="bar-label">{{ f.label }}</span>
+      <span class="bar"><span style="width: {{ w | round(1) }}%"></span></span>
+      <span class="bar-value">{{ v | score }}</span>
+    </div>
+  {% endfor %}
+  </div>
+  <p class="muted">막대는 대전 전체 단지 중 백분위입니다. 100에 가까울수록 좋습니다.</p>
+  {% else %}
+  <p class="muted">아직 이 단지의 입지 정보가 없습니다.</p>
+  {% endif %}
+  {% if latlng %}
+    {% if kakao_js_key %}
+    <div id="map" class="map" data-lat="{{ latlng[0] }}" data-lng="{{ latlng[1] }}" data-name="{{ c.name }}"></div>
+    {% else %}
+    <p><a href="https://map.kakao.com/link/map/{{ c.name | urlencode }},{{ latlng[0] }},{{ latlng[1] }}" target="_blank" rel="noopener">카카오맵에서 위치 보기</a></p>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section>
+  <h2>최근 거래</h2>
+  <div class="table-wrap">
+  <table class="trades">
+    <thead><tr><th>계약일</th><th>전용면적</th><th>층</th><th>거래가</th><th>비고</th></tr></thead>
+    <tbody>
+    {% for t in recent %}
+    <tr class="{{ 'struck' if t.cancelled }}">
+      <td>{{ t.date.strftime("%Y.%m.%d") }}</td>
+      <td>{{ "%.2f" | format(t.area) }}㎡</td>
+      <td>{{ t.floor | int if t.floor is not none and t.floor == t.floor else "-" }}</td>
+      <td>{{ t.price | price }}</td>
+      <td>{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+{% if latlng and kakao_js_key %}
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false"></script>
+<script src="{{ root }}static/map.js"></script>
+{% endif %}
+{% endblock %}

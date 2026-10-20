@@ -1,0 +1,49 @@
+# 대전 아파트 지수 설정 파일
+# 숫자를 바꾸면 다음 `python -m djdex score` 실행부터 반영됩니다.
+
+[region]
+name = "대전"
+# 국토부 실거래가 API의 LAWD_CD (법정동코드 앞 5자리)
+districts = { "30110" = "동구", "30140" = "중구", "30170" = "서구", "30200" = "유성구", "30230" = "대덕구" }
+
+[collect]
+# 국토부 아파트 매매 실거래가는 2006년 1월부터 공개됩니다.
+start_ym = "200601"
+# 신고 기한(30일)과 계약 해제 반영 때문에 최근 몇 개월은 매번 다시 받습니다.
+refresh_recent_months = 3
+# 상세 자료 API: 기본 API 항목에 단지 일련번호(aptSeq) 등이 더해집니다.
+endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
+rows_per_page = 1000
+
+[filters]
+# 해제(취소)된 거래 제외
+exclude_cancelled = true
+# 직거래 제외: 가족 간 증여성 저가 거래가 섞여 시세를 왜곡하기 쉽습니다.
+exclude_direct = true
+
+[metrics]
+# 대표 가격은 ㎡당 중위가격 × 이 면적(전용 84㎡ 환산)으로 보여줍니다.
+reference_area = 84.0
+# 가격 비교에 쓰는 구간 길이(개월). 끝 시점과 n년 전 시점에 각각 적용됩니다.
+window_months = 12
+# 구간 안 거래가 이보다 적으면 그 구간 가격은 계산하지 않습니다.
+min_trades = 2
+# 연평균 수익률(CAGR)을 계산할 기간(년)
+cagr_years = [10, 5]
+
+[index]
+# 종합 지수 = 아래 항목 중 값이 있는 것들의 평균. 신축은 입지점수만 남습니다.
+components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
+
+[location]
+# 카카오 로컬 API 카테고리 코드: SW8 지하철역, SC4 학교, AC5 학원, MT1 대형마트, HP8 병원
+# kind = "nearest" 는 가장 가까운 곳까지 거리(m, 가까울수록 좋음),
+# kind = "count" 는 반경 안 개수(많을수록 좋음).
+# 각 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
+factors = [
+  { key = "subway",     label = "지하철역까지 거리",  category = "SW8", kind = "nearest", radius = 3000, weight = 0.30 },
+  { key = "elementary", label = "초등학교까지 거리",  category = "SC4", kind = "nearest", radius = 2000, weight = 0.20, name_contains = "초등학교" },
+  { key = "academy",    label = "반경 1km 학원 수",   category = "AC5", kind = "count",   radius = 1000, weight = 0.20 },
+  { key = "mart",       label = "대형마트까지 거리",  category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },
+  { key = "hospital",   label = "반경 1km 병원 수",   category = "HP8", kind = "count",   radius = 1000, weight = 0.15 },
+]

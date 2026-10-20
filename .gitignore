@@ -1,0 +1,8 @@
+# 수집 캐시와 생성물 (Actions 캐시로 관리)
+data/raw/
+data/trades.csv
+data/geo.json
+data/poi.json
+data/scores.csv
+site/
+site-demo/
