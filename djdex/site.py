@@ -171,12 +171,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     }
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
-                  grades=charts.GRADES, grade_legend=charts.grade_legend())
+                  grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site)
 
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
-        rows=rows, root="", charts=index_charts, tops=tops, gu_stats=gu_stats, **common), encoding="utf-8")
+        rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
-        env.get_template("methodology.html").render(root="", cfg=cfg, **common), encoding="utf-8")
+        env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
 
     # 단지 페이지
     trades = trades.copy()
@@ -220,9 +220,30 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                     for f in factors]
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid][:6]
         html = tpl.render(
-            c=c, charts=c_charts, recent=tr_list[:15], root="../", latlng=geo.get(cid),
+            c=c, charts=c_charts, recent=tr_list[:15], root="../", page_path=f"apt/{c['slug']}.html",
+            latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_rows=loc_rows, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name),
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
+    write_sitemap(out_dir, cfg.site.get("base_url", ""), [f"apt/{r['slug']}.html" for r in rows])
     return len(rows)
+
+
+def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:
+    """검색엔진 제출용 sitemap.xml 과 robots.txt."""
+    if not base:
+        return
+    from datetime import date
+    from xml.sax.saxutils import escape as xml_escape
+
+    today = date.today().isoformat()
+    entries = [("", "1.0"), ("methodology.html", "0.3")] + [(p, "0.7") for p in apt_paths]
+    urls = "".join(
+        f"<url><loc>{xml_escape(base + path)}</loc><lastmod>{today}</lastmod><priority>{pri}</priority></url>\n"
+        for path, pri in entries)
+    (out_dir / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + "</urlset>\n",
+        encoding="utf-8")
+    (out_dir / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}sitemap.xml\n", encoding="utf-8")

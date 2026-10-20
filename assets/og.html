@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- 링크 미리보기 이미지(static/og.png) 원본. 수정 후 README의 방법으로 다시 캡처합니다. -->
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; }
+  body { width: 1200px; height: 630px; background: #104281; color: #fff; overflow: hidden;
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "WenQuanYi Zen Hei", sans-serif; position: relative; }
+  .wrap { position: absolute; left: 80px; top: 92px; width: 640px; }
+  .eyebrow { font-size: 26px; font-weight: 700; color: #9ec5f4; letter-spacing: 0.02em; }
+  h1 { font-size: 84px; line-height: 1.12; margin: 18px 0 26px; font-weight: 800; letter-spacing: -0.02em; }
+  p { font-size: 30px; line-height: 1.5; margin: 0; color: #cde2fb; }
+  .chips { margin-top: 40px; display: flex; gap: 14px; }
+  .chip { font-size: 24px; padding: 10px 20px; border-radius: 999px; background: rgba(255,255,255,0.12); color: #fff; }
+  .viz { position: absolute; right: 70px; top: 80px; width: 380px; height: 470px; }
+  .card { position: absolute; background: #fff; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  .score { left: 40px; top: 20px; width: 300px; height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #0b0b0b; }
+  .score .num { font-size: 96px; font-weight: 800; line-height: 1; color: #104281; }
+  .score .lbl { font-size: 22px; color: #52514e; margin-top: 10px; }
+  .grade { position: absolute; left: 0; top: 0; width: 76px; height: 76px; border-radius: 20px; background: #2a78d6; color: #fff;
+    font-size: 44px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .bars { left: 0; top: 260px; width: 380px; height: 200px; padding: 28px 30px; box-sizing: border-box; }
+  .row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; font-size: 20px; color: #52514e; }
+  .row span:first-child { width: 64px; }
+  .bar { height: 18px; border-radius: 0 6px 6px 0; background: #2a78d6; }
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">국토부 실거래가 · 매월 갱신</div>
+    <h1>대전 아파트,<br>숫자로 임장하기</h1>
+    <p>실거래가, 입지, 수익률을 한 점수로.<br>우리 동네 단지는 몇 점일까?</p>
+    <div class="chips"><span class="chip">동구</span><span class="chip">중구</span><span class="chip">서구</span><span class="chip">유성구</span><span class="chip">대덕구</span></div>
+  </div>
+  <div class="viz">
+    <div class="card score"><div class="num">82</div><div class="lbl">종합 지수 / 100</div></div>
+    <div class="grade">S</div>
+    <div class="card bars">
+      <div class="row"><span>입지</span><div class="bar" style="width:170px"></div></div>
+      <div class="row"><span>10년</span><div class="bar" style="width:240px"></div></div>
+      <div class="row"><span>5년</span><div class="bar" style="width:210px"></div></div>
+    </div>
+  </div>
+</body></html>
