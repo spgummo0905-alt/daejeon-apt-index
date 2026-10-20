@@ -44,7 +44,7 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt
       - name: 수집 캐시 복원
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             data/raw
@@ -54,10 +54,21 @@ jobs:
           restore-keys: djdex-data-
       - name: 수집, 계산, 사이트 생성
         env:
+          PYTHONUNBUFFERED: "1"
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
         run: python -m djdex all
+      # 뒤 단계가 실패해도 받아 둔 실거래·입지 데이터는 저장해서 다음 실행 때 다시 받지 않습니다.
+      - name: 수집 캐시 저장
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/raw
+            data/geo.json
+            data/poi.json
+          key: djdex-data-${{ github.run_id }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

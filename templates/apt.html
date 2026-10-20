@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ c.name }} 시세·입지 분석 · 지수 {{ c.index | score }}{% endblock %}
-{% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }} ({{ meta.asof }} 기준), 입지점수 {{ c.location_score | score }}, 종합 지수 {{ c.index | score }}/100.{% endblock %}
+{% block og_title %}{{ c.name }} · 지수 {{ c.index | score }}{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} | {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 연평균 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} 상위 {{ c.location_top | round(0) | int }}%{% endif %}. {{ n_total }}개 단지 중 {{ c.rank }}위 ({{ meta.asof }} 실거래 기준).{% endblock %}
 {% block body %}
 <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c.gu }} {{ c.dong }}</p>
 <section class="apt-head">

@@ -29,3 +29,21 @@ def test_build_handles_missing_build_year_and_floor(tmp_path):
     b = (tmp_path / "s" / "apt" / "B.html").read_text(encoding="utf-8")
     assert "2004년 준공" in a and "2004.0" not in a and "<td>7</td>" in a
     assert "nan" not in b.lower().replace("nanum", "")
+
+
+def test_share_tags_and_sitemap(tmp_path):
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    base = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+    page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
+    assert f'<meta property="og:url" content="{base}apt/DEMO-0001.html">' in page
+    assert f'<meta property="og:image" content="{base}static/og.png">' in page
+    assert 'property="og:title" content="데모단지 01 · 지수' in page
+    assert (out / "static" / "og.png").exists() and (out / "static" / "favicon.svg").exists()
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert sitemap.count("<url>") == 62 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
+    # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
+    assert '<meta name="robots" content="noindex">' in page

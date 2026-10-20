@@ -54,6 +54,13 @@ class Config:
         return self.raw["region"]["name"]
 
     @property
+    def site(self) -> dict:
+        site = dict(self.raw.get("site", {}))
+        base = site.get("base_url", "") or ""
+        site["base_url"] = base if not base or base.endswith("/") else base + "/"
+        return site
+
+    @property
     def collect(self) -> dict:
         return self.raw["collect"]
 
