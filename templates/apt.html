@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ c.name }} 시세·입지 분석 · 지수 {{ c.index | score }}{% endblock %}
 {% block og_title %}{{ c.name }} · 지수 {{ c.index | score }}{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} | {{ region }} 아파트 지수{% endblock %}
-{% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 연평균 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} 상위 {{ c.location_top | round(0) | int }}%{% endif %}. {{ n_total }}개 단지 중 {{ c.rank }}위 ({{ meta.asof }} 실거래 기준).{% endblock %}
+{% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 연평균 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} 상위 {{ c.location_top | round(0) | int }}%{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
 {% block body %}
 <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c.gu }} {{ c.dong }}</p>
 <section class="apt-head">
   <div class="apt-title">
     <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
     <div>
-      <h1>{{ c.name }}</h1>
+      <h1>{{ c.name }}{% if c.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if c.small %}<span class="badge-small">소규모</span>{% endif %}</h1>
       <p class="muted">{{ region }} {{ c.gu }} {{ c.dong }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건</p>
     </div>
   </div>
   <div class="gauge-box">
     {{ charts.gauge | safe }}
-    <span class="muted">{{ c.grade_name }} · {{ n_total }}개 중 {{ c.rank }}위</span>
+    <span class="muted">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}개 중 {{ c.rank }}위{% else %} · 순위 제외(소규모){% endif %}</span>
   </div>
 </section>
 
@@ -29,8 +29,15 @@
   <div class="card">
     <span class="label">전용 {{ ref_area }}㎡ 환산가</span>
     <span class="value">{{ c.price_ref | price }}</span>
-    <span class="muted">{% if c.price_ref is nan %}최근 {{ window }}개월 거래가 적어 계산하지 않음{% else %}최근 {{ window }}개월 ㎡당 중위가격 기준{% endif %}</span>
+    <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }} ㎡당 중위가 기준{% endif %}</span>
   </div>
+  {% if c.last_price is not nan %}
+  <div class="card">
+    <span class="label">가장 최근 거래</span>
+    <span class="value">{{ c.last_price | price }}{% if c.new_high %}<span class="badge-high">신고가</span>{% endif %}</span>
+    <span class="muted">{{ c.last_date.strftime("%Y.%m.%d") }} · 전용 {{ "%.0f" | format(c.last_area) }}㎡{% if c.last_kind != "매매" %} · {{ c.last_kind }}{% endif %}{% if c.prev_high is not nan and not c.new_high %} · 이전 최고 {{ c.prev_high | price }}{% endif %}</span>
+  </div>
+  {% endif %}
   {% for n in years %}
   <div class="card">
     <span class="label">{{ n }}년 {{ "실질" if meta.real_returns else "명목" }} 연평균 수익률</span>
@@ -61,7 +68,7 @@
   </div>
   {{ charts.price | safe }}
   <h3 class="sub">최근 10년 실제 거래</h3>
-  <p class="muted">점 하나가 거래 한 건입니다. 색은 평형대입니다.</p>
+  <p class="muted">점 하나가 거래 한 건입니다. 색은 평형대이고, 속이 빈 점은 분양권·입주권 거래입니다.</p>
   {{ charts.trades | safe }}
 </section>
 
@@ -125,7 +132,7 @@
       <td>{{ "%.2f" | format(t.area) }}㎡</td>
       <td>{{ "-" if t.floor is nan else t.floor | int }}</td>
       <td>{{ t.price | price }}</td>
-      <td>{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}</td>
+      <td>{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}{% if t.kind and t.kind != "매매" %} {{ t.kind }}{% endif %}</td>
     </tr>
     {% endfor %}
     </tbody>

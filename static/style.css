@@ -87,6 +87,8 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .chart .dot.s1 { fill: var(--s1); } .chart .dot.s2 { fill: var(--s2); } .chart .dot.s3 { fill: var(--s3); }
 .chart .dot.dim { fill: var(--dim); }
 .chart .dot.ring { stroke-width: 2; }
+.chart .dot.hollow { fill: var(--surface) !important; stroke-width: 2; }
+.chart .dot.s1.hollow { stroke: var(--s1); } .chart .dot.s2.hollow { stroke: var(--s2); } .chart .dot.s3.hollow { stroke: var(--s3); }
 .chart .xhair { stroke: var(--ref); stroke-width: 1; opacity: 0; }
 .chart .col:hover .xhair, .chart .col:focus .xhair { opacity: 1; }
 .chart .mark:hover .dot, .chart .mark:focus .dot { stroke: var(--text); stroke-width: 2; }
@@ -114,6 +116,7 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .key-dot.s1 { background: var(--s1); } .key-dot.s2 { background: var(--s2); } .key-dot.s3 { background: var(--s3); }
 .key-dot.g-S { background: var(--g-S); } .key-dot.g-A { background: var(--g-A); } .key-dot.g-B { background: var(--g-B); }
 .key-dot.g-C { background: var(--g-C); } .key-dot.g-D { background: var(--g-D); }
+.key-dot.hollow { background: transparent; border: 2px solid var(--text-2); width: 10px; height: 10px; box-sizing: border-box; }
 .key-line { width: 16px; height: 2px; display: inline-block; }
 .key-line.s1 { background: var(--s1); } .key-line.ref { background: var(--ref); }
 
@@ -209,3 +212,31 @@ tr.struck td { text-decoration: line-through; color: var(--muted); }
   .c-desk { display: none; }
   .c-mob { display: block; }
 }
+
+/* 신고가 배지, 소규모 표시 */
+.badge-high { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  color: #fff; background: #d03b3b; vertical-align: 2px; }
+.badge-small { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px;
+  color: var(--text-2); background: var(--chip); vertical-align: 2px; }
+.toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--text-2); cursor: pointer; }
+tr[data-small="1"] { display: none; }
+#complex-table.show-small tr[data-small="1"] { display: table-row; }
+tr[data-small="1"][hidden] { display: none !important; }
+
+/* 카카오 지도 */
+.kmap-wrap { position: relative; }
+#kmap { width: 100%; height: 520px; border-radius: 12px; border: 1px solid var(--border); }
+.kmap-on .map-fallback { display: none; }
+.kmap-wrap:not(.kmap-on) #kmap, .kmap-wrap:not(.kmap-on) .kmap-card { display: none; }
+.kpin { padding: 3px 8px; border-radius: 999px; font: 700 12px/1.3 system-ui, sans-serif;
+  border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer; white-space: nowrap; }
+.kpin .nm { font-weight: 600; margin-left: 4px; }
+.kpin.g-S { background: #104281; color: #fff; } .kpin.g-A { background: #1c5cab; color: #fff; }
+.kpin.g-B { background: #2a78d6; color: #fff; } .kpin.g-C { background: #5598e7; color: #0b0b0b; }
+.kpin.g-D { background: #86b6ef; color: #0b0b0b; } .kpin.g-- { background: #c3c2b7; color: #0b0b0b; }
+.kpin.hi { border-color: #d03b3b; }
+.kmap-card { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+  display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.kmap-card .muted { font-size: 13px; }
+@media (max-width: 720px) { #kmap { height: 440px; } }
+.kmap-wrap:not(.show-names) .kpin .nm { display: none; }

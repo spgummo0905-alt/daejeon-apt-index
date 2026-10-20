@@ -5,7 +5,7 @@
   <h1>{{ region }} 아파트,<br>숫자로 임장하기</h1>
   <p class="lead">실거래가, 입지, 수익률을 한 점수로 모았습니다. 지도에서 동네를 고르고, 단지를 눌러 자세히 보세요.</p>
   <div class="stats">
-    <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span></div>
+    <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
     <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span></div>
     <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
     <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
@@ -20,13 +20,17 @@
   <a href="#list">전체 목록</a>
 </nav>
 
-{% if charts.map %}
+{% if charts.map or kakao_js_key %}
 <section id="map" class="panel">
   <div class="panel-head">
     <h2>지도로 보는 {{ region }} 아파트</h2>
-    <p class="muted">점 하나가 단지 하나입니다. 진한 점일수록 지수가 높습니다. 점을 누르면 단지 페이지로 갑니다.</p>
+    <p class="muted">숫자는 종합 지수입니다. 멀리서는 단지 수로 묶여 보이고, 확대하면 단지마다 점수와 이름이 나옵니다. 빨간 테두리는 최근 신고가 단지입니다.</p>
   </div>
-  {{ charts.map | safe }}
+  <div class="kmap-wrap" id="kmap-wrap">
+    <div id="kmap"></div>
+    <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 여기에 요약이 나옵니다.</span></div>
+    <div class="map-fallback">{{ charts.map | safe }}</div>
+  </div>
   {{ grade_legend | safe }}
 </section>
 {% endif %}
@@ -88,6 +92,9 @@
     </div>
     <input id="search" type="search" placeholder="단지명 또는 동 검색">
   </div>
+  {% if meta.n_small %}
+  <label class="toggle"><input type="checkbox" id="show-small"> 소규모 단지 {{ "{:,}".format(meta.n_small) }}개도 보기 (거래가 드문 나홀로·빌라형)</label>
+  {% endif %}
   <div class="table-wrap">
   <table id="complex-table">
     <thead><tr>
@@ -102,9 +109,9 @@
     </tr></thead>
     <tbody>
     {% for r in rows %}
-    <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}">
-      <td data-v="{{ r.rank }}">{{ r.rank }}</td>
-      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a></td>
+    <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
+      <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
+      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">소규모</span>{% endif %}</td>
       <td>{{ r.gu }} {{ r.dong }}</td>
       <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
       <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
@@ -122,4 +129,10 @@
   </div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/table.js"></script>{% endblock %}
+{% block scripts %}
+<script src="static/table.js"></script>
+{% if kakao_js_key %}
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>
+<script src="static/kmap.js"></script>
+{% endif %}
+{% endblock %}

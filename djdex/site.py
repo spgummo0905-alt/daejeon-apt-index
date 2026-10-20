@@ -72,7 +72,14 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     out = []
     if not _nan(c["index"]):
         g, gname = grade(c["index"])
-        out.append(f"종합 지수 {c['index']:.0f}점, {region} {n}개 단지 중 {c['rank']}위로 상위 {c['index_top']:.0f}%입니다 ({g}등급 {gname}).")
+        if c.get("rank"):
+            out.append(f"종합 지수 {c['index']:.0f}점, {region} {n}개 단지 중 {c['rank']}위로 상위 {c['index_top']:.0f}%입니다 ({g}등급 {gname}).")
+        else:
+            out.append(f"종합 지수 {c['index']:.0f}점입니다. 거래가 적은 소규모 단지라 순위와 TOP 목록에서는 뺐습니다.")
+    if not _nan(c.get("last_price")):
+        kind = "" if c.get("last_kind") == "매매" else f" {c['last_kind']}"
+        high = " 같은 면적 기준 신고가입니다." if c.get("new_high") else ""
+        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} 전용 {c['last_area']:.0f}㎡{kind} {eok(c['last_price'], 2)}입니다.{high}")
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
         out.append(f"입지점수는 {region} 상위 {c['location_top']:.0f}%이고, 가장 강한 항목은 {best['label']}입니다.")
@@ -109,9 +116,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     factors = cfg.location_factors
     geo = geo or {}
     table = table.copy()
-    table["index_top"] = _top_share(table["index"])
-    table["location_top"] = _top_share(table["location_score"])
-    n_total = len(table)
+    if "small" not in table:
+        table["small"] = False
+    main_t = table[~table["small"].astype(bool)]
+    table["index_top"] = _top_share(main_t["index"]).reindex(table.index)
+    table["location_top"] = _top_share(main_t["location_score"]).reindex(table.index)
+    n_total = len(main_t)
 
     rows = []
     for cid, r in table.iterrows():
@@ -120,6 +130,10 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 결측이 섞이면 pandas가 정수 열을 float로 바꾸므로 표시용으로 되돌립니다.
         d["build_year"] = None if _nan(d.get("build_year")) else int(d["build_year"])
         d["grade"], d["grade_name"] = grade(d.get("index"))
+        d["rank"] = None if _nan(d.get("rank")) else int(d["rank"])
+        d["small"] = bool(d.get("small"))
+        d["new_high"] = bool(d.get("new_high")) if not _nan(d.get("new_high")) else False
+        d["new_high_recent"] = bool(d.get("new_high_recent")) if not _nan(d.get("new_high_recent")) else False
         ll = geo.get(cid)
         d["lat"], d["lng"] = (ll[0], ll[1]) if ll else (None, None)
         rows.append(d)
@@ -128,7 +142,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     gus = list(cfg.districts.values())
     gu_stats = []
     for gu in gus:
-        sub = table[table["gu"] == gu]
+        sub = main_t[main_t["gu"] == gu]
         if sub.empty:
             continue
         gu_stats.append({"gu": gu, "n": len(sub), "price": sub["price_ref"].median(),
@@ -136,45 +150,57 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     gu_med = {g["gu"]: g["price"] for g in gu_stats if not _nan(g["price"])}
 
     # TOP 목록
-    def top(df, col, k=5):
-        return [next(r for r in rows if r["complex_id"] == cid) for cid in df.nlargest(k, col).index]
+    by_id = {r["complex_id"]: r for r in rows}
 
-    has_loc = table["location_score"].notna().any()
-    priced = table.dropna(subset=["price_ref"])
+    def top(df, col, k=5):
+        return [by_id[cid] for cid in df.nlargest(k, col).index]
+
+    has_loc = main_t["location_score"].notna().any()
+    priced = main_t.dropna(subset=["price_ref"])
     value_picks = []
     if has_loc and not priced.empty:
         cand = priced[(priced["location_score"] > priced["location_score"].median())
                       & (priced["price_ref"] < priced["price_ref"].median())]
         value_picks = top(cand.assign(v=cand["location_score"] - cand["price_ref"].rank(pct=True) * 100), "v")
+    highs = []
+    if "new_high_recent" in main_t:
+        hr = main_t[main_t["new_high_recent"].fillna(False).astype(bool)].sort_values("last_date", ascending=False)
+        highs = [by_id[cid] for cid in hr.index[:5]]
     tops = [
-        {"title": "종합 지수 TOP 5", "items": top(table.dropna(subset=["index"]), "index"),
+        {"title": "종합 지수 TOP 5", "items": top(main_t.dropna(subset=["index"]), "index"),
          "value": lambda r: f"{r['index']:.0f}점"},
-        {"title": f"{years[0]}년 수익률 TOP 5", "items": top(table.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
+        {"title": f"{years[0]}년 수익률 TOP 5", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
          "value": lambda r, k=f"cagr_{years[0]}y": fmt_pct(r[k])},
     ]
+    if highs:
+        tops.insert(0, {"title": "최근 신고가 🔥", "items": highs,
+                        "value": lambda r: f"{eok(r['last_price'])} · {r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}"})
     if value_picks:
         tops.append({"title": "가성비 TOP 5", "items": value_picks,
                      "value": lambda r: f"입지 {r['location_score']:.0f} · {eok(r['price_ref'])}"})
 
     link = "apt/{}.html"
     index_charts = {
-        "map": charts.responsive(charts.dot_map, [dict(r, href=link.format(r["slug"])) for r in rows],
+        "map": charts.responsive(charts.dot_map, [dict(r, href=link.format(r["slug"])) for r in rows if not r["small"]],
                                 mob={"width": 360, "max_height": 440}) if geo else "",
         "gu_price": charts.hbar([(g["gu"], g["price"], eok(g["price"])) for g in gu_stats],
                                 unit_tip=" (84㎡ 환산 중위)"),
         "gu_index": charts.hbar([(g["gu"], g["index"], f"{g['index']:.0f}점") for g in gu_stats
                                  if not _nan(g["index"])], vmax=100, unit_tip=" (지수 중위)"),
         "scatter": charts.responsive(charts.value_scatter, [dict(r, x=r["location_score"], y=r["price_ref"],
-                                    href=link.format(r["slug"])) for r in rows],
+                                    href=link.format(r["slug"])) for r in rows if not r["small"]],
                                     mob={"width": 360, "height": 320}) if has_loc else "",
-        "hist": charts.responsive(charts.histogram, list(table["index"]), mob={"width": 360}),
+        "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
+    # 카카오 지도용 점 데이터 (소규모 제외). 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
+    write_points(out_dir, [r for r in rows if not r["small"] and r["lat"] is not None])
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site)
 
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
-        rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, **common), encoding="utf-8")
+        rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats,
+        kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
 
@@ -186,7 +212,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     region_line = [(y, v * ref) for y, v in meta.get("region_history", [])]
     factor_med = {f["key"]: table[f["key"] + "_pct"].median() if f["key"] + "_pct" in table else float("nan")
                   for f in factors}
-    index_values = list(table["index"])
+    index_values = list(main_t["index"])
     by_dong: dict[tuple, list] = {}
     for r in rows:
         by_dong.setdefault((r["gu"], r["dong"]), []).append(r)
@@ -218,7 +244,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         loc_rows = [{"label": f["label"], "pct": c.get(f["key"] + "_pct"),
                      "raw": fmt_raw(c.get(f["key"] + "_raw"), f) if f["key"] + "_raw" in c else None}
                     for f in factors]
-        neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid][:6]
+        neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         html = tpl.render(
             c=c, charts=c_charts, recent=tr_list[:15], root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
@@ -228,6 +254,17 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""), [f"apt/{r['slug']}.html" for r in rows])
     return len(rows)
+
+
+def write_points(out_dir: Path, rows: list[dict]) -> None:
+    import json
+    pts = [{
+        "n": r["name"], "d": f"{r['gu']} {r['dong']}", "s": r["slug"], "la": round(r["lat"], 6), "ln": round(r["lng"], 6),
+        "i": None if _nan(r.get("index")) else round(r["index"]), "g": r["grade"],
+        "p": eok(r.get("price_ref")) if not _nan(r.get("price_ref")) else None,
+        "h": r["new_high_recent"],
+    } for r in rows]
+    (out_dir / "points.json").write_text(json.dumps(pts, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:

@@ -6,6 +6,7 @@ API: 공공데이터포털 '국토교통부_아파트 매매 실거래가 상세
 from __future__ import annotations
 
 import json
+import re
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -93,8 +94,14 @@ def _float(v: str | None) -> float | None:
         return None
 
 
-def normalize(raw: dict, districts: dict[str, str]) -> dict | None:
-    """API 원본 항목을 분석용 한 줄로 바꿉니다. 필수값이 없으면 None."""
+PRESALE_KINDS = {"분": "분양권", "입": "입주권", "분양권": "분양권", "입주권": "입주권"}
+
+
+def normalize(raw: dict, districts: dict[str, str], kind: str = "매매") -> dict | None:
+    """API 원본 항목을 분석용 한 줄로 바꿉니다. 필수값이 없으면 None.
+
+    kind: "매매" 또는 분양권 API에서 온 거래면 "분양권"(ownershipGbn 으로 분양권/입주권 구분).
+    """
     sgg = raw.get("sggCd", "")
     price = _int(raw.get("dealAmount"))
     area = _float(raw.get("excluUseAr"))
@@ -118,6 +125,7 @@ def normalize(raw: dict, districts: dict[str, str]) -> dict | None:
         "floor": _int(raw.get("floor")),
         "cancelled": (raw.get("cdealType") or "").strip().upper() == "O",
         "direct": (raw.get("dealingGbn") or "").strip() == "직거래",
+        "kind": kind if kind == "매매" else PRESALE_KINDS.get((raw.get("ownershipGbn") or "").strip(), "분양권"),
     }
 
 
@@ -154,11 +162,32 @@ def collect(
             log(f"{districts[lawd]} {ym}: {len(items)}건")
 
 
-def load_raw(raw_dir: Path, districts: dict[str, str]) -> list[dict]:
+def load_raw(raw_dir: Path, districts: dict[str, str], presale_dir: Path | None = None) -> list[dict]:
     rows = []
-    for path in sorted(raw_dir.glob("*/*.json")):
-        for item in json.loads(path.read_text(encoding="utf-8")):
-            row = normalize(item, districts)
-            if row:
-                rows.append(row)
+    sources = [(raw_dir, "매매")] + ([(presale_dir, "분양권")] if presale_dir else [])
+    for d, kind in sources:
+        for path in sorted(d.glob("*/*.json")):
+            for item in json.loads(path.read_text(encoding="utf-8")):
+                row = normalize(item, districts, kind)
+                if row:
+                    rows.append(row)
+    return link_ids(rows)
+
+
+def _norm_name(name: str) -> str:
+    return re.sub(r"[\s()（）·.,-]", "", name or "")
+
+
+def link_ids(rows: list[dict]) -> list[dict]:
+    """분양권 API에는 단지 일련번호가 없어 '구-동-지번-이름' 임시 ID가 붙습니다.
+    같은 동, 같은 이름(공백 무시)의 매매 단지가 있으면 그 일련번호로 합칩니다."""
+    by_key: dict[tuple, str] = {}
+    for r in rows:
+        if r["kind"] == "매매":
+            by_key.setdefault((r["gu"], r["dong"], _norm_name(r["name"])), r["complex_id"])
+    for r in rows:
+        if r["kind"] != "매매":
+            cid = by_key.get((r["gu"], r["dong"], _norm_name(r["name"])))
+            if cid:
+                r["complex_id"] = cid
     return rows

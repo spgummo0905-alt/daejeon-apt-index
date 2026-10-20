@@ -1,5 +1,6 @@
 # 수집 캐시와 생성물 (Actions 캐시로 관리)
 data/raw/
+data/raw_presale/
 data/trades.csv
 data/geo.json
 data/poi.json
