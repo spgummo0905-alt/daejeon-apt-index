@@ -56,3 +56,19 @@ def test_enrich_caches(tmp_path):
     first = c.calls
     kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
     assert c.calls == first  # 두 번째 실행은 캐시만 사용
+
+
+def test_all_continues_when_kakao_fails(tmp_path, monkeypatch):
+    import requests
+    from djdex import cli
+
+    monkeypatch.setenv("KAKAO_REST_KEY", "x")
+    calls = []
+    monkeypatch.setattr(cli, "cmd_collect", lambda cfg, args: calls.append("collect"))
+
+    def boom(cfg, args):
+        raise requests.HTTPError("403 Forbidden")
+    monkeypatch.setattr(cli, "cmd_locate", boom)
+    monkeypatch.setattr(cli, "cmd_build", lambda cfg, args: calls.append("build"))
+    cli.main(["--data", str(tmp_path), "all"])
+    assert calls == ["collect", "build"]

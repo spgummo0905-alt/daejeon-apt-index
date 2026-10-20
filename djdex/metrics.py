@@ -97,8 +97,11 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
               .agg(["median", "size"]).reset_index()
               .rename(columns={"median": "ppm2", "size": "n"}))
 
+    region_hist = df.groupby(df["date"].dt.year)["ppm2"].median()
     meta = {
         "asof": asof.strftime("%Y.%m"),
+        # 연도별 대전 전체 ㎡당 중위가격 (단지 페이지 비교선)
+        "region_history": [(int(y), float(v)) for y, v in region_hist.items()],
         "real_returns": real,
         "n_complexes": int(len(table)),
         "n_trades": int(len(df)),
