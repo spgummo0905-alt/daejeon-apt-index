@@ -16,6 +16,7 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
@@ -63,7 +64,10 @@ def cmd_locate(cfg, args) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False):
-    loc = location.score(poi_df, cfg.location_factors) if not poi_df.empty else None
+    loc = None
+    if not poi_df.empty:
+        # 백분위와 함께 원래 값(거리 m, 개수)도 단지 페이지에 보여주려고 붙여 둡니다.
+        loc = location.score(poi_df, cfg.location_factors).join(poi_df.add_suffix("_raw"))
     cpi = CPI.load(cfg.paths.cpi)
     table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, location=loc, cpi=cpi,
                                         components=cfg.index_components)
@@ -88,7 +92,13 @@ def cmd_build(cfg, args) -> None:
 def cmd_all(cfg, args) -> None:
     cmd_collect(cfg, args)
     if os.environ.get("KAKAO_REST_KEY"):
-        cmd_locate(cfg, args)
+        try:
+            cmd_locate(cfg, args)
+        except requests.RequestException as e:
+            # 입지 수집이 실패해도 이미 받은 실거래 데이터로 사이트는 만듭니다.
+            # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
+            detail = getattr(getattr(e, "response", None), "text", "")[:300]
+            print(f"::warning::카카오 입지 수집 실패, 입지점수 없이 진행합니다: {e} {detail}")
     cmd_build(cfg, args)
 
 

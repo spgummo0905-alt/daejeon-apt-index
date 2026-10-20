@@ -1,52 +1,125 @@
 {% extends "base.html" %}
 {% block body %}
 <section class="hero">
-  <h1>{{ region }} 아파트, 숫자로 비교하기</h1>
-  <p class="muted">{{ meta.n_complexes | int }}개 단지 · 거래 {{ "{:,}".format(meta.n_trades) }}건 · 기준 {{ meta.asof }} ·
-    수익률 {{ "실질(물가 반영)" if meta.real_returns else "명목" }}</p>
+  <p class="eyebrow">{{ meta.asof }} 실거래 기준 · 매월 갱신</p>
+  <h1>{{ region }} 아파트,<br>숫자로 임장하기</h1>
+  <p class="lead">실거래가, 입지, 수익률을 한 점수로 모았습니다. 지도에서 동네를 고르고, 단지를 눌러 자세히 보세요.</p>
   <div class="stats">
-    <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}</span></div>
-    <div class="stat"><span class="label">입지점수 중위값</span><span class="value">{{ meta.median_location | score }}</span></div>
+    <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span></div>
+    <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span></div>
+    <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
+    <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
   </div>
 </section>
 
-<section class="controls">
-  <div class="chips" id="gu-filter">
-    <button class="chip active" data-gu="">전체</button>
-    {% for g in gus %}<button class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
+<nav class="jump">
+  {% if charts.map %}<a href="#map">지도</a>{% endif %}
+  <a href="#gu">구별 비교</a>
+  {% if charts.scatter %}<a href="#value">가성비</a>{% endif %}
+  <a href="#top">TOP 5</a>
+  <a href="#list">전체 목록</a>
+</nav>
+
+{% if charts.map %}
+<section id="map" class="panel">
+  <div class="panel-head">
+    <h2>지도로 보는 {{ region }} 아파트</h2>
+    <p class="muted">점 하나가 단지 하나입니다. 진한 점일수록 지수가 높습니다. 점을 누르면 단지 페이지로 갑니다.</p>
   </div>
-  <input id="search" type="search" placeholder="단지명 또는 동 검색">
+  {{ charts.map | safe }}
+  {{ grade_legend | safe }}
+</section>
+{% endif %}
+
+<section id="gu" class="panel">
+  <div class="panel-head">
+    <h2>구별로 비교하기</h2>
+    <p class="muted">구마다 단지들의 가운데 값입니다.</p>
+  </div>
+  <div class="two-col">
+    <figure><figcaption>{{ ref_area }}㎡ 환산 중위가</figcaption>{{ charts.gu_price | safe }}</figure>
+    <figure><figcaption>지수 중위값</figcaption>{{ charts.gu_index | safe }}</figure>
+  </div>
 </section>
 
-<div class="table-wrap">
-<table id="complex-table">
-  <thead><tr>
-    <th data-sort="num">순위</th>
-    <th data-sort="text">단지</th>
-    <th data-sort="text">위치</th>
-    <th data-sort="num">준공</th>
-    <th data-sort="num">{{ ref_area }}㎡ 환산가</th>
-    {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
-    <th data-sort="num">입지</th>
-    <th data-sort="num" class="sorted-desc">지수</th>
-  </tr></thead>
-  <tbody>
-  {% for r in rows %}
-  <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}">
-    <td data-v="{{ r.rank }}">{{ r.rank }}</td>
-    <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a></td>
-    <td>{{ r.gu }} {{ r.dong }}</td>
-    <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
-    <td data-v="{{ r.price_ref if r.price_ref == r.price_ref else '' }}">{{ r.price_ref | price }}</td>
-    {% for n in years %}{% set v = r["cagr_%dy" % n] %}
-    <td data-v="{{ v if v == v else '' }}" class="{{ 'pos' if v > 0 else 'neg' if v < 0 else '' }}">{{ v | pct }}</td>
-    {% endfor %}
-    <td data-v="{{ r.location_score if r.location_score == r.location_score else '' }}">{{ r.location_score | score }}</td>
-    <td data-v="{{ r.index if r.index == r.index else '' }}"><span class="badge">{{ r.index | score }}</span></td>
-  </tr>
+{% if charts.scatter %}
+<section id="value" class="panel">
+  <div class="panel-head">
+    <h2>가성비 단지 찾기</h2>
+    <p class="muted">오른쪽 아래 파란 점들이 <strong>입지는 대전 중간 이상인데 가격은 중간 이하</strong>인 단지입니다. 선은 각각 입지와 가격의 중간값입니다.</p>
+  </div>
+  {{ charts.scatter | safe }}
+</section>
+{% endif %}
+
+<section id="top" class="panel">
+  <div class="panel-head"><h2>한눈에 보는 TOP 5</h2></div>
+  <div class="top-grid">
+  {% for t in tops %}
+    <div class="top-card">
+      <h3>{{ t.title }}</h3>
+      <ol>
+      {% for r in t["items"] %}
+        <li><a href="apt/{{ r.slug }}.html"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
+          <span class="top-name">{{ r.name }}<span class="muted"> {{ r.gu }} {{ r.dong }}</span></span>
+          <span class="top-val">{{ t.value(r) }}</span></a></li>
+      {% endfor %}
+      </ol>
+    </div>
   {% endfor %}
-  </tbody>
-</table>
-</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>등급과 분포</h2>
+    <p class="muted">지수에 따라 다섯 등급으로 나눴습니다. 막대는 각 점수대에 단지가 몇 개 있는지입니다.</p>
+  </div>
+  {{ grade_legend | safe }}
+  {{ charts.hist | safe }}
+</section>
+
+<section id="list" class="panel">
+  <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬됩니다.</p></div>
+  <div class="controls">
+    <div class="chips" id="gu-filter">
+      <button class="chip active" data-gu="">전체</button>
+      {% for g in gus %}<button class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
+    </div>
+    <input id="search" type="search" placeholder="단지명 또는 동 검색">
+  </div>
+  <div class="table-wrap">
+  <table id="complex-table">
+    <thead><tr>
+      <th data-sort="num">순위</th>
+      <th data-sort="text">단지</th>
+      <th data-sort="text">위치</th>
+      <th data-sort="num">준공</th>
+      <th data-sort="num">{{ ref_area }}㎡ 환산가</th>
+      {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
+      <th data-sort="num">입지</th>
+      <th data-sort="num" class="sorted-desc">지수</th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}">
+      <td data-v="{{ r.rank }}">{{ r.rank }}</td>
+      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a></td>
+      <td>{{ r.gu }} {{ r.dong }}</td>
+      <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
+      <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
+      {% for n in years %}{% set v = r["cagr_%dy" % n] %}
+      <td data-v="{{ '' if v is nan else v }}" class="{{ '' if v is nan else ('pos' if v > 0 else 'neg' if v < 0 else '') }}">{{ v | pct }}</td>
+      {% endfor %}
+      <td data-v="{{ '' if r.location_score is nan else r.location_score }}">{{ r.location_score | score }}</td>
+      <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
+        <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
+        <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
 {% endblock %}
 {% block scripts %}<script src="static/table.js"></script>{% endblock %}
