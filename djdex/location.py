@@ -144,15 +144,15 @@ def score(poi: pd.DataFrame, factors: list[dict], ref: pd.Index | None = None) -
     반경 안에 시설이 없는 'nearest' 항목(None)은 최하점(0)으로 봅니다.
     'score' 항목(학원가 접근성처럼 이미 0~100인 값)은 백분위로 바꾸지 않고 그대로 씁니다.
     'value' 항목(학군처럼 카카오 밖에서 구한 값)은 높을수록 좋은 백분위로 바꿉니다.
-    score·value 항목에 값이 하나도 없으면 그 항목은 빼고 나머지 비중으로 계산합니다.
+    값이 하나도 없는 항목은 빼고 나머지 비중으로 계산합니다.
     """
     out = pd.DataFrame(index=poi.index)
     total_w = 0.0
     acc = pd.Series(0.0, index=poi.index)
     for f in factors:
         col = pd.to_numeric(poi.get(f["key"], pd.Series(index=poi.index, dtype=float)), errors="coerce")
-        if f["kind"] in ("score", "value") and col.isna().all():
-            continue  # 아직 모으지 못한 항목(예: 학교알리미 키가 없을 때)은 빼고 나머지로 가중평균
+        if col.isna().all():
+            continue  # 모으지 못했거나 그 지역에 없는 항목(학교알리미 키 없음, 세종의 지하철 등)은 빼고 가중평균
         total_w += f["weight"]
         if f["kind"] == "score":
             pct = col.clip(0, 100).fillna(0.0)

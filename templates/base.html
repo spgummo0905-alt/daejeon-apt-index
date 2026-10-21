@@ -44,9 +44,14 @@
 </svg>
 <header class="site">
   <a class="brand" href="{{ root }}index.html"><span class="brand-mark">D</span><span>{{ region }} 아파트 지수</span></a>
+  {% if regions | length > 1 %}
+  <nav class="region-switch" aria-label="지역 바꾸기">
+    {% for g in regions %}<a href="{{ g.url }}"{% if g.name == region %} class="active" aria-current="page"{% endif %}>{{ g.name }}</a>{% endfor %}
+  </nav>
+  {% endif %}
   <nav class="top-nav">
     <a href="{{ root }}index.html#map">지도</a>
-    <a href="{{ root }}stations.html">역세권</a>
+    <a href="{{ root }}stations.html">{{ transit.tab }}</a>
     <a href="{{ root }}compare.html">단지 비교</a>
     <a href="{{ root }}finder.html">조건으로 찾기</a>
     <a href="{{ root }}my.html">관심 단지</a>
@@ -61,7 +66,7 @@
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">
   <a href="{{ root }}index.html" data-tab="index"><svg class="ic"><use href="#i-home"/></svg>홈</a>
-  <a href="{{ root }}stations.html" data-tab="stations"><svg class="ic"><use href="#i-train"/></svg>역세권</a>
+  <a href="{{ root }}stations.html" data-tab="stations"><svg class="ic"><use href="#i-train"/></svg>{{ transit.tab }}</a>
   <a href="{{ root }}compare.html" data-tab="compare"><svg class="ic"><use href="#i-compare"/></svg>비교</a>
   <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-filter"/></svg>찾기</a>
   <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심</a>

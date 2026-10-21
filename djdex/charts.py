@@ -11,6 +11,8 @@ from html import escape
 
 import pandas as pd
 
+REGION = "대전"  # 그래프 문구의 지역 이름. site.build 가 설정 값으로 바꿉니다.
+
 GRADES = [  # (하한, 등급, 이름)
     (80, "S", "최상위"),
     (65, "A", "우수"),
@@ -111,7 +113,7 @@ def dot_map(points: list[dict], width: int = 960, max_height: int = 560) -> str:
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="12" class="hit"/>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6.5" class="dot g-{g}"/></a>')
     return (f'<svg viewBox="0 0 {width} {height}" class="chart map" role="img" '
-            f'aria-label="대전 단지 위치와 등급 지도">{"".join(labels)}{"".join(dots)}</svg>')
+            f'aria-label="{REGION} 단지 위치와 등급 지도">{"".join(labels)}{"".join(dots)}</svg>')
 
 
 def grade_legend() -> str:
@@ -392,11 +394,11 @@ def radar(axes: list[tuple[str, float, float]], size: int = 340) -> str:
     for i, (name, v, m) in enumerate(axes):
         x, y = pt(i, 0 if nan(v) else v)
         shown = "-" if nan(v) else f"{v:.0f}"
-        out.append(f'<g class="mark" {_tip(f"{name}: 이 단지 {shown} · 대전 중위 {m:.0f}")}>'
+        out.append(f'<g class="mark" {_tip(f"{name}: 이 단지 {shown} · {REGION} 중위 {m:.0f}")}>'
                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="11" class="hit"/>'
                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" class="dot s1 ring"/></g>')
     legend = ('<div class="legend"><span class="legend-item"><span class="key-line s1"></span>이 단지</span>'
-              '<span class="legend-item"><span class="key-line ref"></span>대전 중위</span></div>')
+              f'<span class="legend-item"><span class="key-line ref"></span>{REGION} 중위</span></div>')
     return (f'<svg viewBox="0 0 {size} {size}" class="chart radar" role="img" aria-label="입지 항목 레이더">'
             f'{"".join(out)}</svg>{legend}')
 

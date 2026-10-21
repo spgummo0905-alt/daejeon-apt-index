@@ -111,6 +111,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None) -> int:
     env = _env()
+    charts.REGION = cfg.region_name
     out_dir = Path(out_dir)
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -158,6 +159,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
 
     # 구별 통계
     gus = list(cfg.districts.values())
+    if cfg.raw["region"].get("group_by") == "dong":  # 구가 없는 지역: 단지가 많은 동부터
+        gus = list(main_t["gu"].value_counts().index)
     gu_stats = []
     for gu in gus:
         sub = main_t[main_t["gu"] == gu]
@@ -230,6 +233,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
                     {"asof": meta["asof"], "region": cfg.region_name, "url": cfg.site.get("base_url", "")})
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
+                  transit=_transit(cfg), regions=cfg.site.get("regions", []),
+                  unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
+                  example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
@@ -275,7 +281,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         c_charts = {
             "gauge": charts.gauge(c.get("index")),
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
-                                            marker=50, marker_label="대전 중간(50)",
+                                            marker=50, marker_label=f"{cfg.region_name} 중간(50)",
                                             desk={"width": 520}, mob={"width": 340}),
             "price": charts.responsive(charts.line_compare, main, region_line, "이 단지", f"{cfg.region_name} 중위",
                                        mob={"width": 360, "height": 240}),
@@ -298,7 +304,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations"]] + [f"apt/{r['slug']}.html" for r in rows])
+                  [f"{n}.html" for n in APP_PAGES + ["stations"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [g.get("url", "") for g in cfg.site.get("regions", [])])
     return len(rows)
 
 
@@ -335,6 +342,13 @@ def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]
                       "up": None if _nan(ref) else g[key] > ref} for g in items],
         })
     return boards
+
+
+def _transit(cfg) -> dict:
+    """역세권 화면 문구: 대전은 지하철역, 세종은 BRT 정류장처럼 지역마다 다릅니다."""
+    t = {"tab": "역세권", "stop": "지하철역", "short": "역"}
+    t.update(cfg.site.get("transit", {}))
+    return t
 
 
 APP_PAGES = ["compare", "finder", "my"]
@@ -441,8 +455,8 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
-def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:
-    """검색엔진 제출용 sitemap.xml 과 robots.txt."""
+def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[str] | None = None) -> None:
+    """검색엔진 제출용 sitemap.xml 과 robots.txt. others: 다른 지역 사이트 주소 (robots 에 사이트맵 추가)."""
     if not base:
         return
     from datetime import date
@@ -457,4 +471,6 @@ def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + "</urlset>\n",
         encoding="utf-8")
-    (out_dir / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}sitemap.xml\n", encoding="utf-8")
+    maps = [base] + [u for u in (others or []) if u and u != base]
+    (out_dir / "robots.txt").write_text("User-agent: *\nAllow: /\n" + "".join(f"Sitemap: {u}sitemap.xml\n" for u in maps),
+                                        encoding="utf-8")

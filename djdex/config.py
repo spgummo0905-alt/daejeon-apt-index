@@ -62,6 +62,11 @@ class Config:
         return self.raw["region"]["name"]
 
     @property
+    def geo_region(self) -> str:
+        """주소 검색에 쓰는 지역 이름 (예: 세종특별자치시). 없으면 name."""
+        return self.raw["region"].get("geo_name", self.region_name)
+
+    @property
     def site(self) -> dict:
         site = dict(self.raw.get("site", {}))
         base = site.get("base_url", "") or ""
@@ -102,11 +107,29 @@ class Config:
         return self.raw.get("school", {})
 
 
+REPLACE_KEYS = {"districts", "transit"}  # 합치지 않고 통째로 바꾸는 표 (지역마다 완전히 다른 값)
+
+
+def merge(base: dict, over: dict) -> dict:
+    """설정 덮어쓰기: 표(dict)는 키별로 합치고, 그 밖의 값(목록 포함)과 REPLACE_KEYS 는 통째로 바꿉니다."""
+    out = dict(base)
+    for k, v in over.items():
+        deep = isinstance(v, dict) and isinstance(out.get(k), dict) and k not in REPLACE_KEYS
+        out[k] = merge(out[k], v) if deep else v
+    return out
+
+
 def load(path: Path | None = None, data_dir: Path | None = None) -> Config:
-    path = path or ROOT / "config.toml"
+    """extends = "config.toml" 이 있으면 그 설정 위에 덮어씁니다 (예: config.sejong.toml).
+    data 키(예: "data/sejong")가 있으면 데이터 폴더로 씁니다. --data 가 우선."""
+    path = Path(path or ROOT / "config.toml")
     with open(path, "rb") as f:
         raw = tomllib.load(f)
+    if raw.get("extends"):
+        base = load(path.parent / raw.pop("extends"))
+        raw = merge(base.raw, raw)
     cfg = Config(raw)
-    if data_dir is not None:
-        cfg.paths = Paths(Path(data_dir))
+    folder = data_dir or (ROOT / raw["data"] if raw.get("data") else None)
+    if folder is not None:
+        cfg.paths = Paths(Path(folder))
     return cfg

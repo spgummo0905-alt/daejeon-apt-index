@@ -592,3 +592,10 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 #complex-table tr[hidden] { display: none !important; }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
 .pager .btn { min-width: 160px; justify-content: center; }
+
+/* 지역 바꾸기 (대전 · 세종) */
+.region-switch { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); margin-right: auto; margin-left: 12px; }
+.region-switch a { padding: 5px 12px; border-radius: 999px; font-size: 13.5px; font-weight: 700; color: var(--text-2); }
+.region-switch a:hover { text-decoration: none; color: var(--text); }
+.region-switch a.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+@media (max-width: 720px) { .region-switch { margin-left: 8px; } .region-switch a { padding: 4px 10px; font-size: 13px; } }

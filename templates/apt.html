@@ -29,7 +29,7 @@
 <section class="gcard gcard-solo g-{{ c.grade }}" data-holo>
   <div class="gcard-head">
     <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
-    <div class="gcard-title"><strong>{{ c.name }}</strong><span class="muted">{{ c.grade_name }} 등급 · 항목별 점수 (대전 단지 중 백분위)</span></div>
+    <div class="gcard-title"><strong>{{ c.name }}</strong><span class="muted">{{ c.grade_name }} 등급 · 항목별 점수 ({{ region }} 단지 중 백분위)</span></div>
     <span class="gcard-score">{{ c.index | score }}</span>
   </div>
   <div class="gstats">
@@ -74,20 +74,20 @@
   <div class="card">
     <span class="label">{{ n }}년 {{ "실질" if meta.real_returns else "명목" }} 연평균 수익률</span>
     <span class="value {{ '' if c['cagr_%dy' % n] is nan else ('pos' if c['cagr_%dy' % n] > 0 else 'neg') }}">{{ c["cagr_%dy" % n] | pct }}</span>
-    <span class="muted">대전 백분위 {{ c["cagr_%dy_pct" % n] | score }}</span>
+    <span class="muted">{{ region }} 백분위 {{ c["cagr_%dy_pct" % n] | score }}</span>
   </div>
   {% endfor %}
   <div class="card">
     <span class="label">입지점수</span>
     <span class="value">{{ c.location_score | score }}</span>
-    <span class="muted">{% if c.location_top is nan %}입지 정보 없음{% else %}대전 상위 {{ c.location_top | round(0) | int }}%{% endif %}</span>
+    <span class="muted">{% if c.location_top is nan %}입지 정보 없음{% else %}{{ region }} 상위 {{ c.location_top | round(0) | int }}%{% endif %}</span>
   </div>
 </section>
 
 <section class="panel">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>
-    <p class="muted">세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 대전 단지들의 한가운데(50)입니다.</p>
+    <p class="muted">세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 {{ region }} 단지들의 한가운데(50)입니다.</p>
   </div>
   {{ charts.components | safe }}
   {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
@@ -135,7 +135,7 @@
 <section class="panel">
   <div class="panel-head">
     <h2>{{ region }}에서 이 단지의 위치</h2>
-    <p class="muted">대전 전체 단지의 지수 분포에서 이 단지가 속한 칸을 파랗게 표시했습니다.</p>
+    <p class="muted">{{ region }} 전체 단지의 지수 분포에서 이 단지가 속한 칸을 파랗게 표시했습니다.</p>
   </div>
   {{ charts.hist | safe }}
 </section>

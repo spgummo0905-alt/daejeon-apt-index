@@ -22,6 +22,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
       - run: python -m djdex demo
+      - run: python -m djdex --config config.sejong.toml demo --out site-demo/sejong
 
   publish:
     # 실제 데이터 수집과 배포는 예약 실행이나 수동 실행 때만
@@ -52,6 +53,7 @@ jobs:
             data/geo.json
             data/poi.json
             data/school
+            data/sejong
           key: djdex-data-${{ github.run_id }}
           restore-keys: djdex-data-
       - name: 수집, 계산, 사이트 생성
@@ -62,6 +64,16 @@ jobs:
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
         run: python -m djdex all
+      # 세종은 대전 사이트 안 /sejong/ 에 만듭니다. 세종이 실패해도 대전은 배포합니다.
+      - name: 세종 수집, 계산, 사이트 생성
+        continue-on-error: true
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
+        run: python -m djdex --config config.sejong.toml all --out site/sejong
       # 뒤 단계가 실패해도 받아 둔 실거래·입지 데이터는 저장해서 다음 실행 때 다시 받지 않습니다.
       - name: 수집 캐시 저장
         if: always()
@@ -73,6 +85,7 @@ jobs:
             data/geo.json
             data/poi.json
             data/school
+            data/sejong
           key: djdex-data-${{ github.run_id }}
       - uses: actions/upload-pages-artifact@v3
         with:

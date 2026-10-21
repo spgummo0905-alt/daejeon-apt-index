@@ -65,7 +65,10 @@ def _read_trades(cfg) -> pd.DataFrame:
 def cmd_locate(cfg, args) -> None:
     client = kakao.Kakao(_need("KAKAO_REST_KEY"))
     trades = _read_trades(cfg)
-    kakao.enrich(_complex_list(trades), cfg.location_factors + cfg.location_extras, cfg.region_name,
+    complexes = _complex_list(trades)
+    if cfg.raw["region"].get("group_by") == "dong":  # 구가 없는 지역은 주소에 구 이름을 넣지 않습니다
+        complexes = [dict(c, gu="") for c in complexes]
+    kakao.enrich(complexes, cfg.location_factors + cfg.location_extras, cfg.geo_region,
                  cfg.paths.geo, cfg.paths.poi, client)
 
 
@@ -94,6 +97,10 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None):
     cpi = CPI.load(cfg.paths.cpi)
+    if cfg.raw["region"].get("group_by") == "dong":
+        # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
+        trades = trades.assign(gu=trades["dong"])
+    hubs = []
     if not poi_df.empty and geo and any(f["kind"] == "score" for f in cfg.location_factors):
         # 학원 밀집도로 찾은 학원가: config 에 hubs 가 없고 auto = true 면 이것을 쓰고,
         # hubs 가 있으면 비교용으로 로그에만 남깁니다. 수학 학원 수(입시 학원가 대용)가 있으면 그것을 씁니다.
@@ -128,6 +135,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                                         components=cfg.index_components,
                                         poi=poi_df if not poi_df.empty else None,
                                         factors=cfg.location_factors)
+    meta["hubs"] = hubs
     if not demo:
         _log_complex_sizes(table)
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,

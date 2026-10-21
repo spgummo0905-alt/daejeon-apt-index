@@ -56,7 +56,7 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
     for k in range(40):
         d = end_ts - pd.Timedelta(days=rnd.randint(1, 360))
         area = rnd.choice([59.9, 84.9])
-        trades.append({"complex_id": cid, "name": "데모신축", "gu": gus[2], "dong": "데모3동", "jibun": "1",
+        trades.append({"complex_id": cid, "name": "데모신축", "gu": gus[2 % len(gus)], "dong": "데모3동", "jibun": "1",
                        "build_year": end_ts.year, "area": area, "price": round(area * rnd.uniform(800, 950)),
                        "date": d.strftime("%Y-%m-%d"), "floor": rnd.randint(1, 30), "cancelled": False,
                        "direct": False, "kind": "입주권" if k % 3 == 0 else "분양권"})

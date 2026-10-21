@@ -2,15 +2,15 @@
 {% block body %}
 <section class="hero hero-main">
   <p class="eyebrow">{{ meta.asof }} 국토부 실거래 기준 · 매월 갱신</p>
-  <h1>우리 아파트,<br>대전에서 <span class="hl">몇 점</span>일까요?</h1>
-  <p class="lead">대전 아파트 {{ "{:,}".format(meta.n_complexes) }}개 단지를 실거래가, 입지, 수익률로 평가했습니다. 단지 이름이나 동 이름으로 찾아보세요.</p>
+  <h1>우리 아파트,<br>{{ region }}에서 <span class="hl">몇 점</span>일까요?</h1>
+  <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}개 단지를 실거래가, 입지, 수익률로 평가했습니다. 단지 이름이나 동 이름으로 찾아보세요.</p>
   <div class="hero-search">
     <svg class="ic"><use href="#i-search"/></svg>
-    <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: 둔산동)" aria-label="단지 검색">
+    <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: {{ example_dong }})" aria-label="단지 검색">
   </div>
   <div class="quick">
     <a class="quick-tile" href="#map"><svg class="ic"><use href="#i-map"/></svg><strong>지도로 보기</strong><span>동네별 점수를 한눈에</span></a>
-    <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>역세권 단지</strong><span>역마다 가까운 단지 순위</span></a>
+    <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.short }}마다 가까운 단지 순위</span></a>
     <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>두 단지를 항목별로</span></a>
     <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건으로</span></a>
   </div>
@@ -30,7 +30,7 @@
 
 <nav class="jump">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
-  <a href="#world">구별 요약</a>
+  <a href="#world">{{ unit }}별 요약</a>
   {% if value_list %}<a href="#value">입지 대비 저렴</a>{% endif %}
   <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
@@ -53,8 +53,8 @@
 
 <section id="world" class="panel">
   <div class="panel-head">
-    <h2>구별 한눈에 보기</h2>
-    <p class="muted">구마다 단지들의 가운데 값입니다. 누르면 그 구의 단지만 목록에서 보여드립니다.</p>
+    <h2>{{ unit }}별 한눈에 보기</h2>
+    <p class="muted">{{ unit }}마다 단지들의 가운데 값입니다. 누르면 그 {{ unit }}의 단지만 목록에서 보여드립니다.</p>
   </div>
   <div class="world-grid">
   {% for g in gu_stats %}
@@ -74,8 +74,8 @@
 
 <section id="gu" class="panel">
   <div class="panel-head">
-    <h2>구별로 비교하기</h2>
-    <p class="muted">항목을 누르면 그 기준으로 구 순위가 바뀝니다. 모두 구마다 단지들의 가운데 값입니다.</p>
+    <h2>{{ unit }}별로 비교하기</h2>
+    <p class="muted">항목을 누르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 모두 {{ unit }}마다 단지들의 가운데 값입니다.</p>
   </div>
   <div class="chips gu-tabs" role="tablist">
   {% for b in gu_boards %}<button class="chip{% if loop.first %} active{% endif %}" type="button" role="tab" data-board="{{ b.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ b.tab }}</button>{% endfor %}
@@ -102,7 +102,7 @@
 <section id="value" class="panel">
   <div class="panel-head">
     <h2>입지 대비 가격이 좋은 단지</h2>
-    <p class="muted">입지점수는 대전 아파트 중간({{ value_ref.loc_med | score }}점) 이상인데, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지입니다. 입지가 좋은 순서로 보여드립니다.</p>
+    <p class="muted">입지점수는 {{ region }} 아파트 중간({{ value_ref.loc_med | score }}점) 이상인데, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지입니다. 입지가 좋은 순서로 보여드립니다.</p>
   </div>
   {% set n_villa = value_list | selectattr("small") | list | length %}
   <div class="chips type-chips" id="value-type" role="tablist">
