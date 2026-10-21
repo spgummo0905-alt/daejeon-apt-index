@@ -499,3 +499,20 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .cmp-table thead th a { color: var(--text); font-weight: 700; }
 .cmp-table td.best { background: rgba(201,162,74,.16); font-weight: 800; color: var(--text); }
 .cmp-table td.best::after { content: " ●"; color: var(--gold); font-size: 9px; vertical-align: 2px; }
+
+/* 단지 카드 저장 미리보기 */
+.btn-card { border-color: var(--gold); }
+.btn-card .ic { color: #8a6a12; }
+.card-modal { position: fixed; inset: 0; z-index: 80; background: rgba(8,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 16px; animation: pop .25s ease-out; }
+.card-modal-box { display: flex; flex-direction: column; align-items: center; gap: 14px; max-height: 100%; }
+.card-modal .small { color: rgba(255,255,255,.7); max-width: 340px; }
+.center-actions { justify-content: center; margin-top: 0; }
+.card-shot { position: relative; width: min(78vw, 360px, calc((100vh - 160px) * 5 / 7)); aspect-ratio: 5 / 7; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5); transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .2s ease-out; }
+.card-shot img { width: 100%; height: 100%; display: block; }
+.card-shot.g-S::before, .card-shot.g-A::before { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; opacity: .75;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,236,170,.45) 44%, rgba(160,220,255,.35) 50%, rgba(255,180,235,.3) 56%, transparent 70%);
+  background-size: 260% 260%; background-position: var(--mx, 100%) var(--my, 50%); animation: foil-sweep 6s ease-in-out infinite; }
+.card-shot.holo-on::before { animation: none; }
+@media (prefers-reduced-motion: reduce) { .card-shot, .card-shot::before { animation: none !important; transform: none !important; } }
