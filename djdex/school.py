@@ -5,7 +5,8 @@
 
 학군 지표: 중학교 순전입률 = (전입 학생 수 - 전출 학생 수) ÷ 전체 학생 수, 최근 몇 년 평균.
 학군을 보고 이사 오는 집이 많은 동네일수록 중학교 전입이 전출보다 많습니다.
-(특목고·자사고 진학 인원이 실린 '졸업생의 진로 현황'은 OpenAPI로 제공되지 않습니다.)
+특목고·자사고 진학 인원이 실린 '졸업생의 진로 현황'은 OpenAPI로 제공되지 않아,
+공시 파일을 assets/school_advance/<시도코드>.csv 로 넣어 두면 함께 씁니다 (load_advance).
 """
 from __future__ import annotations
 
@@ -117,15 +118,11 @@ def short_name(name: str, region: str = "대전") -> str:
 SPECIAL = ("체육", "예술", "국제", "외국어", "과학", "방송", "특수", "대안")
 
 
-def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
-    """캐시에서 중학교 표를 만듭니다. index=학교코드, 열: name, lat, lng, net_in(순전입률 %), students, years.
-
-    순전입률은 최근 n년 (전입 합 − 전출 합) ÷ 학생 수 합으로, 해마다 따로 구해 평균하는 것보다 흔들림이 적습니다.
-    특수 목적 학교와 학생 수가 min_students 명보다 적은 학교는 몇 명의 이동에 크게 흔들려 뺍니다.
-    """
+def _basic(out_dir: Path, cfg: dict, region: str) -> dict[str, dict]:
+    """학교기본정보 캐시 → {학교코드: {name, lat, lng}} (문 닫은 학교·특수 목적 학교 제외)."""
     basic = out_dir / f"{cfg.get('api_basic', '0')}_now.json"
     if not basic.exists():
-        return pd.DataFrame()
+        return {}
     sch = {}
     for r in json.loads(basic.read_text(encoding="utf-8")):
         code = r.get("SCHUL_CODE")
@@ -139,6 +136,18 @@ def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
         if not code or math.isnan(lat) or math.isnan(lng) or str(r.get("ABSCH_YN", "N")).upper() == "Y":
             continue
         sch[code] = {"name": short_name(name, region), "lat": lat, "lng": lng}
+    return sch
+
+
+def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
+    """캐시에서 중학교 표를 만듭니다. index=학교코드, 열: name, lat, lng, net_in(순전입률 %), students, years.
+
+    순전입률은 최근 n년 (전입 합 − 전출 합) ÷ 학생 수 합으로, 해마다 따로 구해 평균하는 것보다 흔들림이 적습니다.
+    특수 목적 학교와 학생 수가 min_students 명보다 적은 학교는 몇 명의 이동에 크게 흔들려 뺍니다.
+    """
+    sch = _basic(out_dir, cfg, region)
+    if not sch:
+        return pd.DataFrame()
     net: dict[str, list[float]] = {}
     moves = sorted(p for p in out_dir.glob(f"{cfg.get('api_moves', '10')}_*.json") if p.stem.split("_")[-1].isdigit())
     for path in moves[-cfg.get("years", 3):]:  # 최근 n년만
@@ -163,14 +172,55 @@ def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
     return df
 
 
+# 졸업생의 진로 현황(학교알리미 공시, 해마다 11월): 특목고·자사고 진학 인원.
+# OpenAPI로는 제공되지 않아 공시 파일을 assets/school_advance/<시도코드>.csv 로 넣습니다.
+# 열: year, school, graduates, science(과학고), foreign_intl(외고·국제고), autonomous(자율형 사립고), gifted(영재학교, 없으면 0)
+ADVANCE_COLS = ("science", "foreign_intl", "autonomous", "gifted")
+
+
+def load_advance(path: Path, out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
+    """중학교별 특목고·자사고 진학률(%) = 최근 n년 (과학고 + 외고·국제고 + 자사고 + 영재학교) ÷ 졸업자.
+    해마다 졸업생이 100~300명이라 한 해만 보면 몇 명에 크게 흔들려 n년을 합쳐 셉니다.
+    학교알리미 학교기본정보의 위치와 이름으로 잇습니다. 반환: index=학교코드, 열 name, lat, lng, adv, grads."""
+    if not path.exists():
+        return pd.DataFrame()
+    sch = _basic(out_dir, cfg, region)
+    if not sch:
+        return pd.DataFrame()
+    raw = pd.read_csv(path, dtype={"school": str})
+    if raw.empty:
+        return pd.DataFrame()
+    keep_years = sorted(raw["year"].dropna().unique())[-cfg.get("advance_years", 3):]
+    raw = raw[raw["year"].isin(keep_years)].copy()
+    for c in ("graduates", *ADVANCE_COLS):
+        raw[c] = pd.to_numeric(raw.get(c, 0), errors="coerce").fillna(0)
+    raw["key"] = raw["school"].map(lambda n: _name_key(n, region))
+    agg = raw.groupby("key")[["graduates", *ADVANCE_COLS]].sum()
+    by_key = {_name_key(v["name"], region): code for code, v in sch.items()}
+    rows = {}
+    for key, r in agg.iterrows():
+        code = by_key.get(key)
+        if code is None or r["graduates"] < cfg.get("advance_min_graduates", 50):
+            continue
+        adv = sum(r[c] for c in ADVANCE_COLS) / r["graduates"] * 100
+        rows[code] = {**sch[code], "adv": round(adv, 2), "grads": int(r["graduates"])}
+    return pd.DataFrame.from_dict(rows, orient="index")
+
+
+def _name_key(name, region: str) -> str:
+    """학교 이름 맞추기: '대전둔산중학교'·'둔산중학교'·'둔산중' → '둔산중'."""
+    return short_name(str(name or "").replace(" ", ""), region)
+
+
 def _meters(a, b) -> float:
     lat = math.radians((a[0] + b[0]) / 2)
     return math.hypot((a[0] - b[0]) * 111_320, (a[1] - b[1]) * 111_320 * math.cos(lat))
 
 
-def for_complexes(geo: dict, sch: pd.DataFrame, radius: float = 1500, k: int = 3) -> pd.DataFrame:
-    """단지마다 반경 안 가까운 중학교 k곳의 순전입률을 거리로 가중평균합니다 (가까울수록 크게).
-    반경 안에 없으면 가장 가까운 한 곳을 씁니다. 열: school_mid, school_mid_names."""
+def for_complexes(geo: dict, sch: pd.DataFrame, radius: float = 1500, k: int = 3,
+                  col: str = "net_in", key: str = "school_mid", fmt=lambda v: f"{v:+.1f}%") -> pd.DataFrame:
+    """단지마다 반경 안 가까운 중학교 k곳의 값(기본: 순전입률)을 거리로 가중평균합니다 (가까울수록 크게).
+    반경 안에 없으면 가장 가까운 한 곳을 씁니다. 열: <key>, <key>_names."""
     if sch.empty:
         return pd.DataFrame()
     pts = list(zip(sch.index, sch["lat"], sch["lng"]))
@@ -181,7 +231,7 @@ def for_complexes(geo: dict, sch: pd.DataFrame, radius: float = 1500, k: int = 3
         near = sorted((_meters(tuple(ll), (lat, lng)), code) for code, lat, lng in pts)
         pick = [p for p in near if p[0] <= radius][:k] or near[:1]
         w = [1 / (d + 300) for d, _ in pick]
-        val = sum(wi * sch.at[c, "net_in"] for wi, (_, c) in zip(w, pick)) / sum(w)
-        names = ", ".join(f"{sch.at[c, 'name']} {sch.at[c, 'net_in']:+.1f}%" for _, c in pick)
-        rows[cid] = {"school_mid": round(val, 2), "school_mid_names": names}
+        val = sum(wi * sch.at[c, col] for wi, (_, c) in zip(w, pick)) / sum(w)
+        names = ", ".join(f"{sch.at[c, 'name']} {fmt(sch.at[c, col])}" for _, c in pick)
+        rows[cid] = {key: round(val, 2), key + "_names": names}
     return pd.DataFrame.from_dict(rows, orient="index")

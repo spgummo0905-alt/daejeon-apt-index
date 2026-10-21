@@ -45,7 +45,8 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
         poi.setdefault(cid, {})
         poi[cid] = {
             f["key"]: (rnd.choice([None, *[rnd.uniform(80, f["radius"]) for _ in range(9)]])
-                       if f["kind"] == "nearest" else round(rnd.uniform(-5, 8), 1) if f["kind"] == "value"
+                       if f["kind"] == "nearest" else round(rnd.uniform(0, 18), 1) if f["key"] == "school_adv"
+                       else round(rnd.uniform(-5, 8), 1) if f["kind"] == "value"
                        else rnd.randint(0, 120))
             for f in factors
         }

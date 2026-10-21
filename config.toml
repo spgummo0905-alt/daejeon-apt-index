@@ -95,6 +95,7 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 factors = [
   { key = "subway",     label = "지하철역까지 거리",   short = "지하철역", category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
   { key = "hub",        label = "주요 학원가 접근성", short = "학원가", kind = "score", weight = 0.25 },
+  { key = "school_adv", label = "주변 중학교 특목고·자사고 진학률", short = "특목·자사 진학", kind = "value", weight = 0.10, signed = false, note = "주변 중학교 졸업생 중 과학고·외고·국제고·자사고·영재학교로 간 비율, 최근 3년 합산 (학교알리미 졸업생의 진로 현황). 공시 파일이 있을 때만 씁니다" },
   { key = "school_mid", label = "주변 중학교 순전입률", short = "중학교 전입", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
   { key = "elementary", label = "초등학교까지 거리",   short = "초등학교", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
   { key = "academy_math", label = "반경 1km 수학 학원 수", short = "수학 학원", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
@@ -103,10 +104,10 @@ factors = [
 ]
 
 # 화면에서 입지 항목을 묶어 보여주는 단위. 점수는 위 weight 그대로라 묶어도 입지점수는 같습니다.
-# 묶음 점수는 그 묶음 항목들의 가중평균(0~100)입니다. 학군 = 학교(중학교 순전입) + 학원가 + 주변 수학 학원.
+# 묶음 점수는 그 묶음 항목들의 가중평균(0~100)입니다. 학군 = 학교(특목고·자사고 진학률, 중학교 순전입) + 학원가 + 주변 수학 학원.
 groups = [
   { key = "transit", label = "교통", factors = ["subway"] },
-  { key = "edu",     label = "학군", factors = ["school_mid", "hub", "academy_math"] },
+  { key = "edu",     label = "학군", factors = ["school_adv", "school_mid", "hub", "academy_math"] },
   { key = "life",    label = "생활", factors = ["elementary", "mart", "hospital"] },
 ]
 

@@ -46,9 +46,9 @@
   <thead><tr><th>항목</th><th>기준</th><th>가중치</th></tr></thead>
   <tbody>
   {% for g in loc_groups %}
-  <tr class="grp-row"><th colspan="2">{{ g.label }}</th><th>{{ "%.0f" | format((g.factors | sum(attribute="weight")) * 100) }}%</th></tr>
+  <tr class="grp-row"><th colspan="2">{{ g.label }}</th><th>{{ "%.0f" | format((g.factors | sum(attribute="weight")) / loc_weight * 100) }}%</th></tr>
   {% for f in g.factors %}
-  <tr><td>{{ f.label }}</td><td>{% if f.kind == "score" %}학원가까지 걸리는 시간이 짧을수록 좋음{% elif f.kind == "value" %}높을수록 좋음{% else %}{{ "가까울수록 좋음" if f.kind == "nearest" else "많을수록 좋음" }} (반경 {{ f.radius }}m){% endif %}{% if f.note %}<br><span class="muted">{{ f.note }}</span>{% endif %}</td><td>{{ "%.0f" | format(f.weight * 100) }}%</td></tr>
+  <tr><td>{{ f.label }}</td><td>{% if f.kind == "score" %}학원가까지 걸리는 시간이 짧을수록 좋음{% elif f.kind == "value" %}높을수록 좋음{% else %}{{ "가까울수록 좋음" if f.kind == "nearest" else "많을수록 좋음" }} (반경 {{ f.radius }}m){% endif %}{% if f.note %}<br><span class="muted">{{ f.note }}</span>{% endif %}</td><td>{{ "%.0f" | format(f.weight / loc_weight * 100) }}%</td></tr>
   {% endfor %}
   {% endfor %}
   </tbody>
@@ -73,7 +73,10 @@
 <h3>학군</h3>
 <p>학교알리미 공시정보로 {{ region }} 중학교의 위치와 최근 {{ cfg.raw.school.years }}년 전·출입 학생 수를 받아, 학교마다 순전입률((전입 − 전출) ÷ 전체 학생 수)을 구합니다.
 학군을 보고 이사 오는 집이 많은 동네일수록 전입이 전출보다 많습니다. 단지에서 {{ cfg.raw.school.radius }}m 안의 가까운 중학교 최대 {{ cfg.raw.school.max_schools }}곳을 거리로 가중평균하고(가까울수록 크게), 안에 없으면 가장 가까운 한 곳을 씁니다.
-배정은 학교군 단위 추첨이라 실제 배정 학교와 다를 수 있습니다. 특목고·자사고 진학 인원은 학교알리미 OpenAPI로 제공되지 않아 아직 넣지 않았습니다.</p>
+배정은 학교군 단위 추첨이라 실제 배정 학교와 다를 수 있습니다.</p>
+<p>특목고·자사고 진학률은 학교알리미 '졸업생의 진로 현황' 공시(해마다 11월)에서 과학고·외고·국제고·자사고·영재학교로 간 졸업생 비율을 최근 3년 합쳐 구하고, 위와 같은 방식으로 주변 중학교를 거리로 가중평균합니다.
+이 공시는 OpenAPI로 제공되지 않아 공시 파일을 받아 넣은 해에만 반영됩니다{% if not (loc_groups | selectattr("key", "equalto", "edu") | map(attribute="factors") | first | default([]) | selectattr("key", "equalto", "school_adv") | list) %} (지금은 아직 넣지 않아 빠져 있습니다){% endif %}.
+일반고는 지망을 받아 추첨으로 배정하는 평준화 지역이라 고등학교는 거리로 보지 않습니다.</p>
 {% endif %}
 
 <h2 id="m-ref">참고 지표 (가성비·거래량·신축도)</h2>

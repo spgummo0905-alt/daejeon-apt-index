@@ -44,7 +44,9 @@ def fmt_raw(v, factor: dict, c: dict | None = None) -> str:
     """입지 원래 값: 거리는 m/km, 개수는 '곳', 학원가는 '둔산 학원가 15분'."""
     if factor["kind"] == "value":
         names = (c or {}).get(factor["key"] + "_names_raw")
-        return names if isinstance(names, str) and names else ("-" if _nan(v) else f"{v:+.1f}%")
+        if isinstance(names, str) and names:
+            return names
+        return "-" if _nan(v) else (f"{v:+.1f}%" if factor.get("signed", True) else f"{v:.1f}%")
     if factor["kind"] == "score":
         name, mins = (c or {}).get(factor["key"] + "_name_raw"), (c or {}).get(factor["key"] + "_min_raw")
         return "-" if not name or _nan(mins) else f"{name} {int(mins)}분"
@@ -187,7 +189,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     n_total = len(main_t)
     table = add_game_stats(table, trades, meta)
     # 입지 묶음(교통·학군·생활) 점수: 묶음 안 항목들의 가중평균. 입지점수 계산은 그대로입니다.
-    loc_groups = _loc_groups(cfg)
+    loc_groups = _loc_groups(cfg, table)
     for g in loc_groups:
         table[f"grp_{g['key']}"] = _group_score(table, g["factors"])
     main_t = table[~table["small"].astype(bool)]
@@ -297,7 +299,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
-                  exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=_loc_groups(cfg))
+                  exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=loc_groups,
+                  loc_weight=sum(f["weight"] for g in loc_groups for f in g["factors"]) or 1)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
     leader_by_gu = {d["gu"]: d for d in month["leaders"]}
@@ -387,16 +390,19 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     return len(rows)
 
 
-def _loc_groups(cfg) -> list[dict]:
-    """설정의 입지 묶음 [{key, label, factors: [factor dict]}]. 묶음에 없는 항목은 '기타'로."""
-    by_key = {f["key"]: f for f in cfg.location_factors}
+def _loc_groups(cfg, table: pd.DataFrame | None = None) -> list[dict]:
+    """설정의 입지 묶음 [{key, label, factors: [factor dict]}]. 묶음에 없는 항목은 '기타'로.
+    table 을 주면 값이 하나도 없는 항목(예: 공시 파일을 아직 넣지 않은 진학률)은 뺍니다."""
+    factors = [f for f in cfg.location_factors
+               if table is None or (f["key"] + "_pct" in table and table[f["key"] + "_pct"].notna().any())]
+    by_key = {f["key"]: f for f in factors}
     out, used = [], set()
     for g in cfg.raw.get("location", {}).get("groups", []):
         fs = [by_key[k] for k in g["factors"] if k in by_key]
         used.update(f["key"] for f in fs)
         if fs:
             out.append({"key": g["key"], "label": g["label"], "factors": fs})
-    rest = [f for f in cfg.location_factors if f["key"] not in used]
+    rest = [f for f in factors if f["key"] not in used]
     if rest:
         out.append({"key": "etc" if out else "all", "label": "기타" if out else "입지", "factors": rest})
     return out
@@ -798,7 +804,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "st": [_r(r.get(k)) for k, _, _ in STATS],
             "c10": _r(r.get("cagr_10y") * 100, 1) if not _nan(r.get("cagr_10y")) else None,
             "c5": _r(r.get("cagr_5y") * 100, 1) if not _nan(r.get("cagr_5y")) else None,
-            "f": {f["key"]: _r(r.get(f["key"] + "_raw")) for f in factors},
+            "f": {f["key"]: _r(r.get(f["key"] + "_raw"), 1 if f["kind"] == "value" else 0) for f in factors},
             "y": r.get("build_year"), "la": _r(r.get("lat"), 6), "ln": _r(r.get("lng"), 6),
             "h": bool(r.get("new_high_recent")),
             "dd": _r(r.get("from_peak") * 100, 1) if not _nan(r.get("from_peak")) else None,
