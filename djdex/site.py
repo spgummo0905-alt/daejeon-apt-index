@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import shutil
 from pathlib import Path
@@ -9,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import charts
+from . import charts, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -239,10 +240,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
+    month = _month_view(trades, main_t, rows, by_id, meta, cfg)
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
-        value_list=value_list, value_ref=value_ref,
+        value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
+    (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
+        root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
     import json as _json
@@ -304,7 +308,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in cfg.site.get("regions", [])])
     return len(rows)
 
@@ -349,6 +353,111 @@ def _transit(cfg) -> dict:
     t = {"tab": "역세권", "stop": "지하철역", "short": "역"}
     t.update(cfg.site.get("transit", {}))
     return t
+
+
+HEX = 34  # 시황 보드 육각 타일 반지름(px)
+
+
+def _short_dong(name: str) -> str:
+    """'가수원동' → '가수원', '목동' → '목동' (두 글자는 그대로)."""
+    n = str(name)
+    return n[:-1] if len(n) > 2 and n[-1] in "동가" else n
+
+
+def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
+    """이번 달 볼거리: 시황 보드(동별 육각 타일), 랭킹 다섯 가지, 화제의 단지 띠."""
+    asof = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") + pd.offsets.MonthEnd(0)
+    sale = trends._sale(trades, cfg.filters, keep=main_t.index)
+    chg = trends.recent_change(sale, asof)
+    cnt = trends.recent_count(sale, asof)
+    deals = trends.top_deals(sale, asof)
+
+    def item(cid, value, sub="", tone=""):
+        r = by_id[cid]
+        return {"slug": r["slug"], "name": r["name"], "gu": r["gu"], "dong": r["dong"], "grade": r["grade"],
+                "value": value, "sub": sub, "tone": tone}
+
+    up = chg[chg > 0].sort_values(ascending=False).head(10)
+    down = chg[chg < 0].sort_values().head(10)
+    busy = cnt.sort_values(ascending=False).head(10)
+    highs = main_t[main_t.get("new_high_recent", pd.Series(False, index=main_t.index)).fillna(False).astype(bool)]
+    highs = highs.sort_values(["last_date", "last_price"], ascending=False).head(10) if not highs.empty else highs
+    ranks = [
+        {"key": "up", "tab": "많이 오른", "title": "1년 전보다 많이 오른 단지",
+         "note": "최근 6개월 ㎡당 중위가를 1년 전 같은 6개월과 비교 (양쪽 모두 거래 3건 이상)",
+         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "up") for c, v in up.items()]},
+        {"key": "high", "tab": "신고가", "title": "최근 신고가 단지",
+         "note": "마지막 거래가 같은 면적대 이전 최고가를 넘은 단지 (최근 90일)",
+         "items": [item(c, eok(r["last_price"]), f"{r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}", "up")
+                   for c, r in highs.iterrows()]},
+        {"key": "busy", "tab": "거래 활발", "title": "최근 3개월 거래가 많은 단지",
+         "note": "최근 3개월 매매 신고 건수 (해제 거래 제외)",
+         "items": [item(c, f"{int(v)}건", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡") for c, v in busy.items()]},
+        {"key": "deal", "tab": "최고가 거래", "title": "최근 3개월 가장 비싼 거래",
+         "note": "단지마다 가장 비싼 한 건 (실거래 금액 그대로, 84㎡ 환산 아님)",
+         "items": [item(r["complex_id"], eok(r["price"]), f"{r['area']:.0f}㎡ · {pd.Timestamp(r['date']):%m.%d}")
+                   for _, r in deals.iterrows()]},
+        {"key": "down", "tab": "많이 내린", "title": "1년 전보다 많이 내린 단지",
+         "note": "최근 6개월 ㎡당 중위가를 1년 전 같은 6개월과 비교 (양쪽 모두 거래 3건 이상)",
+         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "down") for c, v in down.items()]},
+    ]
+    ranks = [r for r in ranks if r["items"]]
+
+    # 화제의 단지 띠: 신고가 · 많이 오른 · 거래 활발에서 겹치지 않게 골라 섞습니다.
+    ticker, seen = [], set()
+    pools = [("신고가", [(i, i["value"]) for i in next((r["items"] for r in ranks if r["key"] == "high"), [])[:5]]),
+             ("상승", [(i, i["value"]) for i in next((r["items"] for r in ranks if r["key"] == "up"), [])[:4]]),
+             ("거래", [(i, i["value"]) for i in next((r["items"] for r in ranks if r["key"] == "busy"), [])[:3]])]
+    for k in range(5):
+        for tag, pool in pools:
+            if k < len(pool) and pool[k][0]["slug"] not in seen:
+                seen.add(pool[k][0]["slug"])
+                ticker.append(dict(pool[k][0], tag=tag))
+
+    # 시황 보드: 동별 온도를 육각 타일로 (실제 위치에 가깝게)
+    board = None
+    heat = trends.dong_heat(sale, main_t, asof)
+    pts = {}
+    for r in rows:
+        if not r["small"] and r.get("lat") and r.get("lng"):
+            pts.setdefault((r["gu"], r["dong"]), []).append((r["lat"], r["lng"]))
+    cent = {k: (sum(p[0] for p in v) / len(v), sum(p[1] for p in v) / len(v)) for k, v in pts.items() if k in heat.index}
+    if len(cent) >= 5:
+        cells = trends.hex_layout(cent)
+        w3 = math.sqrt(3) * HEX
+        xy = {k: (w3 * (q + r / 2), 1.5 * HEX * r) for k, (q, r) in cells.items()}
+        x0 = min(v[0] for v in xy.values()) - w3 / 2 - 4
+        y0 = min(v[1] for v in xy.values()) - HEX - 4
+        best = main_t.dropna(subset=["index"]).sort_values("index", ascending=False).groupby(["gu", "dong"]).head(1)
+        best = {(r["gu"], r["dong"]): cid for cid, r in best.iterrows()}
+        price = main_t.groupby(["gu", "dong"])["price_ref"].median()
+        corner = [(math.cos(math.radians(60 * i - 30)), math.sin(math.radians(60 * i - 30))) for i in range(6)]
+        tiles = []
+        mx, my = sum(v[0] for v in xy.values()) / len(xy), sum(v[1] for v in xy.values()) / len(xy)
+        for k, (x, y) in xy.items():
+            h = heat.loc[k]
+            x, y = x - x0, y - y0
+            b = best.get(k)
+            tiles.append({
+                "gu": k[0], "dong": k[1], "label": _short_dong(k[1]), "x": round(x, 1), "y": round(y, 1),
+                "points": " ".join(f"{x + (HEX - 1.5) * cx:.1f},{y + (HEX - 1.5) * cy:.1f}" for cx, cy in corner),
+                "band": int(h["band"]), "band_name": h["band_name"], "n": int(h["n"]),
+                "chg": None if _nan(h["chg"]) else round(float(h["chg"]) * 100, 1),
+                "last3": int(h["last3"]), "usual": round(float(h["prev_q"]), 1),
+                "price": None if _nan(price.get(k)) else eok(price.get(k)),
+                "best": by_id[b]["name"] if b else None, "best_slug": by_id[b]["slug"] if b else None,
+                "best_grade": by_id[b]["grade"] if b else None,
+                "ring": int(math.hypot(x + x0 - mx, y + y0 - my) / (w3 * 0.9)),
+            })
+        tiles.sort(key=lambda t: (t["y"], t["x"]))
+        w = max(t["x"] for t in tiles) + w3 / 2 + 4
+        hgt = max(t["y"] for t in tiles) + HEX + 4
+        counts = {b: sum(1 for t in tiles if t["band"] == b) for b, _ in trends.BANDS + [trends.QUIET]}
+        hot = max((t for t in tiles if t["band"]), key=lambda t: (t["band"], t["chg"] or -99), default=None)
+        board = {"tiles": tiles, "w": round(w), "h": round(hgt),
+                 "bands": [{"band": b, "name": n, "count": counts[b]} for b, n in trends.BANDS + [trends.QUIET]],
+                 "start": f"{hot['gu']}|{hot['dong']}" if hot else None}
+    return {"ranks": ranks, "ticker": ticker, "board": board}
 
 
 APP_PAGES = ["compare", "finder", "my"]

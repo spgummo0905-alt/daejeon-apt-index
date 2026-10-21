@@ -8,6 +8,20 @@
     <svg class="ic"><use href="#i-search"/></svg>
     <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: {{ example_dong }})" aria-label="단지 검색">
   </div>
+  {% if ticker %}
+  <div class="ticker" aria-label="이번 달 화제의 단지">
+    <span class="ticker-label"><span class="live-dot"></span>이번 달 화제</span>
+    <div class="ticker-window">
+      <div class="ticker-track">
+      {% for dup in [0, 1] %}
+        {% for t in ticker %}<a class="ticker-chip t-{{ t.tone or 'flat' }}" href="apt/{{ t.slug }}.html"{% if dup %} aria-hidden="true" tabindex="-1"{% endif %}>
+          <span class="tk-tag">{{ t.tag }}</span><strong>{{ t.name }}</strong><span class="tk-val">{{ t.value }}</span></a>{% endfor %}
+      {% endfor %}
+      </div>
+    </div>
+    <a class="ticker-more" href="rank.html">랭킹 →</a>
+  </div>
+  {% endif %}
   <div class="quick">
     <a class="quick-tile" href="#map"><svg class="ic"><use href="#i-map"/></svg><strong>지도로 보기</strong><span>동네별 점수를 한눈에</span></a>
     <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.short }}마다 가까운 단지 순위</span></a>
@@ -30,6 +44,8 @@
 
 <nav class="jump">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
+  {% if board %}<a href="#heat">시황</a>{% endif %}
+  <a href="rank.html">랭킹</a>
   <a href="#world">{{ unit }}별 요약</a>
   {% if value_list %}<a href="#value">입지 대비 저렴</a>{% endif %}
   <a href="#top">주목할 단지</a>
@@ -48,6 +64,40 @@
     <div class="map-fallback">{{ charts.map | safe }}</div>
   </div>
   {{ grade_legend | safe }}
+</section>
+{% endif %}
+
+{% if board %}
+<section id="heat" class="panel heat">
+  <div class="panel-head">
+    <p class="eyebrow">{{ meta.asof }} 시황</p>
+    <h2>동네 시황 보드</h2>
+    <p class="muted">육각형 하나가 동 하나입니다. 실제 위치에 가깝게 놓았고, 색은 최근 6개월 가격 흐름과 3개월 거래량으로 매긴 온도입니다. 눌러서 동네 요약을 보세요.</p>
+  </div>
+  <div class="heat-legend" role="group" aria-label="온도 거르기">
+    {% for b in board.bands %}{% if b.count %}<button type="button" class="heat-chip b{{ b.band }}" data-band="{{ b.band }}" aria-pressed="false"><i></i>{{ b.name }}<span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
+  </div>
+  <div class="heat-grid">
+    <div class="heat-board">
+      <svg viewBox="0 0 {{ board.w }} {{ board.h }}" role="img" aria-label="{{ region }} 동별 시황 육각 지도" id="heat-svg">
+        {% for t in board.tiles %}
+        <g class="hx b{{ t.band }}" tabindex="0" role="button" aria-label="{{ t.gu }} {{ t.dong }} {{ t.band_name }}"
+           style="--ring: {{ t.ring }}; transform-origin: {{ t.x }}px {{ t.y }}px"
+           data-key="{{ t.gu }}|{{ t.dong }}" data-band="{{ t.band }}" data-gu="{{ t.gu }}" data-dong="{{ t.dong }}"
+           data-name="{{ t.band_name }}" data-chg="{{ t.chg if t.chg is not none else '' }}" data-last3="{{ t.last3 }}"
+           data-usual="{{ t.usual }}" data-n="{{ t.n }}" data-price="{{ t.price or '' }}"
+           data-best="{{ t.best or '' }}" data-best-slug="{{ t.best_slug or '' }}" data-best-grade="{{ t.best_grade or '' }}">
+          <polygon points="{{ t.points }}"/>
+          <text x="{{ t.x }}" y="{{ t.y - 2 }}" class="hx-name">{{ t.label }}</text>
+          <text x="{{ t.x }}" y="{{ t.y + 12 }}" class="hx-val">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '·' }}</text>
+        </g>
+        {% endfor %}
+      </svg>
+    </div>
+    <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}">
+      <p class="muted">육각형을 누르면 동네 요약이 나옵니다.</p>
+    </aside>
+  </div>
 </section>
 {% endif %}
 
@@ -213,4 +263,5 @@
 <script src="static/kmap.js?v={{ v }}"></script>
 {% endif %}
 <script src="static/home.js?v={{ v }}"></script>
+<script src="static/board.js?v={{ v }}"></script>
 {% endblock %}

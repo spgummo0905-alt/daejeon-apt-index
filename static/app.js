@@ -202,4 +202,37 @@
     // 검색창: 고르면 단지 페이지로 이동
     document.querySelectorAll("[data-search-go]").forEach(inp => DJ.search(inp, c => { location.href = DJ.href(c); }));
   });
+
+  // ---------- 모션: 화면에 들어올 때 펼치기, 숫자 올라가기 ----------
+  // 모든 효과는 '움직임 줄이기' 설정이면 끄고 결과만 바로 보여줍니다.
+  DJ.calm = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  DJ.onView = function (els, fn, opts) {
+    const list = Array.from(els);
+    if (DJ.calm || !("IntersectionObserver" in window)) { list.forEach(fn); return; }
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (e.isIntersecting) { io.unobserve(e.target); fn(e.target); }
+    }), Object.assign({ threshold: 0.2 }, opts || {}));
+    list.forEach(e => io.observe(e));
+  };
+  // "+12.3%", "12.7억", "24건" 처럼 숫자 하나가 든 글자를 0부터 그 값까지 올립니다.
+  DJ.countUp = function (node, ms) {
+    const text = node.textContent;
+    const m = text.match(/-?[0-9][0-9,]*\.?[0-9]*/);
+    if (!m || DJ.calm) return;
+    const target = parseFloat(m[0].replace(/,/g, ""));
+    const dec = (m[0].split(".")[1] || "").length;
+    const head = text.slice(0, m.index), tail = text.slice(m.index + m[0].length);
+    const dur = ms || 700, t0 = performance.now();
+    const fmt = v => v.toLocaleString("ko-KR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      node.textContent = head + fmt(target * e) + tail;
+      if (k < 1) requestAnimationFrame(step); else node.textContent = text;
+    };
+    requestAnimationFrame(step);
+  };
+  document.addEventListener("DOMContentLoaded", () => {
+    DJ.onView(document.querySelectorAll("[data-reveal]"), e => e.classList.add("in"));
+    DJ.onView(document.querySelectorAll("[data-count]"), e => DJ.countUp(e));
+  });
 })();

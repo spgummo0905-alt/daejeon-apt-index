@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}이번 달 랭킹 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} 아파트 이번 달 랭킹: 1년 전보다 많이 오른 단지, 신고가, 거래가 활발한 단지, 가장 비싼 거래.{% endblock %}
+{% block body %}
+<section class="page-hero">
+  <p class="eyebrow">{{ meta.asof }} 실거래 기준</p>
+  <h1>이번 달 {{ region }}<br>랭킹</h1>
+  <p class="lead">실거래로만 매긴 순위입니다. 조회수나 광고는 섞지 않았습니다.</p>
+</section>
+<section class="panel rank">
+  <div class="rank-tabs" role="tablist" id="rank-tabs">
+    {% for r in ranks %}<button type="button" role="tab" class="rank-tab{% if loop.first %} active{% endif %}" data-tab="{{ r.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ r.tab }}</button>{% endfor %}
+    <span class="rank-ink" aria-hidden="true"></span>
+  </div>
+  {% for r in ranks %}
+  <div class="rank-panel" data-panel="{{ r.key }}" role="tabpanel"{% if not loop.first %} hidden{% endif %}>
+    <div class="rank-head"><h2>{{ r.title }}</h2><p class="muted">{{ r.note }}</p></div>
+    {% set top3 = r["items"][:3] %}
+    <ol class="podium">
+      {% for it in top3 %}
+      <li class="pd pd{{ loop.index }} t-{{ it.tone or 'flat' }}" style="--i: {{ [1, 0, 2][loop.index0] }}">
+        <a href="apt/{{ it.slug }}.html">
+          <span class="pd-medal">{{ loop.index }}</span>
+          <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
+          <strong class="pd-name">{{ it.name }}</strong>
+          <span class="pd-where muted">{{ it.gu }} {{ it.dong }}</span>
+          <span class="pd-val">{{ it.value }}</span>
+          <span class="pd-sub muted">{{ it.sub }}</span>
+        </a>
+        <span class="pd-step" aria-hidden="true"></span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% if r["items"] | length > 3 %}
+    <ol class="rank-list" start="4">
+      {% for it in r["items"][3:] %}
+      <li style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
+        <span class="rl-no">{{ loop.index + 3 }}</span>
+        <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
+        <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{{ it.gu }} {{ it.dong }} · {{ it.sub }}</span></span>
+        <span class="rl-val t-{{ it.tone or 'flat' }}">{{ it.value }}</span>
+      </a></li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
+{% block scripts %}<script src="static/rank.js?v={{ v }}"></script>{% endblock %}
