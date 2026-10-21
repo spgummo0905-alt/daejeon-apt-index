@@ -89,3 +89,16 @@ def test_card_download_button_only_for_ranked(tmp_path):
         has = "data-card-download" in html
         assert has == (page.stem in ranked), page.stem  # 소규모 단지는 카드 데이터가 없어 버튼도 없음
         assert "static/cardgen.js" in html
+
+
+def test_value_list_sorted_by_location(tmp_path):
+    import re
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    html = (out / "index.html").read_text(encoding="utf-8")
+    assert 'class="value-list"' in html and "value_scatter" not in html and 'aria-label="입지점수와 가격 산점도"' not in html
+    section = html[html.index('id="value"'):html.index("</section>", html.index('id="value"'))]
+    locs = [int(x) for x in re.findall(r'<span class="vl-label">입지</span>.*?<strong>(\d+)</strong>', section, re.S)]
+    assert locs and locs == sorted(locs, reverse=True)

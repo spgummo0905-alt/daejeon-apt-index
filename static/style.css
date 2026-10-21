@@ -516,3 +516,30 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   background-size: 260% 260%; background-position: var(--mx, 100%) var(--my, 50%); animation: foil-sweep 6s ease-in-out infinite; }
 .card-shot.holo-on::before { animation: none; }
 @media (prefers-reduced-motion: reduce) { .card-shot, .card-shot::before { animation: none !important; transform: none !important; } }
+
+/* 입지 대비 가격이 좋은 단지 목록 */
+.value-list { list-style: none; margin: 0; padding: 0; }
+.value-list li { border-top: 1px solid var(--border); }
+.value-list li:first-child { border-top: none; }
+.value-list a { display: grid; grid-template-columns: 28px auto minmax(0, 1fr) 190px 120px; gap: 12px; align-items: center;
+  padding: 12px 4px; color: var(--text); }
+.value-list a:hover { background: var(--bg); text-decoration: none; }
+.vl-rank { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.vl-name { display: flex; flex-direction: column; min-width: 0; }
+.vl-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vl-name .muted { font-size: 12.5px; }
+.vl-loc { display: grid; grid-template-columns: auto 1fr 28px; gap: 8px; align-items: center; font-size: 13px; }
+.vl-loc strong { text-align: right; font-variant-numeric: tabular-nums; }
+.vl-label { color: var(--muted); }
+.vl-price { display: flex; flex-direction: column; align-items: flex-end; }
+.vl-price strong { font-variant-numeric: tabular-nums; }
+.vl-price .muted { font-size: 12px; color: var(--s3); }
+.more { margin-top: 4px; }
+.more summary { cursor: pointer; list-style: none; padding: 12px 4px; color: var(--navy); font-weight: 700; border-top: 1px solid var(--border); }
+.more summary::-webkit-details-marker { display: none; }
+.more[open] summary { color: var(--muted); }
+@media (max-width: 720px) {
+  .value-list a { grid-template-columns: 22px auto minmax(0, 1fr) auto; grid-template-areas: "r g n p" ". . l l"; row-gap: 6px; }
+  .vl-rank { grid-area: r; } .value-list .grade { grid-area: g; } .vl-name { grid-area: n; } .vl-price { grid-area: p; }
+  .vl-loc { grid-area: l; }
+}

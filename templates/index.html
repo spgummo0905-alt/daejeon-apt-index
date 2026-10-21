@@ -31,7 +31,7 @@
 <nav class="jump">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
   <a href="#world">구별 요약</a>
-  {% if charts.scatter %}<a href="#value">가성비</a>{% endif %}
+  {% if value_list %}<a href="#value">입지 대비 저렴</a>{% endif %}
   <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
 </nav>
@@ -83,13 +83,24 @@
   </div>
 </section>
 
-{% if charts.scatter %}
+{% if value_list %}
 <section id="value" class="panel">
   <div class="panel-head">
     <h2>입지 대비 가격이 좋은 단지</h2>
-    <p class="muted">오른쪽 아래 파란 점들이 <strong>입지는 대전 중간 이상인데 가격은 중간 이하</strong>인 단지입니다. 선은 각각 입지와 가격의 중간값입니다.</p>
+    <p class="muted">입지점수는 대전 단지 중간({{ value_ref.loc_med | score }}점) 이상인데, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지입니다. 입지가 좋은 순서로 보여드립니다.</p>
   </div>
-  {{ charts.scatter | safe }}
+  <ol class="value-list">
+  {% for r in value_list %}
+    {% if loop.index == 11 %}</ol><details class="more"><summary>{{ value_list | length - 10 }}곳 더 보기</summary><ol class="value-list" start="11">{% endif %}
+    <li><a href="apt/{{ r.slug }}.html">
+      <span class="vl-rank">{{ loop.index }}</span>
+      <span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
+      <span class="vl-name"><strong>{{ r.name }}</strong><span class="muted">{{ r.gu }} {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
+      <span class="vl-loc"><span class="vl-label">입지</span><span class="gbar"><span style="width: {{ r.location_score | round(1) }}%"></span></span><strong>{{ r.location_score | score }}</strong></span>
+      <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="muted">중간보다 {{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}% 낮음</span></span>
+    </a></li>
+  {% endfor %}
+  </ol>{% if value_list | length > 10 %}</details>{% endif %}
 </section>
 {% endif %}
 

@@ -168,11 +168,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
 
     has_loc = main_t["location_score"].notna().any()
     priced = main_t.dropna(subset=["price_ref"])
-    value_picks = []
+    # 입지 대비 가격이 좋은 단지: 입지는 대전 중간 이상, 가격은 중간 이하. 입지 좋은 순.
+    value_list, value_ref = [], {}
     if has_loc and not priced.empty:
-        cand = priced[(priced["location_score"] > priced["location_score"].median())
-                      & (priced["price_ref"] < priced["price_ref"].median())]
-        value_picks = top(cand.assign(v=cand["location_score"] - cand["price_ref"].rank(pct=True) * 100), "v")
+        loc_med, price_med = priced["location_score"].median(), priced["price_ref"].median()
+        cand = priced[(priced["location_score"] > loc_med) & (priced["price_ref"] < price_med)]
+        value_list = [by_id[cid] for cid in cand.sort_values(["location_score", "price_ref"], ascending=[False, True]).index[:30]]
+        value_ref = {"loc_med": loc_med, "price_med": price_med}
     highs = []
     if "new_high_recent" in main_t:
         hr = main_t[main_t["new_high_recent"].fillna(False).astype(bool)].sort_values("last_date", ascending=False)
@@ -196,9 +198,6 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     if highs:
         tops.insert(0, {"title": "최근 신고가", "items": highs,
                         "value": lambda r: f"{eok(r['last_price'])} · {r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}"})
-    if value_picks:
-        tops.append({"title": "입지 대비 저렴한 5곳", "items": value_picks,
-                     "value": lambda r: f"입지 {r['location_score']:.0f} · {eok(r['price_ref'])}"})
 
     link = "apt/{}.html"
     index_charts = {
@@ -208,12 +207,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                 unit_tip=" (84㎡ 환산 중위)"),
         "gu_index": charts.hbar([(g["gu"], g["index"], f"{g['index']:.0f}점") for g in gu_stats
                                  if not _nan(g["index"])], vmax=100, unit_tip=" (지수 중위)"),
-        "scatter": charts.responsive(charts.value_scatter, [dict(r, x=r["location_score"], y=r["price_ref"],
-                                    href=link.format(r["slug"])) for r in rows if not r["small"]],
-                                    mob={"width": 360, "height": 320}) if has_loc else "",
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
-    # 지도, 검색, 대결, 게임, 맞춤 찾기가 함께 쓰는 단지 데이터 (소규모 제외).
+    # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
                     {"asof": meta["asof"], "region": cfg.region_name, "url": cfg.site.get("base_url", "")})
@@ -223,6 +219,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
 
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats,
+        value_list=value_list, value_ref=value_ref,
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
