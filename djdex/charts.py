@@ -405,30 +405,6 @@ def radar(axes: list[tuple[str, float, float]], size: int = 340) -> str:
 
 # ---------------------------------------------------------------- 게이지
 
-def gauge(value, size: int = 200) -> str:
-    """반원 게이지. 지수 0~100."""
-    c, r, sw = size / 2, size / 2 - 14, 14
-    cy = c
-
-    def arc(v):
-        a = math.pi * (1 - v / 100)
-        return c + r * math.cos(a), cy - r * math.sin(a)
-
-    x0, y0 = arc(0)
-    x1, y1 = arc(100)
-    track = f'<path d="M{x0:.1f},{y0:.1f} A{r},{r} 0 0 1 {x1:.1f},{y1:.1f}" class="gauge-track" stroke-width="{sw}"/>'
-    if nan(value):
-        fill, num = "", "-"
-    else:
-        v = max(0.5, min(100, value))
-        xv, yv = arc(v)
-        fill = f'<path d="M{x0:.1f},{y0:.1f} A{r},{r} 0 0 1 {xv:.1f},{yv:.1f}" class="gauge-fill g-stroke-{grade(value)[0]}" stroke-width="{sw}"/>'
-        num = f"{value:.0f}"
-    return (f'<svg viewBox="0 0 {size} {size / 2 + 12}" class="gauge" role="img" aria-label="종합 지수 {num}">'
-            f'{track}{fill}<text x="{c}" y="{cy - 8}" text-anchor="middle" class="gauge-num">{num}</text>'
-            f'<text x="{c}" y="{cy + 10}" text-anchor="middle" class="axis">/ 100</text></svg>')
-
-
 def responsive(fn, *args, desk: dict | None = None, mob: dict | None = None, **kw) -> str:
     """같은 차트를 넓은 화면용과 휴대폰용 크기로 두 번 그립니다. CSS가 화면 폭에 따라 하나만 보여줍니다."""
     a = fn(*args, **{**kw, **(desk or {})})

@@ -7,63 +7,54 @@
   <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
   <div class="icon-actions">
     <button class="icon-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic"><use href="#i-star"/></svg></button>
-    <button class="icon-btn" data-share="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}" type="button" aria-label="공유" title="공유"><svg class="ic"><use href="#i-share"/></svg></button>
+    <button class="icon-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic"><use href="#i-share"/></svg></button>
   </div>
 </div>
-<section class="apt-head" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-grade="{{ c.grade }}">
-  <div class="apt-title">
-    <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
-    <div>
-      <h1>{{ c.name }}{% if c.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if c.small %}<span class="badge-small">{{ c.small_reason }}</span>{% endif %}</h1>
-      <p class="muted">{{ region }} {{ c | place }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건</p>
-    </div>
-  </div>
-  <div class="gauge-box">
-    {{ charts.gauge | safe }}
-    <span class="muted">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}개 중 {{ c.rank }}위{% else %} · 순위 제외({{ c.small_reason or "소규모" }}){% endif %}</span>
-  </div>
-</section>
-
-<div class="apt-actions">
-  <a class="btn" href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg><span>다른 단지와 비교</span></a>
-  {% if not c.small %}<button class="btn btn-card" data-card-download type="button" title="이 단지 점수를 이미지로 저장해 공유"><svg class="ic"><use href="#i-download"/></svg><span>이미지로 저장</span></button>{% endif %}
-</div>
-
-{% if not c.small %}
-<section class="gcard gcard-solo g-{{ c.grade }}" data-holo>
-  <div class="gcard-head">
-    <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
-    <div class="gcard-title"><strong>{{ c.name }}</strong><span class="muted">{{ c.grade_name }} 등급 · 항목별 점수 ({{ region }} 단지 중 백분위)</span></div>
-    <span class="gcard-score">{{ c.index | score }}</span>
-  </div>
-  <div class="gstats">
-  {% for key, label, desc in stats %}{% set v = c[key] %}
-    <div class="gstat" title="{{ desc }}"><span class="gstat-name">{{ label }}</span>
-      <span class="gbar"><span style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></span></span>
-      <span class="gstat-val">{{ v | score }}</span></div>
-  {% endfor %}
-  </div>
-  <div class="gcard-foot"><span>{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span><span>84㎡ {{ c.price_ref | price }}</span></div>
-</section>
-{% endif %}
 
 {% set fresh = recent[:5] %}
-{% if fresh %}
-<section class="recent-deals">
-  <div class="rd-head"><h2>최근 실거래</h2><a href="#trades">전체 거래 보기</a></div>
-  <ol class="rd-list">
-  {% for t in fresh %}
-    <li{% if t.cancelled %} class="struck"{% endif %}>
-      <span class="rd-date">{{ t.date.strftime("%y.%m.%d") }}</span>
-      <span class="rd-spec">{{ "%.0f" | format(t.area) }}㎡{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}</span>
-      <span class="rd-tags">{% if t.high %}<span class="badge-high">신고가</span>{% endif %}{% if t.cancelled %}<span class="rd-tag">해제</span>{% elif t.direct %}<span class="rd-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="rd-tag">{{ t.kind }}</span>{% endif %}</span>
-      <strong class="rd-price">{{ t.price | price }}</strong>
-    </li>
+<div class="apt-hero">
+<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}"><div class="mc-in">
+  <div class="mc-top">
+    <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
+    <div class="mc-title">
+      <h1>{{ c.name }}</h1>
+      <p>{{ region }} {{ c | place }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %}</p>
+    </div>
+    <div class="mc-score"><small>종합 지수</small><strong>{{ c.index | score }}</strong></div>
+  </div>
+  <div class="mc-art">
+    <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
+    <span class="mc-rank">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% else %} · 순위 제외({{ c.small_reason or "소규모" }}){% endif %}</span>
+    <div class="mc-chips">
+      {% if fresh %}{% set t0 = fresh[0] %}<button class="mc-chip" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals"><svg class="ic"><use href="#i-receipt"/></svg>최근 실거래 <b>{{ t0.price | price }}</b><span class="mc-chip-sub">· {{ t0.date.strftime("%m.%d") }}</span>{% if t0.high %}<span class="mc-hi">신고가</span>{% endif %}<span class="mc-caret" aria-hidden="true"></span></button>{% endif %}
+      {% for icon, text in chips %}<span class="mc-chip"><svg class="ic"><use href="#i-{{ icon }}"/></svg>{{ text }}</span>{% endfor %}
+    </div>
+  </div>
+  {% if fresh %}
+  <div class="mc-deals" id="mc-deals" hidden>
+    {% for t in fresh %}
+    <div class="mc-deal{% if t.cancelled %} struck{% endif %}"><span class="d">{{ t.date.strftime("%y.%m.%d") }}</span>
+      <span>{{ "%.0f" | format(t.area) }}㎡{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}{% if t.high %}<span class="mc-hi">신고가</span>{% endif %}{% if t.cancelled %}<span class="mc-tag">해제</span>{% elif t.direct %}<span class="mc-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="mc-tag">{{ t.kind }}</span>{% endif %}</span>
+      <strong>{{ t.price | price }}</strong></div>
+    {% endfor %}
+    <a class="mc-all" href="#trades">전체 거래 {{ c.n_trades }}건 보기 ›</a>
+    <p class="mc-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고해 최근 거래는 늦게 올라올 수 있습니다.</p>
+  </div>
+  {% endif %}
+  <div class="mc-strip">{{ c.grade_name }} 등급{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건{% if c.new_high_recent %} · 최근 신고가{% endif %}{% if c.small %} · {{ c.small_reason }}{% endif %}</div>
+  <ul class="mc-stats" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
+  {% for key, label, desc in stats %}{% set v = c[key] %}
+    <li><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></li>
   {% endfor %}
-  </ol>
-  <p class="muted rd-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고하므로 최근 거래는 늦게 올라올 수 있습니다.</p>
-</section>
-{% endif %}
+  </ul>
+  {% set c10 = c["cagr_%dy" % years[0]] %}
+  <div class="mc-cells">
+    <div><span>84㎡ 환산</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
+    <div><span>{{ years[0] }}년 연평균</span><strong>{{ c10 | pct }}</strong></div>
+    <div><span>전고점 대비</span><strong>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</strong></div>
+  </div>
+  <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="희귀도 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
+</div></section>
 
 {% if summary %}
 <section class="summary">
@@ -71,7 +62,12 @@
   <ul>{% for s in summary %}<li>{{ s }}</li>{% endfor %}</ul>
 </section>
 {% endif %}
+</div>
 
+<div class="sec-head">
+  <h2>관련 점수</h2>
+  <a href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg>다른 단지와 비교</a>
+</div>
 <section class="cards">
   <div class="card">
     <span class="label">전용 {{ ref_area }}㎡ 환산가</span>
@@ -193,6 +189,24 @@
   </table>
   </div>
 </section>
+
+<div class="sheet-back" data-sheet-close hidden></div>
+<div class="sheet" id="share-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden
+     data-kakao-key="{{ kakao_js_key or '' }}" data-title="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}"
+     data-text="{{ region }} {{ c | place }} · {{ c.grade_name }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% endif %} | {{ region }} 아파트 지수">
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <h3 id="sheet-title">공유하기</h3>
+  <p class="muted">링크를 보내거나, 위 카드를 이미지로 저장할 수 있어요.</p>
+  {% if not c.small %}<div class="sheet-prev"><img alt="" data-sheet-thumb hidden><span class="sheet-thumb-ph" aria-hidden="true"></span><div><b>{{ c.name }} · {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}</b><span data-sheet-info>카드 이미지를 만드는 중…</span></div></div>{% endif %}
+  <div class="sheet-acts">
+    <button type="button" class="sheet-act" data-act="kakao"><i class="kakao"><svg class="ic"><use href="#i-chat"/></svg></i><span>카카오톡</span></button>
+    <button type="button" class="sheet-act" data-act="link"><i><svg class="ic"><use href="#i-link"/></svg></i><span>링크 복사</span></button>
+    {% if not c.small %}<a class="sheet-act" data-act="save" href="#" aria-disabled="true"><i><svg class="ic"><use href="#i-download"/></svg></i><span>이미지 저장</span></a>{% endif %}
+    <button type="button" class="sheet-act" data-act="more" hidden><i><svg class="ic"><use href="#i-more"/></svg></i><span>다른 앱</span></button>
+  </div>
+  <p class="sheet-hint" data-sheet-hint hidden></p>
+  <button type="button" class="btn sheet-close" data-sheet-close>닫기</button>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
