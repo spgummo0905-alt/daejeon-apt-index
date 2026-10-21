@@ -128,3 +128,11 @@ def test_percentile_against_reference_group():
     pct = location.percentile(s, ref=pd.Index(["a", "b", "c"]))
     assert list(pct[["a", "b", "c"]]) == [0, 50, 100]
     assert pct["x"] == 100  # 기준 밖 값도 기준 분포 안 위치로 점수를 받음
+
+
+def test_from_peak():
+    rows = _rows("A", [("2021-03-01", 100000), ("2021-05-01", 100000), ("2024-03-01", 70000), ("2024-04-01", 70000),
+                       ("2026-07-01", 80000), ("2026-08-01", 80000)])
+    table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
+    assert table.loc["A", "peak_year"] == 2021
+    assert table.loc["A", "from_peak"] == pytest.approx(-0.2)

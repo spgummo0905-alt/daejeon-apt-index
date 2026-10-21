@@ -72,3 +72,23 @@ def test_all_continues_when_kakao_fails(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "cmd_build", lambda cfg, args: calls.append("build"))
     cli.main(["--data", str(tmp_path), "all"])
     assert calls == ["collect", "build"]
+
+
+def test_enrich_keeps_station_name_and_backfills(tmp_path):
+    class NamedKakao(FakeKakao):
+        def nearest_place(self, lat, lng, category, radius, name_contains=None):
+            self.calls += 1
+            return 410.0, "정부청사역 대전1호선"
+
+    factors = [{"key": "subway", "kind": "nearest", "category": "SW8", "radius": 3000, "keep_name": True}]
+    cx = [{"complex_id": "1", "name": "가", "gu": "서구", "dong": "둔산동", "jibun": "1"}]
+    geo, poi = tmp_path / "geo.json", tmp_path / "poi.json"
+    # 예전 캐시: 거리만 있고 이름이 없음 → 한 번 다시 조회해 이름을 채웁니다.
+    poi.write_text(json.dumps({"1": {"subway": 400.0}}), encoding="utf-8")
+    geo.write_text(json.dumps({"1": [36.35, 127.38]}), encoding="utf-8")
+    c = NamedKakao()
+    kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
+    assert json.loads(poi.read_text())["1"] == {"subway": 410.0, "subway_name": "정부청사역 대전1호선"}
+    n = c.calls
+    kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
+    assert c.calls == n

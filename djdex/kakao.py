@@ -35,19 +35,25 @@ class Kakao:
             return None
         return float(docs[0]["y"]), float(docs[0]["x"])
 
-    def nearest(self, lat: float, lng: float, category: str, radius: int,
-                name_contains: str | None = None) -> float | None:
-        """가장 가까운 시설까지 거리(m). 반경 안에 없으면 None."""
+    def nearest_place(self, lat: float, lng: float, category: str, radius: int,
+                      name_contains: str | None = None) -> tuple[float, str] | None:
+        """가장 가까운 시설의 (거리 m, 이름). 반경 안에 없으면 None."""
         for page in range(1, 4):  # 카카오는 최대 45건(15건 × 3페이지)까지 줍니다.
             data = self._get("category", category_group_code=category, x=lng, y=lat,
                              radius=radius, sort="distance", page=page, size=15)
             for d in data.get("documents", []):
                 if name_contains and name_contains not in d.get("place_name", ""):
                     continue
-                return float(d["distance"])
+                return float(d["distance"]), d.get("place_name", "")
             if data.get("meta", {}).get("is_end", True):
                 return None
         return None
+
+    def nearest(self, lat: float, lng: float, category: str, radius: int,
+                name_contains: str | None = None) -> float | None:
+        """가장 가까운 시설까지 거리(m). 반경 안에 없으면 None."""
+        hit = self.nearest_place(lat, lng, category, radius, name_contains)
+        return hit[0] if hit else None
 
     def count(self, lat: float, lng: float, category: str, radius: int) -> int:
         data = self._get("category", category_group_code=category, x=lng, y=lat,
@@ -80,9 +86,14 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
         lat, lng = geo[cid]
         entry = poi.setdefault(cid, {})
         for f in factors:
-            if f["key"] in entry:
+            want_name = f.get("keep_name") and hasattr(client, "nearest_place")
+            if f["key"] in entry and (not want_name or f["key"] + "_name" in entry):
                 continue
-            if f["kind"] == "nearest":
+            if f["kind"] == "nearest" and want_name:
+                # 역 이름까지 저장해 '역별 단지' 묶음에 씁니다.
+                hit = client.nearest_place(lat, lng, f["category"], f["radius"], f.get("name_contains"))
+                entry[f["key"]], entry[f["key"] + "_name"] = (hit if hit else (None, None))
+            elif f["kind"] == "nearest":
                 entry[f["key"]] = client.nearest(lat, lng, f["category"], f["radius"],
                                                  f.get("name_contains"))
             else:

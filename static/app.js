@@ -157,16 +157,18 @@
       fill.style.width = (v == null ? 0 : Math.max(2, v)) + "%";
       bar.append(fill);
       row.append(bar, el("span", "gstat-val", v == null ? "-" : String(v)));
-      if (opts.compare) {
-        const o = opts.compare.st[k];
-        if (v != null && (o == null || v > o)) { row.classList.add("win"); row.querySelector(".gstat-name").append(el("span", "lead-mark", " ▲")); }
-        else if (o != null && (v == null || v < o)) row.classList.add("lose");
+      const others = opts.others || (opts.compare ? [opts.compare] : null);
+      if (others) {
+        const ov = others.map(o => o.st[k]).filter(x => x != null);
+        if (v != null && ov.every(o => v > o)) { row.classList.add("win"); row.querySelector(".gstat-name").append(el("span", "lead-mark", " ▲")); }
+        else if (v == null || ov.some(o => o > v)) row.classList.add("lose");
       }
       rows.append(row);
     });
     card.append(rows);
     const foot = el("div", "gcard-foot");
     foot.append(el("span", "", c.pt ? "84㎡ " + c.pt : "가격 정보 없음"));
+    if (c.dd != null && c.dd <= -5) foot.append(el("span", "", "고점 대비 " + Math.round(c.dd) + "%"));
     if (c.h) foot.append(el("span", "badge-high", "신고가"));
     card.append(foot);
     return card;

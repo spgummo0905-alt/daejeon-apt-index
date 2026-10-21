@@ -43,7 +43,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og.png").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 3  # 단지 비교, 조건으로 찾기, 관심 단지 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 4  # 단지 비교, 조건으로 찾기, 관심 단지, 역세권 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -60,7 +60,12 @@ def test_complexes_json_and_small_rows(tmp_path):
     index = (out / "index.html").read_text(encoding="utf-8")
     n_small = index.count('data-small="1"')
     assert n_small > 0 and len(pts) == 61 - n_small
-    assert {"s", "n", "gu", "d", "i", "g", "p", "st", "f", "la", "ln"} <= set(pts[0])
+    assert {"s", "n", "gu", "d", "i", "g", "p", "st", "f", "la", "ln", "dd", "py", "stn", "nw"} <= set(pts[0])
+    assert any(c["stn"] and c["stn"].endswith("역") for c in pts)  # '정부청사역 대전1호선' → '정부청사역'
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert '<details class="panel station"' in stations and "역 " in stations
+    finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert '"workplaces"' in finder and "정부세종청사" in finder
     assert [s["n"] for s in data["stats"]] == ["입지", "성장성", "상승세", "가성비", "거래량"]
     assert all(len(c["st"]) == 5 and all(v is None or 0 <= v <= 100 for v in c["st"]) for c in pts)
     assert "dapi.kakao.com" not in index  # 키가 없으면 카카오 지도 스크립트를 넣지 않음

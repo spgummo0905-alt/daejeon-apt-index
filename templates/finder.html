@@ -1,12 +1,26 @@
 {% extends "base.html" %}
 {% block title %}맞춤 찾기 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}예산과 원하는 조건(역세권, 초품아, 학원가, 신축, 상승세)으로 {{ region }} 아파트를 골라 보세요.{% endblock %}
+{% block description %}연소득과 자기자본으로 살 수 있는 가격을 계산하고, 예산·직장 거리·생활 조건으로 {{ region }} 아파트를 골라 보세요.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">🎯 맞춤 찾기</p>
   <h1>내 예산과 조건에<br>딱 맞는 단지는?</h1>
   <p class="lead">조건을 바꾸면 결과가 바로 바뀝니다. 조건을 많이 만족하는 단지부터, 같으면 지수가 높은 순입니다.</p>
 </section>
+<section class="panel afford" id="afford">
+  <div class="panel-head"><h2>얼마까지 살 수 있을까</h2>
+    <p class="muted">연소득과 가진 돈으로 대출 한도(DSR {{ "%.0f" | format(finder.dsr * 100) if finder else 40 }}%, LTV {{ "%.0f" | format(finder.ltv * 100) if finder else 70 }}%)를 어림해 살 수 있는 최대 가격을 계산합니다.</p></div>
+  <div class="afford-grid">
+    <label class="field"><span>연소득 (세전, 만원)</span><input id="af-income" type="number" inputmode="numeric" min="0" step="100" placeholder="예: 6000"></label>
+    <label class="field"><span>자기자본 (만원)</span><input id="af-equity" type="number" inputmode="numeric" min="0" step="100" placeholder="예: 20000"></label>
+    <label class="field"><span>대출 금리 (%)</span><input id="af-rate" type="number" inputmode="decimal" min="0" step="0.1"></label>
+    <label class="field"><span>대출 기간 (년)</span><input id="af-years" type="number" inputmode="numeric" min="1" max="50" step="1"></label>
+    <label class="field"><span>기존 대출 연간 상환액 (만원)</span><input id="af-debt" type="number" inputmode="numeric" min="0" step="100" value="0"></label>
+  </div>
+  <div class="afford-out" id="af-out" aria-live="polite"></div>
+  <p class="muted small">원리금균등 상환 기준 어림값입니다. 스트레스 DSR, 은행 심사, 취득세·중개보수는 반영하지 않았습니다.</p>
+</section>
+
 <section class="panel finder-controls">
   <label class="field">
     <span>예산 (84㎡ 환산 최대) <strong id="budget-val"></strong></span>
@@ -14,10 +28,19 @@
   </label>
   <div class="field"><span>지역</span><div class="chips" id="gu-chips"></div></div>
   <div class="field"><span>원하는 조건</span><div class="chips" id="cond-chips"></div></div>
+  <div class="field"><span>직장·자주 가는 곳 (직선거리)</span>
+    <div class="work-row">
+      <select id="work"><option value="">선택 안 함</option></select>
+      <button class="btn" id="work-here" type="button">내 위치 사용</button>
+    </div>
+    <label class="work-dist" id="work-dist-wrap" hidden><span id="work-dist-val"></span>
+      <input id="work-dist" type="range" min="1" max="30" step="1" value="8"></label>
+  </div>
 </section>
 <section>
   <p class="finder-count" id="finder-count" aria-live="polite"></p>
   <div class="card-grid" id="finder-results"></div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/finder.js"></script>{% endblock %}
+{% block scripts %}<script id="finder-cfg" type="application/json">{{ finder_cfg | safe }}</script>
+<script src="static/finder.js"></script>{% endblock %}

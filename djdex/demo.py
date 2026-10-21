@@ -40,11 +40,15 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
                 "floor": rnd.randint(1, 25), "cancelled": rnd.random() < 0.02,
                 "direct": rnd.random() < 0.05, "kind": "매매",
             })
+        stations = ["판암역", "대동역", "대전역", "중앙로역", "서대전네거리역", "용문역", "탄방역", "시청역",
+                    "정부청사역", "갈마역", "월평역", "유성온천역", "노은역", "반석역"]
+        poi.setdefault(cid, {})
         poi[cid] = {
             f["key"]: (rnd.choice([None, *[rnd.uniform(80, f["radius"]) for _ in range(9)]])
                        if f["kind"] == "nearest" else rnd.randint(0, 120))
             for f in factors
         }
+        poi[cid]["subway_name"] = rnd.choice(stations) + " 대전1호선"
         geo[cid] = (CENTER[0] + rnd.uniform(-0.06, 0.06), CENTER[1] + rnd.uniform(-0.08, 0.08))
     # 입주 직전 신축: 매매 없이 분양권·입주권 거래만 있는 단지
     cid = "DEMO-NEW1"

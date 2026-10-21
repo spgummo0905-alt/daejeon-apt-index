@@ -168,6 +168,18 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
               .agg(["median", "size"]).reset_index()
               .rename(columns={"median": "ppm2", "size": "n"}))
 
+    # 전고점 대비: 연도별 ㎡당 중위가 중 가장 높았던 해와 지금 가격의 차이 (매매 기준).
+    # 거래가 2건 이상인 해만 봅니다 (한 건짜리 해가 고점으로 잡히는 것을 막기 위해).
+    solid = hist[hist["n"] >= 2]
+    if not solid.empty:
+        top = solid.loc[solid.groupby("complex_id")["ppm2"].idxmax(), ["complex_id", "year", "ppm2"]].set_index("complex_id")
+        table["peak_ppm2"] = top["ppm2"]
+        table["peak_year"] = top["year"]
+        sale_based = table["price_basis"].fillna("").str.contains("매매")
+        table["from_peak"] = (table["ppm2_now"] / table["peak_ppm2"] - 1).where(sale_based)
+    else:
+        table["peak_ppm2"] = table["peak_year"] = table["from_peak"] = float("nan")
+
     region_hist = sale[sale["complex_id"].isin(main)].groupby(sale["date"].dt.year)["ppm2"].median()
     m = table[~table["small"]]
     meta = {
