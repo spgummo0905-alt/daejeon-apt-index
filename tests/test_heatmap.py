@@ -57,3 +57,17 @@ def test_mark_highs_skips_direct_when_excluded():
     tr = [t("2024-01-01", 50000), t("2024-02-01", 51000), t("2024-03-01", 90000, direct=True), t("2024-04-01", 52000)]
     site._mark_highs(tr, skip_direct=True)
     assert [x["high"] for x in tr] == [False, True, False, True]  # 직거래는 신고가도 아니고 기준선도 아님
+
+
+def test_location_groups_and_group_score():
+    import pandas as pd
+    from djdex import config
+    cfg = config.load()
+    groups = site._loc_groups(cfg)
+    assert [g["label"] for g in groups] == ["교통", "학군", "생활"]
+    assert [f["key"] for f in groups[1]["factors"]] == ["school_mid", "hub", "academy_math"]  # 학교 + 학원
+    assert sum(len(g["factors"]) for g in groups) == len(cfg.location_factors)  # 빠진 항목 없음
+    t = pd.DataFrame({"school_mid_pct": [80.0, None], "hub_pct": [40.0, 60.0], "academy_math_pct": [20.0, 30.0]})
+    s = site._group_score(t, groups[1]["factors"])  # 가중치 0.10 : 0.25 : 0.10
+    assert round(s[0], 1) == round((80 * .1 + 40 * .25 + 20 * .1) / .45, 1)
+    assert round(s[1], 1) == round((60 * .25 + 30 * .1) / .35, 1)  # 값 없는 항목은 빼고

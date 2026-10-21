@@ -115,6 +115,8 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
         out.append(f"입지점수는 {region} {share(c['location_top'])}이고, 가장 강한 항목은 {best['label']}입니다.")
+        if not _nan(c.get("grp_edu_top")):
+            out.append(f"학군(중학교 전입·학원가·주변 수학 학원)은 {region} {share(c['grp_edu_top'])}입니다.")
     for n_y in years:
         v = c.get(f"cagr_{n_y}y")
         if not _nan(v):
@@ -170,6 +172,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     table["location_top"] = _top_share(main_t["location_score"]).reindex(table.index)
     n_total = len(main_t)
     table = add_game_stats(table, trades, meta)
+    # 입지 묶음(교통·학군·생활) 점수: 묶음 안 항목들의 가중평균. 입지점수 계산은 그대로입니다.
+    loc_groups = _loc_groups(cfg)
+    for g in loc_groups:
+        table[f"grp_{g['key']}"] = _group_score(table, g["factors"])
+    main_t = table[~table["small"].astype(bool)]
+    for g in loc_groups:
+        table[f"grp_{g['key']}_top"] = _top_share(main_t[f"grp_{g['key']}"]).reindex(table.index)
     main_t = table[~table["small"].astype(bool)]
 
     rows = []
@@ -274,7 +283,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
-                  exclude_direct=bool(cfg.filters.get("exclude_direct", False)))
+                  exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=_loc_groups(cfg))
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
     leader_by_gu = {d["gu"]: d for d in month["leaders"]}
@@ -338,20 +347,22 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                        mob={"width": 360, "height": 240}),
             "trades": charts.responsive(charts.trade_dots, [t for t in tr_list if t["date"] >= cutoff],
                                         mob={"width": 360, "height": 240}),
-            "radar": charts.radar([(f["label"].replace("까지 거리", "").replace("반경 1km ", "").replace("주요 ", "").replace(" 접근성", "").split(" (")[0],
-                                    c.get(f["key"] + "_pct"), factor_med[f["key"]]) for f in factors]) if has_loc_c else "",
+            "radar": charts.radar([(f.get("short") or f["label"], c.get(f["key"] + "_pct"), factor_med[f["key"]])
+                                   for g in loc_groups for f in g["factors"]]) if has_loc_c else "",
             "hist": charts.responsive(charts.histogram, index_values, highlight=c.get("index"), height=180,
                                       mob={"width": 360}),
         }
-        loc_rows = [{"label": f["label"], "pct": c.get(f["key"] + "_pct"), "score": f["kind"] == "score",
-                     "raw": fmt_raw(c.get(f["key"] + "_raw"), f, c) if f["key"] + "_raw" in c else None}
-                    for f in factors]
+        loc_sets = [{"key": g["key"], "label": g["label"], "score": c.get(f"grp_{g['key']}"), "top": c.get(f"grp_{g['key']}_top"),
+                     "rows": [{"label": f["label"], "pct": c.get(f["key"] + "_pct"), "score": f["kind"] == "score",
+                               "raw": fmt_raw(c.get(f["key"] + "_raw"), f, c) if f["key"] + "_raw" in c else None}
+                              for f in g["factors"]]}
+                    for g in loc_groups]
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         shown = tr_list[:TRADE_ROWS]
         html = tpl.render(
             c=c, charts=c_charts, recent=shown, area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
-            kakao_js_key=kakao_js_key, loc_rows=loc_rows, neighbors=neighbors,
+            kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
                              leader_by_gu.get(c["gu"])),
             n_total=n_total, chips=_card_chips(c), gems=GEMS.get(c["grade"], 1), **common)
@@ -360,6 +371,34 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in cfg.site.get("regions", [])])
     return len(rows)
+
+
+def _loc_groups(cfg) -> list[dict]:
+    """설정의 입지 묶음 [{key, label, factors: [factor dict]}]. 묶음에 없는 항목은 '기타'로."""
+    by_key = {f["key"]: f for f in cfg.location_factors}
+    out, used = [], set()
+    for g in cfg.raw.get("location", {}).get("groups", []):
+        fs = [by_key[k] for k in g["factors"] if k in by_key]
+        used.update(f["key"] for f in fs)
+        if fs:
+            out.append({"key": g["key"], "label": g["label"], "factors": fs})
+    rest = [f for f in cfg.location_factors if f["key"] not in used]
+    if rest:
+        out.append({"key": "etc" if out else "all", "label": "기타" if out else "입지", "factors": rest})
+    return out
+
+
+def _group_score(table: pd.DataFrame, factors: list[dict]) -> pd.Series:
+    """묶음 점수: 항목 백분위(학원가는 점수)의 가중평균, 값 있는 항목만으로."""
+    num = pd.Series(0.0, index=table.index)
+    den = pd.Series(0.0, index=table.index)
+    for f in factors:
+        col = table.get(f["key"] + "_pct")
+        if col is None:
+            continue
+        num += col.fillna(0) * f["weight"]
+        den += col.notna() * f["weight"]
+    return (num / den).where(den > 0)
 
 
 TRADE_ROWS = 80  # 단지 페이지 거래 표에 싣는 최근 거래 수 (처음엔 15건, 나머지는 '더 보기')
@@ -595,8 +634,8 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
          lambda c: f"{station_name(t.at[c, 'subway_name_raw']) or tr['stop']} {t.at[c, 'subway_raw']:.0f}m"),
         ("hub", "학원가 도보권", "주요 학원가까지 15분 안 (도보·지하철)", col("hub_min_raw") <= 15,
          lambda c: f"{t.at[c, 'hub_name_raw']} {t.at[c, 'hub_min_raw']:.0f}분"),
-        ("district", "학군 상위", "주변 중학교 순전입률 상위 20%", col("school_mid_pct") >= 80,
-         lambda c: f"중학교 순전입 {t.at[c, 'school_mid_raw']:+.1f}%"),
+        ("district", "학군 상위", "학군 점수(중학교 전입·학원가·주변 수학 학원) 상위 20%", col("grp_edu_top") <= 20,
+         lambda c: f"학군 {t.at[c, 'grp_edu']:.0f}점"),
         ("new", "신축 10년", f"{asof_year - 9}년 이후 준공", col("build_year") >= asof_year - 9,
          lambda c: f"{int(t.at[c, 'build_year'])}년 준공"),
         ("value", "입지 대비 가격", "가성비 점수 상위 20%", col("stat_value") >= 80,
@@ -650,7 +689,7 @@ def station_name(raw) -> str | None:
 
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
-    ("location_score", "입지", "역·학원가·학교·마트·병원 접근성"),
+    ("location_score", "입지", "교통·학군·생활 편의 (아래 '입지는 어떤가')"),
     ("stat_growth", "성장성", "10년 수익률 백분위 (없으면 5년)"),
     ("stat_momentum", "상승세", "최근 5년 수익률 백분위"),
     ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
@@ -735,6 +774,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "hn": r.get("hub_name_raw") if isinstance(r.get("hub_name_raw"), str) else None,
             "hm": None if _nan(r.get("hub_min_raw")) else _r(r.get("hub_min_raw")),
             "nw": bool(r.get("is_new")),
+            "ed": _r(r.get("grp_edu")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
         })

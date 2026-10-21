@@ -20,13 +20,13 @@ transit = { tab = "BRT", stop = "BRT 정류장", short = "정류장" }
 # 목록은 통째로 바뀌므로 전체 항목을 다시 적습니다. 지하철 대신 BRT 정류장:
 # 카카오에는 정류장 분류가 없어(키워드 'BRT'는 카페·중개사무소가 잡힘), OSM에서 번호가 B로 시작하는 노선의 정류장을 받습니다.
 factors = [
-  { key = "subway",       label = "BRT 정류장까지 거리", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true, osm_route = "^B[0-9]+$", note = "오픈스트리트맵(OSM)에 그려진 BRT 노선(B0·B1 …) 정류장까지 직선거리" },
-  { key = "hub",          label = "주요 학원가 접근성", kind = "score", weight = 0.25 },
-  { key = "school_mid",   label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
-  { key = "elementary",   label = "초등학교까지 거리", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
-  { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
-  { key = "mart",         label = "대형마트까지 거리", category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
-  { key = "hospital",     label = "반경 1km 병원 수", category = "HP8", kind = "count", radius = 1000, weight = 0.10 },
+  { key = "subway",       label = "BRT 정류장까지 거리", short = "BRT 정류장", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true, osm_route = "^B[0-9]+$", note = "오픈스트리트맵(OSM)에 그려진 BRT 노선(B0·B1 …) 정류장까지 직선거리" },
+  { key = "hub",          label = "주요 학원가 접근성", short = "학원가", kind = "score", weight = 0.25 },
+  { key = "school_mid",   label = "주변 중학교 순전입률", short = "중학교 전입", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "elementary",   label = "초등학교까지 거리", short = "초등학교", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
+  { key = "academy_math", label = "반경 1km 수학 학원 수", short = "수학 학원", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
+  { key = "mart",         label = "대형마트까지 거리", short = "대형마트", category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
+  { key = "hospital",     label = "반경 1km 병원 수", short = "병원", category = "HP8", kind = "count", radius = 1000, weight = 0.10 },
 ]
 
 [location.hub]
