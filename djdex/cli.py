@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import kakao, location, metrics, molit, site
+from . import kakao, location, metrics, molit, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -114,6 +114,15 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
         if hubs:
             hub = location.hub_access(poi_df, geo, {**cfg.hub, "hubs": hubs})
             poi_df = poi_df.drop(columns=[c for c in hub.columns if c in poi_df], errors="ignore").join(hub)
+    if not poi_df.empty and geo and cfg.school and any(f["kind"] == "value" for f in cfg.location_factors):
+        sch = school.load(cfg.paths.school, cfg.school, cfg.region_name)
+        if not sch.empty:
+            mid = school.for_complexes(geo, sch, cfg.school.get("radius", 1500), cfg.school.get("max_schools", 3))
+            poi_df = poi_df.drop(columns=[c for c in mid.columns if c in poi_df], errors="ignore").join(mid)
+            top = sch.sort_values("net_in", ascending=False)
+            print(f"[학군] 중학교 {len(sch)}곳, 순전입률 중간 {sch['net_in'].median():+.1f}%")
+            print("[학군] 순전입 상위: " + ", ".join(f"{r['name']} {r['net_in']:+.1f}%" for _, r in top.head(8).iterrows()))
+            print("[학군] 순전입 하위: " + ", ".join(f"{r['name']} {r['net_in']:+.1f}%" for _, r in top.tail(5).iterrows()))
     # 입지점수는 소규모 단지를 뺀 분포 기준이라 metrics 안에서 계산합니다.
     table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, cpi=cpi,
                                         components=cfg.index_components,
@@ -149,6 +158,12 @@ def cmd_all(cfg, args) -> None:
             # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
             detail = getattr(getattr(e, "response", None), "text", "")[:300]
             print(f"::warning::카카오 입지 수집 실패, 입지점수 없이 진행합니다: {e} {detail}")
+    if os.environ.get("SCHOOLINFO_KEY") and cfg.school:
+        try:
+            school.collect(os.environ["SCHOOLINFO_KEY"], cfg.school, list(cfg.districts), cfg.paths.school,
+                           date.today().year)
+        except (requests.RequestException, ValueError) as e:
+            print(f"::warning::학교알리미 수집 실패, 학군 항목 없이 진행합니다: {e}")
     cmd_build(cfg, args)
 
 
