@@ -86,15 +86,16 @@ factors = [
   { key = "subway",     label = "지하철역까지 거리",   category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
   { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.20 },
   { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.15, name_contains = "초등학교" },
-  { key = "academy",    label = "반경 1km 학원 수",    category = "AC5", kind = "count",   radius = 1000, weight = 0.10 },
+  { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
   { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },
   { key = "hospital",   label = "반경 1km 병원 수",    category = "HP8", kind = "count",   radius = 1000, weight = 0.15 },
 ]
 
 # 점수에는 넣지 않고 함께 조사만 하는 항목. query 가 있으면 카카오 키워드 검색으로 그 단어가 들어간 곳만 셉니다.
-# 수학 학원은 입시 학원가의 중심이라, 공무원·성인·예체능 학원까지 섞인 전체 학원 수보다 입시 학원가를 잘 가려낼 것으로 봅니다.
+# 전체 학원 수에는 공무원·성인·예체능 학원이 섞여 원도심이 학원가로 잡혀서, 점수에는 수학 학원 수를 씁니다.
+# (2026.10 빌드 로그: 전체 기준 자동 탐지는 둔산·선화동·관저동, 수학 기준은 둔산·관저동·지족동)
 extras = [
-  { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, query = "수학" },
+  { key = "academy", label = "반경 1km 학원 수(전체)", category = "AC5", kind = "count", radius = 1000 },
 ]
 
 # 주요 학원가 접근성: 학원 '개수'만으로는 동네 상가 학원과 대형 학원가가 구분되지 않아

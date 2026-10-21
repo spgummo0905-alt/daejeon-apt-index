@@ -181,11 +181,16 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     has_loc = main_t["location_score"].notna().any()
     priced = main_t.dropna(subset=["price_ref"])
     # 입지 대비 가격이 좋은 단지: 입지는 대전 중간 이상, 가격은 중간 이하. 입지 좋은 순.
+    # 기준(중간값)은 아파트 단지로 잡고, 빌라형(소규모·원룸형)도 '빌라' 필터에서 볼 수 있게 함께 담습니다.
     value_list, value_ref = [], {}
     if has_loc and not priced.empty:
         loc_med, price_med = priced["location_score"].median(), priced["price_ref"].median()
-        cand = priced[(priced["location_score"] > loc_med) & (priced["price_ref"] < price_med)]
-        value_list = [by_id[cid] for cid in cand.sort_values(["location_score", "price_ref"], ascending=[False, True]).index[:30]]
+        every = table.dropna(subset=["price_ref", "location_score"])
+        cand = every[(every["location_score"] > loc_med) & (every["price_ref"] < price_med)]
+        cand = cand.sort_values(["location_score", "price_ref"], ascending=[False, True])
+        small = cand["small"].astype(bool)
+        keep = set(cand[~small].index[:30]) | set(cand[small].index[:30])
+        value_list = [by_id[cid] for cid in cand.index if cid in keep]
         value_ref = {"loc_med": loc_med, "price_med": price_med}
     highs = []
     if "new_high_recent" in main_t:

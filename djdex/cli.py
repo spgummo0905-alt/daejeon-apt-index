@@ -69,6 +69,24 @@ def cmd_locate(cfg, args) -> None:
                  cfg.paths.geo, cfg.paths.poi, client)
 
 
+def _log_complex_sizes(table: pd.DataFrame) -> None:
+    """빌라형 단지를 가려낼 기준을 정하려고, 규모 관련 값을 빌드 로그에 남깁니다."""
+    cols = ["name", "dong", "build_year", "n_trades", "peak_trades", "main_area", "max_floor", "n_dong", "n_areas"]
+    if not set(cols) <= set(table.columns) or "location_score" not in table:
+        return
+    main = table[~table["small"].astype(bool)]
+    known = main["n_dong"].notna()
+    print(f"[규모] 아파트 {len(main)}곳 중 동 이름이 있는 곳 {int(known.sum())}곳,"
+          f" 동 1개 {int((main['n_dong'] == 1).sum())}곳, 2개 {int((main['n_dong'] == 2).sum())}곳")
+    priced = main.dropna(subset=["price_ref", "location_score"])
+    cand = priced[(priced["location_score"] > priced["location_score"].median())
+                  & (priced["price_ref"] < priced["price_ref"].median())].sort_values("location_score", ascending=False)
+    big = main.nlargest(8, "n_trades")
+    for title, df in (("입지 대비 저렴 상위", cand.head(30)), ("거래 많은 단지", big)):
+        for cid, r in df.iterrows():
+            print(f"[규모:{title}] " + " | ".join(f"{c}={r[c]}" for c in cols))
+
+
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None):
     cpi = CPI.load(cfg.paths.cpi)
     if not poi_df.empty and geo and any(f["kind"] == "score" for f in cfg.location_factors):
@@ -96,6 +114,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                                         components=cfg.index_components,
                                         poi=poi_df if not poi_df.empty else None,
                                         factors=cfg.location_factors)
+    if not demo:
+        _log_complex_sizes(table)
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
     return table, meta, n

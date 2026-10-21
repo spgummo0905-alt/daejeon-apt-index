@@ -3,11 +3,12 @@
   const cfg = (() => { try { return JSON.parse(document.getElementById("finder-cfg").textContent); } catch (e) { return {}; } })();
   const LTV = cfg.ltv || 0.7, DSR = cfg.dsr || 0.4;
   const nowYear = new Date().getFullYear();
+  const acadOf = c => c.f.academy_math ?? c.f.academy;
   const CONDS = [
     { id: "subway", label: "역세권", desc: "지하철역 700m 안", test: c => c.f.subway != null && c.f.subway <= 700 },
     { id: "school", label: "초품아", desc: "초등학교 400m 안", test: c => c.f.elementary != null && c.f.elementary <= 400 },
     { id: "academy", label: "학원가", desc: "주요 학원가 20분 안 (도보·지하철)", test: (c, ctx) => ctx.hasHub
-        ? c.hm != null && c.hm <= 20 : c.f.academy != null && c.f.academy >= ctx.academyQ },
+        ? c.hm != null && c.hm <= 20 : acadOf(c) != null && acadOf(c) >= ctx.academyQ },
     { id: "mart", label: "대형마트", desc: "대형마트 1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
     { id: "new", label: "신축 10년 이내", desc: "준공 10년 이내", test: c => c.y && c.y >= nowYear - 10 },
     { id: "rising", label: "상승세", desc: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
@@ -28,7 +29,7 @@
   DJ.data().then(d => {
     const priced = d.complexes.filter(c => c.p);
     const maxB = Math.ceil(Math.max(...priced.map(c => c.p)) / 10000);
-    const acad = d.complexes.map(c => c.f.academy).filter(v => v != null).sort((x, y) => x - y);
+    const acad = d.complexes.map(acadOf).filter(v => v != null).sort((x, y) => x - y);
     const ctx = { academyQ: acad.length ? acad[Math.floor(acad.length * 0.7)] : Infinity,
                   hasHub: d.complexes.some(c => c.hm != null) };
     const range = document.getElementById("budget");

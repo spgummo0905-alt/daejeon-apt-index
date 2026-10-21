@@ -123,6 +123,7 @@ def normalize(raw: dict, districts: dict[str, str], kind: str = "매매") -> dic
         "price": price,  # 만원
         "date": f"{y:04d}-{m:02d}-{d:02d}",
         "floor": _int(raw.get("floor")),
+        "apt_dong": (raw.get("aptDong") or "").strip(),  # 동 이름 (최근 신고분부터 채워짐)
         "cancelled": (raw.get("cdealType") or "").strip().upper() == "O",
         "direct": (raw.get("dealingGbn") or "").strip() == "직거래",
         "kind": kind if kind == "매매" else PRESALE_KINDS.get((raw.get("ownershipGbn") or "").strip(), "분양권"),
