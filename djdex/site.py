@@ -254,7 +254,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
-                    {"asof": meta["asof"], "region": cfg.region_name, "url": cfg.site.get("base_url", "")})
+                    {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
+                     "url": cfg.site.get("base_url", "")})
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   transit=_transit(cfg), regions=cfg.site.get("regions", []),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",

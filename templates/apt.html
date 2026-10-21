@@ -22,7 +22,7 @@
   <button class="btn" data-fav type="button"><svg class="ic"><use href="#i-star"/></svg><span>관심 단지 저장</span></button>
   <a class="btn" href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg><span>다른 단지와 비교</span></a>
   <button class="btn" data-share="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}" type="button"><svg class="ic"><use href="#i-share"/></svg><span>공유</span></button>
-  {% if not c.small %}<button class="btn btn-card" data-card-download type="button" title="단지 카드 이미지로 저장"><svg class="ic"><use href="#i-download"/></svg><span>카드 저장</span></button>{% endif %}
+  {% if not c.small %}<button class="btn btn-card" data-card-download type="button" title="이 단지 점수를 이미지로 저장해 공유"><svg class="ic"><use href="#i-download"/></svg><span>이미지로 저장</span></button>{% endif %}
 </div>
 
 {% if not c.small %}
