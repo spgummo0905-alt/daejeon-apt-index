@@ -78,6 +78,11 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
     known = main["n_dong"].notna()
     print(f"[규모] 아파트 {len(main)}곳 중 동 이름이 있는 곳 {int(known.sum())}곳,"
           f" 동 1개 {int((main['n_dong'] == 1).sum())}곳, 2개 {int((main['n_dong'] == 2).sum())}곳")
+    reasons = table.loc[table["small"].astype(bool), "small_reason"].value_counts().to_dict()
+    print(f"[규모] 아파트 외: {reasons}")
+    lone = table[table["small_reason"] == "나홀로"].nlargest(15, "n_trades")
+    for cid, r in lone.iterrows():
+        print("[규모:나홀로 거래 많은 순] " + " | ".join(f"{c}={r[c]}" for c in cols))
     priced = main.dropna(subset=["price_ref", "location_score"])
     cand = priced[(priced["location_score"] > priced["location_score"].median())
                   & (priced["price_ref"] < priced["price_ref"].median())].sort_values("location_score", ascending=False)

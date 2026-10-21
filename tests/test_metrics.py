@@ -200,3 +200,20 @@ def test_complex_size_features():
             zip(_trades("A", {2025: 500, 2026: 600}, n=3), ["101동", "102동", "", "101동", "103동", ""], [3, 15, 7, 9, 12, 4])]
     t = metrics.complexes(metrics.prepare(pd.DataFrame(rows), F))
     assert t.loc["A", "n_dong"] == 3 and t.loc["A", "max_floor"] == 15 and t.loc["A", "n_areas"] == 1
+
+
+def test_lone_building_is_villa_type():
+    # B: 동 이름 3개 (일반 단지) / L: 동 이름 신고 이후에도 동 이름 없음, 12층 (나홀로)
+    # T: 한 동이지만 30층 타워 (아파트) / O: 동 이름 신고 이전 거래뿐 (판단 불가 → 아파트)
+    def mk(cid, years, dongs, floor):
+        rows = _trades(cid, years, n=6)
+        return [dict(r, apt_dong=dongs[i % len(dongs)], floor=floor) for i, r in enumerate(rows)]
+    rows = (mk("B", {2025: 500, 2026: 600}, ["101동", "102동", "103동"], 20)
+            + mk("L", {2025: 400, 2026: 450}, [""], 12)
+            + mk("T", {2025: 700, 2026: 800}, ["101동"], 30)
+            + mk("O", {2016: 300, 2017: 320}, [""], 10))
+    table, _, meta = metrics.compute(pd.DataFrame(rows), dict(M, small_peak_trades=5, lone_max_floor=15), F,
+                                     asof=pd.Timestamp("2026-08-31"))
+    assert table.loc["L", "small"] and table.loc["L", "small_reason"] == "나홀로"
+    assert not table.loc["B", "small"] and not table.loc["T", "small"] and not table.loc["O", "small"]
+    assert meta["n_lone"] == 1
