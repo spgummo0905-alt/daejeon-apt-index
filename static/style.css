@@ -1168,6 +1168,9 @@ button.mc-chip:hover { background: rgba(10,16,30,.78); } button.mc-chip:active {
 .sheet-act i.kakao { background: #fee500; color: #191600; } .sheet-act i.kakao .ic { fill: #191600; stroke: none; }
 .sheet-act:hover i { transform: translateY(-2px); } .sheet-act:active i { transform: scale(.92); }
 .sheet-act[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.sheet-act[aria-busy="true"] { pointer-events: none; color: var(--muted); }
+.sheet-act[aria-busy="true"] i { animation: sheet-busy 1.1s ease-in-out infinite; }
+@keyframes sheet-busy { 50% { opacity: .45; } }
 .sheet-hint { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); }
 .sheet-close { width: 100%; justify-content: center; margin-top: 14px; }
 @media (prefers-reduced-motion: reduce) { .mc-in::before, .mc-stats .bar i, .mc-deals, .sheet-thumb-ph { animation: none !important; } .sheet, .sheet-back { transition: none; } }
