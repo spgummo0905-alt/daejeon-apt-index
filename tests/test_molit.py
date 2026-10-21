@@ -68,3 +68,38 @@ def test_presale_kind_and_id_linking():
     rows = molit.link_ids([sale, *pre])
     # 띄어쓰기가 달라도 같은 동·같은 이름이면 매매 단지 일련번호로 합칩니다.
     assert {r["complex_id"] for r in rows} == {"30170-999"}
+
+
+def test_collect_keeps_cached_recent_month_when_server_is_down(tmp_path, monkeypatch):
+    import json
+    import requests
+    calls = []
+
+    def fake(key, lawd, ym, endpoint, rows, session=None):
+        calls.append(ym)
+        if ym >= "202608":
+            raise requests.ConnectTimeout("apis.data.go.kr timed out")
+        return [{"n": ym}]
+
+    monkeypatch.setattr(molit, "fetch_month", fake)
+    cached = tmp_path / "30200" / "202608.json"
+    cached.parent.mkdir(parents=True)
+    cached.write_text(json.dumps([{"n": "old"}]))
+    months = ["202606", "202607", "202608", "202609", "202610", "202611"]
+    logs = []
+    molit.collect("k", DISTRICTS, months, tmp_path, "e", 1000, refresh=set(months[-4:]), log=logs.append)
+    assert json.loads(cached.read_text()) == [{"n": "old"}]  # 받아 둔 최근 달은 그대로
+    assert (tmp_path / "30200" / "202607.json").exists() and not (tmp_path / "30200" / "202609.json").exists()
+    assert calls == ["202606", "202607", "202608", "202609", "202610"]  # 세 번 연달아 실패하면 나머지는 시도 안 함
+    assert any("받아 둔 자료 사용" in m for m in logs)
+
+
+def test_collect_stops_when_an_old_month_cannot_be_fetched(tmp_path, monkeypatch):
+    import requests
+
+    def fake(*a, **k):
+        raise requests.ConnectTimeout("timed out")
+
+    monkeypatch.setattr(molit, "fetch_month", fake)
+    with pytest.raises(requests.ConnectTimeout):  # 예전 달이 빠진 채로 만들면 수익률이 틀어지므로 멈춤
+        molit.collect("k", DISTRICTS, ["202001", "202610"], tmp_path, "e", 1000, refresh={"202610"}, log=lambda m: None)

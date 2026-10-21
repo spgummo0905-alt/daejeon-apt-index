@@ -68,7 +68,7 @@ def fetch_month(
         }
         for attempt in range(retries):
             try:
-                r = s.get(endpoint, params=params, timeout=30)
+                r = s.get(endpoint, params=params, timeout=(10, 40))  # 연결 10초, 응답 40초
                 r.raise_for_status()
                 batch, total = parse_response(r.text)
                 break
@@ -130,6 +130,9 @@ def normalize(raw: dict, districts: dict[str, str], kind: str = "매매") -> dic
     }
 
 
+DOWN_AFTER = 3  # 최근 달 받기가 이만큼 연달아 실패하면 서버가 내려간 것으로 봄
+
+
 def month_range(start_ym: str, end_ym: str) -> list[str]:
     y, m = int(start_ym[:4]), int(start_ym[4:])
     ey, em = int(end_ym[:4]), int(end_ym[4:])
@@ -150,14 +153,33 @@ def collect(
     refresh: set[str] = frozenset(),
     log=print,
 ) -> None:
-    """원본 응답을 data/raw/<구코드>/<YYYYMM>.json 으로 캐시합니다. 이미 있는 달은 건너뜁니다."""
+    """원본 응답을 data/raw/<구코드>/<YYYYMM>.json 으로 캐시합니다. 이미 있는 달은 건너뜁니다.
+
+    최근 달(refresh)을 다시 받다가 국토부 서버가 응답하지 않으면, 받아 둔 파일을 그대로 쓰고
+    넘어갑니다 (하루 늦은 자료로라도 사이트는 만들어지게). 아직 받은 적 없는 최근 달은 다음 번에
+    채우고, 예전 달을 처음 받는 중에 실패하면 자료가 빠지므로 멈춥니다.
+    여러 번 연달아 실패하면 서버가 내려간 것으로 보고 나머지 최근 달은 시도하지 않습니다.
+    """
     s = requests.Session()
+    fails, down = 0, False
     for lawd in districts:
         for ym in months:
             path = raw_dir / lawd / f"{ym}.json"
             if path.exists() and ym not in refresh:
                 continue
-            items = fetch_month(service_key, lawd, ym, endpoint, rows, session=s)
+            if down and ym in refresh:
+                log(f"::warning::{districts[lawd]} {ym}: 국토부 서버 응답 없음, {'받아 둔 자료 사용' if path.exists() else '다음 번에 받음'}")
+                continue
+            try:
+                items = fetch_month(service_key, lawd, ym, endpoint, rows, session=s)
+            except (requests.RequestException, MolitError) as e:
+                if ym not in refresh:
+                    raise
+                fails += 1
+                down = fails >= DOWN_AFTER
+                log(f"::warning::{districts[lawd]} {ym} 받기 실패, {'받아 둔 자료 사용' if path.exists() else '다음 번에 받음'}: {e}")
+                continue
+            fails = 0
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
             log(f"{districts[lawd]} {ym}: {len(items)}건")
