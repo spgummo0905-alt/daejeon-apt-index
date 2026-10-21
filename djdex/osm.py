@@ -15,6 +15,9 @@ import requests
 
 from .location import _meters
 
+# 주 서버는 프로그램 이름(User-Agent)이 없는 요청을 406으로 거절합니다.
+HEADERS = {"User-Agent": "daejeon-apt-index/1.0 (+https://github.com/spgummo0905-alt/daejeon-apt-index)",
+           "Accept": "application/json"}
 MIRRORS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.kumi.systems/api/interpreter",
            "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
@@ -78,6 +81,7 @@ def collect(route_ref: str, geo: dict, path: Path, log=print, session=None) -> l
     if bbox is None:
         return old.get("stops", [])
     s = session or requests.Session()
+    s.headers.update(HEADERS)
     q = query(route_ref, bbox)
     for url in MIRRORS:
         try:

@@ -152,7 +152,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                   + (f", 중간 {col.median():.0f}" if col.notna().any() else ""))
             if f.get("keep_name") and f["key"] + "_name" in poi_df:
                 names = poi_df[f["key"] + "_name"].dropna().value_counts().head(8)
-                print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
+                if len(names):
+                    print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
     return table, meta, n

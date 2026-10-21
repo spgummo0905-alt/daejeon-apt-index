@@ -32,7 +32,7 @@ def test_nearest_within_radius():
 
 class FakeSession:
     def __init__(self, fail=False):
-        self.fail, self.urls = fail, []
+        self.fail, self.urls, self.headers = fail, [], {}
 
     def post(self, url, data=None, timeout=None):
         self.urls.append(url)
@@ -53,6 +53,9 @@ def test_collect_caches_and_falls_back(tmp_path):
     geo = {"a": [36.5, 127.26]}
     stops = osm.collect("^B[0-9]+$", geo, path, log=lambda *_: None, session=FakeSession())
     assert len(stops) == 2 and json.loads(path.read_text())["routes"] == ["B0", "B1"]
+    s0 = FakeSession()
+    osm.collect("^B[0-9]+$", geo, path, log=lambda *_: None, session=s0)
+    assert s0.headers["User-Agent"].startswith("daejeon-apt-index")
     s = FakeSession(fail=True)
     assert osm.collect("^B[0-9]+$", geo, path, log=lambda *_: None, session=s) == stops
     assert len(s.urls) == len(osm.MIRRORS)
