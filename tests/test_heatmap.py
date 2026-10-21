@@ -31,6 +31,8 @@ def test_place_area_and_groups():
     assert [g["label"] for g in groups] == ["동 지역", "부강면", "조치원읍"]
     assert [i["label"] for i in groups[0]["items"]] == ["도담동", "아름동"]
     assert groups[2]["items"][0] == {"value": "조치원읍 교리", "label": "교리", "n": 0}
+    # 절반보다 아래는 '상위 92%' 대신 '하위 8%'
+    assert [site.share(v) for v in (3.2, 50, 72, 92, 99.9, None)] == ["상위 3%", "상위 50%", "하위 28%", "하위 8%", "하위 1%", "-"]
 
 
 def test_mark_highs_by_area_band():

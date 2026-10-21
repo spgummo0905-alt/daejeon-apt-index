@@ -69,6 +69,14 @@ def _top_share(series: pd.Series) -> pd.Series:
     return out
 
 
+def share(top) -> str:
+    """'상위 몇 %'를 읽기 쉽게: 절반보다 아래면 '하위 8%'처럼 (상위 92% 대신)."""
+    if top is None or _nan(top):
+        return "-"
+    top = float(top)
+    return f"상위 {max(1, round(top))}%" if top <= 50 else f"하위 {max(1, round(100 - top))}%"
+
+
 def place(r) -> str:
     """'서구 둔산동'. 구가 없는 지역(세종)은 구 자리에 동이 들어 있어 한 번만: '도담동'."""
     return str(r["dong"]) if r["gu"] == r["dong"] else f"{r['gu']} {r['dong']}"
@@ -85,7 +93,7 @@ def area_name(name) -> Markup:
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
-    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name)
+    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share)
     env.tests["nan"] = _nan
     return env
 
@@ -97,7 +105,7 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     if not _nan(c["index"]):
         g, gname = grade(c["index"])
         if c.get("rank"):
-            out.append(f"종합 지수 {c['index']:.0f}점, {region} {n}개 단지 중 {c['rank']}위로 상위 {c['index_top']:.0f}%입니다 ({g}등급 {gname}).")
+            out.append(f"종합 지수 {c['index']:.0f}점, {region} {n}개 단지 중 {c['rank']}위로 {share(c['index_top'])}입니다 ({g}등급 {gname}).")
         else:
             out.append(f"종합 지수 {c['index']:.0f}점입니다. 거래가 적은 소규모 단지라 순위와 TOP 목록에서는 뺐습니다.")
     if not _nan(c.get("last_price")):
@@ -106,7 +114,7 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
         out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} 전용 {c['last_area']:.0f}㎡{kind} {eok(c['last_price'], 2)}입니다.{high}")
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
-        out.append(f"입지점수는 {region} 상위 {c['location_top']:.0f}%이고, 가장 강한 항목은 {best['label']}입니다.")
+        out.append(f"입지점수는 {region} {share(c['location_top'])}이고, 가장 강한 항목은 {best['label']}입니다.")
     for n_y in years:
         v = c.get(f"cagr_{n_y}y")
         if not _nan(v):
