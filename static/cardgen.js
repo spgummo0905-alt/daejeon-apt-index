@@ -352,7 +352,16 @@
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();
-      if (!IN_APP || KAKAO) uploadKakao();
+      if (!IN_APP || KAKAO) kakaoReadyState();
+    }
+    // 카드 이미지가 카카오에 올라갈 때까지 카카오톡 버튼은 '이미지 준비 중' (먼저 누르면 글만 가던 문제)
+    const kakaoBtn = sheet.querySelector('[data-act="kakao"]'), kakaoLabel = kakaoBtn.querySelector("span");
+    function kakaoReadyState() {
+      if (!save || !sheet.dataset.kakaoKey || kakaoImg) return uploadKakao();
+      kakaoBtn.setAttribute("aria-busy", "true");
+      kakaoLabel.textContent = "이미지 준비 중";
+      const done = () => { kakaoBtn.removeAttribute("aria-busy"); kakaoLabel.textContent = "카카오톡"; };
+      Promise.race([uploadKakao(), new Promise(r => setTimeout(r, 12000))]).then(done, done);
     }
     function close() {
       back.classList.remove("on"); sheet.classList.remove("on");
@@ -368,7 +377,7 @@
       if (await loadKakao(sheet.dataset.kakaoKey)) {
         try {
           // 카드 이미지가 올라가 있으면 이미지가 보이는 피드 메시지, 아니면 글 메시지
-          const img = kakaoImg || (save ? await Promise.race([uploadKakao(), new Promise(r => setTimeout(() => r(null), 4000))]) : null);
+          const img = kakaoImg || (save ? await Promise.race([uploadKakao(), new Promise(r => setTimeout(() => r(null), 1500))]) : null);
           if (img && img.url) {
             Kakao.Share.sendDefault({ objectType: "feed",
               content: { title, description: text, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height, link },
