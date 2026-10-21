@@ -61,11 +61,15 @@ def complexes(df: pd.DataFrame) -> pd.DataFrame:
     )
     # 단지 규모를 가늠하는 값: 거래에 나온 동 수와 면적 종류 수
     out["n_areas"] = d.assign(_a=d["area"].round()).groupby("complex_id")["_a"].nunique()
+    out["n_dong"] = np.nan
+    out["n_since_dong"] = 0
     if "apt_dong" in d:
-        named = d[d["apt_dong"].fillna("").astype(str).str.strip() != ""]
-        out["n_dong"] = named.groupby("complex_id")["apt_dong"].nunique().reindex(out.index)
-    else:
-        out["n_dong"] = np.nan
+        has = d["apt_dong"].fillna("").astype(str).str.strip() != ""
+        if has.any():
+            out["n_dong"] = d[has].groupby("complex_id")["apt_dong"].nunique().reindex(out.index)
+            # 동 이름이 신고되기 시작한 뒤의 거래 수: 이 기간에 거래가 있는데도 동 이름이 없으면 동 구분이 없는 한 동짜리 건물
+            since = d[d["date"] >= d.loc[has, "date"].min()]
+            out["n_since_dong"] = since.groupby("complex_id").size().reindex(out.index).fillna(0).astype(int)
     return out
 
 
@@ -138,8 +142,11 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
     rare = table["peak_trades"] < cfg_metrics.get("small_peak_trades", 0)
     # 원룸형: 거래 면적 중간값이 이보다 작은 단지 (84㎡ 환산가가 실제 가족형 시세와 동떨어짐)
     studio = table["main_area"] < cfg_metrics.get("min_main_area", 0)
-    table["small"] = rare | studio
-    table["small_reason"] = np.where(studio, "원룸형", np.where(rare, "소규모", ""))
+    # 나홀로: 한 동짜리(동 이름이 하나뿐이거나, 동 이름 신고 이후 거래가 있는데 동 이름이 없음)이면서 저층·중층
+    one_dong = (table["n_dong"] == 1) | (table["n_dong"].isna() & (table["n_since_dong"] >= 3))
+    lone = one_dong & (table["max_floor"] <= cfg_metrics.get("lone_max_floor", 0))
+    table["small"] = rare | studio | lone
+    table["small_reason"] = np.select([studio, rare, lone], ["원룸형", "소규모", "나홀로"], "")
     main = table.index[~table["small"]]
 
     cur_now, basis = recent_price(sale, presale, asof, windows, min_n)
@@ -211,6 +218,7 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
         "n_complexes": n_main,
         "n_small": int(table["small"].sum()),
         "n_studio": int((table["small_reason"] == "원룸형").sum()),
+        "n_lone": int((table["small_reason"] == "나홀로").sum()),
         "n_trades": int(len(df)),
         "n_presale": int(len(presale)),
         "median_index": float(m["index"].median()) if m["index"].notna().any() else None,

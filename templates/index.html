@@ -17,7 +17,7 @@
 </section>
 
 <section class="stats">
-  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모·원룸형 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
+  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">빌라형 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
   <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
   <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
@@ -108,7 +108,7 @@
   <div class="chips type-chips" id="value-type" role="tablist">
     <button class="chip" type="button" data-type="">전체 <span class="cnt">{{ value_list | length }}</span></button>
     <button class="chip active" type="button" data-type="apt">아파트 <span class="cnt">{{ value_list | length - n_villa }}</span></button>
-    <button class="chip" type="button" data-type="villa" title="거래가 드문 나홀로·빌라형, 원룸 위주 단지">빌라 <span class="cnt">{{ n_villa }}</span></button>
+    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">빌라 <span class="cnt">{{ n_villa }}</span></button>
   </div>
   <ol class="value-list" id="value-list">
   {% for r in value_list %}
@@ -165,7 +165,7 @@
   <div class="chips type-chips" id="table-type">
     <button class="chip" type="button" data-type="">전체</button>
     <button class="chip active" type="button" data-type="apt">아파트 <span class="cnt">{{ "{:,}".format(meta.n_complexes) }}</span></button>
-    <button class="chip" type="button" data-type="villa" title="거래가 드문 나홀로·빌라형, 원룸 위주 단지">빌라 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
+    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">빌라 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
   </div>
   {% endif %}
   <div class="table-wrap">
