@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}단지 대결 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} 아파트 두 곳을 입지, 성장, 기세, 가성비, 인기 다섯 능력치로 맞붙여 보세요.{% endblock %}
+{% block body %}
+<section class="page-hero">
+  <p class="eyebrow">⚔ 단지 대결</p>
+  <h1>우리 단지 vs 저 단지,<br>누가 이길까?</h1>
+  <p class="lead">두 단지를 고르면 다섯 능력치로 맞붙여 승패를 가립니다. 결과 링크를 친구에게 보내 보세요.</p>
+</section>
+<section class="panel">
+  <div class="vs-pick">
+    <label class="field"><span>1P 단지</span><input id="pick-a" type="search" placeholder="단지명 또는 동"></label>
+    <span class="vs-mark">VS</span>
+    <label class="field"><span>2P 단지</span><input id="pick-b" type="search" placeholder="단지명 또는 동"></label>
+  </div>
+  <div class="row-actions">
+    <button class="btn" id="vs-random">🎲 랜덤 대결</button>
+    <button class="btn" id="vs-share" hidden>결과 공유하기</button>
+  </div>
+</section>
+<section id="vs-result" class="vs-result" aria-live="polite">
+  <p class="muted center">두 단지를 고르면 여기에 대결 결과가 나옵니다.</p>
+</section>
+{% endblock %}
+{% block scripts %}<script src="static/compare.js"></script>{% endblock %}

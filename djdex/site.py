@@ -122,6 +122,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     table["index_top"] = _top_share(main_t["index"]).reindex(table.index)
     table["location_top"] = _top_share(main_t["location_score"]).reindex(table.index)
     n_total = len(main_t)
+    table = add_game_stats(table, trades, meta)
+    main_t = table[~table["small"].astype(bool)]
 
     rows = []
     for cid, r in table.iterrows():
@@ -145,8 +147,14 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         sub = main_t[main_t["gu"] == gu]
         if sub.empty:
             continue
+        best = sub["index"].idxmax() if sub["index"].notna().any() else None
         gu_stats.append({"gu": gu, "n": len(sub), "price": sub["price_ref"].median(),
-                         "index": sub["index"].median()})
+                         "index": sub["index"].median(),
+                         "location": sub["location_score"].median(),
+                         "growth": sub["stat_growth"].median() if "stat_growth" in sub else float("nan"),
+                         "highs": int(sub.get("new_high_recent", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()),
+                         "best_name": sub.loc[best, "name"] if best is not None else None,
+                         "best_slug": slug(best) if best is not None else None})
     gu_med = {g["gu"]: g["price"] for g in gu_stats if not _nan(g["price"])}
 
     # TOP 목록
@@ -192,17 +200,21 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                     mob={"width": 360, "height": 320}) if has_loc else "",
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
-    # 카카오 지도용 점 데이터 (소규모 제외). 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
-    write_points(out_dir, [r for r in rows if not r["small"] and r["lat"] is not None])
+    # 지도, 검색, 대결, 게임, 맞춤 찾기가 함께 쓰는 단지 데이터 (소규모 제외).
+    # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
+    write_complexes(out_dir, [r for r in rows if not r["small"]], factors)
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
-                  grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site)
+                  grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats,
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
+    for name in APP_PAGES:
+        (out_dir / f"{name}.html").write_text(
+            env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", **common), encoding="utf-8")
 
     # 단지 페이지
     trades = trades.copy()
@@ -252,19 +264,71 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name),
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
-    write_sitemap(out_dir, cfg.site.get("base_url", ""), [f"apt/{r['slug']}.html" for r in rows])
+    write_sitemap(out_dir, cfg.site.get("base_url", ""),
+                  [f"{n}.html" for n in APP_PAGES] + [f"apt/{r['slug']}.html" for r in rows])
     return len(rows)
 
 
-def write_points(out_dir: Path, rows: list[dict]) -> None:
+APP_PAGES = ["compare", "quiz", "finder", "my"]
+
+# 게임 카드의 다섯 능력치: (열 이름, 표시 이름, 설명)
+STATS = [
+    ("location_score", "입지", "역·학교·학원·마트·병원 접근성"),
+    ("stat_growth", "성장", "10년 수익률 백분위 (없으면 5년)"),
+    ("stat_momentum", "기세", "최근 5년 수익률 백분위"),
+    ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
+    ("stat_activity", "인기", "최근 3년 거래가 얼마나 활발한지"),
+]
+
+
+def add_game_stats(table: pd.DataFrame, trades: pd.DataFrame, meta: dict) -> pd.DataFrame:
+    """게임 카드용 0~100 능력치. 모두 소규모를 뺀 단지 분포 기준 백분위입니다."""
+    from .location import percentile
+
+    t = table.copy()
+    main = t.index[~t["small"].astype(bool)]
+    tr = trades.copy()
+    tr["date"] = pd.to_datetime(tr["date"])
+    asof = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") + pd.offsets.MonthEnd(0)
+    recent = tr[(tr["date"] > asof - pd.DateOffset(years=3)) & ~tr["cancelled"].astype(bool)]
+    act = recent.groupby("complex_id").size().reindex(t.index).fillna(0)
+    t["stat_activity"] = percentile(act, ref=main)
+    y10 = next((c for c in t.columns if c.startswith("cagr_10y_pct")), None)
+    y5 = next((c for c in t.columns if c.startswith("cagr_5y_pct")), None)
+    t["stat_growth"] = (t[y10] if y10 else pd.Series(float("nan"), index=t.index))
+    if y5:
+        t["stat_growth"] = t["stat_growth"].fillna(t[y5])
+        t["stat_momentum"] = t[y5]
+    else:
+        t["stat_momentum"] = float("nan")
+    price_pct = percentile(t["price_ref"], ref=main)
+    t["stat_value"] = percentile(t["location_score"] - price_pct, ref=main)
+    return t
+
+
+def _r(x, nd=0):
+    return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
+
+
+def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict]) -> None:
     import json
-    pts = [{
-        "n": r["name"], "d": f"{r['gu']} {r['dong']}", "s": r["slug"], "la": round(r["lat"], 6), "ln": round(r["lng"], 6),
-        "i": None if _nan(r.get("index")) else round(r["index"]), "g": r["grade"],
-        "p": eok(r.get("price_ref")) if not _nan(r.get("price_ref")) else None,
-        "h": r["new_high_recent"],
-    } for r in rows]
-    (out_dir / "points.json").write_text(json.dumps(pts, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    data = []
+    for r in rows:
+        data.append({
+            "s": r["slug"], "n": r["name"], "gu": r["gu"], "d": r["dong"],
+            "i": _r(r.get("index")), "g": r["grade"], "rk": r.get("rank"),
+            "p": _r(r.get("price_ref")), "pt": eok(r.get("price_ref")) if not _nan(r.get("price_ref")) else None,
+            "st": [_r(r.get(k)) for k, _, _ in STATS],
+            "c10": _r(r.get("cagr_10y") * 100, 1) if not _nan(r.get("cagr_10y")) else None,
+            "c5": _r(r.get("cagr_5y") * 100, 1) if not _nan(r.get("cagr_5y")) else None,
+            "f": {f["key"]: _r(r.get(f["key"] + "_raw")) for f in factors},
+            "y": r.get("build_year"), "la": _r(r.get("lat"), 6), "ln": _r(r.get("lng"), 6),
+            "h": bool(r.get("new_high_recent")),
+            "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
+            "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
+        })
+    meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data}
+    (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:
@@ -275,7 +339,7 @@ def write_sitemap(out_dir: Path, base: str, apt_paths: list[str]) -> None:
     from xml.sax.saxutils import escape as xml_escape
 
     today = date.today().isoformat()
-    entries = [("", "1.0"), ("methodology.html", "0.3")] + [(p, "0.7") for p in apt_paths]
+    entries = [("", "1.0"), ("methodology.html", "0.3")] + [(p, "0.5" if "/" not in p else "0.7") for p in apt_paths]
     urls = "".join(
         f"<url><loc>{xml_escape(base + path)}</loc><lastmod>{today}</lastmod><priority>{pri}</priority></url>\n"
         for path, pri in entries)

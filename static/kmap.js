@@ -15,7 +15,7 @@
   kakao.maps.load(async function () {
     let pts;
     try {
-      pts = await (await fetch("points.json")).json();
+      pts = (await DJ.data()).complexes.filter(function (c) { return c.la != null && c.ln != null; });
     } catch (e) {
       return;
     }
@@ -32,11 +32,11 @@
       card.replaceChildren();
       const left = document.createElement("div");
       const title = text("a", "", p.n);
-      title.href = "apt/" + p.s + ".html";
+      title.href = DJ.href(p);
       title.style.fontWeight = "700";
       left.append(title, document.createElement("br"),
-        text("span", "muted", p.d + " · 지수 " + (p.i == null ? "-" : p.i) + " · " + p.g + "등급" +
-          (p.p ? " · 84㎡ " + p.p : "") + (p.h ? " · 최근 신고가" : "")));
+        text("span", "muted", p.gu + " " + p.d + " · 지수 " + (p.i == null ? "-" : p.i) + " · " + p.g + "등급" +
+          (p.pt ? " · 84㎡ " + p.pt : "") + (p.h ? " · 최근 신고가" : "")));
       const go = text("a", "btn", "자세히 →");
       go.href = title.href;
       card.append(left, go);
