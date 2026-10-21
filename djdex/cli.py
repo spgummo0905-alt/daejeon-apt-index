@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import kakao, location, metrics, molit, school, site
+from . import kakao, location, metrics, molit, osm, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -121,6 +121,14 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
         if hubs:
             hub = location.hub_access(poi_df, geo, {**cfg.hub, "hubs": hubs})
             poi_df = poi_df.drop(columns=[c for c in hub.columns if c in poi_df], errors="ignore").join(hub)
+    for f in cfg.location_factors:
+        if f.get("osm_route") and not demo and not poi_df.empty and geo:
+            # OSM 노선 정류장까지 거리는 캐시된 정류장으로 매번 다시 계산합니다 (예전 카카오 값은 버림).
+            stops = osm.load(cfg.paths.osm_stops)
+            near = osm.nearest(geo, stops, f["key"], f["radius"])
+            poi_df = poi_df.drop(columns=[f["key"], f["key"] + "_name"], errors="ignore").join(near)
+            if not stops:
+                print(f"::warning::{f['label']}: 정류장 정보가 없어 이 항목을 빼고 계산합니다")
     if not poi_df.empty and geo and cfg.school and any(f["kind"] == "value" for f in cfg.location_factors):
         sch = school.load(cfg.paths.school, cfg.school, cfg.region_name)
         if not sch.empty:
@@ -173,6 +181,12 @@ def cmd_all(cfg, args) -> None:
             # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
             detail = getattr(getattr(e, "response", None), "text", "")[:300]
             print(f"::warning::카카오 입지 수집 실패, 입지점수 없이 진행합니다: {e} {detail}")
+    for f in cfg.location_factors:
+        if f.get("osm_route") and cfg.paths.geo.exists():
+            try:
+                osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
+            except (ValueError, OSError) as e:  # 정류장을 못 받아도 사이트는 만듭니다 (그 항목만 빠짐)
+                print(f"::warning::OSM 정류장 수집 실패: {e}")
     if os.environ.get("SCHOOLINFO_KEY") and cfg.school:
         try:
             school.collect(os.environ["SCHOOLINFO_KEY"], cfg.school, list(cfg.districts), cfg.paths.school,

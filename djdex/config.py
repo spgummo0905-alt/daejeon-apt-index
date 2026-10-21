@@ -36,6 +36,10 @@ class Paths:
         return self.data / "school"
 
     @property
+    def osm_stops(self) -> Path:
+        return self.data / "osm_stops.json"
+
+    @property
     def cpi(self) -> Path:
         return self.data / "cpi.csv"
 
