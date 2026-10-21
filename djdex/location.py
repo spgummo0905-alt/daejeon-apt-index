@@ -143,19 +143,26 @@ def score(poi: pd.DataFrame, factors: list[dict], ref: pd.Index | None = None) -
 
     반경 안에 시설이 없는 'nearest' 항목(None)은 최하점(0)으로 봅니다.
     'score' 항목(학원가 접근성처럼 이미 0~100인 값)은 백분위로 바꾸지 않고 그대로 씁니다.
+    'value' 항목(학군처럼 카카오 밖에서 구한 값)은 높을수록 좋은 백분위로 바꿉니다.
+    score·value 항목에 값이 하나도 없으면 그 항목은 빼고 나머지 비중으로 계산합니다.
     """
     out = pd.DataFrame(index=poi.index)
-    total_w = sum(f["weight"] for f in factors)
+    total_w = 0.0
     acc = pd.Series(0.0, index=poi.index)
     for f in factors:
-        col = poi.get(f["key"], pd.Series(index=poi.index, dtype=float)).astype(float)
+        col = pd.to_numeric(poi.get(f["key"], pd.Series(index=poi.index, dtype=float)), errors="coerce")
+        if f["kind"] in ("score", "value") and col.isna().all():
+            continue  # 아직 모으지 못한 항목(예: 학교알리미 키가 없을 때)은 빼고 나머지로 가중평균
+        total_w += f["weight"]
         if f["kind"] == "score":
             pct = col.clip(0, 100).fillna(0.0)
+        elif f["kind"] == "value":
+            pct = percentile(col, higher_is_better=True, ref=ref).fillna(50.0)
         elif f["kind"] == "nearest":
             pct = percentile(col, higher_is_better=False, ref=ref).fillna(0.0)
         else:
             pct = percentile(col.fillna(0), higher_is_better=True, ref=ref).fillna(0.0)
         out[f"{f['key']}_pct"] = pct
         acc += pct * f["weight"]
-    out["location_score"] = acc / total_w
+    out["location_score"] = acc / total_w if total_w else float("nan")
     return out

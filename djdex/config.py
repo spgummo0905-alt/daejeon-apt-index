@@ -32,6 +32,10 @@ class Paths:
         return self.data / "poi.json"
 
     @property
+    def school(self) -> Path:
+        return self.data / "school"
+
+    @property
     def cpi(self) -> Path:
         return self.data / "cpi.csv"
 
@@ -92,6 +96,10 @@ class Config:
     @property
     def hub(self) -> dict:
         return self.raw["location"].get("hub", {})
+
+    @property
+    def school(self) -> dict:
+        return self.raw.get("school", {})
 
 
 def load(path: Path | None = None, data_dir: Path | None = None) -> Config:

@@ -84,15 +84,17 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 # kind = "nearest" 는 가장 가까운 곳까지 거리(m, 가까울수록 좋음),
 # kind = "count" 는 반경 안 개수(많을수록 좋음),
 # kind = "score" 는 카카오 조회 없이 계산한 0~100 점수를 그대로 씁니다 (아래 [location.hub]).
+# kind = "value" 는 카카오 밖에서 구한 값(학군, 아래 [school])을 높을수록 좋은 백분위로 바꿉니다.
 # nearest·count 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
 # keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위, 학원가 지하철 시간에 사용).
 factors = [
   { key = "subway",     label = "지하철역까지 거리",   category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
   { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.20 },
-  { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.15, name_contains = "초등학교" },
+  { key = "school_mid", label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.15, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
   { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
-  { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },
-  { key = "hospital",   label = "반경 1km 병원 수",    category = "HP8", kind = "count",   radius = 1000, weight = 0.15 },
+  { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
+  { key = "hospital",   label = "반경 1km 병원 수",    category = "HP8", kind = "count",   radius = 1000, weight = 0.10 },
 ]
 
 # 점수에는 넣지 않고 함께 조사만 하는 항목. query 가 있으면 카카오 키워드 검색으로 그 단어가 들어간 곳만 셉니다.
@@ -120,3 +122,13 @@ hubs = [
   { name = "노은·지족 학원가", weight = 0.85, lat = 36.3790, lng = 127.3190, stations = { "노은" = 6, "지족" = 6 } },
   { name = "도안 학원가",      weight = 0.75, lat = 36.3440, lng = 127.3390 },
 ]
+
+[school]
+# 학교알리미 공시정보 OpenAPI (환경변수 SCHOOLINFO_KEY). 시도코드 30 = 대전.
+# API 종류: 0 = 학교기본정보(위도·경도), 10 = 전·출입 및 학업중단 학생 수.
+sido = "30"
+api_basic = "0"
+api_moves = "10"
+years = 3          # 최근 몇 해의 전·출입을 평균할지
+radius = 1500      # 단지에서 이 거리(m) 안 중학교를 봅니다. 없으면 가장 가까운 한 곳.
+max_schools = 3    # 가까운 순으로 최대 몇 곳까지 가중평균할지

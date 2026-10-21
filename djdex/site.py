@@ -37,6 +37,9 @@ def fmt_score(x) -> str:
 
 def fmt_raw(v, factor: dict, c: dict | None = None) -> str:
     """입지 원래 값: 거리는 m/km, 개수는 '곳', 학원가는 '둔산 학원가 15분'."""
+    if factor["kind"] == "value":
+        names = (c or {}).get(factor["key"] + "_names_raw")
+        return names if isinstance(names, str) and names else ("-" if _nan(v) else f"{v:+.1f}%")
     if factor["kind"] == "score":
         name, mins = (c or {}).get(factor["key"] + "_name_raw"), (c or {}).get(factor["key"] + "_min_raw")
         return "-" if not name or _nan(mins) else f"{name} {int(mins)}분"
@@ -278,7 +281,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                        mob={"width": 360, "height": 240}),
             "trades": charts.responsive(charts.trade_dots, [t for t in tr_list if t["date"] >= cutoff],
                                         mob={"width": 360, "height": 240}),
-            "radar": charts.radar([(f["label"].replace("까지 거리", "").replace("반경 1km ", "").replace("주요 ", "").replace(" 접근성", ""),
+            "radar": charts.radar([(f["label"].replace("까지 거리", "").replace("반경 1km ", "").replace("주요 ", "").replace(" 접근성", "").split(" (")[0],
                                     c.get(f["key"] + "_pct"), factor_med[f["key"]]) for f in factors]) if has_loc_c else "",
             "hist": charts.responsive(charts.histogram, index_values, highlight=c.get("index"), height=180,
                                       mob={"width": 360}),

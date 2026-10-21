@@ -91,7 +91,7 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
         lat, lng = geo[cid]
         entry = poi.setdefault(cid, {})
         for f in factors:
-            if f["kind"] == "score":  # 카카오 조회 없이 계산하는 항목 (학원가 접근성)
+            if f["kind"] in ("score", "value"):  # 카카오 조회 없이 계산하는 항목 (학원가 접근성, 학군)
                 continue
             want_name = f.get("keep_name") and hasattr(client, "nearest_place")
             if f["key"] in entry and (not want_name or f["key"] + "_name" in entry):
