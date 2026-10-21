@@ -6,7 +6,9 @@
 from __future__ import annotations
 
 import json
+import re
 import time
+import unicodedata
 from pathlib import Path
 
 import requests
@@ -35,7 +37,9 @@ class Kakao:
             docs = self._get("keyword", query=kw).get("documents", [])
         if not docs:
             return None
-        return float(docs[0]["y"]), float(docs[0]["x"])
+        # 키워드 결과에는 같은 이름의 중개사무소·상가도 섞여 있어 아파트로 분류된 곳을 먼저 씁니다.
+        d = next((d for d in docs if "아파트" in d.get("category_name", "")), docs[0])
+        return float(d["y"]), float(d["x"])
 
     def nearest_place(self, lat: float, lng: float, category: str | None, radius: int,
                       name_contains: str | None = None, query: str | None = None) -> tuple[float, str] | None:
@@ -74,6 +78,14 @@ class Kakao:
         return int(data.get("meta", {}).get("total_count", 0))
 
 
+def clean_name(name: str) -> str:
+    """분양 때 이름에 붙은 괄호 속 블록·생활권과 전각 문자를 걷어냅니다.
+    '세종중흥Ｓ클래스　리버뷰２차（Ｍ４블록）' → '세종중흥S클래스 리버뷰2차'"""
+    s = unicodedata.normalize("NFKC", name)
+    s = re.sub(r"\([^)]*\)", " ", s)
+    return re.sub(r"\s+", " ", s).strip() or name
+
+
 def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
@@ -91,8 +103,12 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
         cid = c["complex_id"]
         if not geo.get(cid):
             # 처음이거나 지난번에 못 찾은 단지: 주소 → '지역 동 단지명' → '지역 단지명' 순서로
+            # (이름에 괄호 속 블록명이 붙어 있으면 그것을 뗀 이름으로도 찾아봅니다)
             addr = f"{region} {c['gu']} {c['dong']} {c['jibun']}".strip()
-            geo[cid] = client.geocode(addr, keyword=[f"{region} {c['dong']} {c['name']}", f"{region} {c['name']}"])
+            short = clean_name(c["name"])
+            names = dict.fromkeys([c["name"]] + ([short] if len(short) >= 4 else []))  # 'LH' 같은 이름은 엉뚱한 곳이 잡힘
+            geo[cid] = client.geocode(addr, keyword=list(dict.fromkeys(
+                kw for n in names for kw in (f"{region} {c['dong']} {n}", f"{region} {n}"))))
             if i % 50 == 0:
                 _save(geo_path, geo)
         if not geo[cid]:
@@ -100,8 +116,8 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
         lat, lng = geo[cid]
         entry = poi.setdefault(cid, {})
         for f in factors:
-            if f["kind"] in ("score", "value"):  # 카카오 조회 없이 계산하는 항목 (학원가 접근성, 학군)
-                continue
+            if f["kind"] in ("score", "value") or f.get("osm_route"):
+                continue  # 카카오 조회 없이 계산하는 항목 (학원가 접근성, 학군, OSM 정류장)
             want_name = f.get("keep_name") and hasattr(client, "nearest_place")
             if f["key"] in entry and (not want_name or f["key"] + "_name" in entry):
                 continue
@@ -125,4 +141,4 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
     missing = [c for c in complexes if not geo.get(c["complex_id"])]
     if missing:
         log(f"위치를 못 찾은 단지 {len(missing)}곳: "
-            + ", ".join(f"{c['name']}({c['dong']} {c['jibun']})" for c in missing[:12]))
+            + ", ".join(f"{c['name']}({c['dong']} {c['jibun']})" for c in missing[:60]))

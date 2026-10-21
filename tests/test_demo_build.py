@@ -114,7 +114,7 @@ def test_sejong_config_extends_daejeon():
     assert sj.paths.data.name == "sejong" and dj.paths.data.name == "data"
     assert sj.hub["auto"] and sj.hub["hubs"] == [] and sj.hub["full_min"] == dj.hub["full_min"]  # 나머지는 물려받음
     assert sj.school["sido"] == "36" and sj.school["api_moves"] == dj.school["api_moves"]
-    assert [f["key"] for f in sj.location_factors][0] == "subway" and sj.location_factors[0]["query"] == "BRT"
+    assert [f["key"] for f in sj.location_factors][0] == "subway" and sj.location_factors[0]["osm_route"] == "^B[0-9]+$"
     assert sj.metrics == dj.metrics
 
 

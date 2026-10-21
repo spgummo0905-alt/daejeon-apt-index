@@ -109,3 +109,29 @@ def test_kakao_count_uses_keyword_search_with_query():
     assert k.count(36.35, 127.38, "AC5", 1000) == 12
     assert k.count(36.35, 127.38, "AC5", 1000, query="수학") == 12
     assert seen == [("category", None, "AC5"), ("keyword", "수학", "AC5")]
+
+
+def test_clean_name_and_geocode_prefers_apartment():
+    assert kakao.clean_name("세종중흥Ｓ클래스　리버뷰２차（Ｍ４블록）") == "세종중흥S클래스 리버뷰2차"
+    assert kakao.clean_name("트리풀시티포레(노은3지구 B4블록)") == "트리풀시티포레"
+    k = kakao.Kakao("x", pause=0)
+    seen = []
+
+    def fake_get(path, **params):
+        seen.append(params["query"])
+        if path == "address" or "블록" in params["query"]:
+            return {"documents": []}
+        return {"documents": [{"y": "36.1", "x": "127.1", "category_name": "부동산 > 중개업소"},
+                              {"y": "36.5", "x": "127.2", "category_name": "부동산 > 주거시설 > 아파트"}]}
+    k._get = fake_get
+    assert k.geocode("세종 소담동 BL-M1", ["세종 소담동 리버뷰(M1블록)", "세종 소담동 리버뷰"]) == (36.5, 127.2)
+    assert seen == ["세종 소담동 BL-M1", "세종 소담동 리버뷰(M1블록)", "세종 소담동 리버뷰"]
+
+
+def test_enrich_skips_osm_factor(tmp_path):
+    factors = [{"key": "subway", "kind": "nearest", "radius": 3000, "keep_name": True, "osm_route": "^B[0-9]+$"},
+               {"key": "academy", "kind": "count", "category": "AC5", "radius": 1000}]
+    cx = [{"complex_id": "1", "name": "가", "gu": "", "dong": "도담동", "jibun": "1"}]
+    geo, poi = tmp_path / "geo.json", tmp_path / "poi.json"
+    kakao.enrich(cx, factors, "세종", geo, poi, FakeKakao(), log=lambda *_: None)
+    assert json.loads(poi.read_text())["1"] == {"academy": 7}
