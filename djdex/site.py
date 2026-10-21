@@ -215,7 +215,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     }
     # 지도, 검색, 대결, 게임, 맞춤 찾기가 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
-    write_complexes(out_dir, [r for r in rows if not r["small"]], factors)
+    write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
+                    {"asof": meta["asof"], "region": cfg.region_name, "url": cfg.site.get("base_url", "")})
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
@@ -357,7 +358,7 @@ def _r(x, nd=0):
     return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
 
 
-def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict]) -> None:
+def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None) -> None:
     import json
     data = []
     for r in rows:
@@ -378,7 +379,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict]) -> Non
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
         })
-    meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data}
+    meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 

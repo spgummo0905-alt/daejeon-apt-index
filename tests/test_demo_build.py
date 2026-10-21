@@ -73,3 +73,19 @@ def test_complexes_json_and_small_rows(tmp_path):
     for page in ("compare", "finder", "my"):
         html = (out / f"{page}.html").read_text(encoding="utf-8")
         assert f"static/{page}.js" in html and "static/app.js" in html
+
+
+def test_card_download_button_only_for_ranked(tmp_path):
+    import json
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    assert data["asof"] and data["region"] == "대전"
+    ranked = {c["s"] for c in data["complexes"]}
+    for page in (out / "apt").glob("*.html"):
+        html = page.read_text(encoding="utf-8")
+        has = "data-card-download" in html
+        assert has == (page.stem in ranked), page.stem  # 소규모 단지는 카드 데이터가 없어 버튼도 없음
+        assert "static/cardgen.js" in html
