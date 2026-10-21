@@ -48,7 +48,7 @@ def complexes(df: pd.DataFrame) -> pd.DataFrame:
     # 이름은 매매 거래의 최신 이름을 우선 씁니다 (분양권 신고 이름이 조금 다를 수 있음).
     d = df.assign(_sale=(df["kind"] == SALE)).sort_values(["_sale", "date"])
     g = d.groupby("complex_id")
-    return g.agg(
+    out = g.agg(
         name=("name", "last"),
         gu=("gu", "last"),
         dong=("dong", "last"),
@@ -57,7 +57,16 @@ def complexes(df: pd.DataFrame) -> pd.DataFrame:
         n_trades=("price", "size"),
         last_trade=("date", "max"),
         main_area=("area", "median"),
+        max_floor=("floor", "max"),
     )
+    # 단지 규모를 가늠하는 값: 거래에 나온 동 수와 면적 종류 수
+    out["n_areas"] = d.assign(_a=d["area"].round()).groupby("complex_id")["_a"].nunique()
+    if "apt_dong" in d:
+        named = d[d["apt_dong"].fillna("").astype(str).str.strip() != ""]
+        out["n_dong"] = named.groupby("complex_id")["apt_dong"].nunique().reindex(out.index)
+    else:
+        out["n_dong"] = np.nan
+    return out
 
 
 def recent_price(sale: pd.DataFrame, presale: pd.DataFrame, asof: pd.Timestamp,

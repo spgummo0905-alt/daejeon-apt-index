@@ -27,4 +27,30 @@
     });
     document.querySelectorAll(".gu-board").forEach(bd => { bd.hidden = bd.dataset.board !== btn.dataset.board; });
   }));
+  // 입지 대비 가격이 좋은 단지: 전체/아파트/빌라 필터, 10개씩 더 보기
+  const vlist = document.getElementById("value-list");
+  if (vlist) {
+    const items = Array.from(vlist.children);
+    const more = document.getElementById("value-more");
+    let vtype = "apt", vlimit = 10;
+    const draw = () => {
+      let n = 0;
+      items.forEach(li => {
+        const ok = !vtype || li.dataset.type === vtype;
+        if (ok) n++;
+        li.hidden = !ok || n > vlimit;
+        const rank = li.querySelector(".vl-rank");
+        if (ok) { rank.textContent = n; rank.classList.toggle("top", n <= 3); }
+      });
+      more.hidden = n <= vlimit;
+      document.getElementById("value-empty").hidden = n > 0;
+      more.textContent = `${Math.min(10, n - vlimit)}곳 더 보기`;
+    };
+    document.querySelectorAll("#value-type .chip").forEach(btn => btn.addEventListener("click", () => {
+      document.querySelectorAll("#value-type .chip").forEach(b => b.classList.toggle("active", b === btn));
+      vtype = btn.dataset.type; vlimit = 10; draw();
+    }));
+    more.addEventListener("click", () => { vlimit += 10; draw(); });
+    draw();
+  }
 })();

@@ -537,6 +537,12 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .vl-cheap { font-size: 12px; font-weight: 700; color: var(--s3); background: color-mix(in srgb, var(--s3) 12%, transparent);
   padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .vl-m { display: none; }
+.type-chips { margin: 4px 0 12px; }
+.type-chips .cnt { font-size: 12px; opacity: .7; margin-left: 2px; font-variant-numeric: tabular-nums; }
+.vl-title .badge-small { margin-left: 0; flex: none; }
+.more-btn { display: block; width: 100%; margin-top: 10px; padding: 12px; border: 1px dashed var(--border); border-radius: 14px;
+  background: none; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; }
+.more-btn:hover { border-color: var(--accent); }
 .more { margin-top: 10px; }
 .more summary { cursor: pointer; list-style: none; padding: 12px; text-align: center; color: var(--navy); font-weight: 700;
   border: 1px dashed var(--border); border-radius: 14px; }

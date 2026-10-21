@@ -193,3 +193,10 @@ def test_stat_new_by_age():
     out = site.add_game_stats(t, tr, {"asof": "2026.08"})
     assert out.loc["a", "stat_new"] == 100 and out.loc["c", "stat_new"] == 0
     assert 45 < out.loc["b", "stat_new"] < 55 and out.loc["d", "stat_new"] == 100
+
+
+def test_complex_size_features():
+    rows = [dict(r, apt_dong=d, floor=f) for r, d, f in
+            zip(_trades("A", {2025: 500, 2026: 600}, n=3), ["101동", "102동", "", "101동", "103동", ""], [3, 15, 7, 9, 12, 4])]
+    t = metrics.complexes(metrics.prepare(pd.DataFrame(rows), F))
+    assert t.loc["A", "n_dong"] == 3 and t.loc["A", "max_floor"] == 15 and t.loc["A", "n_areas"] == 1

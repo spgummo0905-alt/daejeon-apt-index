@@ -8,13 +8,13 @@
   const pager = document.getElementById("table-pager");
   const count = document.getElementById("table-count");
   const more = document.getElementById("table-more");
-  let gu = "", q = "", showSmall = false, limit = PAGE;
+  let gu = "", q = "", type = "apt", limit = PAGE;
 
   function apply() {
     let n = 0;
     rows.forEach(r => {
       const ok = (!gu || r.dataset.gu === gu) && (!q || r.dataset.q.toLowerCase().includes(q))
-        && (showSmall || !r.dataset.small);
+        && (!type || (type === "villa") === !!r.dataset.small);
       if (ok) n++;
       r.hidden = !ok || n > limit;
     });
@@ -37,8 +37,11 @@
       reset();
     });
   });
-  const small = document.getElementById("show-small");
-  if (small) small.addEventListener("change", () => { showSmall = small.checked; reset(); });
+  document.querySelectorAll("#table-type .chip").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll("#table-type .chip").forEach(b => b.classList.toggle("active", b === btn));
+    type = btn.dataset.type;
+    reset();
+  }));
   document.getElementById("search").addEventListener("input", e => {
     q = e.target.value.trim().toLowerCase();
     reset();

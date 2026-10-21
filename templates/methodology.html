@@ -36,7 +36,7 @@
   <thead><tr><th>항목</th><th>기준</th><th>가중치</th></tr></thead>
   <tbody>
   {% for f in factors %}
-  <tr><td>{{ f.label }}</td><td>{% if f.kind == "score" %}학원가까지 걸리는 시간이 짧을수록 좋음{% else %}{{ "가까울수록 좋음" if f.kind == "nearest" else "많을수록 좋음" }} (반경 {{ f.radius }}m){% endif %}</td><td>{{ "%.0f" | format(f.weight * 100) }}%</td></tr>
+  <tr><td>{{ f.label }}</td><td>{% if f.kind == "score" %}학원가까지 걸리는 시간이 짧을수록 좋음{% else %}{{ "가까울수록 좋음" if f.kind == "nearest" else "많을수록 좋음" }} (반경 {{ f.radius }}m){% endif %}{% if f.note %}<br><span class="muted">{{ f.note }}</span>{% endif %}</td><td>{{ "%.0f" | format(f.weight * 100) }}%</td></tr>
   {% endfor %}
   </tbody>
 </table>
