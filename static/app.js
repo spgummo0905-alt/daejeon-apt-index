@@ -79,7 +79,13 @@
     const on = !f.includes(s);
     f = on ? [s, ...f] : f.filter(x => x !== s);
     save("favs", f.slice(0, 100));
+    DJ.paintFavCount();
     return on;
+  };
+  // 메뉴의 '관심 단지' 옆 숫자
+  DJ.paintFavCount = function () {
+    const n = DJ.favs().length;
+    document.querySelectorAll("[data-fav-count]").forEach(b => { b.hidden = !n; b.textContent = n > 99 ? "99+" : n; });
   };
   DJ.recent = () => load("recent", []);
   DJ.addRecent = function (c) {
@@ -298,7 +304,94 @@
     });
     list.after(btn);
   }
+  // 단지 페이지 거래 표: 전용면적으로 거르고, 처음엔 몇 줄만 보여주다 '더 보기'
+  function tradeTable(table) {
+    const rows = Array.from(table.tBodies[0].rows), page = +table.dataset.page || 15;
+    const more = table.closest("section").querySelector("[data-trades-more]");
+    const chips = Array.from(table.closest("section").querySelectorAll(".trade-area .chip"));
+    let area = "", limit = page;
+    const apply = () => {
+      let n = 0;
+      rows.forEach(r => { const ok = !area || r.dataset.a === area; if (ok) n++; r.hidden = !ok || n > limit; });
+      if (more) { more.hidden = n <= limit; more.textContent = Math.min(page * 2, n - limit) + "건 더 보기"; }
+    };
+    chips.forEach(b => b.addEventListener("click", () => {
+      area = b.dataset.area; limit = page;
+      chips.forEach(x => x.classList.toggle("active", x === b));
+      apply();
+    }));
+    if (more) more.addEventListener("click", () => { limit += page * 2; apply(); });
+    apply();
+  }
+  // 테마 모음: 구(동)로 거르고, 테마마다 12곳씩 보여주다 '더 보기'
+  function themeLists() {
+    const lists = Array.from(document.querySelectorAll("[data-theme-list]"));
+    if (!lists.length) return;
+    const PAGE = 12;
+    let area = "";
+    const state = new Map(lists.map(l => [l, PAGE]));
+    const render = list => {
+      const sec = list.closest("section"), items = Array.from(list.children), limit = state.get(list);
+      const ok = items.filter(li => !area || li.dataset.gu === area);
+      items.forEach(li => { li.hidden = true; });
+      ok.forEach((li, i) => {
+        li.hidden = i >= limit;
+        li.querySelector(".th-rank").textContent = i + 1;
+        if (!li.hidden) li.classList.add("in");  // 거른 뒤 새로 보이는 줄도 바로 보이게
+      });
+      const more = sec.querySelector("[data-theme-more]");
+      more.hidden = ok.length <= limit;
+      more.textContent = Math.min(PAGE, ok.length - limit) + "곳 더 보기";
+      sec.querySelector(".th-empty").hidden = ok.length > 0;
+      const counts = JSON.parse(list.dataset.counts || "{}");
+      sec.querySelector("[data-th-count]").textContent =
+        area ? `${area} ${counts[area] || 0}곳` : `전체 ${list.dataset.total}곳`;
+    };
+    lists.forEach(list => {
+      list.closest("section").querySelector("[data-theme-more]").addEventListener("click", () => {
+        state.set(list, state.get(list) + PAGE); render(list);
+      });
+      render(list);
+    });
+    const ctl = document.querySelector("[data-area-filter]");
+    const set = v => { area = v || ""; lists.forEach(l => { state.set(l, PAGE); render(l); }); };
+    if (ctl && ctl.tagName === "SELECT") ctl.addEventListener("change", () => set(ctl.value));
+    else if (ctl) ctl.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+      ctl.querySelectorAll(".chip").forEach(x => x.classList.toggle("active", x === b));
+      set(b.dataset.gu);
+    }));
+  }
+  // 역세권: 지수 높은 순 ↔ 역에서 가까운 순
+  function stationSort() {
+    const btns = Array.from(document.querySelectorAll("[data-st-sort]"));
+    btns.forEach(b => b.addEventListener("click", () => {
+      const k = b.dataset.stSort;
+      btns.forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.querySelectorAll(".st-items").forEach(ol => {
+        Array.from(ol.children).sort((a, c) => +a.dataset[k] - +c.dataset[k]).forEach(li => ol.appendChild(li));
+      });
+    }));
+  }
+  // 붙어 다니는 바로가기: 지금 보고 있는 칸을 표시하고, 휴대폰에선 그 버튼이 보이게 옆으로 밀어 줌
+  function scrollSpy(nav) {
+    const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
+    const pairs = links.map(a => [a, document.getElementById(a.getAttribute("href").slice(1))]).filter(p => p[1]);
+    if (!pairs.length || !("IntersectionObserver" in window)) return;
+    const mark = a => {
+      links.forEach(x => x.classList.toggle("on", x === a));
+      if (a && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: a.offsetLeft - 16, behavior: DJ.calm ? "auto" : "smooth" });
+    };
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) mark(pairs.find(p => p[1] === e.target)[0]);
+    }), { rootMargin: "-40% 0px -55% 0px" });
+    pairs.forEach(p => io.observe(p[1]));
+  }
   document.addEventListener("DOMContentLoaded", () => {
+    DJ.paintFavCount();
+    document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
+    themeLists();
+    stationSort();
+    document.querySelectorAll("table[data-trades]").forEach(tradeTable);
     DJ.onView(document.querySelectorAll("[data-reveal]"), e => e.classList.add("in"));
     DJ.onView(document.querySelectorAll("[data-count]"), e => DJ.countUp(e));
     document.querySelectorAll("[data-rail]").forEach(rail);

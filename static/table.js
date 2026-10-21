@@ -60,7 +60,8 @@
   table.querySelectorAll("th[data-sort]").forEach((th, col) => {
     th.addEventListener("click", () => {
       const numeric = th.dataset.sort === "num";
-      const desc = !th.classList.contains("sorted-desc");
+      // 숫자는 큰 값부터, 글자(단지·위치)는 가나다순부터. 한 번 더 누르면 반대로
+      const desc = numeric ? !th.classList.contains("sorted-desc") : th.classList.contains("sorted-asc");
       table.querySelectorAll("th").forEach(h => h.classList.remove("sorted-asc", "sorted-desc"));
       th.classList.add(desc ? "sorted-desc" : "sorted-asc");
       const key = r => {

@@ -14,7 +14,7 @@
     { id: "rising", label: "상승세", desc: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
     { id: "dip", label: "고점 대비 하락", desc: "전고점보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
   ];
-  const state = Object.assign({ budget: 8, gus: [], conds: ["subway"], work: "", workDist: 8, here: null,
+  const state = Object.assign({ budget: 8, gus: [], conds: ["subway"], work: "", workDist: 8, here: null, sort: "i",
                                 af: { income: "", equity: "", rate: cfg.default_rate || 4, years: cfg.default_years || 30, debt: 0 } },
                               DJ.load("finder", {}));
   const eok = v => (v >= 10000 ? (v / 10000).toFixed(1) + "억" : Math.round(v).toLocaleString() + "만");
@@ -134,14 +134,42 @@
         .filter(c => c.p <= state.budget * 10000 && (!state.gus.length || state.gus.includes(c.gu)))
         .map(c => ({ c, met: want.filter(cd => cd.test(c, ctx)), km: t && c.la != null ? km(t.lat, t.lng, c.la, c.ln) : null }))
         .filter(x => !t || (x.km != null && x.km <= state.workDist))
-        .sort((x, y) => (y.met.length - x.met.length) || ((y.c.i || 0) - (x.c.i || 0)));
+        .sort((x, y) => (y.met.length - x.met.length) ||
+          (state.sort === "p" ? x.c.p - y.c.p : (y.c.i || 0) - (x.c.i || 0)));
       const perfect = list.filter(x => x.met.length === want.length).length;
       document.getElementById("finder-count").textContent = want.length
         ? "조건을 모두 만족하는 단지 " + perfect + "곳 · 범위 안 단지 " + list.length + "곳"
         : "범위 안 단지 " + list.length + "곳 (조건을 고르면 더 좁혀집니다)";
       const grid = document.getElementById("finder-results");
       grid.replaceChildren();
-      list.slice(0, 30).forEach(({ c, met, km: dk }) => {
+      shown = Math.min(list.length, PAGE);
+      lastList = list; lastWant = want; lastT = t;
+      draw(0, shown);
+      if (!list.length) grid.append(el("p", "muted center", "예산을 조금 올리거나 지역·거리를 넓혀 보세요."));
+      moreBtn();
+      DJ.save("finder", state);
+    }
+    // 결과 카드는 30곳씩: '더 보기'를 누르면 이어서 붙입니다
+    const PAGE = 30;
+    let shown = 0, lastList = [], lastWant = [], lastT = null;
+    const more = document.getElementById("finder-more");
+    function moreBtn() {
+      more.hidden = shown >= lastList.length;
+      more.textContent = Math.min(PAGE, lastList.length - shown) + "곳 더 보기";
+    }
+    more.addEventListener("click", () => { const from = shown; shown = Math.min(lastList.length, shown + PAGE); draw(from, shown); moreBtn(); });
+    document.querySelectorAll("[data-sort]").forEach(b => {
+      b.classList.toggle("active", b.dataset.sort === state.sort);
+      b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false");
+    });
+    document.querySelectorAll("[data-sort]").forEach(b => b.addEventListener("click", () => {
+      state.sort = b.dataset.sort;
+      document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      update();
+    }));
+    function draw(from, to) {
+      const grid = document.getElementById("finder-results"), want = lastWant, t = lastT;
+      lastList.slice(from, to).forEach(({ c, met, km: dk }) => {
         const card = DJ.card(c, d.stats);
         const tags = [];
         if (want.length) tags.push("조건 " + met.length + "/" + want.length + (met.length ? " · " + met.map(m => m.label).join(", ") : ""));
@@ -149,8 +177,6 @@
         if (tags.length) card.prepend(el("div", "match " + (want.length && met.length === want.length ? "full" : ""), tags.join(" · ")));
         grid.append(card);
       });
-      if (!list.length) grid.append(el("p", "muted center", "예산을 조금 올리거나 지역·거리를 넓혀 보세요."));
-      DJ.save("finder", state);
     }
     afford();
     update();

@@ -5,7 +5,20 @@
 <section class="page-hero">
   <p class="eyebrow">테마 모음</p>
   <h1>생활 조건으로 고르는<br>{{ region }} 아파트</h1>
-  <p class="lead">테마마다 조건에 맞는 단지를 종합 지수가 높은 순으로 12곳씩 모았습니다.</p>
+  <p class="lead">테마마다 조건에 맞는 단지를 종합 지수가 높은 순으로 모았습니다. 관심 있는 {{ unit }}만 골라 볼 수도 있어요.</p>
+  {% if area_groups %}
+  <label class="select-pill"><span class="sr-only">{{ unit }} 고르기</span>
+    <select data-area-filter>
+      <option value="">{{ region }} 전체</option>
+      {% for grp in area_groups %}<optgroup label="{{ grp.label }}">{% for it in grp["items"] %}<option value="{{ it.value }}">{{ it.label }}</option>{% endfor %}</optgroup>{% endfor %}
+    </select>
+  </label>
+  {% else %}
+  <div class="chips" data-area-filter role="group" aria-label="{{ unit }} 고르기">
+    <button type="button" class="chip active" data-gu="">전체</button>
+    {% for g in gus %}<button type="button" class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
+  </div>
+  {% endif %}
 </section>
 <nav class="theme-nav" aria-label="테마">
   {% for th in themes %}<a class="theme-pill" href="#t-{{ th.key }}"><strong>{{ th.title }}</strong><span>{{ th.count }}</span></a>{% endfor %}
@@ -13,11 +26,11 @@
 {% for th in themes %}
 <section class="panel theme" id="t-{{ th.key }}">
   <div class="panel-head row-between">
-    <div><h2>{{ th.title }}</h2><p class="muted">{{ th.desc }} · 전체 {{ th.count }}곳</p></div>
+    <div><h2>{{ th.title }}</h2><p class="muted">{{ th.desc }} · <span data-th-count>전체 {{ th.count }}곳</span></p></div>
   </div>
-  <ol class="theme-grid">
+  <ol class="theme-grid" data-theme-list data-total="{{ th.count }}" data-counts="{{ th.by_gu | tojson | forceescape }}">
     {% for it in th["items"] %}
-    <li data-reveal style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
+    <li data-reveal data-gu="{{ it.gu }}" style="--i: {{ loop.index0 % 12 }}"{% if loop.index > 12 %} hidden{% endif %}><a href="apt/{{ it.slug }}.html">
       <span class="th-rank">{{ loop.index }}</span>
       <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
       <span class="th-name"><strong>{{ it.name }}</strong><span class="muted">{{ it | place }}</span></span>
@@ -26,6 +39,8 @@
     </a></li>
     {% endfor %}
   </ol>
+  <p class="th-empty muted" hidden>이 {{ unit }}에는 조건에 맞는 단지가 없어요.</p>
+  <button type="button" class="more-btn" data-theme-more hidden></button>
 </section>
 {% endfor %}
 {% endblock %}

@@ -273,7 +273,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
-                  grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
+                  grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
+                  exclude_direct=bool(cfg.filters.get("exclude_direct", False)))
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
     leader_by_gu = {d["gu"]: d for d in month["leaders"]}
@@ -319,11 +320,16 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         main = [] if h is None else [(int(y), float(p) * ref) for y, p in zip(h["year"], h["ppm2"])]
         tr = by_cid.get(cid)
         tr_list = [] if tr is None else tr.to_dict("records")
-        _mark_highs(tr_list)
+        _mark_highs(tr_list, skip_direct=cfg.filters.get("exclude_direct", False))
+        # 카드에 내세우는 최근 거래는 지수 계산과 같은 기준 (해제·제외한 직거래는 목록에만)
+        lead = next((t for t in tr_list if not t.get("cancelled") and not (t.get("direct") and cfg.filters.get("exclude_direct"))),
+                    tr_list[0] if tr_list else None)
         cutoff = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") - pd.DateOffset(years=10)
         has_loc_c = not _nan(c.get("location_score"))
-        comps = [("입지점수", c.get("location_score"), f"{fmt_score(c.get('location_score'))}점")]
-        comps += [(f"{n}년 수익률 백분위", c.get(f"cagr_{n}y_pct"), fmt_score(c.get(f"cagr_{n}y_pct"))) for n in years]
+        # 카드의 항목 이름(입지·성장성·상승세)과 같게
+        comps = [("입지", c.get("location_score"), fmt_score(c.get("location_score")))]
+        comps += [(f"{'성장성' if n == years[0] else '상승세'} · {n}년 수익률", c.get(f"cagr_{n}y_pct"),
+                   fmt_score(c.get(f"cagr_{n}y_pct"))) for n in years]
         c_charts = {
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
                                             marker=50, marker_label=f"{cfg.region_name} 중간(50)",
@@ -341,8 +347,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                      "raw": fmt_raw(c.get(f["key"] + "_raw"), f, c) if f["key"] + "_raw" in c else None}
                     for f in factors]
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
+        shown = tr_list[:TRADE_ROWS]
         html = tpl.render(
-            c=c, charts=c_charts, recent=tr_list[:15], root="../", page_path=f"apt/{c['slug']}.html",
+            c=c, charts=c_charts, recent=shown, area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_rows=loc_rows, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
@@ -355,13 +362,44 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     return len(rows)
 
 
-def _mark_highs(trades: list[dict], band: float = 3) -> None:
-    """거래마다 'high': 같은 면적대(±band㎡) 이전 매매보다 비싸면 신고가 (해제 거래·분양권 제외).
+TRADE_ROWS = 80  # 단지 페이지 거래 표에 싣는 최근 거래 수 (처음엔 15건, 나머지는 '더 보기')
+
+
+def _area_types(trades: list[dict]) -> list[dict]:
+    """거래 표 면적 고르기: 전용면적을 1㎡ 단위로 내림해 붙어 있는 값(59·60)은 한 묶음으로.
+    거래마다 t['akey'] 에 묶음 이름('84')을 달고, [{key, n}] 을 작은 면적부터 돌려줍니다."""
+    ints = sorted({int(t["area"]) for t in trades if not _nan(t.get("area"))})
+    group, out = {}, []
+    for a in ints:
+        if out and a - out[-1][-1] <= 1:
+            out[-1].append(a)
+        else:
+            out.append([a])
+    counts: dict[int, int] = {}
+    for t in trades:
+        if not _nan(t.get("area")):
+            counts[int(t["area"])] = counts.get(int(t["area"]), 0) + 1
+    for g in out:
+        key = str(max(g, key=lambda a: counts.get(a, 0)))
+        for a in g:
+            group[a] = key
+    for t in trades:
+        t["akey"] = group.get(int(t["area"])) if not _nan(t.get("area")) else ""
+    n = {}
+    for t in trades:
+        if t["akey"]:
+            n[t["akey"]] = n.get(t["akey"], 0) + 1
+    return [{"key": k, "n": n[k]} for k in sorted(n, key=int)]
+
+
+def _mark_highs(trades: list[dict], band: float = 3, skip_direct: bool = False) -> None:
+    """거래마다 'high': 같은 면적대(±band㎡) 이전 매매보다 비싸면 신고가 (해제 거래·분양권, skip_direct면 직거래도 제외).
     면적을 1㎡ 단위로 묶어 최고가를 들고 다녀 거래 수에 비례하는 시간에 끝냅니다."""
     best: dict[int, float] = {}
     for t in sorted(trades, key=lambda t: t["date"]):
         t["high"] = False
-        if t.get("cancelled") or t.get("kind", "매매") != "매매" or _nan(t.get("price")) or _nan(t.get("area")):
+        if (t.get("cancelled") or (skip_direct and t.get("direct")) or t.get("kind", "매매") != "매매"
+                or _nan(t.get("price")) or _nan(t.get("area"))):
             continue
         a = int(round(t["area"]))
         prev = [best[k] for k in range(a - int(band), a + int(band) + 1) if k in best]
@@ -385,7 +423,7 @@ def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]
         return ("+" if v > 0 else "−" if v < 0 else "±") + fmt(abs(v))
     specs = [
         ("price", "집값", "84㎡ 환산가 중간값", main_t["price_ref"].median(), eok,
-         lambda d: signed(d, lambda x: f"{x / 10000:.1f}억" if x >= 1000 else f"{x:,.0f}만")),
+         lambda d: signed(d, lambda x: f"{x / 10000:.1f}억" if x >= 10000 else f"{round(x, -1):,.0f}만")),
         ("index", "종합 지수", "종합 지수 중간값", main_t["index"].median(), lambda v: f"{v:.0f}점",
          lambda d: signed(d, lambda x: f"{x:.0f}점")),
         ("c10", f"{y}년 수익률", f"{y}년 연평균 수익률 중간값",
@@ -507,6 +545,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
                 "score": None if _nan(h["score"]) else float(h["score"]),
                 "chg": None if _nan(h["chg"]) else round(float(h["chg"]) * 100, 1),
                 "last3": int(h["last3"]), "usual": round(float(h["prev_q"]), 1),
+                "vol": (f"{h['last3'] / h['prev_q']:.1f}배" if h["prev_q"] >= 0.5 else f"{int(h['last3'])}건"),
                 "price": None if _nan(price.get(k)) else eok(price.get(k)),
                 "best": by_id[b]["name"] if b else None, "best_slug": by_id[b]["slug"] if b else None,
                 "best_grade": by_id[b]["grade"] if b else None,
@@ -544,7 +583,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
 
 
 def _themes(main_t, by_id, cfg, meta) -> list[dict]:
-    """테마 모음: 생활 조건으로 묶은 단지 목록 (각 12곳, 종합 지수 높은 순)."""
+    """테마 모음: 생활 조건으로 묶은 단지 목록 (종합 지수 높은 순, 테마마다 THEME_ROWS 곳까지 싣고 화면엔 12곳씩)."""
     t = main_t
     asof_year = int(meta["asof"][:4])
     tr = _transit(cfg)
@@ -569,7 +608,7 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
         if sel.empty:
             continue
         items = []
-        for cid in sel.index[:12]:
+        for cid in sel.index[:THEME_ROWS]:
             r = by_id[cid]
             try:
                 f = fact(cid)
@@ -577,10 +616,12 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
                 f = ""
             items.append({"slug": r["slug"], "name": r["name"], "grade": r["grade"], "gu": r["gu"], "dong": r["dong"],
                           "index": r["index"], "fact": f})
-        out.append({"key": key, "title": title, "desc": desc, "count": int(len(sel)), "items": items})
+        out.append({"key": key, "title": title, "desc": desc, "count": int(len(sel)), "items": items,
+                    "by_gu": {str(k): int(v) for k, v in sel["gu"].value_counts().items()}})
     return out
 
 
+THEME_ROWS = 400  # 구별로 걸러도 끝까지 볼 수 있게 넉넉히 (화면엔 12곳씩, 나머지는 숨겨 둠)
 APP_PAGES = ["compare", "finder", "my"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 

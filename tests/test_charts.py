@@ -27,7 +27,8 @@ def test_charts_render_and_handle_empty_input():
     out = charts.trade_dots(trades)
     assert "중형" in out and "소형" in out and "대형" not in out
     hist = charts.histogram([10, 55, 57, 90], highlight=56)
-    assert "이 단지" in hist and hist.count("bar dim") == 9
+    # 5점 간격 20칸, 막대 색은 등급 (55점 칸은 B), 이 단지 칸 말고는 흐리게
+    assert "이 단지" in hist and hist.count(" dim") == 19 and 'class="bar g-B"' in hist and "bar g-S dim" in hist
 
 
 def test_responsive_renders_both_sizes():

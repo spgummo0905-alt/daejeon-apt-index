@@ -5,7 +5,13 @@
 <section class="page-hero">
   <p class="eyebrow">{{ transit.tab }} 단지</p>
   <h1>{{ transit.short }}마다 가까운 단지를<br>한눈에</h1>
-  <p class="lead">가장 가까운 {{ transit.stop }}까지 {{ radius }}m 안인 단지를 역별로 묶고, 종합 지수가 높은 순으로 보여드립니다. 역 이름을 누르면 펼쳐집니다.</p>
+  <p class="lead">가장 가까운 {{ transit.stop }}까지 {{ radius }}m 안인 단지를 역별로 묶었습니다. 역 이름을 누르면 펼치거나 접을 수 있어요.</p>
+  {% if stations %}
+  <div class="seg" role="group" aria-label="정렬">
+    <button type="button" class="seg-btn active" data-st-sort="i" aria-pressed="true">종합 지수 높은 순</button>
+    <button type="button" class="seg-btn" data-st-sort="d" aria-pressed="false">{{ transit.short }}에서 가까운 순</button>
+  </div>
+  {% endif %}
 </section>
 {% if stations %}
 <nav class="jump station-jump">
@@ -20,10 +26,10 @@
     </summary>
     <ol class="st-items">
     {% for r in st["items"] %}
-      <li><a href="apt/{{ r.slug }}.html">
+      <li data-d="{{ r.subway_raw }}" data-i="{{ loop.index0 }}"><a href="apt/{{ r.slug }}.html">
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
         <span class="top-name">{{ r.name }}<span class="muted"> {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
-        <span class="top-val">역 {{ "%.0f" | format(r.subway_raw) }}m · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
+        <span class="top-val"><span class="st-walk" title="직선거리 {{ '%.0f' | format(r.subway_raw) }}m">{{ "%.0f" | format(r.subway_raw) }}m · 도보 약 {{ [1, (r.subway_raw / 67) | round(0, 'ceil') | int] | max }}분</span> · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
       </a></li>
     {% endfor %}
     </ol>

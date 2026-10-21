@@ -143,3 +143,19 @@ def test_month_pages_built(tmp_path):
     assert 'id="t-new"' in themes and "th-score" in themes
     apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
     assert "매매" in apt
+
+
+def test_pages_have_filters_and_index_next_to_name(tmp_path):
+    import re
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    heads = re.findall(r"<th data-sort[^>]*>([^<]+)</th>", index[index.index('id="complex-table"'):])
+    assert heads[:3] == ["순위", "단지", "지수"]  # 휴대폰에서도 지수가 이름 바로 옆에 보이게
+    themes = (out / "themes.html").read_text(encoding="utf-8")
+    assert "data-area-filter" in themes and "data-theme-list" in themes and "data-theme-more" in themes
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert 'data-st-sort="d"' in stations and "도보 약" in stations
+    apt = next(p for p in (out / "apt").glob("*.html") if "data-trades" in p.read_text(encoding="utf-8"))
+    html = apt.read_text(encoding="utf-8")
+    assert "종합 지수에 들어가는 항목" in html and "참고 지표" in html
