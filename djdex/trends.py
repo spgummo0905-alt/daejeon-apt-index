@@ -67,9 +67,12 @@ def dong_heat(sale: pd.DataFrame, table: pd.DataFrame, asof: pd.Timestamp, min_y
     active = out["year"] >= min_year_trades
     a = out[active]
     out["score"], out["band"] = np.nan, np.nan
+    out["p_chg"], out["p_vol"] = np.nan, np.nan
     if len(a) >= 5:
-        score = (0.6 * percentile(a["chg"]).fillna(50) + 0.4 * percentile(a["vol"]).fillna(50))
+        p_chg, p_vol = percentile(a["chg"]).fillna(50), percentile(a["vol"]).fillna(50)
+        score = 0.6 * p_chg + 0.4 * p_vol
         out.loc[a.index, "score"] = score
+        out.loc[a.index, "p_chg"], out.loc[a.index, "p_vol"] = p_chg, p_vol  # 온도를 이루는 두 값 (카드에서 근거로)
         q = score.rank(pct=True, method="first")
         out.loc[a.index, "band"] = np.ceil(q * 5).clip(1, 5)
     out["band"] = out["band"].fillna(0).astype(int)

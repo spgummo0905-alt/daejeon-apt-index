@@ -122,9 +122,12 @@
            style="--ring: {{ t.ring }}" data-key="{{ t.gu }}|{{ t.dong }}" data-band="{{ t.band }}" data-gu="{{ t.gu }}"
            data-dong="{{ t.dong }}" data-name="{{ t.band_name }}" data-chg="{{ t.chg if t.chg is not none else '' }}"
            data-last3="{{ t.last3 }}" data-usual="{{ t.usual }}" data-n="{{ t.n }}" data-price="{{ t.price or '' }}"
-           data-best="{{ t.best or '' }}" data-best-slug="{{ t.best_slug or '' }}" data-best-grade="{{ t.best_grade or '' }}"/>
+           data-pc="{{ t.pc if t.pc is not none else '' }}" data-pv="{{ t.pv if t.pv is not none else '' }}"
+           data-rank="{{ t.rank or '' }}" data-gu-rank="{{ t.gu_rank or '' }}" data-gu-of="{{ t.gu_of or '' }}"
+           data-highs="{{ t.highs }}" data-top="{{ t.top | tojson | forceescape }}"/>
         {% endfor %}
         </g>
+        <g class="hm-hover" aria-hidden="true"><path class="dm-hl" d=""/></g>
         <g class="hm-gu" aria-hidden="true">{% for d in board.districts %}<text x="{{ d.x }}" y="{{ d.y }}">{{ d.name }}</text>{% endfor %}</g>
         <g class="hm-names" aria-hidden="true">
         {% for t in board.tiles %}{% if t.show_label or t.pin %}<text class="dm-name b{{ t.band }}" data-for="{{ t.gu }}|{{ t.dong }}" x="{{ t.x }}" y="{{ t.y + (17 if t.pin else 4) }}">{{ t.label }}</text>{% endif %}{% endfor %}
@@ -135,7 +138,7 @@
       </svg>
       <p class="heat-note muted">동 경계는 단지 위치로 그린 근사입니다. 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">온도 매기는 법</a></p>
     </div>
-    <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}">
+    <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}" data-of="{{ board.n_ranked }}">
       <p class="muted">지도에서 동네를 누르면 요약이 나옵니다.</p>
     </aside>
   </div>
