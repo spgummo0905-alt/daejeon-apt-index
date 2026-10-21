@@ -1,20 +1,35 @@
 {% extends "base.html" %}
 {% block body %}
-<section class="hero">
+<section class="hero hero-game">
   <p class="eyebrow">{{ meta.asof }} 실거래 기준 · 매월 갱신</p>
-  <h1>{{ region }} 아파트,<br>숫자로 임장하기</h1>
-  <p class="lead">실거래가, 입지, 수익률을 한 점수로 모았습니다. 지도에서 동네를 고르고, 단지를 눌러 자세히 보세요.</p>
-  <div class="stats">
-    <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
-    <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span></div>
-    <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
-    <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
+  <h1>우리 단지는<br><span class="hl">몇 점</span>일까?</h1>
+  <p class="lead">대전 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가, 입지, 수익률로 매긴 점수판입니다. 단지 이름을 검색해 보세요.</p>
+  <div class="hero-search">
+    <input type="search" data-search-go placeholder="🔍 단지명 또는 동 이름 (예: 둔산동)" aria-label="단지 검색">
+  </div>
+  <div class="quick">
+    <a class="quick-tile" href="#map"><span class="qi">🗺</span><strong>지도 탐험</strong><span>동네별 점수 한눈에</span></a>
+    <a class="quick-tile" href="compare.html"><span class="qi">⚔</span><strong>단지 대결</strong><span>두 단지 맞붙이기</span></a>
+    <a class="quick-tile" href="quiz.html"><span class="qi">💰</span><strong>가격 맞히기</strong><span>오늘의 5문제</span></a>
+    <a class="quick-tile" href="finder.html"><span class="qi">🎯</span><strong>맞춤 찾기</strong><span>예산·조건으로 고르기</span></a>
   </div>
 </section>
 
+<section class="stats">
+  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
+  <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
+  <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
+  <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
+</section>
+
+<section class="panel my-strip" id="my-strip" hidden>
+  <div class="panel-head row-between"><h2>★ 내가 찜한 단지</h2><a href="my.html">전체 보기 →</a></div>
+  <div class="strip" id="my-strip-list"></div>
+</section>
+
 <nav class="jump">
-  {% if charts.map %}<a href="#map">지도</a>{% endif %}
-  <a href="#gu">구별 비교</a>
+  {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
+  <a href="#world">지역 카드</a>
   {% if charts.scatter %}<a href="#value">가성비</a>{% endif %}
   <a href="#top">TOP 5</a>
   <a href="#list">전체 목록</a>
@@ -34,6 +49,27 @@
   {{ grade_legend | safe }}
 </section>
 {% endif %}
+
+<section id="world" class="panel">
+  <div class="panel-head">
+    <h2>🗺 지역 카드</h2>
+    <p class="muted">구마다 단지들의 가운데 값입니다. 카드를 눌러 그 구의 단지만 목록에서 보세요.</p>
+  </div>
+  <div class="world-grid">
+  {% for g in gu_stats %}
+    <a class="world-card" href="#list" data-gu-jump="{{ g.gu }}">
+      <div class="world-head"><strong>{{ g.gu }}</strong><span class="muted">{{ g.n }}개 단지</span></div>
+      <div class="world-score"><span class="num">{{ g.index | score }}</span><span class="muted">지수 중위</span></div>
+      <div class="gstats">
+        <div class="gstat"><span class="gstat-name">입지</span><span class="gbar"><span style="width: {{ 0 if g.location is nan else g.location | round(1) }}%"></span></span><span class="gstat-val">{{ g.location | score }}</span></div>
+        <div class="gstat"><span class="gstat-name">성장</span><span class="gbar"><span style="width: {{ 0 if g.growth is nan else g.growth | round(1) }}%"></span></span><span class="gstat-val">{{ g.growth | score }}</span></div>
+      </div>
+      <div class="world-foot"><span>84㎡ {{ g.price | eok }}</span>{% if g.highs %}<span class="badge-high">신고가 {{ g.highs }}</span>{% endif %}</div>
+      {% if g.best_name %}<div class="world-best muted">대표 단지 · {{ g.best_name }}</div>{% endif %}
+    </a>
+  {% endfor %}
+  </div>
+</section>
 
 <section id="gu" class="panel">
   <div class="panel-head">
@@ -135,4 +171,5 @@
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>
 <script src="static/kmap.js"></script>
 {% endif %}
+<script src="static/home.js"></script>
 {% endblock %}

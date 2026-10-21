@@ -4,7 +4,7 @@
 {% block description %}{{ region }} {{ c.gu }} {{ c.dong }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 연평균 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} 상위 {{ c.location_top | round(0) | int }}%{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
 {% block body %}
 <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c.gu }} {{ c.dong }}</p>
-<section class="apt-head">
+<section class="apt-head" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-grade="{{ c.grade }}">
   <div class="apt-title">
     <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
     <div>
@@ -17,6 +17,29 @@
     <span class="muted">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}개 중 {{ c.rank }}위{% else %} · 순위 제외(소규모){% endif %}</span>
   </div>
 </section>
+
+<div class="apt-actions">
+  <button class="btn" data-fav type="button">☆ 찜하기</button>
+  <a class="btn" href="{{ root }}compare.html?a={{ c.slug | urlencode }}">⚔ 대결하기</a>
+  <button class="btn" data-share="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}" type="button">↗ 공유</button>
+</div>
+
+{% if not c.small %}
+<section class="gcard-solo gcard g-{{ c.grade }}">
+  <div class="gcard-head">
+    <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
+    <div class="gcard-title"><strong>능력치 카드</strong><span class="muted">{{ region }} 단지 중 백분위 (100이 최고)</span></div>
+    <span class="gcard-score">{{ c.index | score }}</span>
+  </div>
+  <div class="gstats">
+  {% for key, label, desc in stats %}{% set v = c[key] %}
+    <div class="gstat" title="{{ desc }}"><span class="gstat-name">{{ label }}</span>
+      <span class="gbar"><span style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></span></span>
+      <span class="gstat-val">{{ v | score }}</span></div>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 {% if summary %}
 <section class="summary">

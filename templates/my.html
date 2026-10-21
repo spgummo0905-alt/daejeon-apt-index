@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}내 단지 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}찜한 단지, 최근 본 단지, 업적 배지를 모아 봅니다.{% endblock %}
+{% block body %}
+<section class="page-hero">
+  <p class="eyebrow">★ 내 단지</p>
+  <h1>나의 임장 기록</h1>
+  <p class="lead">찜과 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>도감 진행도</h2><p class="muted">둘러본 단지의 등급과 지역을 모아 보세요.</p></div>
+  <div class="collection" id="collection"></div>
+</section>
+<section class="panel">
+  <div class="panel-head row-between"><h2>찜한 단지</h2><a class="btn" id="fav-battle" hidden>⚔ 찜한 단지끼리 대결</a></div>
+  <div class="card-grid" id="favs"></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>업적</h2></div>
+  <div class="ach-grid" id="achievements"></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>최근 본 단지</h2></div>
+  <div class="chips" id="recent"></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="static/my.js"></script>{% endblock %}
