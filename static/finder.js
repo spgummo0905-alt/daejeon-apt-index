@@ -9,6 +9,7 @@
     { id: "school", label: "초품아", desc: "초등학교 400m 안", test: c => c.f.elementary != null && c.f.elementary <= 400 },
     { id: "academy", label: "학원가", desc: "주요 학원가 20분 안 (도보·지하철)", test: (c, ctx) => ctx.hasHub
         ? c.hm != null && c.hm <= 20 : acadOf(c) != null && acadOf(c) >= ctx.academyQ },
+    { id: "edu", label: "학군", desc: "학군 점수(중학교 전입·학원가·주변 수학 학원) 상위 30%", test: (c, ctx) => c.ed != null && c.ed >= ctx.eduQ },
     { id: "mart", label: "대형마트", desc: "대형마트 1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
     { id: "new", label: "신축 10년 이내", desc: "준공 10년 이내", test: c => c.y && c.y >= nowYear - 10 },
     { id: "rising", label: "상승세", desc: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
@@ -30,7 +31,9 @@
     const priced = d.complexes.filter(c => c.p);
     const maxB = Math.ceil(Math.max(...priced.map(c => c.p)) / 10000);
     const acad = d.complexes.map(acadOf).filter(v => v != null).sort((x, y) => x - y);
+    const eds = d.complexes.map(c => c.ed).filter(v => v != null).sort((x, y) => x - y);
     const ctx = { academyQ: acad.length ? acad[Math.floor(acad.length * 0.7)] : Infinity,
+                  eduQ: eds.length ? eds[Math.floor(eds.length * 0.7)] : Infinity,
                   hasHub: d.complexes.some(c => c.hm != null) };
     const range = document.getElementById("budget");
     range.max = Math.max(2, maxB);

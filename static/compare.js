@@ -20,8 +20,10 @@
     ["5년 연평균", c => c.c5, c => c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "%", "high"],
     ["전고점 대비", c => c.dd, c => c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%" + (c.py ? " (" + c.py + ")" : ""), null],
     ["지하철역", c => c.f.subway, c => c.f.subway == null ? "-" : (c.stn ? c.stn + " " : "") + c.f.subway + "m", "low"],
-    ["학군 (중학교 순전입)", c => c.f.school_mid, c => c.f.school_mid == null ? "-" : (c.f.school_mid > 0 ? "+" : "") + c.f.school_mid + "%", "high"],
-    ["주요 학원가", c => c.hm, c => c.hm == null ? "-" : c.hn + " " + c.hm + "분", "low"],
+    ["학군 점수", c => c.ed, c => c.ed == null ? "-" : c.ed + "점", "high"],
+    ["· 중학교 순전입", c => c.f.school_mid, c => c.f.school_mid == null ? "-" : (c.f.school_mid > 0 ? "+" : "") + c.f.school_mid + "%", "high"],
+    ["· 주요 학원가", c => c.hm, c => c.hm == null ? "-" : c.hn + " " + c.hm + "분", "low"],
+    ["· 주변 수학 학원", c => c.f.academy_math, c => c.f.academy_math == null ? "-" : c.f.academy_math + "곳", "high"],
     ["초등학교", c => c.f.elementary, c => c.f.elementary == null ? "-" : c.f.elementary + "m", "low"],
     ["준공", c => c.y, c => c.y ? c.y + "년" : "-", null],
   ];
@@ -84,16 +86,19 @@
       th.append(el("span", "grade g-" + c.g, c.g), document.createTextNode(" "), a); hr.append(th); });
     thead.append(hr); table.append(thead);
     const tb = el("tbody");
+    // 항목별 1위 세기: 가격·종합 지수, 좋고 나쁨이 없는 줄, 학군 세부(·로 시작)는 빼고 셉니다
+    const counted = (name, better) => better && name !== "84㎡ 환산가" && name !== "종합 지수" && !name.startsWith("· ");
+    const nCounted = ROWS.filter(([n, , , b]) => counted(n, b)).length;
     ROWS.forEach(([name, get, show, better]) => {
       const tr = el("tr");
-      tr.append(el("th", "", name));
+      tr.append(el("th", name.startsWith("· ") ? "sub" : "", name.replace(/^· /, "")));
       const vals = cs.map(get);
       const valid = vals.filter(v => v != null);
       const best = better && valid.length > 1 ? (better === "high" ? Math.max(...valid) : Math.min(...valid)) : null;
       const unique = best != null && vals.filter(v => v === best).length === 1;
       cs.forEach((c, k) => {
         const td = el("td", "", String(show(c)));
-        if (unique && vals[k] === best) { td.classList.add("best"); if (name !== "84㎡ 환산가" && name !== "종합 지수") wins[k]++; }
+        if (unique && vals[k] === best) { td.classList.add("best"); if (counted(name, better)) wins[k]++; }
         tr.append(td);
       });
       tb.append(tr);
@@ -102,7 +107,7 @@
     const top = wins.indexOf(Math.max(...wins));
     const verdict = el("p", "verdict", cs.length === 2
       ? (wins[0] === wins[1] ? "두 단지가 항목별로 비슷합니다"
-         : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + (ROWS.length - 2) + "개 중 " + wins[top] + "개에서 앞섭니다")
+         : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + nCounted + "개 중 " + wins[top] + "개에서 앞섭니다")
       : "항목별로 가장 좋은 곳: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
     const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
     const cards = el("div", "card-grid");

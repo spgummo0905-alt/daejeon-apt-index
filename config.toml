@@ -93,13 +93,21 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 # nearest·count 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
 # keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위, 학원가 지하철 시간에 사용).
 factors = [
-  { key = "subway",     label = "지하철역까지 거리",   category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
-  { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.25 },
-  { key = "school_mid", label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
-  { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
-  { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
-  { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
-  { key = "hospital",   label = "반경 1km 병원 수",    category = "HP8", kind = "count",   radius = 1000, weight = 0.10 },
+  { key = "subway",     label = "지하철역까지 거리",   short = "지하철역", category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
+  { key = "hub",        label = "주요 학원가 접근성", short = "학원가", kind = "score", weight = 0.25 },
+  { key = "school_mid", label = "주변 중학교 순전입률", short = "중학교 전입", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "elementary", label = "초등학교까지 거리",   short = "초등학교", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
+  { key = "academy_math", label = "반경 1km 수학 학원 수", short = "수학 학원", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
+  { key = "mart",       label = "대형마트까지 거리",   short = "대형마트", category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
+  { key = "hospital",   label = "반경 1km 병원 수",    short = "병원", category = "HP8", kind = "count",   radius = 1000, weight = 0.10 },
+]
+
+# 화면에서 입지 항목을 묶어 보여주는 단위. 점수는 위 weight 그대로라 묶어도 입지점수는 같습니다.
+# 묶음 점수는 그 묶음 항목들의 가중평균(0~100)입니다. 학군 = 학교(중학교 순전입) + 학원가 + 주변 수학 학원.
+groups = [
+  { key = "transit", label = "교통", factors = ["subway"] },
+  { key = "edu",     label = "학군", factors = ["school_mid", "hub", "academy_math"] },
+  { key = "life",    label = "생활", factors = ["elementary", "mart", "hospital"] },
 ]
 
 # 점수에는 넣지 않고 함께 조사만 하는 항목. query 가 있으면 카카오 키워드 검색으로 그 단어가 들어간 곳만 셉니다.

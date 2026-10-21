@@ -129,16 +129,24 @@
 <section class="panel">
   <div class="panel-head">
     <h2>입지는 어떤가</h2>
-    <p class="muted">항목마다 {{ region }} 단지 중 백분위입니다(학원가는 걸리는 시간 기준 점수). 바깥쪽으로 넓을수록 좋습니다.</p>
+    <p class="muted">{% for g in loc_sets %}{{ g.label }}{{ "·" if not loop.last }}{% endfor %}으로 묶어 봤습니다. 묶음 점수는 그 안 항목들의 평균(0~100)이고, 항목 옆은 {{ region }} 단지 중 순위입니다(학원가는 걸리는 시간 기준 점수). 그래프는 바깥쪽으로 넓을수록 좋습니다.</p>
   </div>
+  {% if loc_sets | length > 1 %}
+  <div class="loc-sum">
+    {% for g in loc_sets %}<div class="ls ls-{{ g.key }}"><span>{{ g.label }}</span><strong>{% if g.score is nan %}-{% else %}{{ g.score | round(0) | int }}<small>점</small>{% endif %}</strong><em>{% if g.top is not nan %}{{ region }} {{ g.top | share }}{% endif %}</em></div>{% endfor %}
+  </div>
+  {% endif %}
   {% if charts.radar %}
   <div class="two-col">
     <div>{{ charts.radar | safe }}</div>
     <ul class="loc-list">
-    {% for f in loc_rows %}
+    {% for g in loc_sets %}
+      {% if loc_sets | length > 1 %}<li class="loc-grp"><span>{{ g.label }}</span><span>{% if g.score is not nan %}{{ g.score | round(0) | int }}점{% endif %}</span></li>{% endif %}
+      {% for f in g.rows %}
       <li><span class="loc-label">{{ f.label }}</span>
         <span class="loc-raw">{{ f.raw or "-" }}</span>
         <span class="loc-pct">{% if f.pct is nan %}-{% elif f.score %}{{ f.pct | round(0) | int }}점{% else %}{{ (100 - f.pct) | share }}{% endif %}</span></li>
+      {% endfor %}
     {% endfor %}
     </ul>
   </div>
