@@ -154,7 +154,13 @@ def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
     df["students"] = pd.Series({c: v[1] / v[2] for c, v in net.items()})
     df["years"] = pd.Series({c: v[2] for c, v in net.items()})
     df = df.dropna(subset=["net_in"])
-    return df[df["students"] >= cfg.get("min_students", 300)]
+    # 새로 문을 연 학교는 입주와 함께 학생이 몰려 순전입이 수십 %로 튀므로(세종 산울중 +57%)
+    # 최근 n년 자료가 모두 있는 학교만 쓰고, 남은 값도 ±cap% 안으로 자릅니다.
+    full = df["years"] >= min(cfg.get("years", 3), len(moves) or 1)
+    cap = cfg.get("cap", 10)
+    df = df[full & (df["students"] >= cfg.get("min_students", 300))].copy()
+    df["net_in"] = df["net_in"].clip(-cap, cap)
+    return df
 
 
 def _meters(a, b) -> float:
