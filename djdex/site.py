@@ -181,7 +181,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
          "value": lambda r, k=f"cagr_{years[0]}y": fmt_pct(r[k])},
     ]
     if highs:
-        tops.insert(0, {"title": "최근 신고가 🔥", "items": highs,
+        tops.insert(0, {"title": "최근 신고가", "items": highs,
                         "value": lambda r: f"{eok(r['last_price'])} · {r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}"})
     if value_picks:
         tops.append({"title": "가성비 TOP 5", "items": value_picks,
@@ -269,20 +269,20 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     return len(rows)
 
 
-APP_PAGES = ["compare", "quiz", "finder", "my"]
+APP_PAGES = ["compare", "finder", "my"]
 
-# 게임 카드의 다섯 능력치: (열 이름, 표시 이름, 설명)
+# 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
     ("location_score", "입지", "역·학교·학원·마트·병원 접근성"),
-    ("stat_growth", "성장", "10년 수익률 백분위 (없으면 5년)"),
-    ("stat_momentum", "기세", "최근 5년 수익률 백분위"),
+    ("stat_growth", "성장성", "10년 수익률 백분위 (없으면 5년)"),
+    ("stat_momentum", "상승세", "최근 5년 수익률 백분위"),
     ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
-    ("stat_activity", "인기", "최근 3년 거래가 얼마나 활발한지"),
+    ("stat_activity", "거래량", "최근 3년 거래가 얼마나 활발한지"),
 ]
 
 
 def add_game_stats(table: pd.DataFrame, trades: pd.DataFrame, meta: dict) -> pd.DataFrame:
-    """게임 카드용 0~100 능력치. 모두 소규모를 뺀 단지 분포 기준 백분위입니다."""
+    """단지 카드용 0~100 항목 점수. 모두 소규모를 뺀 단지 분포 기준 백분위입니다."""
     from .location import percentile
 
     t = table.copy()

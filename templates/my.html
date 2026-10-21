@@ -1,23 +1,19 @@
 {% extends "base.html" %}
-{% block title %}내 단지 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}찜한 단지, 최근 본 단지, 업적 배지를 모아 봅니다.{% endblock %}
+{% block title %}관심 단지 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}저장한 관심 단지와 최근 본 단지를 모아 봅니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
-  <p class="eyebrow">★ 내 단지</p>
-  <h1>나의 임장 기록</h1>
-  <p class="lead">찜과 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+  <p class="eyebrow">관심 단지</p>
+  <h1>저장한 단지와<br>최근 본 단지</h1>
+  <p class="lead">관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.</p>
 </section>
 <section class="panel">
-  <div class="panel-head"><h2>도감 진행도</h2><p class="muted">둘러본 단지의 등급과 지역을 모아 보세요.</p></div>
-  <div class="collection" id="collection"></div>
-</section>
-<section class="panel">
-  <div class="panel-head row-between"><h2>찜한 단지</h2><a class="btn" id="fav-battle" hidden>⚔ 찜한 단지끼리 대결</a></div>
+  <div class="panel-head row-between"><h2>관심 단지</h2><a class="btn" id="fav-battle" hidden><svg class="ic"><use href="#i-compare"/></svg><span>관심 단지끼리 비교</span></a></div>
   <div class="card-grid" id="favs"></div>
 </section>
 <section class="panel">
-  <div class="panel-head"><h2>업적</h2></div>
-  <div class="ach-grid" id="achievements"></div>
+  <div class="panel-head"><h2>지금까지 둘러본 단지</h2><p class="muted">둘러본 단지의 등급과 지역입니다.</p></div>
+  <div class="collection" id="collection"></div>
 </section>
 <section class="panel">
   <div class="panel-head"><h2>최근 본 단지</h2></div>

@@ -43,7 +43,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og.png").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 4  # 대결, 게임, 맞춤 찾기, 내 단지 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 3  # 단지 비교, 조건으로 찾기, 관심 단지 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -61,9 +61,10 @@ def test_complexes_json_and_small_rows(tmp_path):
     n_small = index.count('data-small="1"')
     assert n_small > 0 and len(pts) == 61 - n_small
     assert {"s", "n", "gu", "d", "i", "g", "p", "st", "f", "la", "ln"} <= set(pts[0])
-    assert [s["n"] for s in data["stats"]] == ["입지", "성장", "기세", "가성비", "인기"]
+    assert [s["n"] for s in data["stats"]] == ["입지", "성장성", "상승세", "가성비", "거래량"]
     assert all(len(c["st"]) == 5 and all(v is None or 0 <= v <= 100 for v in c["st"]) for c in pts)
     assert "dapi.kakao.com" not in index  # 키가 없으면 카카오 지도 스크립트를 넣지 않음
-    for page in ("compare", "quiz", "finder", "my"):
+    assert not (out / "quiz.html").exists()
+    for page in ("compare", "finder", "my"):
         html = (out / f"{page}.html").read_text(encoding="utf-8")
         assert f"static/{page}.js" in html and "static/app.js" in html

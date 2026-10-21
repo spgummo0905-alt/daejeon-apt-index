@@ -19,16 +19,16 @@
 </section>
 
 <div class="apt-actions">
-  <button class="btn" data-fav type="button">☆ 찜하기</button>
-  <a class="btn" href="{{ root }}compare.html?a={{ c.slug | urlencode }}">⚔ 대결하기</a>
-  <button class="btn" data-share="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}" type="button">↗ 공유</button>
+  <button class="btn" data-fav type="button"><svg class="ic"><use href="#i-star"/></svg><span>관심 단지 저장</span></button>
+  <a class="btn" href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg><span>다른 단지와 비교</span></a>
+  <button class="btn" data-share="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}" type="button"><svg class="ic"><use href="#i-share"/></svg><span>공유</span></button>
 </div>
 
 {% if not c.small %}
-<section class="gcard-solo gcard g-{{ c.grade }}">
+<section class="gcard gcard-solo g-{{ c.grade }}" data-holo>
   <div class="gcard-head">
     <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
-    <div class="gcard-title"><strong>능력치 카드</strong><span class="muted">{{ region }} 단지 중 백분위 (100이 최고)</span></div>
+    <div class="gcard-title"><strong>{{ c.name }}</strong><span class="muted">{{ c.grade_name }} 등급 · 항목별 점수 (대전 단지 중 백분위)</span></div>
     <span class="gcard-score">{{ c.index | score }}</span>
   </div>
   <div class="gstats">
@@ -38,6 +38,7 @@
       <span class="gstat-val">{{ v | score }}</span></div>
   {% endfor %}
   </div>
+  <div class="gcard-foot"><span>{{ c.gu }} {{ c.dong }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span><span>84㎡ {{ c.price_ref | price }}</span></div>
 </section>
 {% endif %}
 
