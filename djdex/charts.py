@@ -215,16 +215,18 @@ def value_scatter(points: list[dict], width: int = 720, height: int = 380) -> st
 
 def histogram(values: list[float], highlight: float | None = None, width: int = 720,
               height: int = 200, highlight_label: str = "이 단지") -> str:
+    """5점 간격 막대, 막대 색은 그 점수대의 등급 (등급 경계 35·50·65·80 이 칸 경계와 맞음)."""
     vals = [v for v in values if not nan(v)]
     if not vals:
         return _empty("지수 값이 없습니다.")
-    bins = [0] * 10
+    nb, step = 20, 5
+    bins = [0] * nb
     for v in vals:
-        bins[min(9, int(v // 10))] += 1
-    hb = None if nan(highlight) else min(9, int(highlight // 10))
+        bins[max(0, min(nb - 1, int(v // step)))] += 1
+    hb = None if nan(highlight) else max(0, min(nb - 1, int(highlight // step)))
     pl, pr, pt, pb = 40, 8, 22, 28
     ymax = max(bins) or 1
-    bw = (width - pl - pr) / 10
+    bw = (width - pl - pr) / nb
     out = []
     for t in _nice_ticks(0, ymax, 3):
         if t > ymax * 1.15:
@@ -232,16 +234,18 @@ def histogram(values: list[float], highlight: float | None = None, width: int = 
         y = pt + (1 - t / ymax) * (height - pt - pb)
         out.append(f'<line x1="{pl}" x2="{width - pr}" y1="{y:.1f}" y2="{y:.1f}" class="grid"/>'
                    f'<text x="{pl - 6}" y="{y + 4:.1f}" text-anchor="end" class="axis">{t:.0f}</text>')
+    for i in range(0, nb + 1, 2):
+        out.append(f'<text x="{pl + i * bw:.1f}" y="{height - pb + 16}" text-anchor="middle" class="axis">{i * step}</text>')
     for i, n in enumerate(bins):
         x = pl + i * bw + 1
         h = n / ymax * (height - pt - pb)
         y = height - pb - h
-        cls = "bar" if hb is None else ("bar" if i == hb else "bar dim")
-        tip = f"지수 {i * 10}~{i * 10 + 9}점: {n}개 단지"
+        g = grade(i * step)[0]
+        cls = f"bar g-{g}" + ("" if hb is None or i == hb else " dim")
+        tip = f"지수 {i * step}~{i * step + step - 1}점 ({g}등급): {n}개 단지"
         out.append(f'<g class="mark" {_tip(tip)}><rect x="{pl + i * bw:.1f}" y="{pt}" width="{bw:.1f}" '
                    f'height="{height - pt - pb}" class="hit"/>'
-                   f'<path d="{_vbar_path(x, y, bw - 2, h)}" class="{cls}"/></g>'
-                   f'<text x="{x + (bw - 2) / 2:.1f}" y="{height - pb + 16}" text-anchor="middle" class="axis">{i * 10}</text>')
+                   f'<path d="{_vbar_path(x, y, bw - 2, h)}" class="{cls}"/></g>')
         if i == hb:
             out.append(f'<text x="{x + (bw - 2) / 2:.1f}" y="{max(12, y - 6):.1f}" text-anchor="middle" '
                        f'class="val strong">{escape(highlight_label)} ▼</text>')
@@ -340,9 +344,12 @@ def trade_dots(trades: list[dict], width: int = 720, height: int = 260) -> str:
         out.append(f'<line x1="{pl}" x2="{width - pr}" y1="{py(t):.1f}" y2="{py(t):.1f}" class="grid"/>'
                    f'<text x="{pl - 8}" y="{py(t) + 4:.1f}" text-anchor="end" class="axis">{eok(t, 0)}</text>')
     n_labels = max(3, (width - pl - pr) // 56)
-    for yr in range(d0.year, d1.year + 1, max(1, math.ceil((d1.year - d0.year + 1) / n_labels))):
-        d = max(d0, pd.Timestamp(year=yr, month=1, day=1))
-        out.append(f'<text x="{px(d):.1f}" y="{height - 8}" text-anchor="middle" class="axis">{yr}</text>')
+    ticks = [(yr, px(max(d0, pd.Timestamp(year=yr, month=1, day=1))))
+             for yr in range(d0.year, d1.year + 1, max(1, math.ceil((d1.year - d0.year + 1) / n_labels)))]
+    if len(ticks) > 1 and ticks[1][1] - ticks[0][1] < 34:  # 첫 해가 몇 달뿐이면 다음 해 글자와 겹치므로 뺌
+        ticks = ticks[1:]
+    for yr, x in ticks:
+        out.append(f'<text x="{x:.1f}" y="{height - 8}" text-anchor="middle" class="axis">{yr}</text>')
     for t in ts:
         cls = next(c for _, lo, hi, c in AREA_GROUPS if lo <= t["area"] < hi)
         fl = "" if nan(t.get("floor")) or t.get("floor") is None else f" · {int(t['floor'])}층"

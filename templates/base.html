@@ -65,7 +65,7 @@
     <a href="{{ root }}stations.html">{{ transit.tab }}</a>
     <a href="{{ root }}compare.html">단지 비교</a>
     <a href="{{ root }}finder.html">조건으로 찾기</a>
-    <a href="{{ root }}my.html">관심 단지</a>
+    <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span></a>
   </nav>
 </header>
 <main>
@@ -80,7 +80,7 @@
   <a href="{{ root }}rank.html" data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>랭킹</a>
   <a href="{{ root }}compare.html" data-tab="compare"><svg class="ic"><use href="#i-compare"/></svg>비교</a>
   <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-filter"/></svg>찾기</a>
-  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심</a>
+  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심<span class="fav-count" data-fav-count hidden></span></a>
 </nav>
 <div class="toast-zone" id="toast-zone" aria-live="polite"></div>
 <script>window.DJ_ROOT = "{{ root }}";</script>

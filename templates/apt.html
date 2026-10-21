@@ -11,14 +11,14 @@
   </div>
 </div>
 
-{% set fresh = recent[:5] %}
+{% set fresh = recent[:5] %}{# 메인 카드 펼침 목록 #}
 <div class="apt-hero">
 <section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}"><div class="mc-in">
   <div class="mc-top">
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
       <h1>{{ c.name }}</h1>
-      <p>{{ region }} {{ c | place }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %}</p>
+      <p>{{ region }} {{ c | place }} {{ c.jibun }}{% if c.build_year %} · <span class="nw">{{ c.build_year }}년 준공</span>{% endif %}</p>
     </div>
     <div class="mc-score"><small>종합 지수</small><strong>{{ c.index | score }}</strong></div>
   </div>
@@ -26,7 +26,7 @@
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
     <span class="mc-rank">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% else %} · 순위 제외({{ c.small_reason or "소규모" }}){% endif %}</span>
     <div class="mc-chips">
-      {% if fresh %}{% set t0 = fresh[0] %}<button class="mc-chip" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals"><svg class="ic"><use href="#i-receipt"/></svg>최근 실거래 <b>{{ t0.price | price }}</b><span class="mc-chip-sub">· {{ t0.date.strftime("%m.%d") }}</span>{% if t0.high %}<span class="mc-hi">신고가</span>{% endif %}<span class="mc-caret" aria-hidden="true"></span></button>{% endif %}
+      {% if lead %}{% set t0 = lead %}<button class="mc-chip" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals"><svg class="ic"><use href="#i-receipt"/></svg>최근 실거래 <b>{{ t0.price | price }}</b><span class="mc-chip-sub">· {{ t0.date.strftime("%m.%d") }}</span>{% if t0.high %}<span class="mc-hi">신고가</span>{% endif %}<span class="mc-caret" aria-hidden="true"></span></button>{% endif %}
       {% for icon, text in chips %}<span class="mc-chip"><svg class="ic"><use href="#i-{{ icon }}"/></svg>{{ text }}</span>{% endfor %}
     </div>
   </div>
@@ -37,14 +37,16 @@
       <span>{{ "%.0f" | format(t.area) }}㎡{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}{% if t.high %}<span class="mc-hi">신고가</span>{% endif %}{% if t.cancelled %}<span class="mc-tag">해제</span>{% elif t.direct %}<span class="mc-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="mc-tag">{{ t.kind }}</span>{% endif %}</span>
       <strong>{{ t.price | price }}</strong></div>
     {% endfor %}
-    <a class="mc-all" href="#trades">전체 거래 {{ c.n_trades }}건 보기 ›</a>
+    <a class="mc-all" href="#trades">거래 내역 더 보기 ›</a>
     <p class="mc-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고해 최근 거래는 늦게 올라올 수 있습니다.</p>
   </div>
   {% endif %}
   <div class="mc-strip">{{ c.grade_name }} 등급{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건{% if c.new_high_recent %} · 최근 신고가{% endif %}{% if c.small %} · {{ c.small_reason }}{% endif %}</div>
   <ul class="mc-stats" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
-    <li><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></li>
+    {% if loop.first %}<li class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></li>
+    {% elif loop.index0 == 3 %}<li class="mc-grp"><span>참고 지표</span><em>지수에는 넣지 않아요</em></li>{% endif %}
+    <li{% if loop.index0 >= 3 %} class="ref"{% endif %}><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></li>
   {% endfor %}
   </ul>
   {% set c10 = c["cagr_%dy" % years[0]] %}
@@ -92,7 +94,7 @@
   <div class="card">
     <span class="label">{{ n }}년 {{ "실질" if meta.real_returns else "명목" }} 연평균 수익률</span>
     <span class="value {{ '' if c['cagr_%dy' % n] is nan else ('pos' if c['cagr_%dy' % n] > 0 else 'neg') }}">{{ c["cagr_%dy" % n] | pct }}</span>
-    <span class="muted">{{ region }} 백분위 {{ c["cagr_%dy_pct" % n] | score }}</span>
+    {% set p = c["cagr_%dy_pct" % n] %}<span class="muted">{% if p is nan %}비교할 거래 부족{% else %}{{ region }} {{ (100 - p) | share }}{% endif %}</span>
   </div>
   {% endfor %}
   <div class="card">
@@ -107,7 +109,7 @@
 <section class="panel">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>
-    <p class="muted">세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 {{ region }} 단지들의 한가운데(50)입니다.</p>
+    <p class="muted">입지·성장성·상승세 세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 {{ region }} 단지들의 한가운데(50)입니다.</p>
   </div>
   {{ charts.components | safe }}
   {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
@@ -155,7 +157,7 @@
 <section class="panel">
   <div class="panel-head">
     <h2>{{ region }}에서 이 단지의 위치</h2>
-    <p class="muted">{{ region }} 전체 단지의 지수 분포에서 이 단지가 속한 칸을 파랗게 표시했습니다.</p>
+    <p class="muted">{{ region }} 전체 단지의 지수 분포입니다. 막대 색은 등급이고, 이 단지가 속한 칸만 진하게 표시했습니다.</p>
   </div>
   {{ charts.hist | safe }}
 </section>
@@ -173,14 +175,21 @@
 {% endif %}
 
 <section class="panel" id="trades">
-  <div class="panel-head"><h2>최근 거래</h2></div>
+  <div class="panel-head"><h2>최근 거래</h2>
+    <p class="muted">계약일 순입니다. 해제된 거래{% if exclude_direct %}와 직거래{% endif %}는 흐리게 표시했고 지수·신고가 계산에서 뺐습니다.</p></div>
+  {% if area_types | length > 1 %}
+  <div class="chips trade-area" role="group" aria-label="전용면적으로 거르기">
+    <button type="button" class="chip active" data-area="">전체 <span class="cnt">{{ recent | length }}</span></button>
+    {% for a in area_types %}<button type="button" class="chip" data-area="{{ a.key }}">{{ a.key }}㎡ <span class="cnt">{{ a.n }}</span></button>{% endfor %}
+  </div>
+  {% endif %}
   <div class="table-wrap">
-  <table class="trades">
+  <table class="trades" data-trades data-page="15">
     <thead><tr><th>계약일</th><th>전용면적</th><th>층</th><th>거래가</th><th>비고</th></tr></thead>
     <tbody>
     {% for t in recent %}
-    <tr class="{{ 'struck' if t.cancelled }}">
-      <td>{{ t.date.strftime("%Y.%m.%d") }}</td>
+    <tr class="{{ 'struck' if t.cancelled }}{{ ' off' if exclude_direct and t.direct and not t.cancelled }}" data-a="{{ t.akey }}">
+      <td><span class="yy">{{ t.date.strftime("%Y")[:2] }}</span>{{ t.date.strftime("%y.%m.%d") }}</td>
       <td>{{ "%.2f" | format(t.area) }}㎡</td>
       <td>{{ "-" if t.floor is nan else t.floor | int }}</td>
       <td>{{ t.price | price }}</td>
@@ -190,6 +199,7 @@
     </tbody>
   </table>
   </div>
+  <button type="button" class="more-btn" data-trades-more hidden></button>
 </section>
 
 <div class="sheet-back" data-sheet-close hidden></div>

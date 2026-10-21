@@ -55,6 +55,20 @@
       chip.addEventListener("click", () => { picked = picked.filter(x => x !== s); render(d); });
       box.append(chip);
     });
+    // 관심 단지·최근 본 단지는 한 번 눌러 바로 추가
+    const quick = [...new Set([...DJ.favs(), ...DJ.recent().map(r => r.s)])]
+      .filter(s => d.bySlug[s] && !picked.includes(s)).slice(0, 8);
+    const qbox = document.getElementById("quick-chips");
+    qbox.replaceChildren();
+    document.getElementById("quick-add").hidden = !quick.length || picked.length >= MAX;
+    quick.forEach(s => {
+      const c = d.bySlug[s];
+      const b = el("button", "chip", "+ " + c.n);
+      b.type = "button";
+      if (DJ.isFav(s)) b.append(el("span", "qa-star", "★"));
+      b.addEventListener("click", () => { picked = [...picked, s].slice(-MAX); render(d); });
+      qbox.append(b);
+    });
     history.replaceState(null, "", picked.length ? "?s=" + picked.map(encodeURIComponent).join(",") : location.pathname);
     const cs = picked.map(s => d.bySlug[s]);
     out.replaceChildren();

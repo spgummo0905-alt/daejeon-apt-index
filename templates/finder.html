@@ -3,7 +3,7 @@
 {% block description %}연소득과 자기자본으로 살 수 있는 가격을 계산하고, 예산·직장 거리·생활 조건으로 {{ region }} 아파트를 골라 보세요.{% endblock %}
 {% block body %}
 <section class="page-hero">
-  <p class="eyebrow">🎯 맞춤 찾기</p>
+  <p class="eyebrow">맞춤 찾기</p>
   <h1>내 예산과 조건에<br>딱 맞는 단지는?</h1>
   <p class="lead">조건을 바꾸면 결과가 바로 바뀝니다. 조건을 많이 만족하는 단지부터, 같으면 지수가 높은 순입니다.</p>
 </section>
@@ -38,8 +38,15 @@
   </div>
 </section>
 <section>
-  <p class="finder-count" id="finder-count" aria-live="polite"></p>
+  <div class="finder-bar">
+    <p class="finder-count" id="finder-count" aria-live="polite"></p>
+    <div class="seg" role="group" aria-label="정렬">
+      <button type="button" class="seg-btn active" data-sort="i" aria-pressed="true">지수 높은 순</button>
+      <button type="button" class="seg-btn" data-sort="p" aria-pressed="false">가격 낮은 순</button>
+    </div>
+  </div>
   <div class="card-grid" id="finder-results"></div>
+  <button type="button" class="more-btn" id="finder-more" hidden></button>
 </section>
 {% endblock %}
 {% block scripts %}<script id="finder-cfg" type="application/json">{{ finder_cfg | safe }}</script>

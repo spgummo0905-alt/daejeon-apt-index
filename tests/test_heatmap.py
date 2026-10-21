@@ -42,3 +42,18 @@ def test_mark_highs_by_area_band():
           t("2024-04-01", 84.9, 51000), t("2024-05-01", 84.9, 60000, ) | {"cancelled": True}, t("2024-06-01", 59.8, 41000)]
     site._mark_highs(tr)
     assert [x["high"] for x in tr] == [False, False, True, False, False, True]
+
+
+def test_area_types_group_neighbouring_sizes():
+    tr = [{"area": a} for a in (59.9, 60.2, 59.8, 84.97, 84.5, 114.7)]
+    types = site._area_types(tr)
+    assert types == [{"key": "59", "n": 3}, {"key": "84", "n": 2}, {"key": "114", "n": 1}]  # 59·60㎡는 한 묶음
+    assert [t["akey"] for t in tr] == ["59", "59", "59", "84", "84", "114"]
+
+
+def test_mark_highs_skips_direct_when_excluded():
+    import pandas as pd
+    t = lambda d, p, **k: dict(date=pd.Timestamp(d), area=84.9, price=p, kind="매매", cancelled=False, direct=False) | k
+    tr = [t("2024-01-01", 50000), t("2024-02-01", 51000), t("2024-03-01", 90000, direct=True), t("2024-04-01", 52000)]
+    site._mark_highs(tr, skip_direct=True)
+    assert [x["high"] for x in tr] == [False, True, False, True]  # 직거래는 신고가도 아니고 기준선도 아님

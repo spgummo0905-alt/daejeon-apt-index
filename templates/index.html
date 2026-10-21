@@ -71,13 +71,11 @@
   <div class="strip" id="my-strip-list"></div>
 </section>
 
-<nav class="jump">
+<nav class="jump" data-spy aria-label="이 페이지 바로가기">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
   {% if board %}<a href="#heat">동네 온도</a>{% endif %}
-  <a href="rank.html">랭킹</a>
-  {% if leaders %}<a href="#leaders">대장 단지</a>{% endif %}
-  <a href="themes.html">테마</a>
   <a href="#world">{{ unit }}별 요약</a>
+  {% if leaders %}<a href="#leaders">대장 단지</a>{% endif %}
   {% if value_list %}<a href="#value">가성비 단지</a>{% endif %}
   <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
@@ -150,10 +148,12 @@
         <span class="hr-rank">{{ loop.index }}</span><i class="hr-dot b{{ t.band }}"></i>
         <span class="hr-name">{{ t.dong }}{% if t.gu != t.dong %}<small>{{ t.gu }}</small>{% endif %}</span>
         <span class="hr-val {{ 'pos' if (t.chg or 0) > 0 else 'neg' if (t.chg or 0) < 0 else '' }}">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '-' }}</span>
+        <span class="hr-vol" title="최근 3개월 거래 {{ t.last3 }}건, 1년 평균 {{ t.usual }}건">거래 {{ t.vol }}</span>
       </button></li>{% endfor %}
       </ol>
     </div>
     {% endif %}{% endfor %}
+    <p class="hr-note muted">가격은 최근 6개월 변화, 거래는 최근 3개월 건수가 1년 평균의 몇 배인지입니다. 순위는 둘을 함께 봅니다.</p>
   </div>
 </section>
 {% endif %}
@@ -188,7 +188,7 @@
     <h2>{{ unit }}별 대장 단지</h2>
     <p class="muted">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다(최근 1년 매매 5건 이상). 막대는 그 {{ unit }} 단지들의 중간 가격이 대장의 몇 % 수준인지 보여줍니다.</p>
   </div>
-  {% set rail = leaders | length > 8 %}
+  {% set rail = true %}{# 다 들어가면 화살표는 숨김 (app.js rail) #}
   {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
   <div class="leader-row{% if rail %} rail{% endif %}">
   {% for d in leaders %}
@@ -315,29 +315,29 @@
   <table id="complex-table">
     <thead><tr>
       <th data-sort="num">순위</th>
-      <th data-sort="text">단지</th>
-      <th data-sort="text">위치</th>
-      <th data-sort="num">준공</th>
+      <th data-sort="text" class="col-name">단지</th>
+      <th data-sort="num" class="sorted-desc">지수</th>
+      <th data-sort="text" class="col-place">위치</th>
+      <th data-sort="num" class="col-year">준공</th>
       <th data-sort="num">{{ ref_area }}㎡ 환산가</th>
       {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
       <th data-sort="num">입지</th>
-      <th data-sort="num" class="sorted-desc">지수</th>
     </tr></thead>
     <tbody>
     {% for r in rows %}
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
-      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</td>
-      <td>{{ r | place }}</td>
-      <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
+      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></td>
+      <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
+        <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
+        <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
+      <td class="col-place">{{ r | place }}</td>
+      <td data-v="{{ r.build_year or '' }}" class="col-year">{{ r.build_year or "-" }}</td>
       <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
       {% for n in years %}{% set v = r["cagr_%dy" % n] %}
       <td data-v="{{ '' if v is nan else v }}" class="{{ '' if v is nan else ('pos' if v > 0 else 'neg' if v < 0 else '') }}">{{ v | pct }}</td>
       {% endfor %}
       <td data-v="{{ '' if r.location_score is nan else r.location_score }}">{{ r.location_score | score }}</td>
-      <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
-        <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
-        <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
     </tr>
     {% endfor %}
     </tbody>
