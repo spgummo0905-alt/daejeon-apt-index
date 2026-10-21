@@ -344,13 +344,17 @@ def trade_dots(trades: list[dict], width: int = 720, height: int = 260) -> str:
     for t in ts:
         cls = next(c for _, lo, hi, c in AREA_GROUPS if lo <= t["area"] < hi)
         fl = "" if nan(t.get("floor")) or t.get("floor") is None else f" · {int(t['floor'])}층"
-        tip = f"{eok(t['price'], 2)}\n{t['date']:%Y.%m.%d} · 전용 {t['area']:.0f}㎡{fl}"
+        kind = t.get("kind") or "매매"
+        pre = kind != "매매"
+        tip = f"{eok(t['price'], 2)}\n{t['date']:%Y.%m.%d} · 전용 {t['area']:.0f}㎡{fl}" + (f" · {kind}" if pre else "")
         x, y = px(t["date"]), py(t["price"])
         out.append(f'<g class="mark" {_tip(tip)}><circle cx="{x:.1f}" cy="{y:.1f}" r="10" class="hit"/>'
-                   f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" class="dot {cls} ring"/></g>')
+                   f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" class="dot {cls} {"hollow" if pre else "ring"}"/></g>')
     present = {next(c for _, lo, hi, c in AREA_GROUPS if lo <= t["area"] < hi) for t in ts}
     legend = "".join(f'<span class="legend-item"><span class="key-dot {c}"></span>{escape(n)}</span>'
                      for n, _, _, c in AREA_GROUPS if c in present)
+    if any((t.get("kind") or "매매") != "매매" for t in ts):
+        legend += '<span class="legend-item"><span class="key-dot hollow"></span>분양권·입주권 (속 빈 점)</span>'
     return (f'<svg viewBox="0 0 {width} {height}" class="chart" role="img" aria-label="거래 점그래프">{"".join(out)}</svg>'
             f'<div class="legend">{legend}</div>')
 

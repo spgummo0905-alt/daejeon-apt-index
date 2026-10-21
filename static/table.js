@@ -22,6 +22,8 @@
       apply();
     });
   });
+  const small = document.getElementById("show-small");
+  if (small) small.addEventListener("change", () => table.classList.toggle("show-small", small.checked));
   document.getElementById("search").addEventListener("input", e => {
     q = e.target.value.trim().toLowerCase();
     apply();

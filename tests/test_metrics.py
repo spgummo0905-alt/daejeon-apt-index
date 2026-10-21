@@ -73,3 +73,58 @@ def test_formatting_and_slug():
     assert site.fmt_pct(0.0123) == "+1.2%" and site.fmt_pct(float("nan")) == "-"
     assert site.slug("30200-1234") == "30200-1234"
     assert len(site.slug("30200-봉명동-1-가")) == 12
+
+
+def _rows(cid, dates_prices, area=84.0, kind="매매"):
+    return [{"complex_id": cid, "name": cid, "gu": "서구", "dong": "둔산동", "jibun": "1", "build_year": 2000,
+             "area": area, "price": p, "date": d, "floor": 5, "cancelled": False, "direct": False, "kind": kind}
+            for d, p in dates_prices]
+
+
+M2 = {**M, "price_windows": [3, 6, 12], "small_peak_trades": 8, "new_high_days": 90}
+
+
+def test_small_complexes_are_unranked():
+    big = _rows("BIG", [(f"2025-{m:02d}-10", 50000 + m * 100) for m in range(1, 13)])
+    tiny = _rows("TINY", [("2025-03-01", 30000), ("2026-02-01", 31000)])
+    table, _, meta = metrics.compute(pd.DataFrame(big + tiny), M2, F, asof=pd.Timestamp("2026-08-31"))
+    assert bool(table.loc["TINY", "small"]) and not bool(table.loc["BIG", "small"])
+    assert table.loc["BIG", "rank"] == 1 and math.isnan(table.loc["TINY", "rank"])
+    assert meta["n_complexes"] == 1 and meta["n_small"] == 1
+
+
+def test_price_uses_shortest_window_with_enough_trades():
+    rows = _rows("A", [("2025-10-01", 50000), ("2025-11-01", 50000), ("2026-07-01", 60000), ("2026-08-01", 62000)])
+    table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
+    # 최근 3개월에 2건이 있으니 3개월 중위가(61,000/84㎡)를 씁니다. 12개월이면 55,000 근처로 늦게 따라감.
+    assert table.loc["A", "price_ref"] == pytest.approx(61000)
+    assert table.loc["A", "price_basis"] == "최근 3개월 매매"
+
+
+def test_presale_only_complex_gets_price_but_no_cagr():
+    rows = _rows("NEW", [("2026-05-01", 70000), ("2026-06-01", 72000)], kind="분양권")
+    rows += _rows("OLD", [("2016-03-01", 30000), ("2016-04-01", 30000), ("2026-07-01", 50000), ("2026-08-01", 50000)])
+    table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
+    assert table.loc["NEW", "price_ref"] == pytest.approx(71000)
+    assert "분양권" in table.loc["NEW", "price_basis"]
+    assert math.isnan(table.loc["NEW", "cagr_10y"]) and not math.isnan(table.loc["OLD", "cagr_10y"])
+
+
+def test_new_high_detection():
+    rows = _rows("A", [("2025-01-01", 50000), ("2025-06-01", 55000), ("2026-08-20", 58000)])
+    rows += _rows("A", [("2026-08-25", 40000)], area=59.0)  # 다른 면적대 거래는 비교하지 않음
+    rows += _rows("B", [("2025-01-01", 50000), ("2025-06-01", 55000), ("2026-08-20", 52000)])
+    table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
+    assert not bool(table.loc["A", "new_high"])  # 마지막 거래(59㎡)는 비교 대상이 없음
+    assert not bool(table.loc["B", "new_high"]) and table.loc["B", "prev_high"] == 55000
+    rows = rows[:-1] + _rows("B", [("2026-08-20", 56000)])
+    table, _, _ = metrics.compute(pd.DataFrame([r for r in rows if r["complex_id"] == "B" and r["price"] != 52000]),
+                                  M2, F, asof=pd.Timestamp("2026-08-31"))
+    assert bool(table.loc["B", "new_high"]) and bool(table.loc["B", "new_high_recent"])
+
+
+def test_percentile_against_reference_group():
+    s = pd.Series([10, 20, 30, 999], index=["a", "b", "c", "x"])
+    pct = location.percentile(s, ref=pd.Index(["a", "b", "c"]))
+    assert list(pct[["a", "b", "c"]]) == [0, 50, 100]
+    assert pct["x"] == 100  # 기준 밖 값도 기준 분포 안 위치로 점수를 받음

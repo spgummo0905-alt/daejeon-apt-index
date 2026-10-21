@@ -24,7 +24,8 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
         base = rnd.uniform(250, 650)          # 2010년 ㎡당 가격(만원)
         growth = rnd.uniform(-0.01, 0.06)     # 연 성장률
         first_year = max(start_year, build_year)
-        for _ in range(rnd.randint(15, 120)):
+        small = i % 6 == 0  # 여섯 곳 중 하나는 거래가 드문 소규모 단지
+        for _ in range(rnd.randint(6, 14) if small else rnd.randint(120, 260)):
             d = pd.Timestamp(year=rnd.randint(first_year, end_ts.year), month=rnd.randint(1, 12),
                              day=rnd.randint(1, 28))
             if d > end_ts:
@@ -37,7 +38,7 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
                 "jibun": str(rnd.randint(1, 999)), "build_year": build_year, "area": area,
                 "price": round(ppm2 * area), "date": d.strftime("%Y-%m-%d"),
                 "floor": rnd.randint(1, 25), "cancelled": rnd.random() < 0.02,
-                "direct": rnd.random() < 0.05,
+                "direct": rnd.random() < 0.05, "kind": "매매",
             })
         poi[cid] = {
             f["key"]: (rnd.choice([None, *[rnd.uniform(80, f["radius"]) for _ in range(9)]])
@@ -45,4 +46,15 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
             for f in factors
         }
         geo[cid] = (CENTER[0] + rnd.uniform(-0.06, 0.06), CENTER[1] + rnd.uniform(-0.08, 0.08))
+    # 입주 직전 신축: 매매 없이 분양권·입주권 거래만 있는 단지
+    cid = "DEMO-NEW1"
+    for k in range(40):
+        d = end_ts - pd.Timedelta(days=rnd.randint(1, 360))
+        area = rnd.choice([59.9, 84.9])
+        trades.append({"complex_id": cid, "name": "데모신축", "gu": gus[2], "dong": "데모3동", "jibun": "1",
+                       "build_year": end_ts.year, "area": area, "price": round(area * rnd.uniform(800, 950)),
+                       "date": d.strftime("%Y-%m-%d"), "floor": rnd.randint(1, 30), "cancelled": False,
+                       "direct": False, "kind": "입주권" if k % 3 == 0 else "분양권"})
+    poi[cid] = {f["key"]: (rnd.uniform(80, 600) if f["kind"] == "nearest" else rnd.randint(20, 120)) for f in factors}
+    geo[cid] = (CENTER[0] + 0.01, CENTER[1] - 0.02)
     return pd.DataFrame(trades), pd.DataFrame.from_dict(poi, orient="index"), geo

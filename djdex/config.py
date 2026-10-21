@@ -16,6 +16,10 @@ class Paths:
         return self.data / "raw"
 
     @property
+    def raw_presale(self) -> Path:
+        return self.data / "raw_presale"
+
+    @property
     def trades(self) -> Path:
         return self.data / "trades.csv"
 

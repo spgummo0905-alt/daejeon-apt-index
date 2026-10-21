@@ -48,6 +48,7 @@ jobs:
         with:
           path: |
             data/raw
+            data/raw_presale
             data/geo.json
             data/poi.json
           key: djdex-data-${{ github.run_id }}
@@ -66,6 +67,7 @@ jobs:
         with:
           path: |
             data/raw
+            data/raw_presale
             data/geo.json
             data/poi.json
           key: djdex-data-${{ github.run_id }}

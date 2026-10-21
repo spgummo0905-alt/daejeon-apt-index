@@ -53,3 +53,18 @@ def test_normalize_missing_fields_and_fallback_id():
 
 def test_month_range():
     assert molit.month_range("202511", "202602") == ["202511", "202512", "202601", "202602"]
+
+
+def test_presale_kind_and_id_linking():
+    sale = molit.normalize({"sggCd": "30170", "umdNm": "탄방동", "jibun": "1", "aptNm": "둔산자이아이파크",
+                            "aptSeq": "30170-999", "dealAmount": "90,000", "excluUseAr": "84.9",
+                            "dealYear": "2026", "dealMonth": "9", "dealDay": "1"}, {"30170": "서구"})
+    pre = [molit.normalize({"sggCd": "30170", "umdNm": "탄방동", "jibun": "1", "aptNm": "둔산 자이 아이파크",
+                            "ownershipGbn": g, "dealAmount": "85,000", "excluUseAr": "84.9",
+                            "dealYear": "2026", "dealMonth": "8", "dealDay": "3"}, {"30170": "서구"}, "분양권")
+           for g in ("분", "입", "")]
+    assert sale["kind"] == "매매"
+    assert [p["kind"] for p in pre] == ["분양권", "입주권", "분양권"]
+    rows = molit.link_ids([sale, *pre])
+    # 띄어쓰기가 달라도 같은 동·같은 이름이면 매매 단지 일련번호로 합칩니다.
+    assert {r["complex_id"] for r in rows} == {"30170-999"}

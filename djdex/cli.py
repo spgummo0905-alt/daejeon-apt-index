@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import kakao, location, metrics, molit, site
+from . import kakao, metrics, molit, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -39,7 +39,13 @@ def cmd_collect(cfg, args) -> None:
     recent = set(months[-cfg.collect["refresh_recent_months"]:])
     molit.collect(key, cfg.districts, months, cfg.paths.raw, cfg.collect["endpoint"],
                   cfg.collect["rows_per_page"], refresh=recent)
-    rows = molit.load_raw(cfg.paths.raw, cfg.districts)
+    if cfg.collect.get("collect_presale"):
+        try:
+            molit.collect(key, cfg.districts, months, cfg.paths.raw_presale, cfg.collect["presale_endpoint"],
+                          cfg.collect["rows_per_page"], refresh=recent)
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::분양권·입주권 수집 실패(활용신청 승인 전이면 정상), 매매 거래로만 진행합니다: {e}")
+    rows = molit.load_raw(cfg.paths.raw, cfg.districts, cfg.paths.raw_presale)
     pd.DataFrame(rows).to_csv(cfg.paths.trades, index=False)
     print(f"거래 {len(rows):,}건 → {cfg.paths.trades}")
 
@@ -63,16 +69,15 @@ def cmd_locate(cfg, args) -> None:
                  cfg.paths.geo, cfg.paths.poi, client)
 
 
-def _score_and_build(cfg, trades, poi_df, geo, out, demo=False):
-    loc = None
-    if not poi_df.empty:
-        # 백분위와 함께 원래 값(거리 m, 개수)도 단지 페이지에 보여주려고 붙여 둡니다.
-        loc = location.score(poi_df, cfg.location_factors).join(poi_df.add_suffix("_raw"))
+def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None):
     cpi = CPI.load(cfg.paths.cpi)
-    table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, location=loc, cpi=cpi,
-                                        components=cfg.index_components)
+    # 입지점수는 소규모 단지를 뺀 분포 기준이라 metrics 안에서 계산합니다.
+    table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, cpi=cpi,
+                                        components=cfg.index_components,
+                                        poi=poi_df if not poi_df.empty else None,
+                                        factors=cfg.location_factors)
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
-                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
+                   kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
     return table, meta, n
 
 
@@ -105,7 +110,8 @@ def cmd_all(cfg, args) -> None:
 def cmd_demo(cfg, args) -> None:
     trades, poi_df, geo = demo_mod.generate(cfg.districts, cfg.location_factors)
     out = Path(args.out or ROOT / "site-demo")
-    _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True)
+    _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
+                                  kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None)
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 

@@ -7,7 +7,7 @@ def test_demo_builds_site(tmp_path):
     index = (out / "index.html").read_text(encoding="utf-8")
     assert "데모 화면" in index and "데모단지" in index
     pages = list((out / "apt").glob("*.html"))
-    assert len(pages) == 60
+    assert len(pages) == 61
     assert (out / "methodology.html").exists() and (out / "static" / "style.css").exists()
 
 
@@ -43,7 +43,21 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og.png").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 62 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
+
+
+def test_points_and_small_rows(tmp_path):
+    import json
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    pts = json.loads((out / "points.json").read_text(encoding="utf-8"))
+    index = (out / "index.html").read_text(encoding="utf-8")
+    n_small = index.count('data-small="1"')
+    assert n_small > 0 and len(pts) == 61 - n_small
+    assert {"n", "s", "la", "ln", "i", "g"} <= set(pts[0])
+    assert "dapi.kakao.com" not in index  # 키가 없으면 카카오 지도 스크립트를 넣지 않음
