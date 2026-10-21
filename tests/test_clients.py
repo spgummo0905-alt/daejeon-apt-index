@@ -58,7 +58,8 @@ def test_enrich_caches(tmp_path):
     assert json.loads(geo.read_text())["2"] is None
     first = c.calls
     kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
-    assert c.calls == first  # 두 번째 실행은 캐시만 사용
+    # 두 번째 실행은 찾은 단지는 캐시만 쓰고, 못 찾은 단지(없는동)만 위치를 다시 찾아봅니다.
+    assert c.calls == first + 1
 
 
 def test_all_continues_when_kakao_fails(tmp_path, monkeypatch):

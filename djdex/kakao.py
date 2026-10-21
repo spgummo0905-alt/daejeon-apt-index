@@ -26,11 +26,13 @@ class Kakao:
         time.sleep(self.pause)
         return r.json()
 
-    def geocode(self, address: str, keyword: str | None = None) -> tuple[float, float] | None:
-        """주소로 좌표(lat, lng)를 찾고, 실패하면 단지명 키워드 검색으로 한 번 더 찾습니다."""
+    def geocode(self, address: str, keyword: str | list[str] | None = None) -> tuple[float, float] | None:
+        """주소로 좌표(lat, lng)를 찾고, 실패하면 단지명 키워드 검색으로 차례로 더 찾습니다."""
         docs = self._get("address", query=address).get("documents", [])
-        if not docs and keyword:
-            docs = self._get("keyword", query=keyword).get("documents", [])
+        for kw in ([keyword] if isinstance(keyword, str) else keyword or []):
+            if docs:
+                break
+            docs = self._get("keyword", query=kw).get("documents", [])
         if not docs:
             return None
         return float(docs[0]["y"]), float(docs[0]["x"])
@@ -87,9 +89,10 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
     geo, poi = _load(geo_path), _load(poi_path)
     for i, c in enumerate(complexes, 1):
         cid = c["complex_id"]
-        if cid not in geo:
+        if not geo.get(cid):
+            # 처음이거나 지난번에 못 찾은 단지: 주소 → '지역 동 단지명' → '지역 단지명' 순서로
             addr = f"{region} {c['gu']} {c['dong']} {c['jibun']}".strip()
-            geo[cid] = client.geocode(addr, keyword=f"{region} {c['dong']} {c['name']}")
+            geo[cid] = client.geocode(addr, keyword=[f"{region} {c['dong']} {c['name']}", f"{region} {c['name']}"])
             if i % 50 == 0:
                 _save(geo_path, geo)
         if not geo[cid]:
@@ -119,3 +122,7 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
             log(f"입지 정보 {i}/{len(complexes)}")
     _save(geo_path, geo)
     _save(poi_path, poi)
+    missing = [c for c in complexes if not geo.get(c["complex_id"])]
+    if missing:
+        log(f"위치를 못 찾은 단지 {len(missing)}곳: "
+            + ", ".join(f"{c['name']}({c['dong']} {c['jibun']})" for c in missing[:12]))
