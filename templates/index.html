@@ -163,9 +163,9 @@
     <h2>{{ unit }}별 한눈에 보기</h2>
     <p class="muted">{{ unit }}마다 단지들의 중간값입니다. 누르면 그 {{ unit }} 단지만 목록에 보여드립니다.</p>
   </div>
-  {% set rail = gu_stats | length > 8 %}
-  {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
-  <div class="world-grid{% if rail %} rail{% endif %}">
+  {# 구·동 카드는 늘 옆으로 넘기는 줄: 몇 곳뿐이면 카드를 크게(한 화면에 3장) #}
+  <div class="rail-wrap" data-rail>
+  <div class="world-grid rail{% if gu_stats | length <= 8 %} rail-wide{% endif %}">
   {% for g in gu_stats %}
     <a class="world-card" href="#list" data-gu-jump="{{ g.gu }}">
       <div class="world-head"><strong>{{ g.gu | area }}</strong><span class="muted">{{ g.n }}개 단지</span></div>
@@ -179,7 +179,7 @@
     </a>
   {% endfor %}
   </div>
-  {% if rail %}{{ rail_nav }}</div>{% endif %}
+  {{ rail_nav }}</div>
 </section>
 
 {% if leaders %}
