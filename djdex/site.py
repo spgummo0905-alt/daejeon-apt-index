@@ -5,7 +5,9 @@ import hashlib
 import math
 import re
 import shutil
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import shapely
@@ -134,6 +136,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
           geo: dict | None = None) -> int:
     env = _env()
     charts.REGION = cfg.region_name
+    # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
+    meta.setdefault("updated", datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y.%m.%d"))
     out_dir = Path(out_dir)
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -306,6 +310,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         main = [] if h is None else [(int(y), float(p) * ref) for y, p in zip(h["year"], h["ppm2"])]
         tr = by_cid.get(cid)
         tr_list = [] if tr is None else tr.to_dict("records")
+        _mark_highs(tr_list)
         cutoff = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") - pd.DateOffset(years=10)
         has_loc_c = not _nan(c.get("location_score"))
         comps = [("입지점수", c.get("location_score"), f"{fmt_score(c.get('location_score'))}점")]
@@ -340,6 +345,20 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in cfg.site.get("regions", [])])
     return len(rows)
+
+
+def _mark_highs(trades: list[dict], band: float = 3) -> None:
+    """거래마다 'high': 같은 면적대(±band㎡) 이전 매매보다 비싸면 신고가 (해제 거래·분양권 제외).
+    면적을 1㎡ 단위로 묶어 최고가를 들고 다녀 거래 수에 비례하는 시간에 끝냅니다."""
+    best: dict[int, float] = {}
+    for t in sorted(trades, key=lambda t: t["date"]):
+        t["high"] = False
+        if t.get("cancelled") or t.get("kind", "매매") != "매매" or _nan(t.get("price")) or _nan(t.get("area")):
+            continue
+        a = int(round(t["area"]))
+        prev = [best[k] for k in range(a - int(band), a + int(band) + 1) if k in best]
+        t["high"] = bool(prev) and t["price"] > max(prev)
+        best[a] = max(best.get(a, 0), t["price"])
 
 
 def _area_groups(gus: list[str], counts: dict) -> list[dict]:

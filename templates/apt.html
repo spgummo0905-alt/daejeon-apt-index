@@ -43,6 +43,24 @@
 </section>
 {% endif %}
 
+{% set fresh = recent[:5] %}
+{% if fresh %}
+<section class="recent-deals">
+  <div class="rd-head"><h2>최근 실거래</h2><a href="#trades">전체 거래 보기</a></div>
+  <ol class="rd-list">
+  {% for t in fresh %}
+    <li{% if t.cancelled %} class="struck"{% endif %}>
+      <span class="rd-date">{{ t.date.strftime("%y.%m.%d") }}</span>
+      <span class="rd-spec">{{ "%.0f" | format(t.area) }}㎡{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}</span>
+      <span class="rd-tags">{% if t.high %}<span class="badge-high">신고가</span>{% endif %}{% if t.cancelled %}<span class="rd-tag">해제</span>{% elif t.direct %}<span class="rd-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="rd-tag">{{ t.kind }}</span>{% endif %}</span>
+      <strong class="rd-price">{{ t.price | price }}</strong>
+    </li>
+  {% endfor %}
+  </ol>
+  <p class="muted rd-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고하므로 최근 거래는 늦게 올라올 수 있습니다.</p>
+</section>
+{% endif %}
+
 {% if summary %}
 <section class="summary">
   <h2>한눈에 보기</h2>
@@ -152,7 +170,7 @@
 </section>
 {% endif %}
 
-<section class="panel">
+<section class="panel" id="trades">
   <div class="panel-head"><h2>최근 거래</h2></div>
   <div class="table-wrap">
   <table class="trades">
@@ -164,7 +182,7 @@
       <td>{{ "%.2f" | format(t.area) }}㎡</td>
       <td>{{ "-" if t.floor is nan else t.floor | int }}</td>
       <td>{{ t.price | price }}</td>
-      <td>{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}{% if t.kind and t.kind != "매매" %} {{ t.kind }}{% endif %}</td>
+      <td>{% if t.high %}<span class="badge-high">신고가</span> {% endif %}{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}{% if t.kind and t.kind != "매매" %} {{ t.kind }}{% endif %}</td>
     </tr>
     {% endfor %}
     </tbody>
