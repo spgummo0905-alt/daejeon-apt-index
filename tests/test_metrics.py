@@ -98,7 +98,7 @@ def test_price_uses_shortest_window_with_enough_trades():
     table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
     # 최근 3개월에 2건이 있으니 3개월 중위가(61,000/84㎡)를 씁니다. 12개월이면 55,000 근처로 늦게 따라감.
     assert table.loc["A", "price_ref"] == pytest.approx(61000)
-    assert table.loc["A", "price_basis"] == "최근 3개월 매매"
+    assert table.loc["A", "price_basis"] == "최근 3개월 매매 2건"
 
 
 def test_presale_only_complex_gets_price_but_no_cagr():

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}테마로 찾는 {{ region }} 아파트 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} 아파트를 초품아, {{ transit.tab }}, 학원가 도보권, 학군, 신축, 입지 대비 가격 테마로 모았습니다.{% endblock %}
+{% block body %}
+<section class="page-hero">
+  <p class="eyebrow">테마 모음</p>
+  <h1>생활 조건으로 고르는<br>{{ region }} 아파트</h1>
+  <p class="lead">테마마다 조건에 맞는 단지를 종합 지수가 높은 순으로 12곳씩 모았습니다.</p>
+</section>
+<nav class="theme-nav" aria-label="테마">
+  {% for th in themes %}<a class="theme-pill" href="#t-{{ th.key }}"><strong>{{ th.title }}</strong><span>{{ th.count }}</span></a>{% endfor %}
+</nav>
+{% for th in themes %}
+<section class="panel theme" id="t-{{ th.key }}">
+  <div class="panel-head row-between">
+    <div><h2>{{ th.title }}</h2><p class="muted">{{ th.desc }} · 전체 {{ th.count }}곳</p></div>
+  </div>
+  <ol class="theme-grid">
+    {% for it in th["items"] %}
+    <li data-reveal style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
+      <span class="th-rank">{{ loop.index }}</span>
+      <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
+      <span class="th-name"><strong>{{ it.name }}</strong><span class="muted">{{ it.gu }} {{ it.dong }}</span></span>
+      <span class="th-fact">{{ it.fact }}</span>
+      <span class="th-score">{{ it.index | score }}<small>점</small></span>
+    </a></li>
+    {% endfor %}
+  </ol>
+</section>
+{% endfor %}
+{% endblock %}

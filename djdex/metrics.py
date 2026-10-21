@@ -83,7 +83,8 @@ def recent_price(sale: pd.DataFrame, presale: pd.DataFrame, asof: pd.Timestamp,
         p = window_price(sale, asof, m, min_n)
         new = p.index.difference(price.index)
         price = pd.concat([price, p[new]])
-        basis = pd.concat([basis, pd.Series(f"최근 {m}개월 매매", index=new)])
+        n = sale[sale["date"] > asof - pd.DateOffset(months=m)].groupby("complex_id").size()
+        basis = pd.concat([basis, pd.Series([f"최근 {m}개월 매매 {int(n.get(c, 0))}건" for c in new], index=new, dtype=object)])
     if not presale.empty:
         p = window_price(presale, asof, max(windows), 1)
         new = p.index.difference(price.index)
