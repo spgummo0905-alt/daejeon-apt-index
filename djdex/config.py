@@ -85,6 +85,11 @@ class Config:
         return self.raw["location"]["factors"]
 
     @property
+    def location_extras(self) -> list[dict]:
+        """점수에는 쓰지 않고 함께 조사만 해 두는 항목 (학원가 자동 탐지 비교 등)."""
+        return self.raw["location"].get("extras", [])
+
+    @property
     def hub(self) -> dict:
         return self.raw["location"].get("hub", {})
 

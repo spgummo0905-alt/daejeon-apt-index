@@ -38,20 +38,23 @@ class FakeKakao:
         self.calls += 1
         return 321.0
 
-    def count(self, lat, lng, category, radius):
+    def count(self, lat, lng, category, radius, query=None):
         self.calls += 1
-        return 7
+        return 3 if query else 7
 
 
 def test_enrich_caches(tmp_path):
     factors = [{"key": "subway", "kind": "nearest", "category": "SW8", "radius": 3000},
-               {"key": "academy", "kind": "count", "category": "AC5", "radius": 1000}]
+               {"key": "academy", "kind": "count", "category": "AC5", "radius": 1000},
+               {"key": "academy_math", "kind": "count", "category": "AC5", "radius": 1000, "query": "수학"},
+               {"key": "hub", "kind": "score", "weight": 0.2}]
     cx = [{"complex_id": "1", "name": "가", "gu": "서구", "dong": "둔산동", "jibun": "1"},
           {"complex_id": "2", "name": "나", "gu": "서구", "dong": "없는동", "jibun": "2"}]
     geo, poi = tmp_path / "geo.json", tmp_path / "poi.json"
     c = FakeKakao()
     kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
-    assert json.loads(poi.read_text())["1"] == {"subway": 321.0, "academy": 7}
+    # 키워드 항목은 그 단어가 들어간 곳만 세고, 점수 항목(hub)은 카카오에 묻지 않습니다.
+    assert json.loads(poi.read_text())["1"] == {"subway": 321.0, "academy": 7, "academy_math": 3}
     assert json.loads(geo.read_text())["2"] is None
     first = c.calls
     kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
@@ -92,3 +95,16 @@ def test_enrich_keeps_station_name_and_backfills(tmp_path):
     n = c.calls
     kakao.enrich(cx, factors, "대전", geo, poi, c, log=lambda *_: None)
     assert c.calls == n
+
+
+def test_kakao_count_uses_keyword_search_with_query():
+    k = kakao.Kakao("x", pause=0)
+    seen = []
+
+    def fake_get(path, **params):
+        seen.append((path, params.get("query"), params.get("category_group_code")))
+        return {"meta": {"total_count": 12}}
+    k._get = fake_get
+    assert k.count(36.35, 127.38, "AC5", 1000) == 12
+    assert k.count(36.35, 127.38, "AC5", 1000, query="수학") == 12
+    assert seen == [("category", None, "AC5"), ("keyword", "수학", "AC5")]
