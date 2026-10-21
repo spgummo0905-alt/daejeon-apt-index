@@ -207,12 +207,19 @@
       DJ.addRecent(c);
       const fav = document.querySelector("[data-fav]");
       if (fav) {
-        const label = fav.querySelector("span") || fav;
-        const paint = on => { fav.classList.toggle("on", on); label.textContent = on ? "관심 단지에 저장됨" : "관심 단지 저장"; };
+        const label = fav.querySelector("span"); // 아이콘만 있는 버튼이면 글자 대신 aria-label 로 상태를 알립니다
+        const paint = on => {
+          fav.classList.toggle("on", on);
+          fav.setAttribute("aria-pressed", on ? "true" : "false");
+          const text = on ? "관심 단지에서 빼기" : "관심 단지 저장";
+          fav.setAttribute("aria-label", text); fav.title = text;
+          if (label) label.textContent = on ? "관심 단지에 저장됨" : "관심 단지 저장";
+        };
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
           const on = DJ.toggleFav(c.s);
           paint(on);
+          if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
           if (on) DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다");
         });
       }

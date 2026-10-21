@@ -172,6 +172,22 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 
 /* 단지 페이지 */
 .crumb { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+/* 단지 페이지 맨 위: 왼쪽 경로, 오른쪽 관심·공유 아이콘 */
+.apt-topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.apt-topbar .crumb { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-actions { display: flex; gap: 8px; flex: none; }
+.icon-btn { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+  transition: transform var(--t-fast) var(--ease-spring), border-color var(--t-fast), background var(--t-fast); }
+.icon-btn .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn:hover { border-color: var(--text); transform: translateY(-1px); }
+.icon-btn:active { transform: scale(.92); }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-btn[data-fav].on { background: #fbf3dc; border-color: var(--gold); color: #8a6a12; }
+.icon-btn[data-fav].on .ic { fill: var(--gold); stroke: #8a6a12; }
+.icon-btn.pop { animation: fav-pop 420ms var(--ease-spring); }
+@keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (prefers-color-scheme: dark) { .icon-btn[data-fav].on { background: #3a3012; color: var(--gold); } }
 .apt-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
 .apt-title { display: flex; gap: 14px; align-items: center; }
 .apt-title h1 { margin: 0; }
