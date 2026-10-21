@@ -53,6 +53,21 @@ small_peak_trades = 8
 # 마지막 거래가 같은 면적대 이전 최고가보다 높고, 이 기간 안이면 '신고가'로 표시합니다.
 new_high_days = 90
 
+[finder]
+# 조건으로 찾기의 직장 위치 (직선거리 계산용, 대략적인 좌표)
+workplaces = [
+  { name = "둔산·정부대전청사", lat = 36.3605, lng = 127.3836 },
+  { name = "대덕연구단지(KAIST)", lat = 36.3721, lng = 127.3604 },
+  { name = "대전역·원도심", lat = 36.3324, lng = 127.4346 },
+  { name = "유성온천역", lat = 36.3537, lng = 127.3417 },
+  { name = "정부세종청사", lat = 36.5040, lng = 127.2649 },
+]
+# 감당 가능 금액 계산 기본값 (대전은 비규제지역 기준 LTV 70%)
+ltv = 0.70
+dsr = 0.40
+default_rate = 4.0
+default_years = 30
+
 [index]
 # 종합 지수 = 아래 항목 중 값이 있는 것들의 평균. 신축은 입지점수만 남습니다.
 components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
@@ -62,8 +77,9 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 # kind = "nearest" 는 가장 가까운 곳까지 거리(m, 가까울수록 좋음),
 # kind = "count" 는 반경 안 개수(많을수록 좋음).
 # 각 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
+# keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위에 사용).
 factors = [
-  { key = "subway",     label = "지하철역까지 거리",  category = "SW8", kind = "nearest", radius = 3000, weight = 0.30 },
+  { key = "subway",     label = "지하철역까지 거리",  category = "SW8", kind = "nearest", radius = 3000, weight = 0.30, keep_name = true },
   { key = "elementary", label = "초등학교까지 거리",  category = "SC4", kind = "nearest", radius = 2000, weight = 0.20, name_contains = "초등학교" },
   { key = "academy",    label = "반경 1km 학원 수",   category = "AC5", kind = "count",   radius = 1000, weight = 0.20 },
   { key = "mart",       label = "대형마트까지 거리",  category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },

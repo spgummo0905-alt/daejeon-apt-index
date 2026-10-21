@@ -133,6 +133,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["build_year"] = None if _nan(d.get("build_year")) else int(d["build_year"])
         d["grade"], d["grade_name"] = grade(d.get("index"))
         d["rank"] = None if _nan(d.get("rank")) else int(d["rank"])
+        asof_year = int(meta["asof"][:4])
+        d["is_new"] = bool((not _nan(d.get("build_year")) and d.get("build_year") and d["build_year"] >= asof_year - 5)
+                           or "분양권" in str(d.get("price_basis") or ""))
         d["small"] = bool(d.get("small"))
         d["new_high"] = bool(d.get("new_high")) if not _nan(d.get("new_high")) else False
         d["new_high_recent"] = bool(d.get("new_high_recent")) if not _nan(d.get("new_high_recent")) else False
@@ -175,16 +178,26 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         hr = main_t[main_t["new_high_recent"].fillna(False).astype(bool)].sort_values("last_date", ascending=False)
         highs = [by_id[cid] for cid in hr.index[:5]]
     tops = [
-        {"title": "종합 지수 TOP 5", "items": top(main_t.dropna(subset=["index"]), "index"),
+        {"title": "종합 지수 상위 5곳", "items": top(main_t.dropna(subset=["index"]), "index"),
          "value": lambda r: f"{r['index']:.0f}점"},
-        {"title": f"{years[0]}년 수익률 TOP 5", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
+        {"title": f"{years[0]}년 수익률 상위 5곳", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
          "value": lambda r, k=f"cagr_{years[0]}y": fmt_pct(r[k])},
     ]
+    dips = [by_id[cid] for cid in main_t[main_t.get("from_peak", pd.Series(dtype=float)) <= -0.10]
+            .sort_values("from_peak").index[:5]] if "from_peak" in main_t else []
+    if dips:
+        tops.append({"title": "전고점 대비 많이 내린 단지", "items": dips,
+                     "value": lambda r: f"{r['from_peak'] * 100:.0f}% · {int(r['peak_year'])}년 고점"})
+    news = sorted([r for r in rows if not r["small"] and r["is_new"] and not _nan(r.get("location_score"))],
+                  key=lambda r: -r["location_score"])[:5]
+    if news:
+        tops.append({"title": "신축·분양권 단지 입지 순위", "items": news,
+                     "value": lambda r: f"입지 {r['location_score']:.0f}" + (f" · {r['build_year']}년" if r.get("build_year") else "")})
     if highs:
         tops.insert(0, {"title": "최근 신고가", "items": highs,
                         "value": lambda r: f"{eok(r['last_price'])} · {r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}"})
     if value_picks:
-        tops.append({"title": "가성비 TOP 5", "items": value_picks,
+        tops.append({"title": "입지 대비 저렴한 5곳", "items": value_picks,
                      "value": lambda r: f"입지 {r['location_score']:.0f} · {eok(r['price_ref'])}"})
 
     link = "apt/{}.html"
@@ -212,9 +225,15 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
+    import json as _json
+    finder_cfg = _json.dumps(cfg.raw.get("finder", {}), ensure_ascii=False)
     for name in APP_PAGES:
         (out_dir / f"{name}.html").write_text(
-            env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", **common), encoding="utf-8")
+            env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", finder_cfg=finder_cfg,
+                                                       finder=cfg.raw.get("finder", {}), **common),
+            encoding="utf-8")
+    (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
+        root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
 
     # 단지 페이지
     trades = trades.copy()
@@ -265,11 +284,19 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES] + [f"apt/{r['slug']}.html" for r in rows])
+                  [f"{n}.html" for n in APP_PAGES + ["stations"]] + [f"apt/{r['slug']}.html" for r in rows])
     return len(rows)
 
 
 APP_PAGES = ["compare", "finder", "my"]
+STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
+
+
+def station_name(raw) -> str | None:
+    """카카오 장소 이름 '정부청사역 대전1호선' → '정부청사역'."""
+    if raw is None or (isinstance(raw, float) and raw != raw) or not str(raw).strip():
+        return None
+    return str(raw).split()[0]
 
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
@@ -306,6 +333,26 @@ def add_game_stats(table: pd.DataFrame, trades: pd.DataFrame, meta: dict) -> pd.
     return t
 
 
+def station_groups(rows: list[dict]) -> list[dict]:
+    """역세권(700m 안) 단지를 가장 가까운 역별로 묶고, 단지가 많은 역부터."""
+    groups: dict[str, list] = {}
+    for r in rows:
+        name = station_name(r.get("subway_name_raw"))
+        dist = r.get("subway_raw")
+        if r["small"] or not name or _nan(dist) or dist is None or dist > STATION_RADIUS:
+            continue
+        groups.setdefault(name, []).append(r)
+    out = []
+    for name, items in groups.items():
+        items.sort(key=lambda r: -(r.get("index") if not _nan(r.get("index")) else -1))
+        prices = [r["price_ref"] for r in items if not _nan(r.get("price_ref"))]
+        idx = [r["index"] for r in items if not _nan(r.get("index"))]
+        out.append({"name": name, "items": items, "n": len(items),
+                    "price": float(pd.Series(prices).median()) if prices else float("nan"),
+                    "index": float(pd.Series(idx).median()) if idx else float("nan")})
+    return sorted(out, key=lambda g: (-g["n"], g["name"]))
+
+
 def _r(x, nd=0):
     return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
 
@@ -324,6 +371,10 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict]) -> Non
             "f": {f["key"]: _r(r.get(f["key"] + "_raw")) for f in factors},
             "y": r.get("build_year"), "la": _r(r.get("lat"), 6), "ln": _r(r.get("lng"), 6),
             "h": bool(r.get("new_high_recent")),
+            "dd": _r(r.get("from_peak") * 100, 1) if not _nan(r.get("from_peak")) else None,
+            "py": _r(r.get("peak_year")),
+            "stn": station_name(r.get("subway_name_raw")),
+            "nw": bool(r.get("is_new")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
         })

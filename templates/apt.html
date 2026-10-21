@@ -55,6 +55,13 @@
     <span class="value">{{ c.price_ref | price }}</span>
     <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }} ㎡당 중위가 기준{% endif %}</span>
   </div>
+  {% if c.from_peak is defined and c.from_peak is not nan %}
+  <div class="card">
+    <span class="label">전고점 대비</span>
+    <span class="value {{ 'neg' if c.from_peak < 0 else 'pos' }}">{{ "%+.0f" | format(c.from_peak * 100) }}%</span>
+    <span class="muted">{{ c.peak_year | int }}년 고점 84㎡ {{ (c.peak_ppm2 * ref_area) | price }} 기준</span>
+  </div>
+  {% endif %}
   {% if c.last_price is not nan %}
   <div class="card">
     <span class="label">가장 최근 거래</span>

@@ -457,3 +457,45 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   .sb-score { font-size: 24px; }
   .apt-actions .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* 역세권 페이지 */
+.station-jump { flex-wrap: nowrap; overflow-x: auto; }
+.station-jump a { white-space: nowrap; }
+.station-list { display: flex; flex-direction: column; gap: 12px; }
+.station { padding: 0; }
+.station summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding: 16px 20px; }
+.station summary::-webkit-details-marker { display: none; }
+.station summary::after { content: "펼치기"; margin-left: auto; font-size: 12px; color: var(--muted); }
+.station[open] summary::after { content: "접기"; }
+.st-name { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
+.st-meta { color: var(--muted); font-size: 13px; }
+.st-items { list-style: none; margin: 0; padding: 0 20px 12px; }
+.st-items li { border-top: 1px solid var(--border); }
+.st-items a { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 0; color: var(--text); }
+@media (max-width: 720px) { .st-items a { grid-template-columns: auto 1fr; } .st-items .top-val { grid-column: 2; } }
+
+/* 감당 가능 금액, 직장 거리 */
+.afford-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.afford-grid input, .work-row select { width: 100%; padding: 11px 12px; font: inherit; border-radius: 12px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text); }
+.afford-grid input:focus, .work-row select:focus { outline: none; border-color: var(--navy); }
+.afford-out { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 16px; padding: 16px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(19,41,75,.06), rgba(201,162,74,.10)); }
+.af-big { display: flex; flex-direction: column; }
+.af-big strong { font-size: 30px; font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
+.af-rows { display: flex; flex-direction: column; gap: 2px; font-size: 14px; flex: 1 1 220px; }
+.small { font-size: 12.5px; margin: 10px 0 0; }
+.work-row { display: flex; gap: 8px; }
+.work-row select { flex: 1; }
+.work-dist { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-weight: 600; color: var(--text); }
+.work-dist input { accent-color: var(--navy); }
+
+/* 여러 단지 비교 표 */
+.picked { margin-top: 10px; }
+.cmp-wrap { margin-bottom: 8px; background: var(--surface); }
+.cmp-table th, .cmp-table td { text-align: center; white-space: nowrap; }
+.cmp-table tbody th { text-align: left; color: var(--text-2); font-weight: 600; font-size: 13.5px; position: sticky; left: 0; background: var(--surface); }
+.cmp-table thead th { color: var(--text); font-size: 14px; }
+.cmp-table thead th a { color: var(--text); font-weight: 700; }
+.cmp-table td.best { background: rgba(201,162,74,.16); font-weight: 800; color: var(--text); }
+.cmp-table td.best::after { content: " ●"; color: var(--gold); font-size: 9px; vertical-align: 2px; }
