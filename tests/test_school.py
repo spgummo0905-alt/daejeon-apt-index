@@ -104,3 +104,19 @@ def test_load_drops_new_schools_and_caps(tmp_path):
     sch = school.load(tmp_path, {"years": 2, "cap": 10}, "대전")
     assert "N" not in sch.index
     assert sch.at["A", "net_in"] == 10  # (400 + 20) / 1600 = 26% → 10%로 자름
+
+
+def test_load_advance_rate_over_years_and_name_matching(tmp_path):
+    _write(tmp_path)
+    csv = tmp_path / "30.csv"
+    csv.write_text("year,school,graduates,science,foreign_intl,autonomous,gifted\n"
+                   "2023,대전둔산중학교,200,2,3,10,1\n"
+                   "2024,둔산중학교,200,1,2,7,0\n"
+                   "2024,삼천중,40,0,1,1,0\n"     # 졸업자가 적어(50명 미만) 뺌
+                   "2024,없는중학교,300,5,5,5,0\n", encoding="utf-8")
+    adv = school.load_advance(csv, tmp_path, {}, "대전")
+    assert list(adv.index) == ["A"]
+    assert adv.at["A", "adv"] == pytest.approx((2 + 3 + 10 + 1 + 1 + 2 + 7) / 400 * 100)  # 2년 합산 6.5%
+    out = school.for_complexes({"x": (36.3501, 127.3801)}, adv, col="adv", key="school_adv", fmt=lambda v: f"{v:.1f}%")
+    assert out.at["x", "school_adv"] == pytest.approx(6.5) and out.at["x", "school_adv_names"] == "둔산중 6.5%"
+    assert school.load_advance(tmp_path / "none.csv", tmp_path, {}, "대전").empty  # 파일이 없으면 빈 표
