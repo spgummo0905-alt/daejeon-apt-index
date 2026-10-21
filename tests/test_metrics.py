@@ -136,3 +136,60 @@ def test_from_peak():
     table, _, _ = metrics.compute(pd.DataFrame(rows), M2, F, asof=pd.Timestamp("2026-08-31"))
     assert table.loc["A", "peak_year"] == 2021
     assert table.loc["A", "from_peak"] == pytest.approx(-0.2)
+
+
+def test_studio_complex_is_small_and_no_return_index_is_neutral():
+    # S: 원룸형(면적 30㎡), N: 수익률 자료 없는 단지(최근 거래만)
+    rows = _trades("A", {2016: 500, 2021: 700, 2026: 1000}, n=6)
+    rows += [dict(r, area=30.0) for r in _trades("S", {2016: 500, 2021: 600, 2026: 700}, n=6)]
+    rows += _trades("N", {2026: 900}, n=6)
+    loc = pd.DataFrame({"location_score": [60.0, 90.0, 90.0]}, index=["A", "S", "N"])
+    table, _, meta = metrics.compute(pd.DataFrame(rows), dict(M, small_peak_trades=5, min_main_area=45), F,
+                                     location=loc, asof=pd.Timestamp("2026-08-31"))
+    assert table.loc["S", "small"] and table.loc["S", "small_reason"] == "원룸형"
+    assert not table.loc["A", "small"] and meta["n_studio"] == 1
+    # 입지만 있는 단지는 수익률을 50으로 보고 계산: (90 + 50 + 50) / 3
+    assert table.loc["N", "index"] == pytest.approx((90 + 50 + 50) / 3)
+
+
+def test_hub_access_walk_and_subway():
+    cfg = {"hubs": [{"name": "둔산", "weight": 1.0, "lat": 36.3555, "lng": 127.3795, "stations": {"시청": 8}},
+                    {"name": "도안", "weight": 0.75, "lat": 36.3440, "lng": 127.3390}],
+           "walk_m_per_min": 80, "detour": 1.3, "subway_wait_min": 5, "min_per_stop": 2,
+           "full_min": 10, "zero_min": 40}
+    poi = pd.DataFrame({"subway": [100.0, 200.0, None], "subway_name": ["정부청사역 대전1호선", "노은역 대전1호선", None]},
+                       index=["center", "noeun", "far"])
+    geo = {"center": (36.3555, 127.3795), "noeun": (36.3745, 127.3178), "far": (36.20, 127.60)}
+    out = location.hub_access(poi, geo, cfg)
+    assert out.loc["center", "hub"] == 100 and out.loc["center", "hub_name"] == "둔산"
+    # 노은역 → 시청역: 9정거장. 도보 200m(약 3분) + 대기 5 + 18 + 8 = 34분 → 둔산 20점
+    assert out.loc["noeun", "hub_name"] == "둔산" and out.loc["noeun", "hub_min"] == 34
+    assert out.loc["noeun", "hub"] == pytest.approx(20, abs=1)
+    assert out.loc["far", "hub"] == 0
+    # 점수 항목은 백분위로 바꾸지 않고 그대로 씁니다.
+    sc = location.score(out[["hub"]], [{"key": "hub", "kind": "score", "weight": 1.0}])
+    assert sc.loc["center", "location_score"] == 100
+
+
+def test_detect_hubs_finds_dense_cluster():
+    poi = pd.DataFrame({"academy": [300, 280, 260, 250, 5, 4, 3, 2, 1, 0] * 3,
+                        "subway": [300.0] * 30, "subway_name": ["노은역 대전1호선"] * 30},
+                       index=[f"c{i}" for i in range(30)])
+    geo = {f"c{i}": ((36.379 + (i % 10) * 0.0005, 127.319) if i % 10 < 4 else (36.30 + i * 0.01, 127.45))
+           for i in range(30)}
+    hubs = location.detect_hubs(poi, geo, top=0.4, dongs={f"c{i}": "노은동" for i in range(30)})
+    assert len(hubs) == 1
+    h = hubs[0]
+    assert h["name"] == "노은동 학원가" and h["weight"] == 1.0 and "노은" in h["stations"]
+    assert abs(h["lat"] - 36.380) < 0.002
+
+
+def test_stat_new_by_age():
+    t = pd.DataFrame({"small": [False] * 4, "build_year": [2026, 2011, 1990, None],
+                      "price_basis": ["매매", "매매", "매매", "분양권"],
+                      "location_score": [50.0] * 4, "price_ref": [1.0, 2.0, 3.0, 4.0]},
+                     index=list("abcd"))
+    tr = pd.DataFrame({"complex_id": ["a"], "date": ["2026-01-01"], "cancelled": [False]})
+    out = site.add_game_stats(t, tr, {"asof": "2026.08"})
+    assert out.loc["a", "stat_new"] == 100 and out.loc["c", "stat_new"] == 0
+    assert 45 < out.loc["b", "stat_new"] < 55 and out.loc["d", "stat_new"] == 100

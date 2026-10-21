@@ -35,8 +35,11 @@ def fmt_score(x) -> str:
     return "-" if _nan(x) else f"{x:.0f}"
 
 
-def fmt_raw(v, factor: dict) -> str:
-    """입지 원래 값: 거리는 m/km, 개수는 '곳'."""
+def fmt_raw(v, factor: dict, c: dict | None = None) -> str:
+    """입지 원래 값: 거리는 m/km, 개수는 '곳', 학원가는 '둔산 학원가 15분'."""
+    if factor["kind"] == "score":
+        name, mins = (c or {}).get(factor["key"] + "_name_raw"), (c or {}).get(factor["key"] + "_min_raw")
+        return "-" if not name or _nan(mins) else f"{name} {int(mins)}분"
     if factor["kind"] == "nearest":
         if _nan(v):
             return f"반경 {factor['radius'] / 1000:g}km 안에 없음"
@@ -110,6 +113,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         shutil.rmtree(out_dir)
     (out_dir / "apt").mkdir(parents=True)
     shutil.copytree(ROOT / "static", out_dir / "static")
+    # 정적 파일이 바뀌면 주소 뒤 ?v= 값이 바뀌어 브라우저가 예전 CSS·JS를 쓰지 않습니다.
+    h = hashlib.sha1()
+    for f in sorted((ROOT / "static").rglob("*")):
+        if f.is_file():
+            h.update(f.read_bytes())
+    env.globals["v"] = h.hexdigest()[:8]
 
     ref = cfg.metrics["reference_area"]
     years = cfg.metrics["cagr_years"]
@@ -137,6 +146,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["is_new"] = bool((not _nan(d.get("build_year")) and d.get("build_year") and d["build_year"] >= asof_year - 5)
                            or "분양권" in str(d.get("price_basis") or ""))
         d["small"] = bool(d.get("small"))
+        d["small_reason"] = (d.get("small_reason") or "소규모") if d["small"] else ""
         d["new_high"] = bool(d.get("new_high")) if not _nan(d.get("new_high")) else False
         d["new_high_recent"] = bool(d.get("new_high_recent")) if not _nan(d.get("new_high_recent")) else False
         ll = geo.get(cid)
@@ -155,10 +165,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                          "index": sub["index"].median(),
                          "location": sub["location_score"].median(),
                          "growth": sub["stat_growth"].median() if "stat_growth" in sub else float("nan"),
+                         "c10": sub[f"cagr_{years[0]}y"].median() if f"cagr_{years[0]}y" in sub else float("nan"),
                          "highs": int(sub.get("new_high_recent", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()),
                          "best_name": sub.loc[best, "name"] if best is not None else None,
                          "best_slug": slug(best) if best is not None else None})
     gu_med = {g["gu"]: g["price"] for g in gu_stats if not _nan(g["price"])}
+    gu_boards = _gu_boards(gu_stats, main_t, years[0])
 
     # TOP 목록
     by_id = {r["complex_id"]: r for r in rows}
@@ -203,10 +215,6 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     index_charts = {
         "map": charts.responsive(charts.dot_map, [dict(r, href=link.format(r["slug"])) for r in rows if not r["small"]],
                                 mob={"width": 360, "max_height": 440}) if geo else "",
-        "gu_price": charts.hbar([(g["gu"], g["price"], eok(g["price"])) for g in gu_stats],
-                                unit_tip=" (84㎡ 환산 중위)"),
-        "gu_index": charts.hbar([(g["gu"], g["index"], f"{g['index']:.0f}점") for g in gu_stats
-                                 if not _nan(g["index"])], vmax=100, unit_tip=" (지수 중위)"),
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
     # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
@@ -218,7 +226,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
-        rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats,
+        rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref,
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
@@ -265,13 +273,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                        mob={"width": 360, "height": 240}),
             "trades": charts.responsive(charts.trade_dots, [t for t in tr_list if t["date"] >= cutoff],
                                         mob={"width": 360, "height": 240}),
-            "radar": charts.radar([(f["label"].replace("까지 거리", "").replace("반경 1km ", ""),
+            "radar": charts.radar([(f["label"].replace("까지 거리", "").replace("반경 1km ", "").replace("주요 ", "").replace(" 접근성", ""),
                                     c.get(f["key"] + "_pct"), factor_med[f["key"]]) for f in factors]) if has_loc_c else "",
             "hist": charts.responsive(charts.histogram, index_values, highlight=c.get("index"), height=180,
                                       mob={"width": 360}),
         }
-        loc_rows = [{"label": f["label"], "pct": c.get(f["key"] + "_pct"),
-                     "raw": fmt_raw(c.get(f["key"] + "_raw"), f) if f["key"] + "_raw" in c else None}
+        loc_rows = [{"label": f["label"], "pct": c.get(f["key"] + "_pct"), "score": f["kind"] == "score",
+                     "raw": fmt_raw(c.get(f["key"] + "_raw"), f, c) if f["key"] + "_raw" in c else None}
                     for f in factors]
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         html = tpl.render(
@@ -286,6 +294,41 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     return len(rows)
 
 
+def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]:
+    """구별 비교 보드: 항목마다 구를 높은 순으로 줄 세우고, 지역 전체 중간값과의 차이를 붙입니다."""
+    def signed(v, fmt):
+        return ("+" if v > 0 else "−" if v < 0 else "±") + fmt(abs(v))
+    specs = [
+        ("price", "집값", "84㎡ 환산 중위가", main_t["price_ref"].median(), eok,
+         lambda d: signed(d, lambda x: f"{x / 10000:.1f}억" if x >= 1000 else f"{x:,.0f}만")),
+        ("index", "종합 지수", "종합 지수 중위값", main_t["index"].median(), lambda v: f"{v:.0f}점",
+         lambda d: signed(d, lambda x: f"{x:.0f}점")),
+        ("c10", f"{y}년 수익률", f"{y}년 연평균 수익률 중위값",
+         main_t[f"cagr_{y}y"].median() if f"cagr_{y}y" in main_t else float("nan"), fmt_pct,
+         lambda d: signed(d * 100, lambda x: f"{x:.1f}%p")),
+        ("location", "입지", "입지점수 중위값", main_t["location_score"].median(), lambda v: f"{v:.0f}점",
+         lambda d: signed(d, lambda x: f"{x:.0f}점")),
+    ]
+    boards = []
+    for key, tab, title, ref, fmt, dfmt in specs:
+        items = [g for g in gu_stats if not _nan(g.get(key))]
+        if not items:
+            continue
+        items.sort(key=lambda g: -g[key])
+        lo = min(0.0, min(g[key] for g in items))
+        span = (max(g[key] for g in items) - lo) or 1
+        width = lambda v: max(2.0, (v - lo) / span * 100)
+        boards.append({
+            "key": key, "tab": tab, "title": title,
+            "ref_text": "-" if _nan(ref) else fmt(ref),
+            "ref_pos": None if _nan(ref) else round(min(100.0, width(ref)), 1),
+            "rows": [{"gu": g["gu"], "n": g["n"], "text": fmt(g[key]), "w": round(width(g[key]), 1),
+                      "diff": None if _nan(ref) else dfmt(g[key] - ref),
+                      "up": None if _nan(ref) else g[key] > ref} for g in items],
+        })
+    return boards
+
+
 APP_PAGES = ["compare", "finder", "my"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 
@@ -298,12 +341,14 @@ def station_name(raw) -> str | None:
 
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
-    ("location_score", "입지", "역·학교·학원·마트·병원 접근성"),
+    ("location_score", "입지", "역·학원가·학교·마트·병원 접근성"),
     ("stat_growth", "성장성", "10년 수익률 백분위 (없으면 5년)"),
     ("stat_momentum", "상승세", "최근 5년 수익률 백분위"),
     ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
     ("stat_activity", "거래량", "최근 3년 거래가 얼마나 활발한지"),
+    ("stat_new", "신축도", "준공 1년차 100점, 30년 이상 0점 (분양권 100점)"),
 ]
+NEW_SPAN = 30  # 신축도가 0점이 되는 연차
 
 
 def add_game_stats(table: pd.DataFrame, trades: pd.DataFrame, meta: dict) -> pd.DataFrame:
@@ -328,6 +373,12 @@ def add_game_stats(table: pd.DataFrame, trades: pd.DataFrame, meta: dict) -> pd.
         t["stat_momentum"] = float("nan")
     price_pct = percentile(t["price_ref"], ref=main)
     t["stat_value"] = percentile(t["location_score"] - price_pct, ref=main)
+    # 신축도는 백분위가 아니라 연차 그대로: 지수에는 넣지 않고 카드에서 보여주기만 합니다.
+    age = int(meta["asof"][:4]) - pd.to_numeric(t.get("build_year"), errors="coerce")
+    t["stat_new"] = (100 - (age - 1).clip(lower=0) * 100 / (NEW_SPAN - 1)).clip(0, 100)
+    if "price_basis" in t:
+        presale = t["price_basis"].fillna("").astype(str).str.contains("분양권")
+        t.loc[presale & t["stat_new"].isna(), "stat_new"] = 100.0
     return t
 
 
@@ -372,6 +423,8 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "dd": _r(r.get("from_peak") * 100, 1) if not _nan(r.get("from_peak")) else None,
             "py": _r(r.get("peak_year")),
             "stn": station_name(r.get("subway_name_raw")),
+            "hn": r.get("hub_name_raw") if isinstance(r.get("hub_name_raw"), str) else None,
+            "hm": None if _nan(r.get("hub_min_raw")) else _r(r.get("hub_min_raw")),
             "nw": bool(r.get("is_new")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,

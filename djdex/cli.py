@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import kakao, metrics, molit, site
+from . import kakao, location, metrics, molit, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -71,6 +71,17 @@ def cmd_locate(cfg, args) -> None:
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None):
     cpi = CPI.load(cfg.paths.cpi)
+    if not poi_df.empty and geo and any(f["kind"] == "score" for f in cfg.location_factors):
+        # 학원 밀집도로 찾은 학원가: config 에 hubs 가 없고 auto = true 면 이것을 쓰고,
+        # hubs 가 있으면 비교용으로 로그에만 남깁니다.
+        auto = location.detect_hubs(poi_df, geo, dongs=trades.groupby("complex_id")["dong"].last().to_dict())
+        for h in auto:
+            print(f"학원 밀집도로 찾은 학원가: {h['name']} ({h['lat']}, {h['lng']}) 단지 {h['members']}곳,"
+                  f" 학원 {h['strength']:.0f}곳, 만점 {h['weight']}, 역 {h['stations'] or '-'}")
+        hubs = cfg.hub.get("hubs") or (auto if cfg.hub.get("auto") else [])
+        if hubs:
+            hub = location.hub_access(poi_df, geo, {**cfg.hub, "hubs": hubs})
+            poi_df = poi_df.drop(columns=[c for c in hub.columns if c in poi_df], errors="ignore").join(hub)
     # 입지점수는 소규모 단지를 뺀 분포 기준이라 metrics 안에서 계산합니다.
     table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, cpi=cpi,
                                         components=cfg.index_components,

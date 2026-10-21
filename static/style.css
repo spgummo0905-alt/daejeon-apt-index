@@ -221,9 +221,6 @@ tr.struck td { text-decoration: line-through; color: var(--muted); }
 .badge-small { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px;
   color: var(--text-2); background: var(--chip); vertical-align: 2px; }
 .toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--text-2); cursor: pointer; }
-tr[data-small="1"] { display: none; }
-#complex-table.show-small tr[data-small="1"] { display: table-row; }
-tr[data-small="1"][hidden] { display: none !important; }
 
 /* 카카오 지도 */
 .kmap-wrap { position: relative; }
@@ -518,28 +515,74 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 @media (prefers-reduced-motion: reduce) { .card-shot, .card-shot::before { animation: none !important; transform: none !important; } }
 
 /* 입지 대비 가격이 좋은 단지 목록 */
-.value-list { list-style: none; margin: 0; padding: 0; }
-.value-list li { border-top: 1px solid var(--border); }
-.value-list li:first-child { border-top: none; }
-.value-list a { display: grid; grid-template-columns: 28px auto minmax(0, 1fr) 190px 120px; gap: 12px; align-items: center;
-  padding: 12px 4px; color: var(--text); }
-.value-list a:hover { background: var(--bg); text-decoration: none; }
-.vl-rank { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-.vl-name { display: flex; flex-direction: column; min-width: 0; }
-.vl-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vl-name .muted { font-size: 12.5px; }
-.vl-loc { display: grid; grid-template-columns: auto 1fr 28px; gap: 8px; align-items: center; font-size: 13px; }
-.vl-loc strong { text-align: right; font-variant-numeric: tabular-nums; }
+.value-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.value-list li { margin: 0; }
+.value-list a { display: grid; grid-template-columns: 36px minmax(0, 1fr) 200px 112px; gap: 18px; align-items: center;
+  padding: 14px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);
+  transition: border-color .15s, box-shadow .15s, transform .15s; }
+.value-list a:hover { text-decoration: none; border-color: var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
+.vl-rank { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--chip);
+  color: var(--text-2); font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.vl-rank.top { background: var(--navy); color: #fff; }
+.vl-name { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.vl-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vl-title strong { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vl-title .grade { flex: none; }
+.vl-name .muted { font-size: 13px; }
+.vl-loc { display: grid; grid-template-columns: auto 1fr 26px; gap: 10px; align-items: center; font-size: 13px; }
+.vl-loc strong { text-align: right; font-size: 15px; font-variant-numeric: tabular-nums; }
 .vl-label { color: var(--muted); }
-.vl-price { display: flex; flex-direction: column; align-items: flex-end; }
-.vl-price strong { font-variant-numeric: tabular-nums; }
-.vl-price .muted { font-size: 12px; color: var(--s3); }
-.more { margin-top: 4px; }
-.more summary { cursor: pointer; list-style: none; padding: 12px 4px; color: var(--navy); font-weight: 700; border-top: 1px solid var(--border); }
+.vl-price { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.vl-price strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.vl-cheap { font-size: 12px; font-weight: 700; color: var(--s3); background: color-mix(in srgb, var(--s3) 12%, transparent);
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.vl-m { display: none; }
+.more { margin-top: 10px; }
+.more summary { cursor: pointer; list-style: none; padding: 12px; text-align: center; color: var(--navy); font-weight: 700;
+  border: 1px dashed var(--border); border-radius: 14px; }
 .more summary::-webkit-details-marker { display: none; }
-.more[open] summary { color: var(--muted); }
+.more[open] summary { color: var(--muted); margin-bottom: 10px; }
 @media (max-width: 720px) {
-  .value-list a { grid-template-columns: 22px auto minmax(0, 1fr) auto; grid-template-areas: "r g n p" ". . l l"; row-gap: 6px; }
-  .vl-rank { grid-area: r; } .value-list .grade { grid-area: g; } .vl-name { grid-area: n; } .vl-price { grid-area: p; }
-  .vl-loc { grid-area: l; }
+  .value-list a { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: "r n p" ". l c"; gap: 10px 12px; padding: 14px; }
+  .vl-rank { grid-area: r; width: 28px; height: 28px; font-size: 13px; align-self: start; }
+  .vl-name { grid-area: n; } .vl-loc { grid-area: l; }
+  .vl-price { display: contents; }
+  .vl-price strong { grid-area: p; align-self: start; text-align: right; }
+  .vl-cheap { grid-area: c; justify-self: end; }
+  .vl-d { display: none; } .vl-m { display: inline; }
+  .vl-title strong { font-size: 15px; }
 }
+/* 구별 비교 보드 */
+.gu-tabs { margin: 4px 0 14px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.gu-tabs .chip { flex: none; }
+.gu-board .gb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.gu-board .gb-head strong { font-size: 15px; }
+.gu-board .gb-head .muted { font-size: 13px; }
+.gu-board ol { list-style: none; margin: 0; padding: 0; }
+.gu-board li { display: grid; grid-template-columns: 30px 92px minmax(0, 1fr) 150px; gap: 14px; align-items: center;
+  padding: 12px 4px; border-top: 1px solid var(--border); }
+.gu-board li:first-child { border-top: none; }
+.gb-rank { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--chip);
+  color: var(--text-2); font-size: 13px; font-weight: 800; }
+.gu-board li.gb-first .gb-rank { background: var(--navy); color: #fff; }
+.gb-name { display: flex; flex-direction: column; color: var(--text); font-weight: 700; font-size: 16px; line-height: 1.25; }
+.gb-name small { color: var(--muted); font-weight: 500; font-size: 12px; }
+.gb-name:hover { text-decoration: none; color: var(--accent); }
+.gb-bar { position: relative; height: 14px; background: var(--chip); border-radius: 999px; }
+.gb-bar > span { display: block; height: 100%; border-radius: 999px; background: color-mix(in srgb, var(--s1) 55%, transparent); }
+.gu-board li.gb-first .gb-bar > span { background: var(--s1); }
+.gb-bar > i, .gb-note i { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: var(--text-2); border-radius: 1px; }
+.gb-val { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.gb-val strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.gb-val small { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gb-val small.up { color: var(--pos); } .gb-val small.down { color: var(--neg); }
+.gb-note { position: relative; margin: 10px 0 0; padding-left: 12px; font-size: 12.5px; }
+.gb-note i { top: 2px; bottom: 2px; left: 0; }
+@media (max-width: 720px) {
+  .gu-board li { grid-template-columns: 26px minmax(0, 1fr) auto; grid-template-areas: "r n v" ". b b"; gap: 8px 12px; }
+  .gb-rank { grid-area: r; } .gb-name { grid-area: n; } .gb-val { grid-area: v; } .gb-bar { grid-area: b; height: 10px; }
+}
+/* 전체 단지 표: 30개씩 */
+#complex-table tr[hidden] { display: none !important; }
+.pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+.pager .btn { min-width: 160px; justify-content: center; }

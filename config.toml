@@ -50,6 +50,9 @@ price_windows = [3, 6, 12]
 # 어느 해에도 거래가 이 건수에 못 미친 단지는 '소규모'(나홀로·빌라형)로 보고
 # 순위, TOP, 지도에서 기본으로 뺍니다. 페이지는 그대로 만듭니다.
 small_peak_trades = 8
+# 거래 면적 중간값이 이보다 작은 단지(전용 ㎡)는 '원룸형'으로 보고 소규모와 같이 기본 목록에서 뺍니다.
+# 원룸·투룸 위주 단지는 84㎡ 환산가가 가족형 아파트 시세와 비교되지 않기 때문입니다.
+min_main_area = 45
 # 마지막 거래가 같은 면적대 이전 최고가보다 높고, 이 기간 안이면 '신고가'로 표시합니다.
 new_high_days = 90
 
@@ -75,13 +78,33 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 [location]
 # 카카오 로컬 API 카테고리 코드: SW8 지하철역, SC4 학교, AC5 학원, MT1 대형마트, HP8 병원
 # kind = "nearest" 는 가장 가까운 곳까지 거리(m, 가까울수록 좋음),
-# kind = "count" 는 반경 안 개수(많을수록 좋음).
-# 각 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
-# keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위에 사용).
+# kind = "count" 는 반경 안 개수(많을수록 좋음),
+# kind = "score" 는 카카오 조회 없이 계산한 0~100 점수를 그대로 씁니다 (아래 [location.hub]).
+# nearest·count 항목은 대전 전체 단지 중 백분위로 바꾼 뒤 weight 로 가중평균합니다.
+# keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위, 학원가 지하철 시간에 사용).
 factors = [
-  { key = "subway",     label = "지하철역까지 거리",  category = "SW8", kind = "nearest", radius = 3000, weight = 0.30, keep_name = true },
-  { key = "elementary", label = "초등학교까지 거리",  category = "SC4", kind = "nearest", radius = 2000, weight = 0.20, name_contains = "초등학교" },
-  { key = "academy",    label = "반경 1km 학원 수",   category = "AC5", kind = "count",   radius = 1000, weight = 0.20 },
-  { key = "mart",       label = "대형마트까지 거리",  category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },
-  { key = "hospital",   label = "반경 1km 병원 수",   category = "HP8", kind = "count",   radius = 1000, weight = 0.15 },
+  { key = "subway",     label = "지하철역까지 거리",   category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
+  { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.20 },
+  { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.15, name_contains = "초등학교" },
+  { key = "academy",    label = "반경 1km 학원 수",    category = "AC5", kind = "count",   radius = 1000, weight = 0.10 },
+  { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.15 },
+  { key = "hospital",   label = "반경 1km 병원 수",    category = "HP8", kind = "count",   radius = 1000, weight = 0.15 },
+]
+
+# 주요 학원가 접근성: 학원 '개수'만으로는 동네 상가 학원과 대형 학원가가 구분되지 않아
+# 대전의 대표 학원가까지 걸어서 또는 1호선으로 몇 분인지를 따로 봅니다.
+# 시간 = min(도보, 가까운 역까지 도보 + 대기 + 역 수 × 역간 시간 + 내려서 걷는 시간)
+# 학원가 점수 = weight × (full_min 분 안 100점 → zero_min 분 0점), 여러 학원가 중 가장 높은 점수.
+# 좌표는 학원가 중심의 대략적인 위치입니다. stations 는 학원가에서 가까운 1호선 역과 내려서 걷는 시간(분).
+[location.hub]
+walk_m_per_min = 80     # 걷는 속도
+detour = 1.3            # 직선거리 대비 실제 걷는 거리
+subway_wait_min = 5     # 대기·승하차
+min_per_stop = 2        # 역 하나 지나는 시간
+full_min = 10
+zero_min = 40
+hubs = [
+  { name = "둔산 학원가",      weight = 1.00, lat = 36.3555, lng = 127.3795, stations = { "정부청사" = 6, "시청" = 8 } },
+  { name = "노은·지족 학원가", weight = 0.85, lat = 36.3790, lng = 127.3190, stations = { "노은" = 6, "지족" = 6 } },
+  { name = "도안 학원가",      weight = 0.75, lat = 36.3440, lng = 127.3390 },
 ]

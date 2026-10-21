@@ -84,6 +84,10 @@ class Config:
     def location_factors(self) -> list[dict]:
         return self.raw["location"]["factors"]
 
+    @property
+    def hub(self) -> dict:
+        return self.raw["location"].get("hub", {})
+
 
 def load(path: Path | None = None, data_dir: Path | None = None) -> Config:
     path = path or ROOT / "config.toml"

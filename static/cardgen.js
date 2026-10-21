@@ -186,7 +186,9 @@
 
     // 항목별 점수
     let sy = by + 92;
-    (data.stats || []).forEach((st, k) => {
+    const stats = data.stats || [];
+    const step = Math.min(56, Math.floor(280 / Math.max(1, stats.length)));  // 항목이 늘어도 같은 높이 안에
+    stats.forEach((st, k) => {
       const v = c.st[k];
       ctx.textAlign = "left"; ctx.fillStyle = t.ink; ctx.font = `700 26px ${FONT}`;
       ctx.fillText(st.n, 64, sy);
@@ -199,7 +201,7 @@
       }
       ctx.textAlign = "right"; ctx.font = `800 28px ${FONT}`; ctx.fillStyle = t.ink;
       ctx.fillText(v == null ? "-" : String(v), W - 62, sy + 2);
-      sy += 56;
+      sy += step;
     });
 
     // 아래 세 칸: 가격 · 10년 수익률 · 전고점 대비
