@@ -138,6 +138,10 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     meta["hubs"] = hubs
     if not demo:
         _log_complex_sizes(table)
+        for f in cfg.location_factors:  # 입지 항목마다 값이 있는 단지 수 (지역마다 빠진 항목 점검)
+            col = pd.to_numeric(poi_df.get(f["key"], pd.Series(dtype=float)), errors="coerce")
+            print(f"[입지] {f['label']}: 값 있는 단지 {int(col.notna().sum())}/{len(poi_df)}"
+                  + (f", 중간 {col.median():.0f}" if col.notna().any() else ""))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
     return table, meta, n

@@ -35,7 +35,8 @@ def _write(tmp_path):
         {"SCHUL_CODE": "A", "MVIN_SUM": "60", "MVT_SUM": "20", "STDNT_SUM": "800"},
         {"SCHUL_CODE": "B", "MVIN_SUM": "10", "MVT_SUM": "30", "STDNT_SUM": "400"}]), encoding="utf-8")
     (tmp_path / "10_2024.json").write_text(json.dumps([
-        {"SCHUL_CODE": "A", "MVIN_SUM": "40", "MVT_SUM": "20", "STDNT_SUM": "800"}]), encoding="utf-8")
+        {"SCHUL_CODE": "A", "MVIN_SUM": "40", "MVT_SUM": "20", "STDNT_SUM": "800"},
+        {"SCHUL_CODE": "B", "MVIN_SUM": "10", "MVT_SUM": "30", "STDNT_SUM": "400"}]), encoding="utf-8")
 
 
 def test_load_net_in_rate(tmp_path):
@@ -89,3 +90,17 @@ def test_load_drops_special_and_small_schools(tmp_path):
     (tmp_path / "10_2025.json").write_text(json.dumps(moves), encoding="utf-8")
     sch = school.load(tmp_path, {"min_students": 300}, "대전")
     assert "S" not in sch.index and "T" not in sch.index and "A" in sch.index
+
+
+def test_load_drops_new_schools_and_caps(tmp_path):
+    _write(tmp_path)
+    basic = json.loads((tmp_path / "0_now.json").read_text(encoding="utf-8"))
+    basic.append({"SCHUL_CODE": "N", "SCHUL_NM": "산울중학교", "LTTUD": "36.47", "LGTUD": "127.25"})
+    (tmp_path / "0_now.json").write_text(json.dumps(basic, ensure_ascii=False), encoding="utf-8")
+    m25 = json.loads((tmp_path / "10_2025.json").read_text(encoding="utf-8"))
+    m25 += [{"SCHUL_CODE": "N", "MVIN_SUM": "300", "MVT_SUM": "0", "STDNT_SUM": "500"}]  # 2025년만 있는 새 학교
+    m25[0] = {"SCHUL_CODE": "A", "MVIN_SUM": "400", "MVT_SUM": "0", "STDNT_SUM": "800"}
+    (tmp_path / "10_2025.json").write_text(json.dumps(m25), encoding="utf-8")
+    sch = school.load(tmp_path, {"years": 2, "cap": 10}, "대전")
+    assert "N" not in sch.index
+    assert sch.at["A", "net_in"] == 10  # (400 + 20) / 1600 = 26% → 10%로 자름
