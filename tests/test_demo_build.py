@@ -137,6 +137,7 @@ def test_month_pages_built(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'class="ticker"' in index and 'id="heat-svg"' in index and 'id="leaders"' in index
+    assert 'class="dm-hl"' in index and 'data-rank="1"' in index and "data-top=" in index  # 동네 카드 내용, 마우스 올림 표시
     rank = (out / "rank.html").read_text(encoding="utf-8")
     assert rank.count('class="rank-panel"') >= 3 and 'class="podium"' in rank
     themes = (out / "themes.html").read_text(encoding="utf-8")

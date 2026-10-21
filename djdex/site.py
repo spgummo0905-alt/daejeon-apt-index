@@ -567,8 +567,13 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
         print(f"::warning::동네 온도 지도를 그리지 못했습니다: {e}")
         shapes = None
     if shapes:
-        best = main_t.dropna(subset=["index"]).sort_values("index", ascending=False).groupby(["gu", "dong"]).head(1)
-        best = {(r["gu"], r["dong"]): cid for cid, r in best.iterrows()}
+        ranked_t = main_t.dropna(subset=["index"]).sort_values("index", ascending=False)
+        best = {(r["gu"], r["dong"]): cid for cid, r in ranked_t.groupby(["gu", "dong"]).head(1).iterrows()}
+        # 카드에 보여줄 동네 지수 상위 3곳, 최근 신고가 단지 수
+        top3 = {k: [[by_id[c]["slug"], by_id[c]["name"], by_id[c]["grade"], round(float(by_id[c]["index"]))] for c in g.index]
+                for k, g in ranked_t.groupby(["gu", "dong"]).head(3).groupby(["gu", "dong"])}
+        highs_by = (main_t[main_t.get("new_high_recent", pd.Series(False, index=main_t.index)).fillna(False).astype(bool)]
+                    .groupby(["gu", "dong"]).size().to_dict())
         price = main_t.groupby(["gu", "dong"])["price_ref"].median()
         cx, cy = shapes["w"] / 2, shapes["h"] / 2
         areas = sorted((g["area"] for g in shapes["regions"].values()), reverse=True)
@@ -589,9 +594,19 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
                 "best": by_id[b]["name"] if b else None, "best_slug": by_id[b]["slug"] if b else None,
                 "best_grade": by_id[b]["grade"] if b else None,
                 "ring": int(math.hypot(g["x"] - cx, g["y"] - cy) / 60),
+                "pc": None if _nan(h.get("p_chg")) else round(float(h["p_chg"])),
+                "pv": None if _nan(h.get("p_vol")) else round(float(h["p_vol"])),
+                "top": top3.get(k, []), "highs": int(highs_by.get(k, 0)),
             })
         counts = {b: sum(1 for t in tiles if t["band"] == b) for b, _ in trends.BANDS + [trends.QUIET]}
         ranked = sorted((t for t in tiles if t["score"] is not None), key=lambda t: (-t["score"], -(t["chg"] or 0)))
+        # 온도 순위 (전체·구 안). 카드의 '몇 번째로 뜨거운 동네'와 이전·다음 넘기기에 씁니다.
+        for i, t in enumerate(ranked, 1):
+            t["rank"] = i
+        for gu_name in {t["gu"] for t in ranked}:
+            same = [t for t in ranked if t["gu"] == gu_name]
+            for i, t in enumerate(same, 1):
+                t["gu_rank"], t["gu_of"] = i, len(same)
         hot, cold = ranked[:5], ranked[::-1][:5]
         for i, t in enumerate(hot[:3], 1):
             t["pin"] = i
@@ -599,7 +614,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
                  "districts": shapes["districts"] if len(shapes["districts"]) > 1 else [],
                  "outline": shapes["districts"],
                  "bands": [{"band": b, "name": n, "count": counts[b]} for b, n in trends.BANDS + [trends.QUIET]],
-                 "hot": hot, "cold": [t for t in cold if t not in hot],
+                 "hot": hot, "cold": [t for t in cold if t not in hot], "n_ranked": len(ranked),
                  "start": f"{hot[0]['gu']}|{hot[0]['dong']}" if hot else None}
     # 대장 단지: 구(세종은 동)마다 84㎡ 환산가가 가장 높은 단지. 최근 1년 매매 5건 이상인 단지만.
     year_n = trends.recent_count(sale, asof, 12)
