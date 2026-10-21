@@ -65,7 +65,7 @@ def _read_trades(cfg) -> pd.DataFrame:
 def cmd_locate(cfg, args) -> None:
     client = kakao.Kakao(_need("KAKAO_REST_KEY"))
     trades = _read_trades(cfg)
-    kakao.enrich(_complex_list(trades), cfg.location_factors, cfg.region_name,
+    kakao.enrich(_complex_list(trades), cfg.location_factors + cfg.location_extras, cfg.region_name,
                  cfg.paths.geo, cfg.paths.poi, client)
 
 
@@ -73,11 +73,20 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     cpi = CPI.load(cfg.paths.cpi)
     if not poi_df.empty and geo and any(f["kind"] == "score" for f in cfg.location_factors):
         # 학원 밀집도로 찾은 학원가: config 에 hubs 가 없고 auto = true 면 이것을 쓰고,
-        # hubs 가 있으면 비교용으로 로그에만 남깁니다.
-        auto = location.detect_hubs(poi_df, geo, dongs=trades.groupby("complex_id")["dong"].last().to_dict())
-        for h in auto:
-            print(f"학원 밀집도로 찾은 학원가: {h['name']} ({h['lat']}, {h['lng']}) 단지 {h['members']}곳,"
-                  f" 학원 {h['strength']:.0f}곳, 만점 {h['weight']}, 역 {h['stations'] or '-'}")
+        # hubs 가 있으면 비교용으로 로그에만 남깁니다. 수학 학원 수(입시 학원가 대용)가 있으면 그것을 씁니다.
+        dongs = trades.groupby("complex_id")["dong"].last().to_dict()
+        auto = []
+        for key, label in (("academy", "학원 수"), ("academy_math", "수학 학원 수")):
+            if key not in poi_df:
+                continue
+            vals = pd.to_numeric(poi_df[key], errors="coerce").dropna()
+            if not vals.empty:
+                print(f"[{label}] 단지 {len(vals)}곳, 중간 {vals.median():.0f}, 상위 10% {vals.quantile(0.9):.0f}, 최대 {vals.max():.0f}")
+            found = location.detect_hubs(poi_df, geo, key=key, dongs=dongs)
+            for h in found:
+                print(f"[{label}] 학원 밀집도로 찾은 학원가: {h['name']} ({h['lat']}, {h['lng']}) 단지 {h['members']}곳,"
+                      f" 학원 {h['strength']:.0f}곳, 만점 {h['weight']}, 역 {h['stations'] or '-'}")
+            auto = found or auto
         hubs = cfg.hub.get("hubs") or (auto if cfg.hub.get("auto") else [])
         if hubs:
             hub = location.hub_access(poi_df, geo, {**cfg.hub, "hubs": hubs})

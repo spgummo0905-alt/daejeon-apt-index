@@ -55,9 +55,14 @@ class Kakao:
         hit = self.nearest_place(lat, lng, category, radius, name_contains)
         return hit[0] if hit else None
 
-    def count(self, lat: float, lng: float, category: str, radius: int) -> int:
-        data = self._get("category", category_group_code=category, x=lng, y=lat,
-                         radius=radius, size=1)
+    def count(self, lat: float, lng: float, category: str, radius: int, query: str | None = None) -> int:
+        """반경 안 시설 수. query 를 주면 그 단어가 들어간 곳만 셉니다 (예: 학원 중 '수학')."""
+        if query:
+            data = self._get("keyword", query=query, category_group_code=category, x=lng, y=lat,
+                             radius=radius, size=1)
+        else:
+            data = self._get("category", category_group_code=category, x=lng, y=lat,
+                             radius=radius, size=1)
         return int(data.get("meta", {}).get("total_count", 0))
 
 
@@ -98,6 +103,8 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
             elif f["kind"] == "nearest":
                 entry[f["key"]] = client.nearest(lat, lng, f["category"], f["radius"],
                                                  f.get("name_contains"))
+            elif f.get("query"):
+                entry[f["key"]] = client.count(lat, lng, f["category"], f["radius"], query=f["query"])
             else:
                 entry[f["key"]] = client.count(lat, lng, f["category"], f["radius"])
         if i % 50 == 0:
