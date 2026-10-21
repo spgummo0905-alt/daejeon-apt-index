@@ -94,8 +94,8 @@ components = ["location_score", "cagr_10y_pct", "cagr_5y_pct"]
 # keep_name = true 이면 가장 가까운 시설 이름도 저장합니다 (지하철역: 역별 단지 순위, 학원가 지하철 시간에 사용).
 factors = [
   { key = "subway",     label = "지하철역까지 거리",   category = "SW8", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true },
-  { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.20 },
-  { key = "school_mid", label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.15, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "hub",        label = "주요 학원가 접근성", kind = "score", weight = 0.25 },
+  { key = "school_mid", label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
   { key = "elementary", label = "초등학교까지 거리",   category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
   { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
   { key = "mart",       label = "대형마트까지 거리",   category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
