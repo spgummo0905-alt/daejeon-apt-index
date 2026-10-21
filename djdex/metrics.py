@@ -56,6 +56,7 @@ def complexes(df: pd.DataFrame) -> pd.DataFrame:
         build_year=("build_year", "max"),
         n_trades=("price", "size"),
         last_trade=("date", "max"),
+        main_area=("area", "median"),
     )
 
 
@@ -125,7 +126,11 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
     # 소규모: 어느 해에도 거래가 small_peak_trades 건에 못 미친 단지
     peak = df.groupby(["complex_id", df["date"].dt.year]).size().groupby(level=0).max()
     table["peak_trades"] = peak
-    table["small"] = table["peak_trades"] < cfg_metrics.get("small_peak_trades", 0)
+    rare = table["peak_trades"] < cfg_metrics.get("small_peak_trades", 0)
+    # 원룸형: 거래 면적 중간값이 이보다 작은 단지 (84㎡ 환산가가 실제 가족형 시세와 동떨어짐)
+    studio = table["main_area"] < cfg_metrics.get("min_main_area", 0)
+    table["small"] = rare | studio
+    table["small_reason"] = np.where(studio, "원룸형", np.where(rare, "소규모", ""))
     main = table.index[~table["small"]]
 
     cur_now, basis = recent_price(sale, presale, asof, windows, min_n)
@@ -155,7 +160,14 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
         table["location_score"] = float("nan")
 
     comps = components or ["location_score"] + [f"cagr_{n}y_pct" for n in cfg_metrics["cagr_years"]]
-    table["index"] = table[comps].mean(axis=1, skipna=True)
+    # 수익률 자료가 하나도 없는 단지(입주 전·거래 공백)는 수익률을 중간(50)으로 보고 계산합니다.
+    # 입지만으로 지수가 매겨져 상위권에 오르는 것을 막기 위해서입니다.
+    parts = table[comps].copy()
+    rets = [c for c in comps if c != "location_score"]
+    if rets and "location_score" in comps:
+        no_ret = parts[rets].isna().all(axis=1) & parts["location_score"].notna()
+        parts.loc[no_ret, rets] = 50.0
+    table["index"] = parts.mean(axis=1, skipna=True)
     table["index_parts"] = table[comps].notna().sum(axis=1)
     # 순위는 소규모를 뺀 단지끼리
     table = table.sort_values(["small", "index"], ascending=[True, False], na_position="last")
@@ -189,6 +201,7 @@ def compute(trades: pd.DataFrame, cfg_metrics: dict, filters: dict,
         "real_returns": real,
         "n_complexes": n_main,
         "n_small": int(table["small"].sum()),
+        "n_studio": int((table["small_reason"] == "원룸형").sum()),
         "n_trades": int(len(df)),
         "n_presale": int(len(presale)),
         "median_index": float(m["index"].median()) if m["index"].notna().any() else None,

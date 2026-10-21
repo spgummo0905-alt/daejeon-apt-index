@@ -17,7 +17,7 @@
 </section>
 
 <section class="stats">
-  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
+  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">소규모·원룸형 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
   <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
   <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
@@ -75,12 +75,27 @@
 <section id="gu" class="panel">
   <div class="panel-head">
     <h2>구별로 비교하기</h2>
-    <p class="muted">구마다 단지들의 가운데 값입니다.</p>
+    <p class="muted">항목을 누르면 그 기준으로 구 순위가 바뀝니다. 모두 구마다 단지들의 가운데 값입니다.</p>
   </div>
-  <div class="two-col">
-    <figure><figcaption>{{ ref_area }}㎡ 환산 중위가</figcaption>{{ charts.gu_price | safe }}</figure>
-    <figure><figcaption>지수 중위값</figcaption>{{ charts.gu_index | safe }}</figure>
+  <div class="chips gu-tabs" role="tablist">
+  {% for b in gu_boards %}<button class="chip{% if loop.first %} active{% endif %}" type="button" role="tab" data-board="{{ b.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ b.tab }}</button>{% endfor %}
   </div>
+  {% for b in gu_boards %}
+  <div class="gu-board" data-board="{{ b.key }}"{% if not loop.first %} hidden{% endif %}>
+    <div class="gb-head"><strong>{{ b.title }}</strong><span class="muted">{{ region }} 전체 {{ b.ref_text }}</span></div>
+    <ol>
+    {% for r in b.rows %}
+      <li{% if loop.first %} class="gb-first"{% endif %}>
+        <span class="gb-rank">{{ loop.index }}</span>
+        <a class="gb-name" href="#list" data-gu-jump="{{ r.gu }}">{{ r.gu }}<small>{{ r.n }}개 단지</small></a>
+        <span class="gb-bar"><span style="width: {{ r.w }}%"></span>{% if b.ref_pos is not none %}<i style="left: {{ b.ref_pos }}%" title="{{ region }} 전체 {{ b.ref_text }}"></i>{% endif %}</span>
+        <span class="gb-val"><strong>{{ r.text }}</strong>{% if r.diff %}<small class="{{ 'up' if r.up else 'down' }}">{{ region }} 대비 {{ r.diff }}</small>{% endif %}</span>
+      </li>
+    {% endfor %}
+    </ol>
+    {% if b.ref_pos is not none %}<p class="gb-note muted"><i></i>세로선은 {{ region }} 전체 중간값</p>{% endif %}
+  </div>
+  {% endfor %}
 </section>
 
 {% if value_list %}
@@ -91,13 +106,12 @@
   </div>
   <ol class="value-list">
   {% for r in value_list %}
-    {% if loop.index == 11 %}</ol><details class="more"><summary>{{ value_list | length - 10 }}곳 더 보기</summary><ol class="value-list" start="11">{% endif %}
+    {% if loop.index == 11 %}</ol><details class="more"><summary>{{ value_list | length - 10 }}곳 더 보기</summary><ol class="value-list">{% endif %}
     <li><a href="apt/{{ r.slug }}.html">
-      <span class="vl-rank">{{ loop.index }}</span>
-      <span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
-      <span class="vl-name"><strong>{{ r.name }}</strong><span class="muted">{{ r.gu }} {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
+      <span class="vl-rank{% if loop.index <= 3 %} top{% endif %}">{{ loop.index }}</span>
+      <span class="vl-name"><span class="vl-title"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span><strong>{{ r.name }}</strong></span><span class="muted">{{ r.gu }} {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
       <span class="vl-loc"><span class="vl-label">입지</span><span class="gbar"><span style="width: {{ r.location_score | round(1) }}%"></span></span><strong>{{ r.location_score | score }}</strong></span>
-      <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="muted">중간보다 {{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}% 낮음</span></span>
+      <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="vl-cheap"><span class="vl-d">중간보다 </span>{{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}%<span class="vl-d">↓</span><span class="vl-m"> 저렴</span></span></span>
     </a></li>
   {% endfor %}
   </ol>{% if value_list | length > 10 %}</details>{% endif %}
@@ -141,7 +155,7 @@
     <input id="search" type="search" placeholder="단지명 또는 동 검색">
   </div>
   {% if meta.n_small %}
-  <label class="toggle"><input type="checkbox" id="show-small"> 소규모 단지 {{ "{:,}".format(meta.n_small) }}개도 보기 (거래가 드문 나홀로·빌라형)</label>
+  <label class="toggle"><input type="checkbox" id="show-small"> 소규모·원룸형 단지 {{ "{:,}".format(meta.n_small) }}개도 보기 (거래가 드문 나홀로·빌라형{% if meta.n_studio %}, 원룸 위주 {{ "{:,}".format(meta.n_studio) }}개 포함{% endif %})</label>
   {% endif %}
   <div class="table-wrap">
   <table id="complex-table">
@@ -159,7 +173,7 @@
     {% for r in rows %}
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
-      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">소규모</span>{% endif %}</td>
+      <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</td>
       <td>{{ r.gu }} {{ r.dong }}</td>
       <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
       <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
@@ -175,13 +189,17 @@
     </tbody>
   </table>
   </div>
+  <div class="pager" id="table-pager" hidden>
+    <span class="muted" id="table-count"></span>
+    <button class="btn" id="table-more" type="button">더 보기</button>
+  </div>
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="static/table.js"></script>
+<script src="static/table.js?v={{ v }}"></script>
 {% if kakao_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>
-<script src="static/kmap.js"></script>
+<script src="static/kmap.js?v={{ v }}"></script>
 {% endif %}
-<script src="static/home.js"></script>
+<script src="static/home.js?v={{ v }}"></script>
 {% endblock %}

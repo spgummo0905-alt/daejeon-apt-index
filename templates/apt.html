@@ -8,13 +8,13 @@
   <div class="apt-title">
     <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
     <div>
-      <h1>{{ c.name }}{% if c.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if c.small %}<span class="badge-small">소규모</span>{% endif %}</h1>
+      <h1>{{ c.name }}{% if c.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if c.small %}<span class="badge-small">{{ c.small_reason }}</span>{% endif %}</h1>
       <p class="muted">{{ region }} {{ c.gu }} {{ c.dong }} {{ c.jibun }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건</p>
     </div>
   </div>
   <div class="gauge-box">
     {{ charts.gauge | safe }}
-    <span class="muted">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}개 중 {{ c.rank }}위{% else %} · 순위 제외(소규모){% endif %}</span>
+    <span class="muted">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}개 중 {{ c.rank }}위{% else %} · 순위 제외({{ c.small_reason or "소규모" }}){% endif %}</span>
   </div>
 </section>
 
@@ -107,7 +107,7 @@
 <section class="panel">
   <div class="panel-head">
     <h2>입지는 어떤가</h2>
-    <p class="muted">항목마다 대전 단지 중 백분위입니다. 바깥쪽으로 넓을수록 좋습니다.</p>
+    <p class="muted">항목마다 {{ region }} 단지 중 백분위입니다(학원가는 걸리는 시간 기준 점수). 바깥쪽으로 넓을수록 좋습니다.</p>
   </div>
   {% if charts.radar %}
   <div class="two-col">
@@ -116,7 +116,7 @@
     {% for f in loc_rows %}
       <li><span class="loc-label">{{ f.label }}</span>
         <span class="loc-raw">{{ f.raw or "-" }}</span>
-        <span class="loc-pct">{% if f.pct is nan %}-{% else %}상위 {{ (100 - f.pct) | round(0) | int if f.pct < 99.5 else 1 }}%{% endif %}</span></li>
+        <span class="loc-pct">{% if f.pct is nan %}-{% elif f.score %}{{ f.pct | round(0) | int }}점{% else %}상위 {{ (100 - f.pct) | round(0) | int if f.pct < 99.5 else 1 }}%{% endif %}</span></li>
     {% endfor %}
     </ul>
   </div>
@@ -173,9 +173,9 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="{{ root }}static/cardgen.js"></script>
+<script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 {% if latlng and kakao_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false"></script>
-<script src="{{ root }}static/map.js"></script>
+<script src="{{ root }}static/map.js?v={{ v }}"></script>
 {% endif %}
 {% endblock %}

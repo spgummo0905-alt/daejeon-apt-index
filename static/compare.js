@@ -15,10 +15,12 @@
     ["상승세", c => c.st[2], c => c.st[2] ?? "-", "high"],
     ["가성비", c => c.st[3], c => c.st[3] ?? "-", "high"],
     ["거래량", c => c.st[4], c => c.st[4] ?? "-", "high"],
+    ["신축도", c => c.st[5], c => c.st[5] ?? "-", "high"],
     ["10년 연평균", c => c.c10, c => c.c10 == null ? "-" : (c.c10 > 0 ? "+" : "") + c.c10 + "%", "high"],
     ["5년 연평균", c => c.c5, c => c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "%", "high"],
     ["전고점 대비", c => c.dd, c => c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%" + (c.py ? " (" + c.py + ")" : ""), null],
     ["지하철역", c => c.f.subway, c => c.f.subway == null ? "-" : (c.stn ? c.stn + " " : "") + c.f.subway + "m", "low"],
+    ["주요 학원가", c => c.hm, c => c.hm == null ? "-" : c.hn + " " + c.hm + "분", "low"],
     ["초등학교", c => c.f.elementary, c => c.f.elementary == null ? "-" : c.f.elementary + "m", "low"],
     ["준공", c => c.y, c => c.y ? c.y + "년" : "-", null],
   ];

@@ -7,3 +7,4 @@ data/poi.json
 data/scores.csv
 site/
 site-demo/
+__pycache__/

@@ -66,8 +66,8 @@ def test_complexes_json_and_small_rows(tmp_path):
     assert '<details class="panel station"' in stations and "역 " in stations
     finder = (out / "finder.html").read_text(encoding="utf-8")
     assert '"workplaces"' in finder and "정부세종청사" in finder
-    assert [s["n"] for s in data["stats"]] == ["입지", "성장성", "상승세", "가성비", "거래량"]
-    assert all(len(c["st"]) == 5 and all(v is None or 0 <= v <= 100 for v in c["st"]) for c in pts)
+    assert [s["n"] for s in data["stats"]] == ["입지", "성장성", "상승세", "가성비", "거래량", "신축도"]
+    assert all(len(c["st"]) == 6 and all(v is None or 0 <= v <= 100 for v in c["st"]) for c in pts)
     assert "dapi.kakao.com" not in index  # 키가 없으면 카카오 지도 스크립트를 넣지 않음
     assert not (out / "quiz.html").exists()
     for page in ("compare", "finder", "my"):
