@@ -286,11 +286,34 @@
     const save = sheet.querySelector('[data-act="save"]');
     const more = sheet.querySelector('[data-act="more"]');
     const title = sheet.dataset.title, text = sheet.dataset.text;
-    let image = null, last = null;
+    let image = null, last = null, preparing = null, kakaoImg = null, kakaoUp = null;
     more.hidden = !navigator.share;
     const say = msg => { hint.textContent = msg; hint.hidden = !msg; };
+    // 휴대폰 공유 창으로 이미지 파일을 넘길 수 있는지 (넘기면 '사진에 저장'·메신저로 이미지가 그대로 갑니다)
+    const cardFile = () => image ? new File([image.blob], image.file, { type: "image/png" }) : null;
+    const canShareFile = f => !!(f && navigator.canShare && navigator.canShare({ files: [f] }));
+    // 아이폰은 파일로 내려받으면 사진 앱이 아니라 '파일'에 들어가서, 공유 창의 '이미지 저장'으로 보냅니다
+    const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    async function prepare() {
+    function prepare() {
+      if (!preparing) preparing = build();
+      return preparing;
+    }
+    // 카카오톡 피드 메시지에 넣을 카드 이미지를 카카오 서버에 미리 올려 둡니다 (누를 때 바로 보내지게)
+    function uploadKakao() {
+      if (!kakaoUp) kakaoUp = prepare().then(() => loadKakao(sheet.dataset.kakaoKey)).then(async ok => {
+        if (!ok || !image || !Kakao.Share.uploadImage) return null;
+        const res = await Kakao.Share.uploadImage({ file: [kakaoFile()] });
+        kakaoImg = res && res.infos && res.infos.original ? res.infos.original : null;
+        return kakaoImg;
+      }).catch(() => null);
+      return kakaoUp;
+    }
+    // 카카오톡 미리보기는 가로:세로 3:4 까지만 그대로 보여줘 (카드는 5:7) 양옆을 바탕색으로 채운 판을 올립니다
+    let kakaoBlobFile = null;
+    function kakaoFile() { return kakaoBlobFile || cardFile(); }
+
+    async function build() {
       if (image || !save) return;
       try {
         const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
@@ -299,6 +322,15 @@
         const cv = draw(c, data);
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
+        const pad = document.createElement("canvas");
+        pad.width = Math.round(cv.height * 3 / 4); pad.height = cv.height;
+        const pc = pad.getContext("2d");
+        const edge = cv.getContext("2d").getImageData(3, Math.round(cv.height / 2), 1, 1).data;  // 카드 가장자리 색으로 채움
+        pc.fillStyle = edge[3] > 200 ? `rgb(${edge[0]},${edge[1]},${edge[2]})` : "#f3f2ee";
+        pc.fillRect(0, 0, pad.width, pad.height);
+        pc.drawImage(cv, Math.round((pad.width - cv.width) / 2), 0);
+        const padBlob = await new Promise(res => pad.toBlob(res, "image/jpeg", 0.9));  // 올리기 빠르게 JPG로
+        if (padBlob) kakaoBlobFile = new File([padBlob], image.file.replace(/\.png$/, ".jpg"), { type: "image/jpeg" });
         const thumb = sheet.querySelector("[data-sheet-thumb]");
         thumb.src = image.url; thumb.hidden = false;
         sheet.querySelector(".sheet-thumb-ph").hidden = true;
@@ -320,7 +352,7 @@
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();
-      loadKakao(sheet.dataset.kakaoKey);
+      if (!IN_APP || KAKAO) uploadKakao();
     }
     function close() {
       back.classList.remove("on"); sheet.classList.remove("on");
@@ -332,23 +364,43 @@
     document.querySelectorAll("[data-sheet-close]").forEach(b => b.addEventListener("click", close));
 
     sheet.querySelector('[data-act="kakao"]').addEventListener("click", async () => {
-      const url = pageUrl();
+      const url = pageUrl(), link = { mobileWebUrl: url, webUrl: url };
       if (await loadKakao(sheet.dataset.kakaoKey)) {
         try {
-          Kakao.Share.sendDefault({ objectType: "text", text: title + "\n" + text, buttonTitle: "점수 보기",
-                                    link: { mobileWebUrl: url, webUrl: url } });
+          // 카드 이미지가 올라가 있으면 이미지가 보이는 피드 메시지, 아니면 글 메시지
+          const img = kakaoImg || (save ? await Promise.race([uploadKakao(), new Promise(r => setTimeout(() => r(null), 4000))]) : null);
+          if (img && img.url) {
+            Kakao.Share.sendDefault({ objectType: "feed",
+              content: { title, description: text, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height, link },
+              buttons: [{ title: "점수 보기", link }] });
+          } else {
+            Kakao.Share.sendDefault({ objectType: "text", text: title + "\n" + text, buttonTitle: "점수 보기", link });
+          }
           return;
         } catch (e) { /* 아래 대체 방법으로 */ }
       }
-      if (navigator.share) { navigator.share({ title, text, url }).catch(() => {}); return; }
+      if (navigator.share) { shareWithImage(url); return; }
       await copyLink(url);
       DJ.toast("링크를 복사했습니다", "카카오톡 대화창에 붙여 넣어 보내세요");
     });
     sheet.querySelector('[data-act="link"]').addEventListener("click", async () => {
       if (await copyLink(pageUrl())) DJ.toast("링크를 복사했습니다", "카카오톡이나 메신저에 붙여 넣어 보내세요");
     });
-    if (save) save.addEventListener("click", e => { if (!image) e.preventDefault(); });
-    more.addEventListener("click", () => navigator.share({ title, text, url: pageUrl() }).catch(() => {}));
+    // 다른 앱으로: 카드 이미지 파일과 글(링크 포함)을 함께. 이미지를 못 넘기는 브라우저는 글과 링크만
+    function shareWithImage(url) {
+      const f = cardFile();
+      const data = canShareFile(f) ? { files: [f], title, text: title + "\n" + text + "\n" + url } : { title, text, url };
+      return navigator.share(data).catch(() => {});
+    }
+    if (save) save.addEventListener("click", e => {
+      if (!image) { e.preventDefault(); return; }
+      const f = cardFile();
+      if (!KAKAO && IOS && canShareFile(f)) {
+        e.preventDefault();
+        navigator.share({ files: [f] }).catch(() => {});
+      }
+    });
+    more.addEventListener("click", () => shareWithImage(pageUrl()));
     opener.addEventListener("click", open);
     return open;
   }
