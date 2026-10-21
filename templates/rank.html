@@ -23,7 +23,7 @@
           <span class="pd-medal">{{ loop.index }}</span>
           <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
           <strong class="pd-name">{{ it.name }}</strong>
-          <span class="pd-where muted">{{ it.gu }} {{ it.dong }}</span>
+          <span class="pd-where muted">{{ it | place }}</span>
           <span class="pd-val">{{ it.value }}</span>
           <span class="pd-sub muted">{{ it.sub }}</span>
         </a>
@@ -37,7 +37,7 @@
       <li style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
         <span class="rl-no">{{ loop.index + 3 }}</span>
         <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
-        <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{{ it.gu }} {{ it.dong }} · {{ it.sub }}</span></span>
+        <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{{ it | place }} · {{ it.sub }}</span></span>
         <span class="rl-val t-{{ it.tone or 'flat' }}">{{ it.value }}</span>
       </a></li>
       {% endfor %}

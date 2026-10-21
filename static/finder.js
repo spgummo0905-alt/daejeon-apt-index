@@ -35,7 +35,10 @@
     const range = document.getElementById("budget");
     range.max = Math.max(2, maxB);
     range.value = Math.min(state.budget, range.max);
-    const gus = [...new Set(d.complexes.map(c => c.gu))];
+    // 지역 칩: 단지가 많은 곳부터. 동이 많은 지역(세종)은 앞 8곳만 보이고 나머지는 '더 보기'로.
+    const guN = {};
+    d.complexes.forEach(c => { guN[c.gu] = (guN[c.gu] || 0) + 1; });
+    const gus = Object.keys(guN).sort((a, b) => guN[b] - guN[a]);
 
     // ---------- 감당 가능 금액 ----------
     const af = id => document.getElementById("af-" + id);
@@ -82,9 +85,18 @@
       parent.append(b);
     }
     const guBox = document.getElementById("gu-chips");
-    gus.forEach(g => chip(guBox, g, state.gus.includes(g), () => {
+    gus.forEach(g => chip(guBox, g.split(" ").pop(), state.gus.includes(g), () => {
       state.gus = state.gus.includes(g) ? state.gus.filter(x => x !== g) : [...state.gus, g];
-    }));
+    }, g));
+    const FEW = 8;
+    if (gus.length > FEW + 2) {
+      const extra = Array.from(guBox.children).slice(FEW).filter((b, i) => !state.gus.includes(gus[FEW + i]));
+      extra.forEach(b => { b.hidden = true; });
+      const more = el("button", "chip chip-more", "+" + extra.length + "곳 더 보기");
+      more.type = "button";
+      more.addEventListener("click", () => { extra.forEach(b => { b.hidden = false; }); more.remove(); });
+      guBox.append(more);
+    }
     const condBox = document.getElementById("cond-chips");
     CONDS.forEach(cd => chip(condBox, cd.label, state.conds.includes(cd.id), () => {
       state.conds = state.conds.includes(cd.id) ? state.conds.filter(x => x !== cd.id) : [...state.conds, cd.id];

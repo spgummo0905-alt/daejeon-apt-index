@@ -20,7 +20,7 @@
     <li data-reveal style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
       <span class="th-rank">{{ loop.index }}</span>
       <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
-      <span class="th-name"><strong>{{ it.name }}</strong><span class="muted">{{ it.gu }} {{ it.dong }}</span></span>
+      <span class="th-name"><strong>{{ it.name }}</strong><span class="muted">{{ it | place }}</span></span>
       <span class="th-fact">{{ it.fact }}</span>
       <span class="th-score">{{ it.index | score }}<small>점</small></span>
     </a></li>

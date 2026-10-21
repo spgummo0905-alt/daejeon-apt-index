@@ -35,7 +35,7 @@
       title.href = DJ.href(p);
       title.style.fontWeight = "700";
       left.append(title, document.createElement("br"),
-        text("span", "muted", p.gu + " " + p.d + " · 지수 " + (p.i == null ? "-" : p.i) + " · " + p.g + "등급" +
+        text("span", "muted", DJ.place(p) + " · 지수 " + (p.i == null ? "-" : p.i) + " · " + p.g + "등급" +
           (p.pt ? " · 84㎡ " + p.pt : "") + (p.h ? " · 최근 신고가" : "")));
       const go = text("a", "btn", "자세히 →");
       go.href = title.href;

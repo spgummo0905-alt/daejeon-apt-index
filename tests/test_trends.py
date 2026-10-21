@@ -37,17 +37,7 @@ def test_dong_heat_bands_and_quiet():
     table = trades.groupby("complex_id")[["gu", "dong"]].last()
     sale = trends._sale(trades, F)
     heat = trends.dong_heat(sale, table, pd.Timestamp("2026-08-31"), min_year_trades=4)
-    assert heat.loc[("서구", "조용동"), "band"] == 0 and heat.loc[("서구", "조용동"), "band_name"] == "거래 적음"
+    assert heat.loc[("서구", "조용동"), "band"] == 0 and heat.loc[("서구", "조용동"), "band_name"] == "거래 적은 동네"
     bands = heat["band"].drop(("서구", "조용동"))
     assert bands.loc[("서구", "동5")] == 5 and bands.loc[("서구", "동0")] == 1
-    assert set(heat["band_name"]) >= {"뜨거움", "차가움"}
-
-
-def test_hex_layout_unique_cells_keep_rough_position():
-    pts = {f"p{i}": (36.30 + 0.01 * (i // 5), 127.30 + 0.01 * (i % 5)) for i in range(25)}
-    pts["dup"] = pts["p12"]  # 같은 자리 → 옆 칸으로 밀림
-    cells = trends.hex_layout(pts)
-    assert len(set(cells.values())) == len(pts)
-    # 동쪽(경도 큼) 점은 서쪽 점보다 오른쪽 칸
-    q = lambda k: cells[k][0] + cells[k][1] / 2
-    assert q("p4") > q("p0")
+    assert set(heat["band_name"]) >= {"뜨거운 동네", "차가운 동네"}

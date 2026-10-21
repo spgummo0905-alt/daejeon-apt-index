@@ -52,12 +52,17 @@ def parse(data: dict) -> tuple[list[str], list[dict]]:
             continue
         lat = e.get("lat", e.get("center", {}).get("lat"))
         lng = e.get("lon", e.get("center", {}).get("lon"))
-        name = e.get("tags", {}).get("name")
+        name = _clean(e.get("tags", {}).get("name"))
         if lat is None or lng is None or not name:
             continue
         stops.append({"name": name, "lat": float(lat), "lng": float(lng),
                       "routes": sorted(routes.get((e["type"], e["id"]), []))})
     return sorted(refs, key=_ref_order), stops
+
+
+def _clean(name: str | None) -> str | None:
+    """방향마다 다르게 적힌 같은 정류장 이름을 맞춥니다: '새롬동,나성동'·'새롬동.나성동' → '새롬동·나성동'."""
+    return re.sub(r"\s*[,.]\s*", "·", name).strip() if name else name
 
 
 def _ref_order(ref: str):

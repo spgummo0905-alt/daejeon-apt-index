@@ -8,9 +8,11 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+import shapely
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup, escape
 
-from . import charts, trends
+from . import charts, heatmap, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -65,10 +67,23 @@ def _top_share(series: pd.Series) -> pd.Series:
     return out
 
 
+def place(r) -> str:
+    """'서구 둔산동'. 구가 없는 지역(세종)은 구 자리에 동이 들어 있어 한 번만: '도담동'."""
+    return str(r["dong"]) if r["gu"] == r["dong"] else f"{r['gu']} {r['dong']}"
+
+
+def area_name(name) -> Markup:
+    """'조치원읍 죽림리' → 작은 '조치원읍' 위에 '죽림리' (카드 제목이 두 줄로 깨지지 않게)."""
+    head, _, tail = str(name).partition(" ")
+    if not tail:
+        return Markup(escape(name))
+    return Markup(f'<span class="area-sub">{escape(head)}</span>{escape(tail)}')
+
+
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
-    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok)
+    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name)
     env.tests["nan"] = _nan
     return env
 
@@ -101,9 +116,9 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     if not _nan(c.get("price_ref")) and med:
         diff = c["price_ref"] / med - 1
         if abs(diff) < 0.03:
-            out.append(f"84㎡ 환산가는 {c['gu']} 중위가와 거의 같습니다.")
+            out.append(f"84㎡ 환산가는 {c['gu']} 중간 가격과 거의 같습니다.")
         else:
-            out.append(f"84㎡ 환산가는 {c['gu']} 중위가보다 {abs(diff) * 100:.0f}% {'비쌉' if diff > 0 else '저렴합'}니다."
+            out.append(f"84㎡ 환산가는 {c['gu']} 중간 가격보다 {abs(diff) * 100:.0f}% {'비쌉' if diff > 0 else '저렴합'}니다."
                        )
     if leader and not c["small"] and not _nan(c.get("price_ref")):
         if leader["complex_id"] == c["complex_id"]:
@@ -182,6 +197,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                          "highs": int(sub.get("new_high_recent", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()),
                          "best_name": sub.loc[best, "name"] if best is not None else None,
                          "best_slug": slug(best) if best is not None else None})
+    area_groups = _area_groups(gus, main_t["gu"].value_counts().to_dict()) if len(gus) > 8 else None
     gu_med = {g["gu"]: g["price"] for g in gu_stats if not _nan(g["price"])}
     gu_boards = _gu_boards(gu_stats, main_t, years[0])
 
@@ -243,7 +259,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   transit=_transit(cfg), regions=cfg.site.get("regions", []),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
-                  window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus,
+                  window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
@@ -254,7 +270,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
-        leaders=month["leaders"],
+        leaders=month["leaders"], pulse=month["pulse"],
+        hero_cards=sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])[:3],
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
@@ -298,7 +315,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
                                             marker=50, marker_label=f"{cfg.region_name} 중간(50)",
                                             desk={"width": 520}, mob={"width": 340}),
-            "price": charts.responsive(charts.line_compare, main, region_line, "이 단지", f"{cfg.region_name} 중위",
+            "price": charts.responsive(charts.line_compare, main, region_line, "이 단지", f"{cfg.region_name} 중간값",
                                        mob={"width": 360, "height": 240}),
             "trades": charts.responsive(charts.trade_dots, [t for t in tr_list if t["date"] >= cutoff],
                                         mob={"width": 360, "height": 240}),
@@ -325,19 +342,29 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     return len(rows)
 
 
+def _area_groups(gus: list[str], counts: dict) -> list[dict]:
+    """동이 많은 지역(세종)의 목록 거르기: '동 지역'과 읍·면별로 묶은 고르기 목록."""
+    groups: dict[str, list] = {}
+    for g in gus:
+        head, _, tail = g.partition(" ")
+        groups.setdefault(head if tail else "동 지역", []).append({"value": g, "label": tail or g, "n": counts.get(g, 0)})
+    order = sorted(groups, key=lambda k: (k != "동 지역", k))
+    return [{"label": k, "items": sorted(groups[k], key=lambda i: i["label"])} for k in order]
+
+
 def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]:
     """구별 비교 보드: 항목마다 구를 높은 순으로 줄 세우고, 지역 전체 중간값과의 차이를 붙입니다."""
     def signed(v, fmt):
         return ("+" if v > 0 else "−" if v < 0 else "±") + fmt(abs(v))
     specs = [
-        ("price", "집값", "84㎡ 환산 중위가", main_t["price_ref"].median(), eok,
+        ("price", "집값", "84㎡ 환산가 중간값", main_t["price_ref"].median(), eok,
          lambda d: signed(d, lambda x: f"{x / 10000:.1f}억" if x >= 1000 else f"{x:,.0f}만")),
-        ("index", "종합 지수", "종합 지수 중위값", main_t["index"].median(), lambda v: f"{v:.0f}점",
+        ("index", "종합 지수", "종합 지수 중간값", main_t["index"].median(), lambda v: f"{v:.0f}점",
          lambda d: signed(d, lambda x: f"{x:.0f}점")),
-        ("c10", f"{y}년 수익률", f"{y}년 연평균 수익률 중위값",
+        ("c10", f"{y}년 수익률", f"{y}년 연평균 수익률 중간값",
          main_t[f"cagr_{y}y"].median() if f"cagr_{y}y" in main_t else float("nan"), fmt_pct,
          lambda d: signed(d * 100, lambda x: f"{x:.1f}%p")),
-        ("location", "입지", "입지점수 중위값", main_t["location_score"].median(), lambda v: f"{v:.0f}점",
+        ("location", "입지", "입지점수 중간값", main_t["location_score"].median(), lambda v: f"{v:.0f}점",
          lambda d: signed(d, lambda x: f"{x:.0f}점")),
     ]
     boards = []
@@ -367,17 +394,14 @@ def _transit(cfg) -> dict:
     return t
 
 
-HEX = 34  # 시황 보드 육각 타일 반지름(px)
-
-
 def _short_dong(name: str) -> str:
-    """'가수원동' → '가수원', '목동' → '목동' (두 글자는 그대로)."""
-    n = str(name)
+    """'가수원동' → '가수원', '목동' → '목동' (두 글자는 그대로), '조치원읍 봉산리' → '봉산리'."""
+    n = str(name).split()[-1]
     return n[:-1] if len(n) > 2 and n[-1] in "동가" else n
 
 
 def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
-    """이번 달 볼거리: 시황 보드(동별 육각 타일), 랭킹 다섯 가지, 화제의 단지 띠."""
+    """이번 달 볼거리: 동네 온도 지도, 랭킹 다섯 가지, 화제의 단지 띠."""
     asof = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") + pd.offsets.MonthEnd(0)
     sale = trends._sale(trades, cfg.filters, keep=main_t.index)
     chg = trends.recent_change(sale, asof)
@@ -396,7 +420,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
     highs = highs.sort_values(["last_date", "last_price"], ascending=False).head(10) if not highs.empty else highs
     ranks = [
         {"key": "up", "tab": "많이 오른", "title": "1년 전보다 많이 오른 단지",
-         "note": "최근 6개월 ㎡당 중위가를 1년 전 같은 6개월과 비교 (양쪽 모두 거래 3건 이상)",
+         "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
          "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "up") for c, v in up.items()]},
         {"key": "high", "tab": "신고가", "title": "최근 신고가 단지",
          "note": "마지막 거래가 같은 면적대 이전 최고가를 넘은 단지 (최근 90일)",
@@ -410,7 +434,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
          "items": [item(r["complex_id"], eok(r["price"]), f"{r['area']:.0f}㎡ · {pd.Timestamp(r['date']):%m.%d}")
                    for _, r in deals.iterrows()]},
         {"key": "down", "tab": "많이 내린", "title": "1년 전보다 많이 내린 단지",
-         "note": "최근 6개월 ㎡당 중위가를 1년 전 같은 6개월과 비교 (양쪽 모두 거래 3건 이상)",
+         "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
          "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "down") for c, v in down.items()]},
     ]
     ranks = [r for r in ranks if r["items"]]
@@ -426,49 +450,52 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
                 seen.add(pool[k][0]["slug"])
                 ticker.append(dict(pool[k][0], tag=tag))
 
-    # 시황 보드: 동별 온도를 육각 타일로 (실제 위치에 가깝게)
+    # 동네 온도 지도: 단지 위치로 그린 동 영역을 온도 색으로 칠합니다.
     board = None
     heat = trends.dong_heat(sale, main_t, asof)
     pts = {}
     for r in rows:
-        if not r["small"] and r.get("lat") and r.get("lng"):
+        if not r["small"] and r.get("lat") and r.get("lng") and (r["gu"], r["dong"]) in heat.index:
             pts.setdefault((r["gu"], r["dong"]), []).append((r["lat"], r["lng"]))
-    cent = {k: (sum(p[0] for p in v) / len(v), sum(p[1] for p in v) / len(v)) for k, v in pts.items() if k in heat.index}
-    if len(cent) >= 5:
-        cells = trends.hex_layout(cent)
-        w3 = math.sqrt(3) * HEX
-        xy = {k: (w3 * (q + r / 2), 1.5 * HEX * r) for k, (q, r) in cells.items()}
-        x0 = min(v[0] for v in xy.values()) - w3 / 2 - 4
-        y0 = min(v[1] for v in xy.values()) - HEX - 4
+    try:
+        shapes = heatmap.build(pts, heatmap.load_districts(cfg.districts)) if len(pts) >= 5 else None
+    except (ValueError, shapely.errors.GEOSException) as e:  # 지도를 못 그려도 나머지 화면은 만듭니다
+        print(f"::warning::동네 온도 지도를 그리지 못했습니다: {e}")
+        shapes = None
+    if shapes:
         best = main_t.dropna(subset=["index"]).sort_values("index", ascending=False).groupby(["gu", "dong"]).head(1)
         best = {(r["gu"], r["dong"]): cid for cid, r in best.iterrows()}
         price = main_t.groupby(["gu", "dong"])["price_ref"].median()
-        corner = [(math.cos(math.radians(60 * i - 30)), math.sin(math.radians(60 * i - 30))) for i in range(6)]
+        cx, cy = shapes["w"] / 2, shapes["h"] / 2
+        areas = sorted((g["area"] for g in shapes["regions"].values()), reverse=True)
+        min_label = areas[min(len(areas) - 1, 44)]  # 이름표는 넓은 동부터 45곳까지만 (겹침 방지)
         tiles = []
-        mx, my = sum(v[0] for v in xy.values()) / len(xy), sum(v[1] for v in xy.values()) / len(xy)
-        for k, (x, y) in xy.items():
+        for k, g in shapes["regions"].items():
             h = heat.loc[k]
-            x, y = x - x0, y - y0
             b = best.get(k)
             tiles.append({
-                "gu": k[0], "dong": k[1], "label": _short_dong(k[1]), "x": round(x, 1), "y": round(y, 1),
-                "points": " ".join(f"{x + (HEX - 1.5) * cx:.1f},{y + (HEX - 1.5) * cy:.1f}" for cx, cy in corner),
+                "gu": k[0], "dong": k[1], "label": _short_dong(k[1]), "d": g["d"], "x": g["x"], "y": g["y"],
+                "show_label": g["area"] >= min_label and g["area"] >= 0.35,
                 "band": int(h["band"]), "band_name": h["band_name"], "n": int(h["n"]),
+                "score": None if _nan(h["score"]) else float(h["score"]),
                 "chg": None if _nan(h["chg"]) else round(float(h["chg"]) * 100, 1),
                 "last3": int(h["last3"]), "usual": round(float(h["prev_q"]), 1),
                 "price": None if _nan(price.get(k)) else eok(price.get(k)),
                 "best": by_id[b]["name"] if b else None, "best_slug": by_id[b]["slug"] if b else None,
                 "best_grade": by_id[b]["grade"] if b else None,
-                "ring": int(math.hypot(x + x0 - mx, y + y0 - my) / (w3 * 0.9)),
+                "ring": int(math.hypot(g["x"] - cx, g["y"] - cy) / 60),
             })
-        tiles.sort(key=lambda t: (t["y"], t["x"]))
-        w = max(t["x"] for t in tiles) + w3 / 2 + 4
-        hgt = max(t["y"] for t in tiles) + HEX + 4
         counts = {b: sum(1 for t in tiles if t["band"] == b) for b, _ in trends.BANDS + [trends.QUIET]}
-        hot = max((t for t in tiles if t["band"]), key=lambda t: (t["band"], t["chg"] or -99), default=None)
-        board = {"tiles": tiles, "w": round(w), "h": round(hgt),
+        ranked = sorted((t for t in tiles if t["score"] is not None), key=lambda t: (-t["score"], -(t["chg"] or 0)))
+        hot, cold = ranked[:5], ranked[::-1][:5]
+        for i, t in enumerate(hot[:3], 1):
+            t["pin"] = i
+        board = {"tiles": tiles, "w": shapes["w"], "h": shapes["h"],
+                 "districts": shapes["districts"] if len(shapes["districts"]) > 1 else [],
+                 "outline": shapes["districts"],
                  "bands": [{"band": b, "name": n, "count": counts[b]} for b, n in trends.BANDS + [trends.QUIET]],
-                 "start": f"{hot['gu']}|{hot['dong']}" if hot else None}
+                 "hot": hot, "cold": [t for t in cold if t not in hot],
+                 "start": f"{hot[0]['gu']}|{hot[0]['dong']}" if hot else None}
     # 대장 단지: 구(세종은 동)마다 84㎡ 환산가가 가장 높은 단지. 최근 1년 매매 5건 이상인 단지만.
     year_n = trends.recent_count(sale, asof, 12)
     liquid = main_t[main_t.index.isin(year_n[year_n >= 5].index)].dropna(subset=["price_ref"])
@@ -483,7 +510,10 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
                         "ratio": round(float(all_gu.median() / main_t.at[top_id, "price_ref"]) * 100) if len(all_gu) else None,
                         "n": int(len(all_gu)), "complex_id": top_id})
     leaders.sort(key=lambda d: -d["price"])
-    return {"ranks": ranks, "ticker": ticker, "board": board, "leaders": leaders}
+    # 첫 화면 숫자 줄: 최근 3개월 매매와 최근 신고가 단지 수
+    pulse = {"recent3": int(cnt.sum()),
+             "highs": int(main_t.get("new_high_recent", pd.Series(dtype=bool)).fillna(False).astype(bool).sum())}
+    return {"ranks": ranks, "ticker": ticker, "board": board, "leaders": leaders, "pulse": pulse}
 
 
 def _themes(main_t, by_id, cfg, meta) -> list[dict]:

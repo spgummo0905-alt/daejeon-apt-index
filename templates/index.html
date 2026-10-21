@@ -1,12 +1,40 @@
 {% extends "base.html" %}
+{% set rail_nav %}<div class="rail-nav"><button type="button" class="rail-btn" data-rail-prev aria-label="이전"><svg class="ic"><use href="#i-chev-left"/></svg></button><span class="rail-dots" aria-hidden="true"><i></i></span><button type="button" class="rail-btn" data-rail-next aria-label="다음"><svg class="ic"><use href="#i-chev-right"/></svg></button></div>{% endset %}
 {% block body %}
 <section class="hero hero-main">
-  <p class="eyebrow">{{ meta.asof }} 국토부 실거래 기준 · 매월 갱신</p>
-  <h1>우리 아파트,<br>{{ region }}에서 <span class="hl">몇 점</span>일까요?</h1>
-  <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}개 단지를 실거래가, 입지, 수익률로 평가했습니다. 단지 이름이나 동 이름으로 찾아보세요.</p>
-  <div class="hero-search">
-    <svg class="ic"><use href="#i-search"/></svg>
-    <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: {{ example_dong }})" aria-label="단지 검색">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">{{ meta.asof }} 국토부 실거래 기준 · 매월 갱신</p>
+      <h1>우리 아파트,<br>{{ region }}에서 <span class="hl">몇 점</span>일까요?</h1>
+      <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가, 입지, 수익률로 평가했습니다. 단지 이름이나 동 이름으로 찾아보세요.</p>
+      <div class="hero-search">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: {{ example_dong }})" aria-label="단지 검색">
+      </div>
+    </div>
+    {% if hero_cards %}
+    <div class="hero-deck" aria-label="이번 달 지수 상위 단지">
+      <span class="deck-tag">이번 달 지수 1위</span>
+      {% for c in hero_cards | reverse %}{% set k = hero_cards | length - loop.index %}
+      <a class="gcard deck-card g-{{ c.grade }}" href="apt/{{ c.slug }}.html" style="--k: {{ k }}"{% if k == 0 %} data-holo{% else %} tabindex="-1" aria-hidden="true"{% endif %}>
+        <div class="gcard-head">
+          <span class="grade big g-{{ c.grade }}">{{ c.grade }}</span>
+          <div class="gcard-title"><strong>{{ c.name }}</strong><span class="muted">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span></div>
+          <span class="gcard-score">{{ c.index | score }}</span>
+        </div>
+        <div class="gstats">
+        {% for key, label, desc in stats[:4] %}{% set v = c[key] %}
+          <div class="gstat"><span class="gstat-name">{{ label }}</span>
+            <span class="gbar"><span style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></span></span>
+            <span class="gstat-val">{{ v | score }}</span></div>
+        {% endfor %}
+        </div>
+        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 {{ c.rank }}위</span><span>84㎡ {{ c.price_ref | price }}</span></div>
+      </a>
+      {% endfor %}
+      <a class="deck-more" href="rank.html">이번 달 랭킹 보기 <span aria-hidden="true">→</span></a>
+    </div>
+    {% endif %}
   </div>
   {% if ticker %}
   <div class="ticker" aria-label="이번 달 화제의 단지">
@@ -14,12 +42,11 @@
     <div class="ticker-window">
       <div class="ticker-track">
       {% for dup in [0, 1] %}
-        {% for t in ticker %}<a class="ticker-chip t-{{ t.tone or 'flat' }}" href="apt/{{ t.slug }}.html"{% if dup %} aria-hidden="true" tabindex="-1"{% endif %}>
-          <span class="tk-tag">{{ t.tag }}</span><strong>{{ t.name }}</strong><span class="tk-val">{{ t.value }}</span></a>{% endfor %}
+        {% for t in ticker %}<a class="tk t-{{ t.tone or 'flat' }}" href="apt/{{ t.slug }}.html"{% if dup %} aria-hidden="true" tabindex="-1"{% endif %}><span class="tk-tag">{{ t.tag }}</span><strong>{{ t.name }}</strong><span class="tk-val">{{ t.value }}</span></a>{% endfor %}
       {% endfor %}
       </div>
     </div>
-    <a class="ticker-more" href="rank.html">랭킹 →</a>
+    <a class="ticker-more" href="rank.html">랭킹 <span aria-hidden="true">→</span></a>
   </div>
   {% endif %}
   <div class="quick">
@@ -30,11 +57,13 @@
   </div>
 </section>
 
-<section class="stats">
-  <div class="stat"><span class="label">분석한 단지</span><span class="value">{{ "{:,}".format(meta.n_complexes) }}개</span>{% if meta.n_small %}<span class="muted">빌라형 {{ "{:,}".format(meta.n_small) }}개 별도</span>{% endif %}</div>
-  <div class="stat"><span class="label">반영한 거래</span><span class="value">{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
-  <div class="stat"><span class="label">지수 중위값</span><span class="value">{{ meta.median_index | score }}점</span></div>
-  <div class="stat"><span class="label">수익률 기준</span><span class="value">{{ "실질" if meta.real_returns else "명목" }}</span></div>
+<section class="stat-strip" aria-label="이번 달 숫자">
+  <div class="ss"><span class="label">평가한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span>{% if meta.n_small %}<span class="muted">빌라형 {{ "{:,}".format(meta.n_small) }}곳은 따로 봅니다</span>{% endif %}</div>
+  <div class="ss"><span class="label">반영한 실거래</span><span class="value" data-count>{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
+  {% if pulse %}
+  <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">해제된 거래는 뺐습니다</span></div>
+  <div class="ss"><span class="label">최근 신고가</span><span class="value" data-count>{{ "{:,}".format(pulse.highs) }}곳</span><span class="muted">최근 90일, 같은 면적 기준</span></div>
+  {% endif %}
 </section>
 
 <section class="panel my-strip" id="my-strip" hidden>
@@ -44,12 +73,12 @@
 
 <nav class="jump">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
-  {% if board %}<a href="#heat">시황</a>{% endif %}
+  {% if board %}<a href="#heat">동네 온도</a>{% endif %}
   <a href="rank.html">랭킹</a>
   {% if leaders %}<a href="#leaders">대장 단지</a>{% endif %}
   <a href="themes.html">테마</a>
   <a href="#world">{{ unit }}별 요약</a>
-  {% if value_list %}<a href="#value">입지 대비 저렴</a>{% endif %}
+  {% if value_list %}<a href="#value">가성비 단지</a>{% endif %}
   <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
 </nav>
@@ -72,33 +101,59 @@
 {% if board %}
 <section id="heat" class="panel heat">
   <div class="panel-head">
-    <p class="eyebrow">{{ meta.asof }} 시황</p>
-    <h2>동네 시황 보드</h2>
-    <p class="muted">육각형 하나가 동 하나입니다. 실제 위치에 가깝게 놓았고, 색은 최근 6개월 가격 흐름과 3개월 거래량으로 매긴 온도입니다. 눌러서 동네 요약을 보세요.</p>
+    <p class="eyebrow">{{ meta.asof }} 기준</p>
+    <h2>동네 온도</h2>
+    <p class="muted">최근 6개월 가격 흐름과 3개월 거래량을 다른 동네와 견줘 온도를 매겼습니다. 지도에서 동네를 누르면 요약이 나옵니다.</p>
   </div>
-  <div class="heat-legend" role="group" aria-label="온도 거르기">
-    {% for b in board.bands %}{% if b.count %}<button type="button" class="heat-chip b{{ b.band }}" data-band="{{ b.band }}" aria-pressed="false"><i></i>{{ b.name }}<span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
+  <div class="heat-scale" role="group" aria-label="온도별로 골라 보기">
+    <span class="hs-end">차가운</span>
+    <span class="hs-steps">
+    {% for b in board.bands | reverse %}{% if b.band %}<button type="button" class="hs-step b{{ b.band }}" data-band="{{ b.band }}" aria-pressed="false" aria-label="{{ b.name }} {{ b.count }}곳만 보기" title="{{ b.name }} {{ b.count }}곳"><i></i><span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
+    </span>
+    <span class="hs-end">뜨거운</span>
+    {% for b in board.bands %}{% if b.band == 0 and b.count %}<button type="button" class="hs-step hs-quiet b0" data-band="0" aria-pressed="false" aria-label="{{ b.name }} {{ b.count }}곳만 보기"><i></i>거래 적은 동네 <span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
   </div>
   <div class="heat-grid">
-    <div class="heat-board">
-      <svg viewBox="0 0 {{ board.w }} {{ board.h }}" role="img" aria-label="{{ region }} 동별 시황 육각 지도" id="heat-svg" style="max-width: {{ (board.w * 1.3) | round | int }}px">
-        {% for t in board.tiles %}
-        <g class="hx b{{ t.band }}" tabindex="0" role="button" aria-label="{{ t.gu }} {{ t.dong }} {{ t.band_name }}"
-           style="--ring: {{ t.ring }}; transform-origin: {{ t.x }}px {{ t.y }}px"
-           data-key="{{ t.gu }}|{{ t.dong }}" data-band="{{ t.band }}" data-gu="{{ t.gu }}" data-dong="{{ t.dong }}"
-           data-name="{{ t.band_name }}" data-chg="{{ t.chg if t.chg is not none else '' }}" data-last3="{{ t.last3 }}"
-           data-usual="{{ t.usual }}" data-n="{{ t.n }}" data-price="{{ t.price or '' }}"
-           data-best="{{ t.best or '' }}" data-best-slug="{{ t.best_slug or '' }}" data-best-grade="{{ t.best_grade or '' }}">
-          <polygon points="{{ t.points }}"/>
-          <text x="{{ t.x }}" y="{{ t.y - 2 }}" class="hx-name">{{ t.label }}</text>
-          <text x="{{ t.x }}" y="{{ t.y + 12 }}" class="hx-val">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '·' }}</text>
-        </g>
+    <div class="heat-map">
+      <svg viewBox="0 0 {{ board.w }} {{ board.h }}" id="heat-svg" role="group" aria-label="{{ region }} 동네 온도 지도">
+        <defs><pattern id="hm-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="6" height="6"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>
+        <g class="hm-land">{% for d in board.outline %}<path d="{{ d.d }}"/>{% endfor %}</g>
+        <g class="hm-dongs">
+        {% for t in board.tiles %}<path class="dm b{{ t.band }}" d="{{ t.d }}" tabindex="0" role="button"
+           aria-label="{{ t.dong }} {{ t.band_name }}{% if t.chg is not none %}, 최근 6개월 {{ '%+.1f' % t.chg }}%{% endif %}"
+           style="--ring: {{ t.ring }}" data-key="{{ t.gu }}|{{ t.dong }}" data-band="{{ t.band }}" data-gu="{{ t.gu }}"
+           data-dong="{{ t.dong }}" data-name="{{ t.band_name }}" data-chg="{{ t.chg if t.chg is not none else '' }}"
+           data-last3="{{ t.last3 }}" data-usual="{{ t.usual }}" data-n="{{ t.n }}" data-price="{{ t.price or '' }}"
+           data-best="{{ t.best or '' }}" data-best-slug="{{ t.best_slug or '' }}" data-best-grade="{{ t.best_grade or '' }}"/>
         {% endfor %}
+        </g>
+        <g class="hm-gu" aria-hidden="true">{% for d in board.districts %}<text x="{{ d.x }}" y="{{ d.y }}">{{ d.name }}</text>{% endfor %}</g>
+        <g class="hm-names" aria-hidden="true">
+        {% for t in board.tiles %}{% if t.show_label or t.pin %}<text class="dm-name b{{ t.band }}" data-for="{{ t.gu }}|{{ t.dong }}" x="{{ t.x }}" y="{{ t.y + (17 if t.pin else 4) }}">{{ t.label }}</text>{% endif %}{% endfor %}
+        </g>
+        <g class="hm-pins" aria-hidden="true">
+        {% for t in board.tiles %}{% if t.pin %}<g class="pin" style="--i: {{ t.pin }}" transform="translate({{ t.x }} {{ t.y - 6 }})"><circle class="pin-pulse" r="11"/><circle class="pin-dot" r="10"/><text y="4">{{ t.pin }}</text></g>{% endif %}{% endfor %}
+        </g>
       </svg>
+      <p class="heat-note muted">동 경계는 단지 위치로 그린 근사입니다. 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">온도 매기는 법</a></p>
     </div>
     <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}">
-      <p class="muted">육각형을 누르면 동네 요약이 나옵니다.</p>
+      <p class="muted">지도에서 동네를 누르면 요약이 나옵니다.</p>
     </aside>
+  </div>
+  <div class="heat-ranks">
+    {% for title, items, tone in [("지금 가장 뜨거운 동네", board.hot, "hot"), ("가장 차가운 동네", board.cold, "cold")] %}{% if items %}
+    <div class="hr-col hr-{{ tone }}">
+      <h3>{{ title }}</h3>
+      <ol>
+      {% for t in items %}<li><button type="button" class="hr-item" data-key="{{ t.gu }}|{{ t.dong }}">
+        <span class="hr-rank">{{ loop.index }}</span><i class="hr-dot b{{ t.band }}"></i>
+        <span class="hr-name">{{ t.dong }}{% if t.gu != t.dong %}<small>{{ t.gu }}</small>{% endif %}</span>
+        <span class="hr-val {{ 'pos' if (t.chg or 0) > 0 else 'neg' if (t.chg or 0) < 0 else '' }}">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '-' }}</span>
+      </button></li>{% endfor %}
+      </ol>
+    </div>
+    {% endif %}{% endfor %}
   </div>
 </section>
 {% endif %}
@@ -106,13 +161,15 @@
 <section id="world" class="panel">
   <div class="panel-head">
     <h2>{{ unit }}별 한눈에 보기</h2>
-    <p class="muted">{{ unit }}마다 단지들의 가운데 값입니다. 누르면 그 {{ unit }}의 단지만 목록에서 보여드립니다.</p>
+    <p class="muted">{{ unit }}마다 단지들의 중간값입니다. 누르면 그 {{ unit }} 단지만 목록에 보여드립니다.</p>
   </div>
-  <div class="world-grid">
+  {% set rail = gu_stats | length > 8 %}
+  {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
+  <div class="world-grid{% if rail %} rail{% endif %}">
   {% for g in gu_stats %}
     <a class="world-card" href="#list" data-gu-jump="{{ g.gu }}">
-      <div class="world-head"><strong>{{ g.gu }}</strong><span class="muted">{{ g.n }}개 단지</span></div>
-      <div class="world-score"><span class="num">{{ g.index | score }}</span><span class="muted">지수 중위</span></div>
+      <div class="world-head"><strong>{{ g.gu | area }}</strong><span class="muted">{{ g.n }}개 단지</span></div>
+      <div class="world-score"><span class="num">{{ g.index | score }}</span><span class="muted">중간 점수</span></div>
       <div class="gstats">
         <div class="gstat"><span class="gstat-name">입지</span><span class="gbar"><span style="width: {{ 0 if g.location is nan else g.location | round(1) }}%"></span></span><span class="gstat-val">{{ g.location | score }}</span></div>
         <div class="gstat"><span class="gstat-name">성장</span><span class="gbar"><span style="width: {{ 0 if g.growth is nan else g.growth | round(1) }}%"></span></span><span class="gstat-val">{{ g.growth | score }}</span></div>
@@ -122,6 +179,7 @@
     </a>
   {% endfor %}
   </div>
+  {% if rail %}{{ rail_nav }}</div>{% endif %}
 </section>
 
 {% if leaders %}
@@ -130,25 +188,28 @@
     <h2>{{ unit }}별 대장 단지</h2>
     <p class="muted">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다(최근 1년 매매 5건 이상). 막대는 그 {{ unit }} 단지들의 중간 가격이 대장의 몇 % 수준인지 보여줍니다.</p>
   </div>
-  <div class="leader-row">
+  {% set rail = leaders | length > 8 %}
+  {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
+  <div class="leader-row{% if rail %} rail{% endif %}">
   {% for d in leaders %}
     <a class="leader" href="apt/{{ d.slug }}.html" data-reveal style="--i: {{ loop.index0 }}">
-      <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
+      <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu | area }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
       <span class="ld-name"><span class="grade g-{{ d.grade }}">{{ d.grade }}</span>{{ d.name }}</span>
       <span class="ld-price" data-count>{{ d.price_text }}</span>
-      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 비교 거래 부족{% endif %}</span>
+      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 전과 견줄 거래 부족{% endif %}</span>
       {% if d.ratio %}<span class="ld-meter" title="{{ d.gu }} 중간 단지는 대장의 {{ d.ratio }}%"><span style="--w: {{ d.ratio }}%"></span></span>
       <span class="ld-meter-label muted">{{ unit }} 중간 단지는 대장의 <strong>{{ d.ratio }}%</strong></span>{% endif %}
     </a>
   {% endfor %}
   </div>
+  {% if rail %}{{ rail_nav }}</div>{% endif %}
 </section>
 {% endif %}
 
 <section id="gu" class="panel">
   <div class="panel-head">
     <h2>{{ unit }}별로 비교하기</h2>
-    <p class="muted">항목을 누르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 모두 {{ unit }}마다 단지들의 가운데 값입니다.</p>
+    <p class="muted">항목을 누르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 모두 {{ unit }}마다 단지들의 중간값입니다.</p>
   </div>
   <div class="chips gu-tabs" role="tablist">
   {% for b in gu_boards %}<button class="chip{% if loop.first %} active{% endif %}" type="button" role="tab" data-board="{{ b.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ b.tab }}</button>{% endfor %}
@@ -156,11 +217,11 @@
   {% for b in gu_boards %}
   <div class="gu-board" data-board="{{ b.key }}"{% if not loop.first %} hidden{% endif %}>
     <div class="gb-head"><strong>{{ b.title }}</strong><span class="muted">{{ region }} 전체 {{ b.ref_text }}</span></div>
-    <ol>
+    <ol{% if b.rows | length > 10 %} data-clamp="10"{% endif %}>
     {% for r in b.rows %}
       <li{% if loop.first %} class="gb-first"{% endif %}>
         <span class="gb-rank">{{ loop.index }}</span>
-        <a class="gb-name" href="#list" data-gu-jump="{{ r.gu }}">{{ r.gu }}<small>{{ r.n }}개 단지</small></a>
+        <a class="gb-name" href="#list" data-gu-jump="{{ r.gu }}">{{ r.gu | area }}<small>{{ r.n }}개 단지</small></a>
         <span class="gb-bar"><span style="width: {{ r.w }}%"></span>{% if b.ref_pos is not none %}<i style="left: {{ b.ref_pos }}%" title="{{ region }} 전체 {{ b.ref_text }}"></i>{% endif %}</span>
         <span class="gb-val"><strong>{{ r.text }}</strong>{% if r.diff %}<small class="{{ 'up' if r.up else 'down' }}">{{ region }} 대비 {{ r.diff }}</small>{% endif %}</span>
       </li>
@@ -174,7 +235,7 @@
 {% if value_list %}
 <section id="value" class="panel">
   <div class="panel-head">
-    <h2>입지 대비 가격이 좋은 단지</h2>
+    <h2>입지에 비해 저렴한 단지</h2>
     <p class="muted">입지점수는 {{ region }} 아파트 중간({{ value_ref.loc_med | score }}점) 이상인데, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지입니다. 입지가 좋은 순서로 보여드립니다.</p>
   </div>
   {% set n_villa = value_list | selectattr("small") | list | length %}
@@ -187,7 +248,7 @@
   {% for r in value_list %}
     <li data-type="{{ 'villa' if r.small else 'apt' }}"{% if r.small %} hidden{% endif %}><a href="apt/{{ r.slug }}.html">
       <span class="vl-rank">{{ loop.index }}</span>
-      <span class="vl-name"><span class="vl-title"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span><strong>{{ r.name }}</strong>{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</span><span class="muted">{{ r.gu }} {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
+      <span class="vl-name"><span class="vl-title"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span><strong>{{ r.name }}</strong>{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</span><span class="muted">{{ r | place }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
       <span class="vl-loc"><span class="vl-label">입지</span><span class="gbar"><span style="width: {{ r.location_score | round(1) }}%"></span></span><strong>{{ r.location_score | score }}</strong></span>
       <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="vl-cheap"><span class="vl-d">중간보다 </span>{{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}%<span class="vl-d">↓</span><span class="vl-m"> 저렴</span></span></span>
     </a></li>
@@ -207,7 +268,7 @@
       <ol>
       {% for r in t["items"] %}
         <li><a href="apt/{{ r.slug }}.html"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
-          <span class="top-name">{{ r.name }}<span class="muted"> {{ r.gu }} {{ r.dong }}</span></span>
+          <span class="top-name">{{ r.name }}<span class="muted"> {{ r | place }}</span></span>
           <span class="top-val">{{ t.value(r) }}</span></a></li>
       {% endfor %}
       </ol>
@@ -228,10 +289,19 @@
 <section id="list" class="panel">
   <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬됩니다.</p></div>
   <div class="controls">
+    {% if area_groups %}
+    <label class="select-pill" id="gu-select-wrap"><span class="sr-only">{{ unit }} 고르기</span>
+      <select id="gu-select">
+        <option value="">{{ region }} 전체</option>
+        {% for grp in area_groups %}<optgroup label="{{ grp.label }}">{% for it in grp["items"] %}<option value="{{ it.value }}">{{ it.label }} ({{ it.n }})</option>{% endfor %}</optgroup>{% endfor %}
+      </select>
+    </label>
+    {% else %}
     <div class="chips" id="gu-filter">
       <button class="chip active" data-gu="">전체</button>
       {% for g in gus %}<button class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
     </div>
+    {% endif %}
     <input id="search" type="search" placeholder="단지명 또는 동 검색">
   </div>
   {% if meta.n_small %}
@@ -258,7 +328,7 @@
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
       <td><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</td>
-      <td>{{ r.gu }} {{ r.dong }}</td>
+      <td>{{ r | place }}</td>
       <td data-v="{{ r.build_year or '' }}">{{ r.build_year or "-" }}</td>
       <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
       {% for n in years %}{% set v = r["cagr_%dy" % n] %}
