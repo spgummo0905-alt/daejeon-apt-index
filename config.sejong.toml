@@ -1,0 +1,46 @@
+# 세종 버전: config.toml 위에 세종에서 다른 부분만 덮어씁니다.
+# 실행: python -m djdex --config config.sejong.toml all --out site/sejong
+extends = "config.toml"
+data = "data/sejong"
+
+[region]
+name = "세종"
+geo_name = "세종특별자치시"   # 카카오 주소 검색용
+districts = { "36110" = "세종" }
+# 세종은 구가 없어 구별 비교·필터를 동 단위로 봅니다.
+group_by = "dong"
+example_dong = "도담동"
+
+[site]
+base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/"
+# 세종은 지하철이 없어 BRT 정류장 거리로 대신합니다.
+transit = { tab = "BRT", stop = "BRT 정류장", short = "정류장" }
+
+[location]
+# 목록은 통째로 바뀌므로 전체 항목을 다시 적습니다. 지하철 대신 BRT 정류장(카카오 키워드 검색 'BRT').
+factors = [
+  { key = "subway",       label = "BRT 정류장까지 거리", kind = "nearest", radius = 3000, weight = 0.25, keep_name = true, query = "BRT" },
+  { key = "hub",          label = "주요 학원가 접근성", kind = "score", weight = 0.20 },
+  { key = "school_mid",   label = "학군 (주변 중학교 순전입률)", kind = "value", weight = 0.15, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "elementary",   label = "초등학교까지 거리", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
+  { key = "academy_math", label = "반경 1km 수학 학원 수", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
+  { key = "mart",         label = "대형마트까지 거리", category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
+  { key = "hospital",     label = "반경 1km 병원 수", category = "HP8", kind = "count", radius = 1000, weight = 0.10 },
+]
+
+[location.hub]
+# 세종 학원가는 수학 학원이 몰린 곳을 자동으로 찾습니다 (지하철이 없어 도보 시간 기준).
+auto = true
+hubs = []
+
+[school]
+sido = "36"
+
+[finder]
+workplaces = [
+  { name = "정부세종청사", lat = 36.5040, lng = 127.2649 },
+  { name = "세종시청", lat = 36.4800, lng = 127.2890 },
+  { name = "오송역(KTX)", lat = 36.6203, lng = 127.3270 },
+  { name = "둔산·정부대전청사", lat = 36.3605, lng = 127.3836 },
+  { name = "대덕연구단지(KAIST)", lat = 36.3721, lng = 127.3604 },
+]

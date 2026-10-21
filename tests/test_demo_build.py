@@ -102,3 +102,30 @@ def test_value_list_sorted_by_location(tmp_path):
     section = html[html.index('id="value"'):html.index("</section>", html.index('id="value"'))]
     locs = [int(x) for x in re.findall(r'<span class="vl-label">입지</span>.*?<strong>(\d+)</strong>', section, re.S)]
     assert locs and locs == sorted(locs, reverse=True)
+
+
+def test_sejong_config_extends_daejeon():
+    from djdex import config
+
+    sj = config.load(config.ROOT / "config.sejong.toml")
+    dj = config.load()
+    assert sj.region_name == "세종" and sj.geo_region == "세종특별자치시"
+    assert sj.districts == {"36110": "세종"}  # 대전 구는 섞이지 않음
+    assert sj.paths.data.name == "sejong" and dj.paths.data.name == "data"
+    assert sj.hub["auto"] and sj.hub["hubs"] == [] and sj.hub["full_min"] == dj.hub["full_min"]  # 나머지는 물려받음
+    assert sj.school["sido"] == "36" and sj.school["api_moves"] == dj.school["api_moves"]
+    assert [f["key"] for f in sj.location_factors][0] == "subway" and sj.location_factors[0]["query"] == "BRT"
+    assert sj.metrics == dj.metrics
+
+
+def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
+    out = tmp_path / "sejong"
+    cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert "세종에서" in index and "동별로 비교하기" in index and "구별" not in index
+    assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
+    assert 'class="region-switch"' in index and 'aria-current="page">세종</a>' in index
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert "BRT 정류장마다" in stations and "지하철" not in stations
+    robots = (out / "robots.txt").read_text(encoding="utf-8")
+    assert "daejeon-apt-index/sitemap.xml" in robots and "sejong/sitemap.xml" in robots

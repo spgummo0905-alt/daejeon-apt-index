@@ -42,15 +42,15 @@
   </tbody>
 </table>
 <p>반경 안에 해당 시설이 없으면 그 항목은 0점입니다.</p>
-{% set hub = cfg.raw.location.hub %}{% if hub and hub.hubs %}
+{% set hub = cfg.raw.location.hub %}{% set hubs = meta.hubs or (hub.hubs if hub else []) %}{% if hubs %}
 <h3>주요 학원가 접근성</h3>
-<p>학원 수만 세면 동네 상가 학원과 대형 학원가가 구분되지 않아, {{ region }}의 대표 학원가까지 몇 분 걸리는지를 따로 봅니다.
+<p>학원 수만 세면 동네 상가 학원과 대형 학원가가 구분되지 않아, {{ region }}의 대표 학원가까지 몇 분 걸리는지를 따로 봅니다.{% if not hub.hubs %} 학원가는 단지 주변 수학 학원 수가 몰린 곳을 자동으로 찾았습니다.{% endif %}
 걸어가는 시간과 지하철을 타는 시간(가까운 역까지 도보 + 대기 {{ hub.subway_wait_min }}분 + 역마다 {{ hub.min_per_stop }}분 + 내려서 도보) 중 짧은 쪽을 씁니다.
 {{ hub.full_min }}분 안이면 만점, {{ hub.zero_min }}분이면 0점이고, 학원가 규모에 따라 만점을 다르게 둡니다. 여러 학원가 중 가장 높은 점수를 씁니다.</p>
 <table>
   <thead><tr><th>학원가</th><th>만점</th><th>지하철</th></tr></thead>
   <tbody>
-  {% for h in hub.hubs %}
+  {% for h in hubs %}
   <tr><td>{{ h.name }}</td><td>{{ "%.0f" | format(h.weight * 100) }}점</td><td>{% if h.stations %}{% for st, m in h.stations.items() %}{{ st }}역(도보 {{ m }}분){% if not loop.last %}, {% endif %}{% endfor %}{% else %}역 없음 (도보 기준){% endif %}</td></tr>
   {% endfor %}
   </tbody>

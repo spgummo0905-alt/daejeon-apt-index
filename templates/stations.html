@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}역세권 단지 순위 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}{{ region }} 지하철역마다 걸어서 갈 만한({{ radius }}m 안) 아파트 단지를 지수 순으로 정리했습니다.{% endblock %}
+{% block title %}{{ transit.tab }} 단지 순위 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} {{ transit.stop }}마다 걸어서 갈 만한({{ radius }}m 안) 아파트 단지를 지수 순으로 정리했습니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
-  <p class="eyebrow">역세권 단지</p>
-  <h1>역마다 가까운 단지를<br>한눈에</h1>
-  <p class="lead">가장 가까운 지하철역까지 {{ radius }}m 안인 단지를 역별로 묶고, 종합 지수가 높은 순으로 보여드립니다. 역 이름을 누르면 펼쳐집니다.</p>
+  <p class="eyebrow">{{ transit.tab }} 단지</p>
+  <h1>{{ transit.short }}마다 가까운 단지를<br>한눈에</h1>
+  <p class="lead">가장 가까운 {{ transit.stop }}까지 {{ radius }}m 안인 단지를 역별로 묶고, 종합 지수가 높은 순으로 보여드립니다. 역 이름을 누르면 펼쳐집니다.</p>
 </section>
 {% if stations %}
 <nav class="jump station-jump">
