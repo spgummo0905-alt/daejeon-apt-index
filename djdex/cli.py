@@ -59,7 +59,7 @@ def _complex_list(trades: pd.DataFrame) -> list[dict]:
 def _read_trades(cfg) -> pd.DataFrame:
     if not cfg.paths.trades.exists():
         sys.exit(f"{cfg.paths.trades} 가 없습니다. `python -m djdex collect` 를 먼저 실행하세요.")
-    return pd.read_csv(cfg.paths.trades, dtype={"jibun": str})
+    return pd.read_csv(cfg.paths.trades, dtype={"jibun": str, "apt_dong": str})
 
 
 def cmd_locate(cfg, args) -> None:

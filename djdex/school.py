@@ -43,11 +43,14 @@ def fetch(key: str, api_type: str, sido: str, sgg: str | None = None, year: int 
         params["pbanYr"] = str(year)
     for attempt in range(retries):
         try:
-            r = s.get(URL, params=params, timeout=30)
+            # 접속 자체가 안 되면(해외 접속 차단 등) 재시도 없이 바로 포기합니다.
+            r = s.get(URL, params=params, timeout=(5, 30))
             r.raise_for_status()
             global _last_text
             _last_text = getattr(r, "text", "")[:300]
             return _records(r.json())
+        except requests.ConnectionError:
+            raise
         except (requests.RequestException, ValueError):
             if attempt == retries - 1:
                 raise
