@@ -36,7 +36,7 @@
     void card.offsetWidth;
     card.classList.add("swap");
     const head = el("div", "hc-head");
-    head.append(el("span", "hc-band b" + d.band, d.name), el("span", "muted", d.gu));
+    head.append(el("span", "hc-band b" + d.band, d.name), el("span", "muted", d.gu === d.dong ? "" : d.gu));
     card.append(head, el("h3", "hc-name", d.dong));
     const big = el("div", "hc-big");
     if (d.chg !== "") {

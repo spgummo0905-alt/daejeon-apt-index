@@ -74,7 +74,7 @@ def _env() -> Environment:
 
 
 def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int],
-             real: bool, region: str) -> list[str]:
+             real: bool, region: str, leader: dict | None = None) -> list[str]:
     """단지 페이지 맨 위 '한눈에 보기' 문장들."""
     out = []
     if not _nan(c["index"]):
@@ -105,6 +105,12 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
         else:
             out.append(f"84㎡ 환산가는 {c['gu']} 중위가보다 {abs(diff) * 100:.0f}% {'비쌉' if diff > 0 else '저렴합'}니다."
                        )
+    if leader and not c["small"] and not _nan(c.get("price_ref")):
+        if leader["complex_id"] == c["complex_id"]:
+            out.append(f"{c['gu']}에서 84㎡ 환산가가 가장 높은 대장 단지입니다.")
+        else:
+            gap = c["price_ref"] / leader["price"] - 1
+            out.append(f"{c['gu']} 대장 단지 {leader['name']}({leader['price_text']})의 {(1 + gap) * 100:.0f}% 가격입니다.")
     return out
 
 
@@ -241,9 +247,14 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
+    leader_by_gu = {d["gu"]: d for d in month["leaders"]}
+    themes = _themes(main_t, by_id, cfg, meta)
+    (out_dir / "themes.html").write_text(env.get_template("themes.html").render(
+        root="", page_path="themes.html", themes=themes, **common), encoding="utf-8")
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
+        leaders=month["leaders"],
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
@@ -304,11 +315,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             c=c, charts=c_charts, recent=tr_list[:15], root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_rows=loc_rows, neighbors=neighbors,
-            summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name),
+            summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
+                             leader_by_gu.get(c["gu"])),
             n_total=n_total, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in cfg.site.get("regions", [])])
     return len(rows)
 
@@ -457,7 +469,59 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
         board = {"tiles": tiles, "w": round(w), "h": round(hgt),
                  "bands": [{"band": b, "name": n, "count": counts[b]} for b, n in trends.BANDS + [trends.QUIET]],
                  "start": f"{hot['gu']}|{hot['dong']}" if hot else None}
-    return {"ranks": ranks, "ticker": ticker, "board": board}
+    # 대장 단지: 구(세종은 동)마다 84㎡ 환산가가 가장 높은 단지. 최근 1년 매매 5건 이상인 단지만.
+    year_n = trends.recent_count(sale, asof, 12)
+    liquid = main_t[main_t.index.isin(year_n[year_n >= 5].index)].dropna(subset=["price_ref"])
+    leaders = []
+    for gu, sub in liquid.groupby("gu", sort=False):
+        top_id = sub["price_ref"].idxmax()
+        all_gu = main_t[main_t["gu"] == gu]["price_ref"].dropna()
+        r = by_id[top_id]
+        leaders.append({"gu": gu, "slug": r["slug"], "name": r["name"], "grade": r["grade"], "dong": r["dong"],
+                        "price": main_t.at[top_id, "price_ref"], "price_text": eok(main_t.at[top_id, "price_ref"]),
+                        "chg": None if top_id not in chg.index else round(float(chg[top_id]) * 100, 1),
+                        "ratio": round(float(all_gu.median() / main_t.at[top_id, "price_ref"]) * 100) if len(all_gu) else None,
+                        "n": int(len(all_gu)), "complex_id": top_id})
+    leaders.sort(key=lambda d: -d["price"])
+    return {"ranks": ranks, "ticker": ticker, "board": board, "leaders": leaders}
+
+
+def _themes(main_t, by_id, cfg, meta) -> list[dict]:
+    """테마 모음: 생활 조건으로 묶은 단지 목록 (각 12곳, 종합 지수 높은 순)."""
+    t = main_t
+    asof_year = int(meta["asof"][:4])
+    tr = _transit(cfg)
+    col = lambda k: t[k] if k in t else pd.Series(float("nan"), index=t.index)
+    defs = [
+        ("school", "초품아", "초등학교까지 400m 안", col("elementary_raw") <= 400,
+         lambda c: f"초등학교 {t.at[c, 'elementary_raw']:.0f}m"),
+        ("transit", tr["tab"], f"{tr['stop']}까지 700m 안", col("subway_raw") <= 700,
+         lambda c: f"{station_name(t.at[c, 'subway_name_raw']) or tr['stop']} {t.at[c, 'subway_raw']:.0f}m"),
+        ("hub", "학원가 도보권", "주요 학원가까지 15분 안 (도보·지하철)", col("hub_min_raw") <= 15,
+         lambda c: f"{t.at[c, 'hub_name_raw']} {t.at[c, 'hub_min_raw']:.0f}분"),
+        ("district", "학군 상위", "주변 중학교 순전입률 상위 20%", col("school_mid_pct") >= 80,
+         lambda c: f"중학교 순전입 {t.at[c, 'school_mid_raw']:+.1f}%"),
+        ("new", "신축 10년", f"{asof_year - 9}년 이후 준공", col("build_year") >= asof_year - 9,
+         lambda c: f"{int(t.at[c, 'build_year'])}년 준공"),
+        ("value", "입지 대비 가격", "가성비 점수 상위 20%", col("stat_value") >= 80,
+         lambda c: f"84㎡ {eok(t.at[c, 'price_ref'])}"),
+    ]
+    out = []
+    for key, title, desc, mask, fact in defs:
+        sel = t[mask.fillna(False)].dropna(subset=["index"]).sort_values("index", ascending=False)
+        if sel.empty:
+            continue
+        items = []
+        for cid in sel.index[:12]:
+            r = by_id[cid]
+            try:
+                f = fact(cid)
+            except (KeyError, TypeError, ValueError):
+                f = ""
+            items.append({"slug": r["slug"], "name": r["name"], "grade": r["grade"], "gu": r["gu"], "dong": r["dong"],
+                          "index": r["index"], "fact": f})
+        out.append({"key": key, "title": title, "desc": desc, "count": int(len(sel)), "items": items})
+    return out
 
 
 APP_PAGES = ["compare", "finder", "my"]
