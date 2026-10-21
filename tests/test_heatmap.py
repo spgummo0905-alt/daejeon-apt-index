@@ -1,0 +1,33 @@
+from djdex import heatmap, site
+
+
+def _pts():
+    # 둔산동 근처 세 동, 동마다 단지 네 곳
+    base = {("서구", "둔산동"): (36.351, 127.378), ("서구", "탄방동"): (36.343, 127.388), ("서구", "월평동"): (36.360, 127.366)}
+    return {k: [(lat + 0.002 * i, lng + 0.002 * (i % 2)) for i in range(4)] for k, (lat, lng) in base.items()}
+
+
+def test_build_draws_each_dong_inside_its_district():
+    dist = heatmap.load_districts({"30170": "서구"})
+    m = heatmap.build(_pts(), dist)
+    assert set(m["regions"]) == set(_pts())
+    for r in m["regions"].values():
+        assert r["d"].startswith("M") and r["d"].endswith("Z")
+        assert 0 <= r["x"] <= m["w"] and 0 <= r["y"] <= m["h"]
+    assert [d["name"] for d in m["districts"]] == ["서구"]
+
+
+def test_build_without_districts_and_too_few_points():
+    assert heatmap.build(_pts(), None)["districts"] == []
+    assert heatmap.build({("서구", "둔산동"): [(36.35, 127.38)]}, None) is None
+
+
+def test_place_area_and_groups():
+    assert site.place({"gu": "서구", "dong": "둔산동"}) == "서구 둔산동"
+    assert site.place({"gu": "도담동", "dong": "도담동"}) == "도담동"
+    assert str(site.area_name("조치원읍 죽림리")) == '<span class="area-sub">조치원읍</span>죽림리'
+    assert str(site.area_name("도담동")) == "도담동"
+    groups = site._area_groups(["도담동", "조치원읍 교리", "아름동", "부강면 부강리", "조치원읍 남리"], {"도담동": 3})
+    assert [g["label"] for g in groups] == ["동 지역", "부강면", "조치원읍"]
+    assert [i["label"] for i in groups[0]["items"]] == ["도담동", "아름동"]
+    assert groups[2]["items"][0] == {"value": "조치원읍 교리", "label": "교리", "n": 0}

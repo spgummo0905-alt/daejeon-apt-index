@@ -16,9 +16,10 @@
       document.getElementById("my-strip").hidden = false;
     });
   }
-  document.querySelectorAll("[data-gu-jump]").forEach(a => a.addEventListener("click", () => {
-    const chip = document.querySelector('#gu-filter .chip[data-gu="' + a.dataset.guJump + '"]');
-    if (chip) chip.click();
+  document.querySelectorAll("[data-gu-jump]").forEach(a => a.addEventListener("click", e => {
+    if (!DJ.showArea) return;
+    e.preventDefault();
+    DJ.showArea(a.dataset.guJump);
   }));
   document.querySelectorAll(".gu-tabs .chip").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".gu-tabs .chip").forEach(b => {

@@ -1,4 +1,4 @@
-// 단지 목록 표: 구 필터, 검색, 열 정렬, 30개씩 더 보기
+// 단지 목록 표: 구(동) 거르기, 검색, 열 정렬, 30개씩 더 보기
 (function () {
   const table = document.getElementById("complex-table");
   if (!table) return;
@@ -29,20 +29,30 @@
   function reset() { limit = PAGE; apply(); }
   if (more) more.addEventListener("click", () => { limit += PAGE; apply(); });
 
-  document.querySelectorAll("#gu-filter .chip").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#gu-filter .chip").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      gu = btn.dataset.gu;
-      reset();
-    });
-  });
+  // 구(또는 동) 거르기: 구가 몇 개뿐이면 칩, 동이 많은 지역(세종)은 묶음 고르기 상자
+  const chips = Array.from(document.querySelectorAll("#gu-filter .chip"));
+  const select = document.getElementById("gu-select");
+  function setArea(v) {
+    gu = v || "";
+    chips.forEach(b => b.classList.toggle("active", b.dataset.gu === gu));
+    if (select) select.value = gu;
+    reset();
+  }
+  chips.forEach(btn => btn.addEventListener("click", () => setArea(btn.dataset.gu)));
+  if (select) select.addEventListener("change", () => setArea(select.value));
+  const search = document.getElementById("search");
+  // 다른 곳(지역 카드, 동네 온도 지도)에서 '이 지역 단지 보기'를 누르면 목록을 그 지역으로 거르고 내려갑니다.
+  DJ.showArea = function (area, dong) {
+    setArea(area);
+    if (search) { search.value = dong && dong !== area ? dong : ""; search.dispatchEvent(new Event("input")); }
+    document.getElementById("list").scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth" });
+  };
   document.querySelectorAll("#table-type .chip").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll("#table-type .chip").forEach(b => b.classList.toggle("active", b === btn));
     type = btn.dataset.type;
     reset();
   }));
-  document.getElementById("search").addEventListener("input", e => {
+  search.addEventListener("input", e => {
     q = e.target.value.trim().toLowerCase();
     reset();
   });

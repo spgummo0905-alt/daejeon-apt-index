@@ -394,11 +394,11 @@ def radar(axes: list[tuple[str, float, float]], size: int = 340) -> str:
     for i, (name, v, m) in enumerate(axes):
         x, y = pt(i, 0 if nan(v) else v)
         shown = "-" if nan(v) else f"{v:.0f}"
-        out.append(f'<g class="mark" {_tip(f"{name}: 이 단지 {shown} · {REGION} 중위 {m:.0f}")}>'
+        out.append(f'<g class="mark" {_tip(f"{name}: 이 단지 {shown} · {REGION} 중간 {m:.0f}")}>'
                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="11" class="hit"/>'
                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" class="dot s1 ring"/></g>')
     legend = ('<div class="legend"><span class="legend-item"><span class="key-line s1"></span>이 단지</span>'
-              f'<span class="legend-item"><span class="key-line ref"></span>{REGION} 중위</span></div>')
+              f'<span class="legend-item"><span class="key-line ref"></span>{REGION} 중간값</span></div>')
     return (f'<svg viewBox="0 0 {size} {size}" class="chart radar" role="img" aria-label="입지 항목 레이더">'
             f'{"".join(out)}</svg>{legend}')
 

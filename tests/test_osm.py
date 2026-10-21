@@ -11,6 +11,7 @@ SAMPLE = {"elements": [
     {"type": "node", "id": 10, "lat": 36.50, "lon": 127.26, "tags": {"name": "도담동"}},
     {"type": "way", "id": 20, "center": {"lat": 36.48, "lon": 127.29}, "tags": {"name": "정부세종청사북측"}},
     {"type": "node", "id": 11, "lat": 36.40, "lon": 127.20, "tags": {}},
+    {"type": "node", "id": 12, "lat": 36.49, "lon": 127.25, "tags": {"name": "새롬동,나성동"}},
 ]}
 
 
@@ -18,7 +19,8 @@ def test_parse_collects_stops_with_routes():
     refs, stops = osm.parse(SAMPLE)
     assert refs == ["B0", "B1"]
     assert stops == [{"name": "도담동", "lat": 36.50, "lng": 127.26, "routes": ["B0", "B1"]},
-                     {"name": "정부세종청사북측", "lat": 36.48, "lng": 127.29, "routes": ["B1"]}]
+                     {"name": "정부세종청사북측", "lat": 36.48, "lng": 127.29, "routes": ["B1"]},
+                     {"name": "새롬동·나성동", "lat": 36.49, "lng": 127.25, "routes": []}]
 
 
 def test_nearest_within_radius():
@@ -52,7 +54,7 @@ def test_collect_caches_and_falls_back(tmp_path):
     path = tmp_path / "osm_stops.json"
     geo = {"a": [36.5, 127.26]}
     stops = osm.collect("^B[0-9]+$", geo, path, log=lambda *_: None, session=FakeSession())
-    assert len(stops) == 2 and json.loads(path.read_text())["routes"] == ["B0", "B1"]
+    assert len(stops) == 3 and json.loads(path.read_text())["routes"] == ["B0", "B1"]
     s0 = FakeSession()
     osm.collect("^B[0-9]+$", geo, path, log=lambda *_: None, session=s0)
     assert s0.headers["User-Agent"].startswith("daejeon-apt-index")

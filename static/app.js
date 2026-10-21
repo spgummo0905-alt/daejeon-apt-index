@@ -27,6 +27,26 @@
     return dataPromise;
   };
   DJ.href = c => ROOT + "apt/" + c.s + ".html";
+  // '서구 둔산동'. 구가 없는 지역(세종)은 구 자리에 동이 들어 있어 한 번만.
+  DJ.place = c => (c.gu === c.d ? c.d : c.gu + " " + c.d);
+  // 받침에 맞춘 조사: DJ.josa("래미안", "이/가") → "래미안이", DJ.josa("자이(아)", "을/를") → "자이(아)를"
+  // 괄호 속 말이나 끝 기호는 건너뛰고 마지막 글자로 봅니다. 숫자·영문은 읽는 소리 기준.
+  DJ.josa = function (word, pair) {
+    const [withB, without] = pair.split("/");
+    const w = String(word).replace(/\([^)]*\)\s*$/, "").replace(/[^0-9A-Za-z가-힣]+$/, "");
+    const ch = w.slice(-1);
+    let batchim = false, rieul = false;
+    if (/[가-힣]/.test(ch)) {
+      const k = (ch.charCodeAt(0) - 0xac00) % 28;
+      batchim = k !== 0; rieul = k === 8;
+    } else if (/[0-9]/.test(ch)) {
+      batchim = "013678".includes(ch); rieul = "178".includes(ch); // 영 일 삼 육 칠 팔 / 일 칠 팔(ㄹ)
+    } else if (/[A-Za-z]/.test(ch)) {
+      batchim = /[lmnr]/i.test(ch); rieul = /[lr]/i.test(ch);
+    }
+    if (withB === "으로") return word + (batchim && !rieul ? "으로" : "로");
+    return word + (batchim ? withB : without);
+  };
 
   // ---------- DOM 도우미 (문자열은 textContent 로만 넣습니다) ----------
   function el(tag, cls, text) {
@@ -103,7 +123,7 @@
           const li = el("li", "ac-item");
           li.setAttribute("role", "option");
           li.append(el("span", "grade g-" + c.g, c.g), el("span", "ac-name", c.n),
-                    el("span", "ac-sub", c.gu + " " + c.d + (c.i != null ? " · " + c.i + "점" : "")));
+                    el("span", "ac-sub", DJ.place(c) + (c.i != null ? " · " + c.i + "점" : "")));
           li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
           list.append(li);
         });
@@ -144,7 +164,7 @@
     head.append(el("span", "grade big g-" + c.g, c.g));
     const t = el("div", "gcard-title");
     const a = el("a", "", c.n); a.href = DJ.href(c);
-    t.append(a, el("span", "muted", c.gu + " " + c.d + (c.y ? " · " + c.y + "년" : "")));
+    t.append(a, el("span", "muted", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")));
     head.append(t, el("span", "gcard-score", c.i == null ? "-" : String(c.i)));
     card.append(head);
     const rows = el("div", "gstats");
@@ -231,8 +251,50 @@
     };
     requestAnimationFrame(step);
   };
+  // 옆으로 넘기는 카드 줄: 화살표로 한 화면씩, 아래 막대는 지금 어디쯤인지
+  function rail(wrap) {
+    const track = wrap.querySelector(".rail");
+    const prev = wrap.querySelector("[data-rail-prev]"), next = wrap.querySelector("[data-rail-next]");
+    const bar = wrap.querySelector(".rail-dots i");
+    const update = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      const at = track.scrollLeft;
+      prev.disabled = at <= 2;
+      next.disabled = at >= max - 2;
+      wrap.classList.toggle("at-start", at <= 2);
+      wrap.classList.toggle("at-end", at >= max - 2);
+      if (bar) {
+        bar.style.width = Math.max(8, track.clientWidth / track.scrollWidth * 100) + "%";
+        bar.style.transform = "translateX(" + (max ? at / max * (100 / (track.clientWidth / track.scrollWidth) - 100) : 0) + "%)";
+      }
+    };
+    const go = dir => track.scrollBy({ left: dir * track.clientWidth * 0.9, behavior: DJ.calm ? "auto" : "smooth" });
+    prev.addEventListener("click", () => go(-1));
+    next.addEventListener("click", () => go(1));
+    track.addEventListener("scroll", () => requestAnimationFrame(update), { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  }
+  // 긴 목록은 앞 몇 줄만 보여주고 '더 보기'로 펼치기
+  function clamp(list) {
+    const n = +list.dataset.clamp, items = Array.from(list.children);
+    const extra = items.slice(n);
+    if (!extra.length) return;
+    extra.forEach(li => { li.hidden = true; });
+    const btn = el("button", "more-btn", extra.length + "곳 더 보기");
+    btn.type = "button";
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") !== "true";
+      extra.forEach(li => { li.hidden = !open; });
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.textContent = open ? "접기" : extra.length + "곳 더 보기";
+    });
+    list.after(btn);
+  }
   document.addEventListener("DOMContentLoaded", () => {
     DJ.onView(document.querySelectorAll("[data-reveal]"), e => e.classList.add("in"));
     DJ.onView(document.querySelectorAll("[data-count]"), e => DJ.countUp(e));
+    document.querySelectorAll("[data-rail]").forEach(rail);
+    document.querySelectorAll("[data-clamp]").forEach(clamp);
   });
 })();

@@ -16,7 +16,7 @@
   <details class="panel station" id="st-{{ loop.index }}" {% if loop.index <= 3 %}open{% endif %}>
     <summary>
       <span class="st-name">{{ st.name }}</span>
-      <span class="st-meta">단지 {{ st.n }}곳 · 지수 중위 {{ st.index | score }} · 84㎡ 중위 {{ st.price | eok }}</span>
+      <span class="st-meta">단지 {{ st.n }}곳 · 중간 점수 {{ st.index | score }} · 84㎡ 중간 가격 {{ st.price | eok }}</span>
     </summary>
     <ol class="st-items">
     {% for r in st["items"] %}

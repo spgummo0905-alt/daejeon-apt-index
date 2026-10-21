@@ -158,7 +158,7 @@
     const name = fitText(ctx, c.n, 430, 44, 800);
     ctx.fillText(name, 126, 82);
     ctx.fillStyle = t.sub; ctx.font = `500 20px ${FONT}`;
-    ctx.fillText((data.region || "대전") + " " + c.gu + " " + c.d, 128, 114);
+    ctx.fillText((data.region || "대전") + " " + DJ.place(c), 128, 114);
 
     ctx.textAlign = "right";
     ctx.fillStyle = t.sub; ctx.font = `600 18px ${FONT}`;

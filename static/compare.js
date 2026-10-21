@@ -88,7 +88,7 @@
     const top = wins.indexOf(Math.max(...wins));
     const verdict = el("p", "verdict", cs.length === 2
       ? (wins[0] === wins[1] ? "두 단지가 항목별로 비슷합니다"
-         : cs[top].n + "이(가) 비교 항목 " + (ROWS.length - 2) + "개 중 " + wins[top] + "개에서 앞섭니다")
+         : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + (ROWS.length - 2) + "개 중 " + wins[top] + "개에서 앞섭니다")
       : "항목별로 가장 좋은 곳: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
     const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
     const cards = el("div", "card-grid");
@@ -96,6 +96,6 @@
     out.append(verdict, wrap, el("p", "muted center small", "표시된 칸이 그 항목에서 가장 좋은 값입니다 (가격·거리는 낮을수록)."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     shareBtn.onclick = () => DJ.share("단지 비교: " + cs.map(c => c.n).join(" · "),
-      cs.map(c => c.n).join(", ") + "을(를) 입지·수익률·가격으로 비교했습니다");
+      DJ.josa(cs.map(c => c.n).join(", "), "을/를") + " 입지·수익률·가격으로 비교했습니다");
   }
 })();
