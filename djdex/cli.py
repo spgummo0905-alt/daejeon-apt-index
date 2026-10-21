@@ -112,7 +112,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
             vals = pd.to_numeric(poi_df[key], errors="coerce").dropna()
             if not vals.empty:
                 print(f"[{label}] 단지 {len(vals)}곳, 중간 {vals.median():.0f}, 상위 10% {vals.quantile(0.9):.0f}, 최대 {vals.max():.0f}")
-            found = location.detect_hubs(poi_df, geo, key=key, dongs=dongs)
+            found = location.detect_hubs(poi_df, geo, key=key, dongs=dongs, **cfg.hub.get("detect", {}))
             for h in found:
                 print(f"[{label}] 학원 밀집도로 찾은 학원가: {h['name']} ({h['lat']}, {h['lng']}) 단지 {h['members']}곳,"
                       f" 학원 {h['strength']:.0f}곳, 만점 {h['weight']}, 역 {h['stations'] or '-'}")
@@ -142,6 +142,9 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
             col = pd.to_numeric(poi_df.get(f["key"], pd.Series(dtype=float)), errors="coerce")
             print(f"[입지] {f['label']}: 값 있는 단지 {int(col.notna().sum())}/{len(poi_df)}"
                   + (f", 중간 {col.median():.0f}" if col.notna().any() else ""))
+            if f.get("keep_name") and f["key"] + "_name" in poi_df:
+                names = poi_df[f["key"] + "_name"].dropna().value_counts().head(8)
+                print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
     return table, meta, n

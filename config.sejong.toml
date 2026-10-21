@@ -30,8 +30,10 @@ factors = [
 
 [location.hub]
 # 세종 학원가는 수학 학원이 몰린 곳을 자동으로 찾습니다 (지하철이 없어 도보 시간 기준).
+# 생활권끼리 2km 남짓 떨어져 있어, 기본값(2km 안이면 한 학원가)으로는 나성동 하나로 뭉쳐서 반경을 줄입니다.
 auto = true
 hubs = []
+detect = { merge_m = 1200, top = 0.15, max_hubs = 5 }
 
 [school]
 sido = "36"
