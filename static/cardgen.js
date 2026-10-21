@@ -236,6 +236,18 @@
   }
 
   // ---------- 미리보기 창 ----------
+  // 카카오톡·네이버 앱 같은 앱 안 브라우저는 내려받기(blob 주소)를 처리하지 못해 '지원하지 않는 형식'이 뜹니다.
+  // 카카오톡은 기본 브라우저로 이 페이지를 다시 열고(?card=1 이면 카드 창을 바로 띄움), 다른 앱은 안내만 합니다.
+  const UA = navigator.userAgent || "";
+  const KAKAO = /KAKAOTALK/i.test(UA);
+  const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
+  function externalUrl() {
+    const u = new URL(location.href);
+    u.hash = "";
+    u.searchParams.set("card", "1");
+    return "kakaotalk://web/openExternal?url=" + encodeURIComponent(u.toString());
+  }
+
   function modal(c, blob, url) {
     const { el } = DJ;
     const back = el("div", "card-modal");
@@ -249,8 +261,14 @@
     shot.append(img);
     const file = c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png";
     const actions = el("div", "row-actions center-actions");
-    const save = el("a", "btn primary", "이미지 저장");
-    save.href = url; save.download = file;
+    let save;
+    if (KAKAO) {
+      save = el("a", "btn primary", "브라우저에서 열어 저장");
+      save.href = externalUrl();
+    } else {
+      save = el("a", "btn primary", "이미지 저장");
+      save.href = url; save.download = file;
+    }
     actions.append(save);
     const f = new File([blob], file, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [f] })) {
@@ -261,7 +279,11 @@
     }
     const close = el("button", "btn", "닫기"); close.type = "button";
     actions.append(close);
-    const hint = el("p", "muted small center", "휴대폰에서 저장이 안 되면 이미지를 길게 눌러 '사진에 저장'을 고르세요.");
+    const hint = el("p", "muted small center", KAKAO
+      ? "카카오톡 안에서는 이미지를 내려받을 수 없어 기본 브라우저로 이 페이지를 열어 드립니다. 열리면 카드가 바로 뜹니다."
+      : IN_APP
+        ? "앱 안 브라우저에서는 저장이 안 될 수 있습니다. 오른쪽 위 메뉴에서 '다른 브라우저로 열기'를 누른 뒤 저장해 주세요."
+        : "휴대폰에서 저장이 안 되면 이미지를 길게 눌러 '사진에 저장'을 고르세요.");
     box.append(shot, actions, hint);
     back.append(box);
     function done() { back.remove(); URL.revokeObjectURL(url); document.removeEventListener("keydown", esc); }
@@ -279,6 +301,11 @@
     const btn = document.querySelector("[data-card-download]");
     const apt = document.querySelector("[data-apt]");
     if (!btn || !apt) return;
+    // 카카오톡에서 '브라우저에서 열어 저장'으로 넘어온 경우: 카드 창을 바로 띄웁니다.
+    if (!IN_APP && new URLSearchParams(location.search).get("card")) {
+      history.replaceState(null, "", location.pathname + location.hash); // 새로고침하면 다시 뜨지 않게
+      setTimeout(() => btn.click(), 300);
+    }
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       try {
