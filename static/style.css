@@ -240,7 +240,9 @@ tr.off td { color: var(--muted); }
   border-radius: 999px; overflow: hidden; }
 .idx-bar > span { display: block; height: 100%; background: var(--s1); }
 .prose { max-width: 720px; }
-.prose pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.prose pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-x: auto;
+  white-space: pre-wrap; word-break: keep-all; }
+.prose h2[id] { scroll-margin-top: 62px; }
 
 @media (max-width: 720px) {
   h1 { font-size: 24px; }
