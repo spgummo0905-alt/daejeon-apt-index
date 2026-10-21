@@ -1,6 +1,5 @@
-// 단지 이미지 만들기: 단지 페이지를 옮긴 화면형과 수집 카드(5:7) 모양 카드형 PNG를 브라우저에서 그려
-// 미리보기 → 저장·공유.
-// 서버로 아무것도 보내지 않습니다.
+// 단지 카드: 메인 카드의 그림을 그리고, 공유 시트에서 수집 카드(5:7) 모양 PNG를 만들어 저장·공유합니다.
+// 이미지는 브라우저에서 만들고 서버로 보내지 않습니다.
 (function () {
   const W = 750, H = 1050, SCALE = 1.4;
 
@@ -236,290 +235,147 @@
     return cv;
   }
 
-  // ---------- 화면형: 단지 페이지 첫 화면을 옮긴 세로 이미지 (사람들이 캡처해 돌리는 모양) ----------
-  const SW = 540, SS = 2; // 화면 폭 540에 2배로 그려 1080px
-
-  function palette() {
-    const dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
-    const css = getComputedStyle(document.documentElement);
-    const v = (k, fb) => (css.getPropertyValue(k) || "").trim() || fb;
-    return {
-      dark,
-      bg: dark ? "#111110" : "#f4f3ef", surface: dark ? "#1d1d1b" : "#ffffff",
-      border: dark ? "rgba(255,255,255,.10)" : "rgba(11,11,11,.10)",
-      text: dark ? "#f0efec" : "#14171f", text2: dark ? "#c3c2b7" : "#52514e", muted: dark ? "#9a998f" : "#75736d",
-      track: dark ? "#2a2a27" : "#efeee9", bar: dark ? "#3987e5" : "#2a78d6",
-      pos: dark ? "#fb923c" : "#c2410c", neg: dark ? "#7aa7ff" : "#1d4ed8", high: "#d93f3e",
-      grade: g => v("--g-" + g, "#6d7a8c"), gradeInk: g => v("--g-" + g + "-ink", "#ffffff"),
-    };
-  }
-
-  // 단지 페이지에서 글자로 이미 보이는 값들(주소 줄, 순위, 최근 거래)을 그대로 가져옵니다.
-  function pageInfo() {
-    const q = sel => document.querySelector(sel);
-    const text = el => (el ? el.textContent.replace(/\s+/g, " ").trim() : "");
-    const trades = [];
-    document.querySelectorAll(".rd-list li").forEach(li => trades.push({
-      date: text(li.querySelector(".rd-date")), spec: text(li.querySelector(".rd-spec")),
-      high: !!li.querySelector(".badge-high"), tag: text(li.querySelector(".rd-tag")),
-      price: text(li.querySelector(".rd-price")), struck: li.classList.contains("struck"),
-    }));
-    if (!trades.length) {
-      document.querySelectorAll("table.trades tbody tr").forEach(tr => {
-        const td = tr.querySelectorAll("td");
-        if (td.length < 4) return;
-        trades.push({ date: text(td[0]).slice(2), spec: text(td[1]).replace(/\.\d+㎡/, "㎡") + (text(td[2]) !== "-" ? " · " + text(td[2]) + "층" : ""),
-                      high: false, tag: text(td[4]), price: text(td[3]), struck: tr.classList.contains("struck") });
-      });
-    }
-    return { sub: text(q(".apt-head .apt-title .muted")), rank: text(q(".gauge-box > .muted")), trades: trades.slice(0, 4) };
-  }
-
-  function wrap(ctx, text, maxW, maxLines) {
-    const lines = [];
-    let line = "";
-    for (const ch of text) {
-      if (ctx.measureText(line + ch).width > maxW && line) { lines.push(line); line = ch; }
-      else line += ch;
-    }
-    if (line) lines.push(line);
-    if (lines.length > maxLines) {
-      const keep = lines.slice(0, maxLines);
-      let last = keep[maxLines - 1];
-      while (last.length > 1 && ctx.measureText(last + "…").width > maxW) last = last.slice(0, -1);
-      keep[maxLines - 1] = last + "…";
-      return keep;
-    }
-    return lines;
-  }
-
-  function drawScreen(c, data) {
-    const P = palette(), info = pageInfo();
-    const pad = 26, inner = SW - pad * 2;
-    const meas = document.createElement("canvas").getContext("2d");
-    meas.font = `800 25px ${FONT}`;
-    const nameLines = wrap(meas, c.n, inner - 74, 2);
-    const stats = data.stats || [];
-    const tradesH = info.trades.length ? 58 + info.trades.length * 40 : 0;
-    const H2 = Math.round(84 + 30 + Math.max(60, nameLines.length * 33 + 26) + 4 + 160 + 22 + (92 + stats.length * 34 + 44) + (tradesH ? 18 + tradesH : 0) + 78);
-    const cv = document.createElement("canvas");
-    cv.width = SW * SS; cv.height = H2 * SS;
+  // ---------- 메인 카드의 그림: 이미지로 저장하는 카드와 같은 그림 ----------
+  function drawArt(cv, c) {
+    const dpr = Math.min(2, window.devicePixelRatio || 1), w = 650, h = 330;
+    cv.width = w * dpr; cv.height = h * dpr;
     const ctx = cv.getContext("2d");
-    ctx.scale(SS, SS);
-    ctx.fillStyle = P.bg; ctx.fillRect(0, 0, SW, H2);
-    ctx.textBaseline = "alphabetic";
-    const T = (str, x, y, font, color, align) => { ctx.font = `${font} ${FONT}`; ctx.fillStyle = color; ctx.textAlign = align || "left"; ctx.fillText(str, x, y); };
-    const badge = (x, y, size, g, radius, fs) => {
-      rr(ctx, x, y, size, size, radius); ctx.fillStyle = P.grade(g); ctx.fill();
-      T(g === "-" ? "?" : g, x + size / 2, y + size / 2 + fs * 0.36, `900 ${fs}px`, P.gradeInk(g), "center");
-    };
-
-    // 머리: 사이트 이름, 기준일
-    let y = 30;
-    rr(ctx, pad, y, 30, 30, 9); ctx.fillStyle = grad(ctx, pad, y, pad + 30, y + 30, ["#2a78d6", "#13294b"]); ctx.fill();
-    T("D", pad + 15, y + 21, "900 16px", "#ffffff", "center");
-    T((data.region || "") + " 아파트 지수", pad + 42, y + 21, "800 18px", P.text);
-    T((data.updated || data.asof || "") + " 기준", SW - pad, y + 20, "600 12px", P.muted, "right");
-    y += 30 + 24;
-
-    // 주소와 이름
-    T(DJ.place(c), pad, y + 14, "600 13px", P.muted);
-    y += 30;
-    badge(pad, y, 60, c.g, 15, 30);
-    nameLines.forEach((ln, k) => T(ln, pad + 74, y + 26 + k * 33, "800 25px", P.text));
-    ctx.font = `500 13px ${FONT}`;
-    T(fitText(ctx, info.sub, inner - 74, 13, 500), pad + 74, y + 26 + (nameLines.length - 1) * 33 + 26, "500 13px", P.muted);
-    y += Math.max(60, nameLines.length * 33 + 26) + 4;
-
-    // 게이지 + 핵심 숫자
-    const gx = pad + 86, gy = y + 102, gr = 74;
-    ctx.lineCap = "round"; ctx.lineWidth = 15;
-    ctx.strokeStyle = P.track; ctx.beginPath(); ctx.arc(gx, gy, gr, Math.PI, 0); ctx.stroke();
-    if (c.i != null) {
-      ctx.strokeStyle = P.grade(c.g);
-      ctx.beginPath(); ctx.arc(gx, gy, gr, Math.PI, Math.PI + Math.PI * Math.max(0.01, Math.min(1, c.i / 100))); ctx.stroke();
-    }
-    T(c.i == null ? "-" : String(c.i), gx, gy - 12, "900 46px", P.text, "center");
-    T("/ 100", gx, gy + 8, "600 12px", P.muted, "center");
-    T(info.rank, gx, gy + 40, "600 13px", P.text2, "center");
-    const facts = [
-      ["84㎡ 환산가", c.pt || "-", P.text],
-      ["10년 연평균", c.c10 == null ? "-" : (c.c10 > 0 ? "+" : "") + c.c10 + "%", c.c10 > 0 ? P.pos : c.c10 < 0 ? P.neg : P.text],
-      ["최근 거래", c.lp ? c.lp + (c.ld ? " · " + c.ld.slice(2) : "") : "-", P.text],
-    ];
-    const fx = pad + 200;
-    facts.forEach(([k, val, color], i) => {
-      const fy = y + 30 + i * 46;
-      T(k, fx, fy, "600 12px", P.muted);
-      ctx.font = `800 19px ${FONT}`;
-      T(fitText(ctx, val, SW - pad - fx, 19, 800), fx, fy + 22, "800 19px", color);
-    });
-    y += 160 + 22;
-
-    // 항목별 점수 카드
-    const ch = 92 + stats.length * 34 + 44;
-    rr(ctx, pad, y, inner, ch, 22); ctx.fillStyle = P.surface; ctx.fill();
-    ctx.strokeStyle = P.border; ctx.lineWidth = 1.5; ctx.stroke();
-    badge(pad + 20, y + 20, 48, c.g, 12, 24);
-    ctx.font = `800 17px ${FONT}`;
-    T(fitText(ctx, c.n, inner - 170, 17, 800), pad + 80, y + 40, "800 17px", P.text);
-    T((TIER[c.g] || TIER.D).name + " 등급 · 항목별 점수 (" + (data.region || "") + " 단지 중 백분위)", pad + 80, y + 60, "500 11.5px", P.muted);
-    T(c.i == null ? "-" : String(c.i), SW - pad - 20, y + 58, "900 38px", P.bar, "right");
-    let sy = y + 104;
-    stats.forEach((st, k) => {
-      const val = c.st[k];
-      T(st.n, pad + 22, sy, "700 14px", P.text);
-      const bx = pad + 100, bw = inner - 100 - 64, top = sy - 10;
-      rr(ctx, bx, top, bw, 9, 4.5); ctx.fillStyle = P.track; ctx.fill();
-      if (val != null) { rr(ctx, bx, top, Math.max(9, bw * val / 100), 9, 4.5); ctx.fillStyle = P.bar; ctx.fill(); }
-      T(val == null ? "-" : String(val), SW - pad - 22, sy + 1, "800 15px", P.text, "right");
-      sy += 34;
-    });
-    T(DJ.place(c) + (c.y ? " · " + c.y + "년" : ""), pad + 22, y + ch - 22, "500 13px", P.text2);
-    T("84㎡ " + (c.pt || "-"), SW - pad - 22, y + ch - 22, "600 13px", P.text2, "right");
-    y += ch;
-
-    // 최근 실거래
-    if (tradesH) {
-      y += 18;
-      rr(ctx, pad, y, inner, tradesH, 22); ctx.fillStyle = P.surface; ctx.fill();
-      ctx.strokeStyle = P.border; ctx.lineWidth = 1.5; ctx.stroke();
-      T("최근 실거래", pad + 20, y + 34, "800 16px", P.text);
-      info.trades.forEach((t, k) => {
-        const ry = y + 70 + k * 40;
-        if (k) { ctx.strokeStyle = P.border; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad + 20, ry - 25); ctx.lineTo(SW - pad - 20, ry - 25); ctx.stroke(); }
-        T(t.date, pad + 20, ry, "500 13.5px", P.muted);
-        T(t.spec, pad + 96, ry, "600 13.5px", t.struck ? P.muted : P.text);
-        let px = SW - pad - 20;
-        ctx.font = `800 16px ${FONT}`;
-        T(t.price, px, ry + 1, "800 16px", t.struck ? P.muted : P.text, "right");
-        px -= ctx.measureText(t.price).width + 10;
-        const tag = t.high ? "신고가" : t.tag;
-        if (tag) {
-          ctx.font = `700 11px ${FONT}`;
-          const tw = ctx.measureText(tag).width + 14;
-          rr(ctx, px - tw, ry - 15, tw, 20, 10); ctx.fillStyle = t.high ? P.high : P.track; ctx.fill();
-          T(tag, px - tw / 2, ry - 1, "700 11px", t.high ? "#ffffff" : P.text2, "center");
-        }
-      });
-      y += tradesH;
-    }
-
-    // 바닥: 주소와 안내
-    const fy = H2 - 30;
-    const url = (data.url || location.origin + location.pathname.replace(/apt\/.*$/, "")).replace(/^https?:\/\//, "").replace(/\/$/, "");
-    T(url, pad, fy, "700 12.5px", P.text2);
-    T("국토부 실거래 기준 · 참고용", SW - pad, fy, "500 12px", P.muted, "right");
-    return cv;
+    ctx.scale(dpr, dpr);
+    skyline(ctx, 0, 0, w, h, TIER[c.g] || TIER.D, seeded(c.s), c);
   }
 
-  // ---------- 미리보기 창 ----------
+  // ---------- 공유 시트: 카카오톡, 링크 복사, 이미지 저장, 다른 앱 ----------
   // 카카오톡·네이버 앱 같은 앱 안 브라우저는 내려받기(blob 주소)를 처리하지 못해 '지원하지 않는 형식'이 뜹니다.
-  // 카카오톡은 기본 브라우저로 이 페이지를 다시 열고(?card=1 이면 카드 창을 바로 띄움), 다른 앱은 안내만 합니다.
+  // 카카오톡에서는 기본 브라우저로 이 페이지를 다시 열고(?card=1 이면 공유 창을 바로 띄움), 다른 앱은 안내만 합니다.
   const UA = navigator.userAgent || "";
   const KAKAO = /KAKAOTALK/i.test(UA);
   const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
-  function externalUrl(mode) {
-    const u = new URL(location.href);
-    u.hash = "";
-    u.searchParams.set("card", mode);
+  const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); return u.toString(); };
+  function externalUrl() {
+    const u = new URL(pageUrl());
+    u.searchParams.set("card", "1");
     return "kakaotalk://web/openExternal?url=" + encodeURIComponent(u.toString());
   }
 
-  const MODES = [["screen", "화면형", "단지화면"], ["card", "카드형", "단지카드"]];
-
-  async function render(mode, c, data) {
-    const cv = mode === "card" ? draw(c, data) : drawScreen(c, data);
-    const blob = await new Promise(res => cv.toBlob(res, "image/png"));
-    return { blob, url: URL.createObjectURL(blob) };
+  let kakaoReady = null;
+  function loadKakao(key) {
+    if (!key) return Promise.resolve(false);
+    if (!kakaoReady) {
+      kakaoReady = new Promise(res => {
+        const s = document.createElement("script");
+        s.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js";
+        s.crossOrigin = "anonymous";
+        s.onload = () => { try { if (!Kakao.isInitialized()) Kakao.init(key); res(true); } catch (e) { res(false); } };
+        s.onerror = () => res(false);
+        document.head.append(s);
+      });
+    }
+    return kakaoReady;
   }
 
-  async function modal(c, data, mode) {
-    const { el } = DJ;
-    const back = el("div", "card-modal");
-    back.setAttribute("role", "dialog");
-    back.setAttribute("aria-label", c.n + " 이미지로 저장");
-    const box = el("div", "card-modal-box");
-    const tabs = el("div", "shot-tabs");
-    tabs.setAttribute("role", "tablist");
-    const shot = el("div", "card-shot");
-    const img = new Image();
-    shot.append(img);
-    const actions = el("div", "row-actions center-actions");
-    const save = el("a", "btn primary");
-    actions.append(save);
-    const sh = el("button", "btn", "카카오톡 등으로 보내기");
-    sh.type = "button";
-    const close = el("button", "btn", "닫기"); close.type = "button";
-    const hint = el("p", "muted small center", KAKAO
-      ? "카카오톡 안에서는 이미지를 내려받을 수 없어 기본 브라우저로 이 페이지를 열어 드립니다. 열리면 저장 창이 바로 뜹니다."
-      : IN_APP
-        ? "앱 안 브라우저에서는 저장이 안 될 수 있습니다. 오른쪽 위 메뉴에서 '다른 브라우저로 열기'를 누른 뒤 저장해 주세요."
-        : "휴대폰에서 저장이 안 되면 이미지를 길게 눌러 '사진에 저장'을 고르세요.");
-    box.append(tabs, shot, actions, hint);
-    back.append(box);
-    let cur = null, file = null;
+  async function copyLink(url) {
+    try { await navigator.clipboard.writeText(url); return true; }
+    catch (e) { window.prompt("이 링크를 복사하세요", url); return false; }
+  }
 
-    async function show(m) {
-      tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.mode === m ? "true" : "false"));
-      shot.className = "card-shot " + (m === "card" ? "g-" + c.g : "screen");
-      if (m === "card") shot.setAttribute("data-holo", ""); else shot.removeAttribute("data-holo");
-      const next = await render(m, c, data);
-      if (cur) URL.revokeObjectURL(cur.url);
-      cur = next;
-      const label = MODES.find(x => x[0] === m);
-      img.src = cur.url; img.alt = c.n + " " + label[1] + " 이미지";
-      file = c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_" + label[2] + ".png";
-      if (KAKAO) { save.textContent = "브라우저에서 열어 저장"; save.href = externalUrl(m); save.removeAttribute("download"); }
-      else { save.textContent = "이미지 저장"; save.href = cur.url; save.download = file; }
-      const f = new File([cur.blob], file, { type: "image/png" });
-      sh.hidden = !(navigator.canShare && navigator.canShare({ files: [f] }));
-      sh.onclick = () => navigator.share({ files: [f], title: c.n }).catch(() => {});
+  function setupSheet(slug, opener) {
+    const sheet = document.getElementById("share-sheet");
+    if (!sheet) return null;
+    const back = document.querySelector(".sheet-back");
+    const hint = sheet.querySelector("[data-sheet-hint]");
+    const save = sheet.querySelector('[data-act="save"]');
+    const more = sheet.querySelector('[data-act="more"]');
+    const title = sheet.dataset.title, text = sheet.dataset.text;
+    let image = null, last = null;
+    more.hidden = !navigator.share;
+    const say = msg => { hint.textContent = msg; hint.hidden = !msg; };
+
+    async function prepare() {
+      if (image || !save) return;
+      try {
+        const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
+        const c = data.bySlug[slug];
+        if (!c) throw new Error("no card");
+        const cv = draw(c, data);
+        const blob = await new Promise(res => cv.toBlob(res, "image/png"));
+        image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
+        const thumb = sheet.querySelector("[data-sheet-thumb]");
+        thumb.src = image.url; thumb.hidden = false;
+        sheet.querySelector(".sheet-thumb-ph").hidden = true;
+        sheet.querySelector("[data-sheet-info]").textContent = cv.width + "×" + cv.height + " 카드 이미지";
+        save.removeAttribute("aria-disabled");
+        if (KAKAO) save.href = externalUrl();
+        else { save.href = image.url; save.download = image.file; }
+      } catch (e) {
+        sheet.querySelector("[data-sheet-info]").textContent = "카드 이미지를 만들지 못했습니다";
+      }
     }
-    MODES.forEach(([m, label]) => {
-      const b = el("button", "shot-tab", label);
-      b.type = "button"; b.dataset.mode = m; b.setAttribute("role", "tab");
-      b.addEventListener("click", () => show(m));
-      tabs.append(b);
+
+    function open() {
+      last = document.activeElement;
+      back.hidden = false; sheet.hidden = false;
+      requestAnimationFrame(() => { back.classList.add("on"); sheet.classList.add("on"); });
+      say(KAKAO ? "카카오톡 안에서는 이미지를 바로 받을 수 없어, '이미지 저장'을 누르면 기본 브라우저로 이 페이지를 열어 드립니다."
+        : IN_APP ? "앱 안 브라우저에서는 저장이 안 될 수 있습니다. 오른쪽 위 메뉴의 '다른 브라우저로 열기'를 이용해 주세요." : "");
+      document.addEventListener("keydown", esc);
+      sheet.querySelector(".sheet-act").focus();
+      prepare();
+      loadKakao(sheet.dataset.kakaoKey);
+    }
+    function close() {
+      back.classList.remove("on"); sheet.classList.remove("on");
+      setTimeout(() => { back.hidden = true; sheet.hidden = true; }, DJ.calm ? 0 : 220);
+      document.removeEventListener("keydown", esc);
+      if (last) last.focus();
+    }
+    function esc(e) { if (e.key === "Escape") close(); }
+    document.querySelectorAll("[data-sheet-close]").forEach(b => b.addEventListener("click", close));
+
+    sheet.querySelector('[data-act="kakao"]').addEventListener("click", async () => {
+      const url = pageUrl();
+      if (await loadKakao(sheet.dataset.kakaoKey)) {
+        try {
+          Kakao.Share.sendDefault({ objectType: "text", text: title + "\n" + text, buttonTitle: "점수 보기",
+                                    link: { mobileWebUrl: url, webUrl: url } });
+          return;
+        } catch (e) { /* 아래 대체 방법으로 */ }
+      }
+      if (navigator.share) { navigator.share({ title, text, url }).catch(() => {}); return; }
+      await copyLink(url);
+      DJ.toast("링크를 복사했습니다", "카카오톡 대화창에 붙여 넣어 보내세요");
     });
-    actions.append(sh, close);
-    function done() { back.remove(); if (cur) URL.revokeObjectURL(cur.url); document.removeEventListener("keydown", esc); }
-    function esc(e) { if (e.key === "Escape") done(); }
-    close.addEventListener("click", done);
-    back.addEventListener("click", e => { if (e.target === back) done(); });
-    document.addEventListener("keydown", esc);
-    document.body.append(back);
-    await show(mode);
-    save.focus();
+    sheet.querySelector('[data-act="link"]').addEventListener("click", async () => {
+      if (await copyLink(pageUrl())) DJ.toast("링크를 복사했습니다", "카카오톡이나 메신저에 붙여 넣어 보내세요");
+    });
+    if (save) save.addEventListener("click", e => { if (!image) e.preventDefault(); });
+    more.addEventListener("click", () => navigator.share({ title, text, url: pageUrl() }).catch(() => {}));
+    opener.addEventListener("click", open);
+    return open;
   }
 
   DJ.drawCard = draw; // 테스트·다른 페이지에서 쓰도록
 
   document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.querySelector("[data-card-download]");
-    const apt = document.querySelector("[data-apt]");
-    if (!btn || !apt) return;
-    // 카카오톡에서 '브라우저에서 열어 저장'으로 넘어온 경우: 저장 창을 그 모양으로 바로 띄웁니다.
-    let mode = "screen";
-    const asked = new URLSearchParams(location.search).get("card");
-    if (!IN_APP && asked) {
-      mode = asked === "card" ? "card" : "screen";
-      history.replaceState(null, "", location.pathname + location.hash); // 새로고침하면 다시 뜨지 않게
-      setTimeout(() => btn.click(), 300);
-    }
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
-      try {
-        const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
-        const c = data.bySlug[apt.dataset.apt];
-        if (!c) { DJ.toast("이미지를 만들 수 없습니다", "이 단지는 점수 정보가 없습니다"); return; }
-        await modal(c, data, mode);
-        mode = "screen";
-      } catch (e) {
-        DJ.toast("이미지를 만들지 못했습니다", "잠시 후 다시 눌러 주세요");
-      } finally {
-        btn.disabled = false;
-      }
+    const card = document.querySelector(".mc[data-apt]");
+    if (!card) return;
+    const c = { s: card.dataset.apt, g: card.dataset.grade, d: card.dataset.dong };
+    card.querySelectorAll("canvas[data-art]").forEach(cv => {
+      const paint = () => drawArt(cv, c);
+      if (document.fonts) document.fonts.ready.then(paint); else paint(); // 동 이름 글꼴이 들어온 뒤 그리기
     });
+    // 최근 실거래: 그림 위 아이콘을 누르면 카드 안에서 펼침
+    const toggle = card.querySelector("[data-deals-toggle]"), deals = document.getElementById("mc-deals");
+    if (toggle && deals) toggle.addEventListener("click", () => {
+      const on = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", on ? "true" : "false");
+      deals.hidden = !on;
+    });
+    const opener = document.querySelector("[data-share-sheet]");
+    const open = opener && setupSheet(c.s, opener);
+    // 카카오톡에서 '이미지 저장'으로 넘어온 경우: 공유 창을 바로 띄웁니다.
+    if (open && !IN_APP && new URLSearchParams(location.search).get("card")) {
+      history.replaceState(null, "", location.pathname + location.hash); // 새로고침하면 다시 뜨지 않게
+      setTimeout(open, 300);
+    }
   });
 })();

@@ -75,7 +75,7 @@ def test_complexes_json_and_small_rows(tmp_path):
         assert f"static/{page}.js" in html and "static/app.js" in html
 
 
-def test_card_download_button_only_for_ranked(tmp_path):
+def test_card_save_only_for_ranked(tmp_path):
     import json
     from djdex import cli
 
@@ -86,8 +86,9 @@ def test_card_download_button_only_for_ranked(tmp_path):
     ranked = {c["s"] for c in data["complexes"]}
     for page in (out / "apt").glob("*.html"):
         html = page.read_text(encoding="utf-8")
-        has = "data-card-download" in html
-        assert has == (page.stem in ranked), page.stem  # 소규모 단지는 카드 데이터가 없어 버튼도 없음
+        has = 'data-act="save"' in html
+        assert has == (page.stem in ranked), page.stem  # 소규모 단지는 카드 데이터가 없어 이미지 저장도 없음
+        assert 'class="mc g-' in html and "data-share-sheet" in html  # 메인 카드와 공유 시트는 모든 단지에
         assert "static/cardgen.js" in html
 
 

@@ -317,7 +317,6 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         comps = [("입지점수", c.get("location_score"), f"{fmt_score(c.get('location_score'))}점")]
         comps += [(f"{n}년 수익률 백분위", c.get(f"cagr_{n}y_pct"), fmt_score(c.get(f"cagr_{n}y_pct"))) for n in years]
         c_charts = {
-            "gauge": charts.gauge(c.get("index")),
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
                                             marker=50, marker_label=f"{cfg.region_name} 중간(50)",
                                             desk={"width": 520}, mob={"width": 340}),
@@ -340,7 +339,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             kakao_js_key=kakao_js_key, loc_rows=loc_rows, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
                              leader_by_gu.get(c["gu"])),
-            n_total=n_total, **common)
+            n_total=n_total, chips=_card_chips(c), gems=GEMS.get(c["grade"], 1), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
@@ -576,6 +575,22 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
 
 APP_PAGES = ["compare", "finder", "my"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
+
+
+# 메인 카드 바닥의 희귀도 보석 수 (카드 이미지와 같게)
+GEMS = {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1}
+
+
+def _card_chips(c: dict) -> list[str]:
+    """메인 카드 그림 위 작은 아이콘 줄: 가까운 역(정류장)과 학원가."""
+    chips = []
+    stn, dist = station_name(c.get("subway_name_raw")), c.get("subway_raw")
+    if stn and not _nan(dist):
+        chips.append(("train", f"{stn} {dist:.0f}m"))
+    hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
+    if isinstance(hub, str) and not _nan(mins) and mins <= 25:
+        chips.append(("book", f"{hub} {mins:.0f}분"))
+    return chips
 
 
 def station_name(raw) -> str | None:
