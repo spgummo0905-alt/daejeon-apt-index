@@ -31,3 +31,12 @@ def test_place_area_and_groups():
     assert [g["label"] for g in groups] == ["동 지역", "부강면", "조치원읍"]
     assert [i["label"] for i in groups[0]["items"]] == ["도담동", "아름동"]
     assert groups[2]["items"][0] == {"value": "조치원읍 교리", "label": "교리", "n": 0}
+
+
+def test_mark_highs_by_area_band():
+    import pandas as pd
+    t = lambda d, a, p, **k: dict(date=pd.Timestamp(d), area=a, price=p, kind="매매", cancelled=False, **k)
+    tr = [t("2024-01-01", 84.9, 50000), t("2024-02-01", 59.9, 40000), t("2024-03-01", 84.7, 52000),
+          t("2024-04-01", 84.9, 51000), t("2024-05-01", 84.9, 60000, ) | {"cancelled": True}, t("2024-06-01", 59.8, 41000)]
+    site._mark_highs(tr)
+    assert [x["high"] for x in tr] == [False, False, True, False, False, True]

@@ -952,3 +952,23 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   .ss { padding: 14px 16px; } .ss .value { font-size: 22px; }
 }
 .chip-more { border-style: dashed !important; color: var(--text-2); }
+
+/* ===== 단지 페이지: 최근 실거래 (위쪽 요약) ===== */
+.recent-deals { margin-top: 16px; padding: 16px 18px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.rd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.rd-head h2 { font-size: 17px; margin: 0; }
+.rd-head a { font-size: 13px; font-weight: 700; }
+.rd-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.rd-list li { display: grid; grid-template-columns: 72px 1fr auto auto; align-items: center; gap: 10px; padding: 10px 2px;
+  border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.rd-list li:first-child { border-top: 0; }
+.rd-date { color: var(--text-2); font-size: 14px; }
+.rd-spec { font-size: 14px; }
+.rd-tags { display: inline-flex; gap: 4px; }
+.rd-tags .badge-high { margin-left: 0; }
+.rd-tag { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--chip); color: var(--text-2); }
+.rd-price { font-size: 16px; font-weight: 800; text-align: right; min-width: 64px; }
+.rd-list li.struck .rd-price, .rd-list li.struck .rd-spec { text-decoration: line-through; color: var(--muted); }
+.rd-note { margin: 8px 0 0; font-size: 12px; }
+.rd-tags:empty { display: none; }
+@media (max-width: 560px) { .rd-list li { grid-template-columns: 62px 1fr auto; } .rd-tags { grid-column: 2; grid-row: 2; } .rd-price { grid-row: 1 / span 2; grid-column: 3; } }

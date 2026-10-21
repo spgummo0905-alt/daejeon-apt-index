@@ -66,7 +66,7 @@ python -m djdex all
 
 ## 자동 갱신 (GitHub Actions)
 
-`.github/workflows/build.yml` 이 푸시 때마다 테스트와 데모 빌드를 돌리고, 매월 20일과 수동 실행 때 실제 데이터로 사이트를 만들어 GitHub Pages에 올립니다.
+`.github/workflows/build.yml` 이 푸시 때마다 테스트와 데모 빌드를 돌리고, 매일 03:17(한국 시각)과 수동 실행 때 실제 데이터로 사이트를 만들어 GitHub Pages에 올립니다. 실거래는 최근 몇 달 치를 매번 다시 받아 새로 신고된 거래를 반영합니다.
 
 1. 저장소 Settings → Secrets and variables → Actions 에 위 키 3개를 등록합니다.
 2. Settings → Pages → Source 를 "GitHub Actions" 로 바꿉니다.

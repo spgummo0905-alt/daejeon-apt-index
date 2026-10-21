@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  # 매월 20일 03:17 UTC
+  # 매일 03:17 (한국 시각) = 18:17 UTC. 실거래는 최근 몇 달 치를 매일 다시 받아 새로 신고된 거래를 반영합니다.
   schedule:
-    - cron: "17 3 20 * *"
+    - cron: "17 18 * * *"
   workflow_dispatch:
 
 jobs:
