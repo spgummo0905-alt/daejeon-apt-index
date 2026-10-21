@@ -77,6 +77,17 @@ def share(top) -> str:
     return f"상위 {max(1, round(top))}%" if top <= 50 else f"하위 {max(1, round(100 - top))}%"
 
 
+def pyeong(area) -> int | None:
+    """전용면적(㎡)으로 어림한 공급 평형. 실거래 자료에는 공급면적이 없어 전용률로 거꾸로 셈합니다.
+    전용률은 작은 집일수록 낮아(계단·복도 몫이 큼) 면적에 따라 0.74~0.79로 둡니다:
+    39㎡ → 16평, 59㎡ → 24평, 74㎡ → 30평, 84㎡ → 34평, 101㎡ → 40평, 114㎡ → 45평."""
+    if area is None or _nan(area) or float(area) <= 0:
+        return None
+    a = float(area)
+    ratio = min(0.79, max(0.74, 0.73 + 0.0004 * a))
+    return round(a / ratio / 3.3058)
+
+
 def place(r) -> str:
     """'서구 둔산동'. 구가 없는 지역(세종)은 구 자리에 동이 들어 있어 한 번만: '도담동'."""
     return str(r["dong"]) if r["gu"] == r["dong"] else f"{r['gu']} {r['dong']}"
@@ -93,7 +104,8 @@ def area_name(name) -> Markup:
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
-    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share)
+    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
+                       pyeong=pyeong)
     env.tests["nan"] = _nan
     return env
 
@@ -111,7 +123,9 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     if not _nan(c.get("last_price")):
         kind = "" if c.get("last_kind") == "매매" else f" {c['last_kind']}"
         high = " 같은 면적 기준 신고가입니다." if c.get("new_high") else ""
-        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} 전용 {c['last_area']:.0f}㎡{kind} {eok(c['last_price'], 2)}입니다.{high}")
+        py = pyeong(c["last_area"])
+        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} 전용 {int(c['last_area'])}㎡{f'({py}평)' if py else ''}{kind} "
+                   f"{eok(c['last_price'], 2)}입니다.{high}")
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
         out.append(f"입지점수는 {region} {share(c['location_top'])}이고, 가장 강한 항목은 {best['label']}입니다.")
@@ -264,7 +278,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                      "value": lambda r: f"입지 {r['location_score']:.0f}" + (f" · {r['build_year']}년" if r.get("build_year") else "")})
     if highs:
         tops.insert(0, {"title": "최근 신고가", "items": highs,
-                        "value": lambda r: f"{eok(r['last_price'])} · {r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}"})
+                        "value": lambda r: f"{eok(r['last_price'])} · {int(r['last_area'])}㎡ · {r['last_date']:%m.%d}"})
 
     link = "apt/{}.html"
     index_charts = {
@@ -428,7 +442,11 @@ def _area_types(trades: list[dict]) -> list[dict]:
     for t in trades:
         if t["akey"]:
             n[t["akey"]] = n.get(t["akey"], 0) + 1
-    return [{"key": k, "n": n[k]} for k in sorted(n, key=int)]
+    areas: dict[str, list] = {}
+    for t in trades:
+        if t["akey"]:
+            areas.setdefault(t["akey"], []).append(float(t["area"]))
+    return [{"key": k, "n": n[k], "py": pyeong(sorted(areas[k])[len(areas[k]) // 2])} for k in sorted(n, key=int)]
 
 
 def _mark_highs(trades: list[dict], band: float = 3, skip_direct: bool = False) -> None:
@@ -528,7 +546,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
          "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "up") for c, v in up.items()]},
         {"key": "high", "tab": "신고가", "title": "최근 신고가 단지",
          "note": "마지막 거래가 같은 면적대 이전 최고가를 넘은 단지 (최근 90일)",
-         "items": [item(c, eok(r["last_price"]), f"{r['last_area']:.0f}㎡ · {r['last_date']:%m.%d}", "up")
+         "items": [item(c, eok(r["last_price"]), f"{int(r['last_area'])}㎡ · {r['last_date']:%m.%d}", "up")
                    for c, r in highs.iterrows()]},
         {"key": "busy", "tab": "거래 활발", "title": "최근 3개월 거래가 많은 단지",
          "note": "최근 3개월 매매 신고 건수 (해제 거래 제외)",

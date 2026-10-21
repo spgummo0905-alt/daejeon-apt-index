@@ -239,6 +239,9 @@ tbody tr:hover td { background: var(--bg); }
 td.pos { color: var(--pos); } td.neg { color: var(--neg); }
 tr.struck td { text-decoration: line-through; color: var(--muted); }
 tr.off td { color: var(--muted); }
+.trades small.py { display: block; font-size: 11.5px; color: var(--muted); }  /* 전용면적 아래 어림 평형 */
+.mc-deal .py { color: var(--sub); }
+.chip .py { font-size: 12.5px; opacity: .8; }
 .trade-area { margin: 0 0 12px; }
 @media (max-width: 720px) {  /* 휴대폰: 비고(신고가·직거래)까지 한 화면에 */
   .trades th, .trades td { padding: 9px 6px; font-size: 13.5px; }

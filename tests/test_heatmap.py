@@ -47,7 +47,8 @@ def test_mark_highs_by_area_band():
 def test_area_types_group_neighbouring_sizes():
     tr = [{"area": a} for a in (59.9, 60.2, 59.8, 84.97, 84.5, 114.7)]
     types = site._area_types(tr)
-    assert types == [{"key": "59", "n": 3}, {"key": "84", "n": 2}, {"key": "114", "n": 1}]  # 59·60㎡는 한 묶음
+    assert types == [{"key": "59", "n": 3, "py": 24}, {"key": "84", "n": 2, "py": 34}, {"key": "114", "n": 1, "py": 45}]  # 59·60㎡는 한 묶음
+    assert [site.pyeong(a) for a in (59.9, 84.97, 74.8, 101.5, None)] == [24, 34, 30, 40, None]  # 흔히 부르는 평형
     assert [t["akey"] for t in tr] == ["59", "59", "59", "84", "84", "114"]
 
 
