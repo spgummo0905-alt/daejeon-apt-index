@@ -327,7 +327,7 @@
     {% for r in rows %}
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
-      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></td>
+      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
       <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
         <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
