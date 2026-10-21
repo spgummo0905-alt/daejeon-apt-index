@@ -2,12 +2,12 @@
   const { el } = DJ;
   const nowYear = new Date().getFullYear();
   const CONDS = [
-    { id: "subway", label: "🚇 역세권", desc: "지하철역 700m 안", test: c => c.f.subway != null && c.f.subway <= 700 },
-    { id: "school", label: "🎒 초품아", desc: "초등학교 400m 안", test: c => c.f.elementary != null && c.f.elementary <= 400 },
-    { id: "academy", label: "📚 학원가", desc: "반경 1km 학원 상위권", test: (c, ctx) => c.f.academy != null && c.f.academy >= ctx.academyQ },
-    { id: "mart", label: "🛒 대형마트", desc: "대형마트 1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
-    { id: "new", label: "✨ 신축", desc: "준공 10년 이내", test: c => c.y && c.y >= nowYear - 10 },
-    { id: "rising", label: "📈 상승세", desc: "최근 5년 기세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
+    { id: "subway", label: "역세권", desc: "지하철역 700m 안", test: c => c.f.subway != null && c.f.subway <= 700 },
+    { id: "school", label: "초품아", desc: "초등학교 400m 안", test: c => c.f.elementary != null && c.f.elementary <= 400 },
+    { id: "academy", label: "학원가", desc: "반경 1km 학원 상위권", test: (c, ctx) => c.f.academy != null && c.f.academy >= ctx.academyQ },
+    { id: "mart", label: "대형마트", desc: "대형마트 1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
+    { id: "new", label: "신축 10년 이내", desc: "준공 10년 이내", test: c => c.y && c.y >= nowYear - 10 },
+    { id: "rising", label: "상승세", desc: "최근 5년 기세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
   ];
   const state = Object.assign({ budget: 8, gus: [], conds: ["subway"] }, DJ.load("finder", {}));
 
@@ -38,7 +38,6 @@
     }, cd.desc));
     range.addEventListener("input", () => { state.budget = +range.value; update(); });
 
-    let touched = false;
     function update() {
       document.getElementById("budget-val").textContent = range.value + "억 이하";
       const want = CONDS.filter(cd => state.conds.includes(cd.id));
@@ -63,8 +62,6 @@
       });
       if (!list.length) grid.append(el("p", "muted center", "예산을 조금 올리거나 지역을 넓혀 보세요."));
       DJ.save("finder", state);
-      if (touched) DJ.unlock("finder");
-      touched = true;
     }
     update();
   });

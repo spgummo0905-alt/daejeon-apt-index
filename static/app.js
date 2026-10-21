@@ -1,4 +1,4 @@
-// 사이트 공통: 단지 데이터, 검색 자동완성, 찜/최근 본 단지, 공유, 업적 배지, 알림.
+// 사이트 공통: 단지 데이터, 검색 자동완성, 관심 단지/최근 본 단지, 공유, 알림.
 // 저장은 이 브라우저(localStorage)에만 남고, 막혀 있어도 사이트는 그대로 동작합니다.
 (function () {
   const ROOT = window.DJ_ROOT || "";
@@ -49,27 +49,7 @@
     setTimeout(() => t.remove(), 3800);
   };
 
-  // ---------- 업적 ----------
-  const ACH = [
-    { id: "first_view", icon: "🏠", name: "첫 임장", desc: "단지 페이지를 처음 열었어요" },
-    { id: "explorer", icon: "🗺", name: "대전 일주", desc: "5개 구의 단지를 모두 둘러봤어요" },
-    { id: "s_hunter", icon: "💎", name: "S등급 헌터", desc: "S등급 단지를 3곳 둘러봤어요" },
-    { id: "first_battle", icon: "⚔", name: "첫 대결", desc: "단지 대결을 처음 해봤어요" },
-    { id: "quiz_any", icon: "💰", name: "가격 감각", desc: "가격 맞히기를 끝까지 풀었어요" },
-    { id: "quiz_master", icon: "🏆", name: "가격 감별사", desc: "가격 맞히기 5문제를 모두 맞혔어요" },
-    { id: "collector", icon: "★", name: "컬렉터", desc: "단지를 5곳 찜했어요" },
-    { id: "finder", icon: "🎯", name: "조건 탐색가", desc: "맞춤 찾기로 단지를 골라봤어요" },
-  ];
-  DJ.achievements = ACH;
-  DJ.unlocked = () => load("ach", {});
-  DJ.unlock = function (id) {
-    const got = load("ach", {});
-    if (got[id]) return;
-    got[id] = new Date().toISOString().slice(0, 10);
-    save("ach", got);
-    const a = ACH.find(x => x.id === id);
-    if (a) DJ.toast(a.icon + " 업적 달성: " + a.name, a.desc);
-  };
+  DJ.unlock = function () {}; // 예전 페이지 호환용 (업적 기능은 없앴습니다)
 
   // ---------- 찜 / 최근 본 ----------
   DJ.favs = () => load("favs", []);
@@ -79,7 +59,6 @@
     const on = !f.includes(s);
     f = on ? [s, ...f] : f.filter(x => x !== s);
     save("favs", f.slice(0, 100));
-    if (f.length >= 5) DJ.unlock("collector");
     return on;
   };
   DJ.recent = () => load("recent", []);
@@ -87,9 +66,6 @@
     const r = DJ.recent().filter(x => x.s !== c.s);
     r.unshift({ s: c.s, gu: c.gu, g: c.g });
     save("recent", r.slice(0, 30));
-    DJ.unlock("first_view");
-    if (new Set(r.map(x => x.gu)).size >= 5) DJ.unlock("explorer");
-    if (r.filter(x => x.g === "S").length >= 3) DJ.unlock("s_hunter");
   };
 
   // ---------- 공유 ----------
@@ -98,7 +74,7 @@
     try {
       if (navigator.share) { await navigator.share({ title, text, url }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
-    try { await navigator.clipboard.writeText(url); DJ.toast("링크를 복사했어요", "카톡이나 메신저에 붙여 넣어 보내세요"); }
+    try { await navigator.clipboard.writeText(url); DJ.toast("링크를 복사했습니다", "카카오톡이나 메신저에 붙여 넣어 보내세요"); }
     catch (e) { prompt("이 링크를 복사하세요", url); }
   };
 
@@ -131,7 +107,7 @@
           li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
           list.append(li);
         });
-        if (!items.length) list.append(el("li", "ac-empty", "찾는 단지가 없어요. 동 이름으로도 검색해 보세요."));
+        if (!items.length) list.append(el("li", "ac-empty", "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
         list.hidden = false;
       });
     }
@@ -159,10 +135,11 @@
   };
 
   // ---------- 게임 카드 ----------
-  // 단지 하나를 수집 카드처럼 그립니다. opts.compare: 상대 단지(능력치 승패 표시)
+  // 단지 하나를 카드로 그립니다. opts.compare: 상대 단지(항목별로 앞선 쪽 표시)
   DJ.card = function (c, stats, opts) {
     opts = opts || {};
     const card = el("article", "gcard g-" + c.g);
+    card.setAttribute("data-holo", "");
     const head = el("div", "gcard-head");
     head.append(el("span", "grade big g-" + c.g, c.g));
     const t = el("div", "gcard-title");
@@ -182,7 +159,7 @@
       row.append(bar, el("span", "gstat-val", v == null ? "-" : String(v)));
       if (opts.compare) {
         const o = opts.compare.st[k];
-        if (v != null && (o == null || v > o)) row.classList.add("win");
+        if (v != null && (o == null || v > o)) { row.classList.add("win"); row.querySelector(".gstat-name").append(el("span", "lead-mark", " ▲")); }
         else if (o != null && (v == null || v < o)) row.classList.add("lose");
       }
       rows.append(row);
@@ -199,21 +176,22 @@
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
     document.querySelectorAll(".tabbar a").forEach(a => {
-      if (a.dataset.tab === page) a.classList.add("on");
+      if (a.dataset.tab === page || (page === "index" && a.dataset.tab === "map" && location.hash === "#map")) a.classList.add("on");
     });
-    // 단지 페이지: 최근 본 단지 기록, 찜·공유·대결 버튼
+    // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼
     const apt = document.querySelector("[data-apt]");
     if (apt) {
       const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade };
       DJ.addRecent(c);
       const fav = document.querySelector("[data-fav]");
       if (fav) {
-        const paint = on => { fav.classList.toggle("on", on); fav.textContent = on ? "★ 찜함" : "☆ 찜하기"; };
+        const label = fav.querySelector("span") || fav;
+        const paint = on => { fav.classList.toggle("on", on); label.textContent = on ? "관심 단지에 저장됨" : "관심 단지 저장"; };
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
           const on = DJ.toggleFav(c.s);
           paint(on);
-          if (on) DJ.toast("찜했어요", "'내 단지'에서 모아 볼 수 있어요");
+          if (on) DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다");
         });
       }
     }

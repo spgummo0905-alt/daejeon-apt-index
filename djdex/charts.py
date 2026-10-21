@@ -195,7 +195,7 @@ def value_scatter(points: list[dict], width: int = 720, height: int = 380) -> st
     out.append(f'<line x1="{px(xmed):.1f}" x2="{px(xmed):.1f}" y1="{pt}" y2="{height - pb}" class="ref"/>'
                f'<line x1="{pl}" x2="{width - pr}" y1="{py(ymed):.1f}" y2="{py(ymed):.1f}" class="ref"/>')
     short = width < 500
-    out.append(f'<text x="{width - pr - 8}" y="{height - pb - 10}" text-anchor="end" class="quad-label hi">{"가성비 ★" if short else "입지 좋고 저렴 ★"}</text>'
+    out.append(f'<text x="{width - pr - 8}" y="{height - pb - 10}" text-anchor="end" class="quad-label hi">{"입지 대비 저렴" if short else "입지 좋고 저렴"}</text>'
                f'<text x="{width - pr - 8}" y="{pt + 16}" text-anchor="end" class="quad-label">{"" if short else "입지 좋고 비쌈"}</text>'
                f'<text x="{pl + 8}" y="{pt + 16}" class="quad-label">{"" if short else "입지 아쉽고 비쌈"}</text>'
                f'<text x="{pl + 8}" y="{height - pb - 10}" class="quad-label">{"" if short else "입지 아쉽고 저렴"}</text>')

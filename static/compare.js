@@ -14,7 +14,7 @@
     document.getElementById("vs-random").addEventListener("click", () => {
       const pool = d.complexes.filter(c => c.i != null);
       const x = pool[Math.floor(Math.random() * pool.length)];
-      // 같은 구에서 상대를 고르면 더 흥미롭습니다.
+      // 같은 구의 단지끼리 비교해야 의미가 큽니다.
       const same = pool.filter(c => c.gu === x.gu && c.s !== x.s);
       const y = (same.length ? same : pool)[Math.floor(Math.random() * (same.length || pool.length))];
       a = x.s; b = y.s; ia.value = x.n; ib.value = y.n;
@@ -34,20 +34,22 @@
       else if (o != null && (v == null || v < o)) wb++;
     });
     out.replaceChildren();
+    const lead = wa === wb ? null : (wa > wb ? ca : cb);
     const board = el("div", "scoreboard");
-    const winner = wa === wb ? null : (wa > wb ? ca : cb);
-    board.append(el("span", "sb-side" + (wa > wb ? " win" : ""), ca.n), el("span", "sb-score", wa + " : " + wb),
+    board.append(el("span", "sb-side" + (wa > wb ? " win" : ""), ca.n),
+                 el("span", "sb-score", wa + " : " + wb),
                  el("span", "sb-side" + (wb > wa ? " win" : ""), cb.n));
-    const verdict = el("p", "verdict", winner ? "🏆 " + winner.n + " 승리!" : "🤝 무승부! 막상막하네요");
+    const verdict = el("p", "verdict", lead
+      ? lead.n + "이(가) 다섯 항목 중 " + Math.max(wa, wb) + "개에서 앞섭니다"
+      : "두 단지가 항목별로 비슷합니다");
     const cards = el("div", "vs-cards");
-    cards.append(DJ.card(ca, d.stats, { compare: cb }), el("div", "vs-mid", "VS"), DJ.card(cb, d.stats, { compare: ca }));
-    const note = el("p", "muted center", "초록 막대가 그 능력치에서 이긴 쪽입니다. 종합 지수: " +
+    cards.append(DJ.card(ca, d.stats, { compare: cb }), el("div", "vs-mid", "vs"), DJ.card(cb, d.stats, { compare: ca }));
+    const note = el("p", "muted center", "▲ 표시와 초록 막대가 그 항목에서 앞선 쪽입니다. 종합 지수 " +
       ca.n + " " + (ca.i ?? "-") + "점, " + cb.n + " " + (cb.i ?? "-") + "점");
     out.append(board, verdict, cards, note);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     shareBtn.hidden = false;
-    shareBtn.onclick = () => DJ.share("단지 대결: " + ca.n + " vs " + cb.n,
-      (winner ? winner.n + " 승리 " : "무승부 ") + wa + ":" + wb + " · 누가 이길지 직접 확인해 보세요");
-    DJ.unlock("first_battle");
+    shareBtn.onclick = () => DJ.share("단지 비교: " + ca.n + " vs " + cb.n,
+      ca.n + "와(과) " + cb.n + "을(를) 입지·성장성·상승세·가성비·거래량으로 비교했습니다");
   }
 })();
