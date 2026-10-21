@@ -113,34 +113,48 @@ def short_name(name: str, region: str = "대전") -> str:
     return n.replace("중학교", "중")
 
 
+# 학군 비교에서 빼는 학교: 거주지와 상관없이 지원해 들어가는 특수 목적 학교
+SPECIAL = ("체육", "예술", "국제", "외국어", "과학", "방송", "특수", "대안")
+
+
 def load(out_dir: Path, cfg: dict, region: str = "대전") -> pd.DataFrame:
-    """캐시에서 중학교 표를 만듭니다. index=학교코드, 열: name, lat, lng, net_in(순전입률 %), years."""
+    """캐시에서 중학교 표를 만듭니다. index=학교코드, 열: name, lat, lng, net_in(순전입률 %), students, years.
+
+    순전입률은 최근 n년 (전입 합 − 전출 합) ÷ 학생 수 합으로, 해마다 따로 구해 평균하는 것보다 흔들림이 적습니다.
+    특수 목적 학교와 학생 수가 min_students 명보다 적은 학교는 몇 명의 이동에 크게 흔들려 뺍니다.
+    """
     basic = out_dir / f"{cfg.get('api_basic', '0')}_now.json"
     if not basic.exists():
         return pd.DataFrame()
     sch = {}
     for r in json.loads(basic.read_text(encoding="utf-8")):
         code = r.get("SCHUL_CODE")
+        name = str(r.get("SCHUL_NM", ""))
         kind = str(r.get("SCHUL_KND_SC_CODE", MIDDLE)).strip()
-        if kind not in (MIDDLE, "3", "중", "중학교") and "중학교" not in str(r.get("SCHUL_NM", "")):
+        if kind not in (MIDDLE, "3", "중", "중학교") and "중학교" not in name:
+            continue
+        if any(w in name for w in SPECIAL):
             continue
         lat, lng = _num(r.get("LTTUD")), _num(r.get("LGTUD"))
         if not code or math.isnan(lat) or math.isnan(lng) or str(r.get("ABSCH_YN", "N")).upper() == "Y":
             continue
-        sch[code] = {"name": short_name(r.get("SCHUL_NM"), region), "lat": lat, "lng": lng}
-    rates: dict[str, list[float]] = {}
+        sch[code] = {"name": short_name(name, region), "lat": lat, "lng": lng}
+    net: dict[str, list[float]] = {}
     moves = sorted(p for p in out_dir.glob(f"{cfg.get('api_moves', '10')}_*.json") if p.stem.split("_")[-1].isdigit())
     for path in moves[-cfg.get("years", 3):]:  # 최근 n년만
         for r in json.loads(path.read_text(encoding="utf-8")):
-            n = _num(r.get("STDNT_SUM"))
-            if r.get("SCHUL_CODE") in sch and n and n > 0:
-                rate = (_num(r.get("MVIN_SUM")) - _num(r.get("MVT_SUM"))) / n * 100
-                if not math.isnan(rate):
-                    rates.setdefault(r["SCHUL_CODE"], []).append(rate)
+            n, i, o = _num(r.get("STDNT_SUM")), _num(r.get("MVIN_SUM")), _num(r.get("MVT_SUM"))
+            if r.get("SCHUL_CODE") in sch and n > 0 and not math.isnan(i) and not math.isnan(o):
+                acc = net.setdefault(r["SCHUL_CODE"], [0.0, 0.0, 0])
+                acc[0] += i - o
+                acc[1] += n
+                acc[2] += 1
     df = pd.DataFrame.from_dict(sch, orient="index")
-    df["net_in"] = pd.Series({c: sum(v) / len(v) for c, v in rates.items()})
-    df["years"] = pd.Series({c: len(v) for c, v in rates.items()})
-    return df.dropna(subset=["net_in"])
+    df["net_in"] = pd.Series({c: v[0] / v[1] * 100 for c, v in net.items()})
+    df["students"] = pd.Series({c: v[1] / v[2] for c, v in net.items()})
+    df["years"] = pd.Series({c: v[2] for c, v in net.items()})
+    df = df.dropna(subset=["net_in"])
+    return df[df["students"] >= cfg.get("min_students", 300)]
 
 
 def _meters(a, b) -> float:

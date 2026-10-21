@@ -43,8 +43,9 @@ def test_load_net_in_rate(tmp_path):
     sch = school.load(tmp_path, {}, "대전")
     assert list(sch.index) == ["A", "B"]  # 폐교 제외
     assert sch.at["A", "name"] == "둔산중" and sch.at["B", "name"] == "삼천중"
-    # A: 2025 (60-20)/800 = 5%, 2024 (40-20)/800 = 2.5% → 평균 3.75%
+    # A: 2년 합 (60-20 + 40-20) / (800 + 800) = 3.75%
     assert sch.at["A", "net_in"] == pytest.approx(3.75) and sch.at["A", "years"] == 2
+    assert sch.at["A", "students"] == 800
     assert sch.at["B", "net_in"] == pytest.approx(-5.0)
 
 
@@ -74,3 +75,17 @@ def test_load_uses_latest_years_only(tmp_path):
         {"SCHUL_CODE": "A", "MVIN_SUM": "0", "MVT_SUM": "800", "STDNT_SUM": "800"}]), encoding="utf-8")
     sch = school.load(tmp_path, {"years": 2}, "대전")
     assert sch.at["A", "net_in"] == pytest.approx(3.75)  # 2023년은 빠짐
+
+
+def test_load_drops_special_and_small_schools(tmp_path):
+    _write(tmp_path)
+    basic = json.loads((tmp_path / "0_now.json").read_text(encoding="utf-8"))
+    basic += [{"SCHUL_CODE": "S", "SCHUL_NM": "대전체육중학교", "LTTUD": "36.35", "LGTUD": "127.38"},
+              {"SCHUL_CODE": "T", "SCHUL_NM": "기성중학교", "LTTUD": "36.25", "LGTUD": "127.30"}]
+    (tmp_path / "0_now.json").write_text(json.dumps(basic, ensure_ascii=False), encoding="utf-8")
+    moves = json.loads((tmp_path / "10_2025.json").read_text(encoding="utf-8"))
+    moves += [{"SCHUL_CODE": "S", "MVIN_SUM": "30", "MVT_SUM": "0", "STDNT_SUM": "400"},
+              {"SCHUL_CODE": "T", "MVIN_SUM": "10", "MVT_SUM": "0", "STDNT_SUM": "90"}]
+    (tmp_path / "10_2025.json").write_text(json.dumps(moves), encoding="utf-8")
+    sch = school.load(tmp_path, {"min_students": 300}, "대전")
+    assert "S" not in sch.index and "T" not in sch.index and "A" in sch.index
