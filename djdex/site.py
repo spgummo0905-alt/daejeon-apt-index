@@ -44,9 +44,7 @@ def fmt_raw(v, factor: dict, c: dict | None = None) -> str:
     """입지 원래 값: 거리는 m/km, 개수는 '곳', 학원가는 '둔산 학원가 15분'."""
     if factor["kind"] == "value":
         names = (c or {}).get(factor["key"] + "_names_raw")
-        if isinstance(names, str) and names:
-            return names
-        return "-" if _nan(v) else (f"{v:+.1f}%" if factor.get("signed", True) else f"{v:.1f}%")
+        return names if isinstance(names, str) and names else ("-" if _nan(v) else f"{v:+.1f}%")
     if factor["kind"] == "score":
         name, mins = (c or {}).get(factor["key"] + "_name_raw"), (c or {}).get(factor["key"] + "_min_raw")
         return "-" if not name or _nan(mins) else f"{name} {int(mins)}분"
@@ -392,7 +390,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
 
 def _loc_groups(cfg, table: pd.DataFrame | None = None) -> list[dict]:
     """설정의 입지 묶음 [{key, label, factors: [factor dict]}]. 묶음에 없는 항목은 '기타'로.
-    table 을 주면 값이 하나도 없는 항목(예: 공시 파일을 아직 넣지 않은 진학률)은 뺍니다."""
+    table 을 주면 값이 하나도 없는 항목(예: 학교알리미를 받지 못한 해의 중학교 순전입)은 뺍니다."""
     factors = [f for f in cfg.location_factors
                if table is None or (f["key"] + "_pct" in table and table[f["key"] + "_pct"].notna().any())]
     by_key = {f["key"]: f for f in factors}

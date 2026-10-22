@@ -138,19 +138,6 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
             print(f"[학군] 중학교 {len(sch)}곳, 순전입률 중간 {sch['net_in'].median():+.1f}%")
             print("[학군] 순전입 상위: " + ", ".join(f"{r['name']} {r['net_in']:+.1f}%" for _, r in top.head(8).iterrows()))
             print("[학군] 순전입 하위: " + ", ".join(f"{r['name']} {r['net_in']:+.1f}%" for _, r in top.tail(5).iterrows()))
-    adv_f = next((f for f in cfg.location_factors if f["key"] == "school_adv"), None)
-    if adv_f and not poi_df.empty and geo and cfg.school:
-        adv_path = ROOT / "assets" / "school_advance" / f"{cfg.school.get('sido', '30')}.csv"
-        adv = school.load_advance(adv_path, cfg.paths.school, cfg.school, cfg.region_name)
-        if not adv.empty:
-            near = school.for_complexes(geo, adv, cfg.school.get("radius", 1500), cfg.school.get("max_schools", 3),
-                                        col="adv", key="school_adv", fmt=lambda v: f"{v:.1f}%")
-            poi_df = poi_df.drop(columns=[c for c in near.columns if c in poi_df], errors="ignore").join(near)
-            top = adv.sort_values("adv", ascending=False)
-            print(f"[학군] 특목고·자사고 진학률: 중학교 {len(adv)}곳, 중간 {adv['adv'].median():.1f}%, "
-                  "상위 " + ", ".join(f"{r['name']} {r['adv']:.1f}%" for _, r in top.head(6).iterrows()))
-        elif adv_path.exists():
-            print(f"::warning::{adv_path.name}: 학교 이름을 학교알리미 학교 목록과 맞추지 못했습니다")
     # 입지점수는 소규모 단지를 뺀 분포 기준이라 metrics 안에서 계산합니다.
     table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters, cpi=cpi,
                                         components=cfg.index_components,
