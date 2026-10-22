@@ -66,7 +66,7 @@ def test_location_groups_and_group_score():
     cfg = config.load()
     groups = site._loc_groups(cfg)
     assert [g["label"] for g in groups] == ["교통", "학군", "생활"]
-    assert [f["key"] for f in groups[1]["factors"]] == ["school_adv", "school_mid", "hub", "academy_math"]  # 학교 + 학원
+    assert [f["key"] for f in groups[1]["factors"]] == ["school_mid", "hub", "academy_math"]  # 학교 + 학원
     assert sum(len(g["factors"]) for g in groups) == len(cfg.location_factors)  # 빠진 항목 없음
     t = pd.DataFrame({"school_mid_pct": [80.0, None], "hub_pct": [40.0, 60.0], "academy_math_pct": [20.0, 30.0]})
     s = site._group_score(t, groups[1]["factors"])  # 가중치 0.10 : 0.25 : 0.10
@@ -78,7 +78,7 @@ def test_location_groups_hide_factor_without_data():
     import pandas as pd
     from djdex import config
     cfg = config.load()
-    t = pd.DataFrame({f["key"] + "_pct": [50.0] for f in cfg.location_factors if f["key"] != "school_adv"})
-    t["school_adv_pct"] = float("nan")  # 진학률 공시 파일을 아직 넣지 않음
+    t = pd.DataFrame({f["key"] + "_pct": [50.0] for f in cfg.location_factors if f["key"] != "school_mid"})
+    t["school_mid_pct"] = float("nan")  # 학교알리미를 받지 못함
     edu = next(g for g in site._loc_groups(cfg, t) if g["key"] == "edu")
-    assert "school_adv" not in [f["key"] for f in edu["factors"]]
+    assert [f["key"] for f in edu["factors"]] == ["hub", "academy_math"]
