@@ -126,8 +126,9 @@ def _shrink(rows: list[dict], name: str) -> dict:
     return {"names": names, "p": purp, "u": out}
 
 
-def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=print) -> None:
-    """거래가 많은 단지부터, 아직 없거나 오래된 것만 받습니다. budget 은 이번 실행의 호출 수 한도."""
+def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=print, first=()) -> None:
+    """거래가 많은 단지부터, 아직 없거나 오래된 것만 받습니다. budget 은 이번 실행의 호출 수 한도.
+    first: 이름에 이 낱말이 든 단지를 먼저 (확인하려는 단지)."""
     root.mkdir(parents=True, exist_ok=True)
     tg = targets(raw_dirs)
     today = date.today()
@@ -139,11 +140,11 @@ def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=
             days = REFRESH_DAYS if got.get("u") else RETRY_EMPTY_DAYS
             if got.get("_at", "") >= (today - timedelta(days=days)).isoformat():
                 continue
-        todo.append((-t["n"], seq))
+        todo.append((not any(f in t["name"] for f in first), -t["n"], seq))
     todo.sort()
     s = requests.Session()
     used = done = 0
-    for _, seq in todo:
+    for *_, seq in todo:
         t = tg[seq]
         if used + 1 > budget:
             break
