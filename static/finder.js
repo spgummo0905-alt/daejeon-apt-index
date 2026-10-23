@@ -13,10 +13,10 @@
   const NS = "http://www.w3.org/2000/svg";
 
   const STATUS = [
-    { id: "first", label: "생애최초", sub: "세대원 모두 집을 가진 적 없음" },
-    { id: "none", label: "무주택", sub: "집을 가진 적은 있는 무주택" },
-    { id: "switch", label: "1주택 갈아타기", sub: "지금 집을 팔고 옮김" },
-    { id: "multi", label: "2주택 이상", sub: "지금 집을 계속 보유" },
+    { id: "first", label: "생애최초", sub: "세대원 모두 집을 가져 본 적 없음" },
+    { id: "none", label: "무주택", sub: "집을 가졌던 적은 있는 무주택" },
+    { id: "switch", label: "1주택 갈아타기", sub: "지금 집을 팔고 이사" },
+    { id: "multi", label: "2주택 이상", sub: "지금 집도 계속 보유" },
   ];
   const PY = [
     { id: "u20", label: "20평 미만", sub: "전용 약 46㎡ 미만", test: p => p < 20 },
@@ -28,20 +28,20 @@
   const AGE = [
     { id: "new", label: "신축", sub: `${NOW - 5}년 이후 준공`, years: 5 },
     { id: "semi", label: "준신축까지", sub: `${NOW - 15}년 이후 준공`, years: 15 },
-    { id: "", label: "상관없습니다" },
+    { id: "", label: "상관없어요" },
   ];
   const BUDGETS = [2, 3, 4, 5, 7, 10, 15, 20];
   const LIMITS = [3, 5, 8, 12];
   let ctx = {};   // 분위 기준값 (자료를 받은 뒤 채움)
   const MUST = [
-    { id: "academy", label: "학원가", sub: "주요 학원가 20분 안 (도보·지하철)", test: c => ctx.hasHub ? c.hm != null && c.hm <= 20 : (c.f.academy_math ?? c.f.academy ?? -1) >= ctx.acadQ },
+    { id: "academy", label: "학원가", sub: "주요 학원가까지 20분 안 (걸어서·지하철)", test: c => ctx.hasHub ? c.hm != null && c.hm <= 20 : (c.f.academy_math ?? c.f.academy ?? -1) >= ctx.acadQ },
     { id: "edu", label: "학군 상위", sub: "학군 점수 상위 30%", test: c => c.ed != null && c.ed >= ctx.eduQ },
     { id: "mart", label: "대형마트", sub: "1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
     { id: "hospital", label: "병원 많은 곳", sub: "반경 1km 병원 수 상위 30%", test: c => c.f.hospital != null && c.f.hospital >= ctx.hospQ },
-    { id: "top", label: "지수 A등급 이상", sub: "종합 지수 65점 이상", test: c => c.i != null && c.i >= 65 },
+    { id: "top", label: "A등급 이상", sub: "종합 지수 65점 이상", test: c => c.i != null && c.i >= 65 },
     { id: "rising", label: "상승세", sub: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
     { id: "dip", label: "고점 대비 하락", sub: "전고점보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
-    { id: "high", label: "최근 신고가", sub: "최근 90일 신고가 거래", test: c => !!c.h },
+    { id: "high", label: "최근 신고가", sub: "최근 90일 안 신고가 거래", test: c => !!c.h },
   ];
 
   const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false,
@@ -89,21 +89,21 @@
 
   // ---------- 질문 ----------
   const STEPS = [
-    { id: "status", name: "상황", q: "현재 어떤 상황입니까?", sub: "예산 단계의 대출 한도 계산에만 씁니다 (단지 수는 그대로).",
+    { id: "status", name: "상황", q: "지금 어떤 상황인가요?", sub: "예산 단계에서 대출 한도를 계산할 때만 써요. 남는 단지 수는 그대로예요.",
       on: () => !!S.status, clear: () => { S.status = ""; }, draw: drawStatus },
-    { id: "gu", name: "지역", q: "어느 지역을 찾으십니까?", sub: `여러 곳 골라도 됩니다. 건너뛰면 ${REGION} 전체를 봅니다.`,
+    { id: "gu", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳 골라도 돼요. 건너뛰면 ${REGION} 전체를 봐요.`,
       on: () => S.gus.length > 0, clear: () => { S.gus = []; }, draw: drawGu },
-    { id: "work", name: "직장", q: "직장은 어디입니까?", sub: "직장에서 직선거리로 몇 km 안까지 볼지 고릅니다. 재택이면 건너뛰십시오.",
+    { id: "work", name: "직장", q: "직장은 어디인가요?", sub: "직장에서 몇 km 안까지 볼지 골라 주세요. 재택이면 건너뛰어도 돼요.",
       on: () => works(S).length > 0, clear: () => { S.works = blank().works; S.two = false; }, draw: drawWork },
-    { id: "budget", name: "예산", q: "예산은 얼마입니까?", sub: "가격대로 고르거나, 연소득·자기자본으로 대출 한도를 계산합니다.",
+    { id: "budget", name: "예산", q: "예산은 얼마인가요?", sub: "가격대로 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
       on: () => !!S.budget, clear: () => { S.budget = 0; }, draw: drawBudget },
-    { id: "py", name: "평형", q: "필요한 평형은 몇 평입니까?", sub: "공급면적 기준입니다. 여러 개 골라도 됩니다.",
+    { id: "py", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준이에요. 여러 개 골라도 돼요.",
       on: () => S.py.length > 0, clear: () => { S.py = []; }, draw: drawPy },
-    { id: "age", name: "연식", q: "선호하는 연식이 있습니까?", sub: "준공 연도로 고릅니다.",
+    { id: "age", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도로 골라요.",
       on: () => !!S.age, clear: () => { S.age = ""; }, draw: drawAge },
-    { id: "near", name: "역·학교", q: `${STOP}과 학교는 얼마나 가까워야 합니까?`, sub: "단지에서 가장 가까운 곳까지 직선거리입니다.",
+    { id: "near", name: "역·학교", q: `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지 잰 직선거리예요.",
       on: () => !!(S.stn || S.sch), clear: () => { S.stn = 0; S.sch = 0; }, draw: drawNear },
-    { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주십시오", sub: "고른 조건을 모두 갖춘 단지만 남깁니다.",
+    { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "고른 조건을 모두 갖춘 단지만 남겨요.",
       on: () => S.must.length > 0, clear: () => { S.must = []; }, draw: drawMust },
   ];
 
@@ -125,7 +125,7 @@
   function drawStatus() {
     q.append(grid("c4", ...STATUS.map(st => option(st.label, st.sub, null, S.status === st.id,
       () => { S.status = S.status === st.id ? "" : st.id; }))));
-    if (S.status) q.append(el("p", "sv-note", `대출 한도 계산에 LTV ${Math.round(LTV[S.status] * 100)}%를 씁니다 (설정값, 은행 심사·정책에 따라 다를 수 있음).`));
+    if (S.status) q.append(el("p", "sv-note", `대출 한도는 LTV ${Math.round(LTV[S.status] * 100)}%로 계산해요. 실제 한도는 은행 심사와 정책에 따라 달라질 수 있어요.`));
   }
   function drawGu() {
     const n = {};
@@ -149,9 +149,9 @@
     const slot = k => {
       const w = S.works[k];
       const wrap = el("div", "sv-work");
-      wrap.append(label(k ? "두 번째 직장" : "직장"));
+      wrap.append(label(k ? "두 번째 직장" : "첫 번째 직장"));
       const sel = el("select", "pc-sel");
-      sel.append(new Option("고르기", ""));
+      sel.append(new Option("직장 고르기", ""));
       ps.forEach((p, i) => sel.append(new Option(p.name, p.here ? "here" : String(i))));
       sel.value = w.w;
       sel.addEventListener("change", () => { w.w = sel.value; if (w.w && !w.lim) w.lim = 8; changed(); });
@@ -161,16 +161,16 @@
         const here = el("button", "btn", "내 위치");
         here.type = "button";
         here.addEventListener("click", () => {
-          if (!navigator.geolocation) return DJ.toast("위치를 쓸 수 없습니다", "브라우저가 위치 기능을 지원하지 않습니다");
+          if (!navigator.geolocation) return DJ.toast("위치를 쓸 수 없어요", "이 브라우저는 위치 기능을 지원하지 않아요");
           navigator.geolocation.getCurrentPosition(pos => {
             S.here = [pos.coords.latitude, pos.coords.longitude]; w.w = "here"; if (!w.lim) w.lim = 8; changed();
-          }, () => DJ.toast("위치를 가져오지 못했습니다", "브라우저의 위치 권한을 확인해 주세요"), { timeout: 8000 });
+          }, () => DJ.toast("위치를 가져오지 못했어요", "브라우저에서 위치 권한을 확인해 주세요"), { timeout: 8000 });
         });
         row.append(here);
       }
       wrap.append(row);
       if (w.w) {
-        wrap.append(label("직선거리"));
+        wrap.append(label("직장에서 직선거리"));
         wrap.append(grid("c4", ...LIMITS.map(lim => {
           const works2 = S.works.map((x, j) => j === k ? Object.assign({}, x, { lim }) : x);
           return option(lim + "km 이내", null, countWith({ works: works2 }), w.lim === lim, () => { w.lim = lim; }, "sm");
@@ -182,13 +182,13 @@
     const two = el("label", "sv-check");
     const cb = el("input"); cb.type = "checkbox"; cb.checked = S.two;
     cb.addEventListener("change", () => { S.two = cb.checked; changed(); });
-    two.append(cb, document.createTextNode(" 맞벌이 · 직장 두 곳"));
+    two.append(cb, document.createTextNode(" 맞벌이라 직장이 두 곳이에요"));
     q.append(two);
     if (S.two) q.append(slot(1));
   }
   function drawBudget() {
     const seg = el("div", "seg sv-seg");
-    [["price", "가격대로"], ["calc", "한도 계산으로"]].forEach(([id, t]) => {
+    [["price", "가격대로"], ["calc", "대출 한도 계산하기"]].forEach(([id, t]) => {
       const b = el("button", "seg-btn" + (S.bmode === id ? " active" : ""), t);
       b.type = "button"; b.setAttribute("aria-pressed", S.bmode === id);
       b.addEventListener("click", () => { S.bmode = id; render(); });
@@ -202,9 +202,9 @@
         () => { S.budget = S.budget === b ? 0 : b; }, "sm"))));
       const own = el("label", "sv-own");
       const inp = el("input"); inp.type = "number"; inp.min = "0.5"; inp.step = "0.5"; inp.inputMode = "decimal";
-      inp.placeholder = "직접 (억)"; if (S.budget && !list.includes(S.budget)) inp.value = S.budget;
+      inp.placeholder = "예: 6.5"; if (S.budget && !list.includes(S.budget)) inp.value = S.budget;
       inp.addEventListener("change", () => { S.budget = Math.max(0, +inp.value || 0); changed(); });
-      own.append(el("span", "", "직접 정하기"), inp, el("span", "", "억 이하"));
+      own.append(el("span", "", "직접 입력"), inp, el("span", "", "억 이하"));
       q.append(own);
       return;
     }
@@ -223,7 +223,7 @@
     function calc() {
       out.replaceChildren();
       const income = +S.af.income, equity = +S.af.equity, rate = +S.af.rate, years = +S.af.years, debt = +S.af.debt || 0;
-      if (!income || !equity || !years) { out.append(el("p", "muted", "연소득과 자기자본을 넣으면 계산됩니다.")); return; }
+      if (!income || !equity || !years) { out.append(el("p", "muted", "연소득과 자기자본을 넣으면 바로 계산돼요.")); return; }
       const ltv = LTV[S.status || "none"];
       const r = rate / 100 / 12, n = years * 12;
       const monthly = Math.max(0, income * DSR - debt) / 12;
@@ -232,11 +232,11 @@
       const max = Math.min(byDsr, byLtv), loan = Math.max(0, max - equity);
       const pay = r > 0 ? loan * r / (1 - Math.pow(1 + r, -n)) : loan / n;
       const big = el("div", "af-big");
-      big.append(el("span", "label", "살 수 있는 최대 가격 (어림)"), el("strong", "", eok(max)));
-      out.append(big, el("p", "muted", `대출 ${eok(loan)} · 월 상환 약 ${Math.round(pay).toLocaleString()}만원 · ` +
-        (byDsr < byLtv ? `소득(DSR ${Math.round(DSR * 100)}%)이 한도를 정합니다` : `LTV ${Math.round(ltv * 100)}%가 한도를 정합니다`)));
+      big.append(el("span", "label", "최대로 살 수 있는 가격 (대략)"), el("strong", "", eok(max)));
+      out.append(big, el("p", "muted", `대출 ${eok(loan)} · 매달 갚는 돈 약 ${Math.round(pay).toLocaleString()}만원 · ` +
+        (byDsr < byLtv ? `소득(DSR ${Math.round(DSR * 100)}%) 기준으로 한도가 정해져요` : `LTV ${Math.round(ltv * 100)}% 기준으로 한도가 정해져요`)));
       const b = Math.max(0.5, Math.floor(max / 5000) / 2);
-      const apply = el("button", "btn primary", `${b}억을 예산으로 (${countWith({ budget: b }).toLocaleString()}곳)`);
+      const apply = el("button", "btn primary", `${b}억을 예산으로 정하기 (${countWith({ budget: b }).toLocaleString()}곳)`);
       apply.type = "button";
       apply.addEventListener("click", () => { S.budget = b; changed(); });
       out.append(apply);
@@ -252,9 +252,9 @@
   }
   function drawNear() {
     q.append(label(STOP));
-    q.append(grid("c4", ...[300, 500, 800, 0].map(m => option(m ? `${m}m 안` : "상관없음", null, countWith({ stn: m }), S.stn === m, () => { S.stn = m; }, "sm"))));
+    q.append(grid("c4", ...[300, 500, 800, 0].map(m => option(m ? `${m}m 안` : "상관없어요", null, countWith({ stn: m }), S.stn === m, () => { S.stn = m; }, "sm"))));
     q.append(label("초등학교"));
-    q.append(grid("c4", ...[300, 500, 0].map(m => option(m ? `${m}m 안` : "상관없음", m === 300 ? "초품아에 가까움" : null, countWith({ sch: m }), S.sch === m, () => { S.sch = m; }, "sm"))));
+    q.append(grid("c4", ...[300, 500, 0].map(m => option(m ? `${m}m 안` : "상관없어요", m === 300 ? "초품아 수준" : null, countWith({ sch: m }), S.sch === m, () => { S.sch = m; }, "sm"))));
   }
   function drawMust() {
     q.append(grid("c3", ...MUST.map(m => option(m.label, m.sub, countWith({ must: S.must.includes(m.id) ? S.must : [...S.must, m.id] }),
@@ -290,10 +290,10 @@
     const n = count(S);
     const d = box.querySelector("[data-sv-delta]");
     if (lastN != null) {
-      d.textContent = n === lastN ? `변동 없이 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄었습니다" : "늘었습니다"}`;
+      d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄었어요" : "늘었어요"}`;
       d.className = "sv-delta " + (n < lastN ? "down" : n > lastN ? "up" : "");
     }
-    if (n === 0) d.textContent += " · 조건을 하나 풀어 보십시오";
+    if (n === 0) d.textContent += " · 조건을 하나 풀어 보세요";
     lastN = n;
     box.querySelector("[data-sv-n]").textContent = n.toLocaleString();
     render();
@@ -444,7 +444,7 @@
   // 결과가 없을 때: 어떤 조건을 빼면 몇 곳이 되는지 보여주고 바로 뺄 수 있게
   function relax() {
     const wrap = el("div", "sv-empty");
-    wrap.append(el("p", "", "조건에 맞는 단지가 없습니다. 조건을 하나 빼 보십시오."));
+    wrap.append(el("p", "", "조건에 맞는 단지가 없어요. 조건을 하나 빼 볼까요?"));
     const opts = STEPS.map((st, i) => {
       if (!st.on()) return null;
       const keep = Object.assign({}, S);   // clear() 는 값을 새로 넣기만 해서 얕은 복사로 되돌릴 수 있음
@@ -459,7 +459,7 @@
       row.append(b);
     });
     if (!opts.length) {
-      const b = el("button", "btn", "조건을 모두 지우고 처음부터");
+      const b = el("button", "btn", "조건 모두 지우고 처음부터");
       b.type = "button";
       b.addEventListener("click", reset);
       row.append(b);

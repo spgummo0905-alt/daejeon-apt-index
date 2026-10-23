@@ -137,7 +137,7 @@
       lines.forEach(l => { const w = l.get(i); if (w != null) vals.push(w); });
     }
     if (!market) typeTr.forEach(t => { if (!(t[5] & F_CANCEL)) { const c = conv(t[3], t[0], base); if (c != null) vals.push(c); } });
-    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 보여줄 거래가 없습니다.")); return; }
+    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 보여 줄 거래가 없어요.")); return; }
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const padV = (hi - lo) * 0.08 || hi * 0.05;
     lo = Math.max(0, lo - padV); hi += padV;
@@ -343,12 +343,12 @@
     const out = [ym(i)];
     const v = conv(T.est[i], i, base);
     if (v != null) {
-      out.push(`추정 시세 ${eok(v)}${T.sp[i] ? " (거래 드묾)" : ""}`);
+      out.push(`추정 시세 ${eok(v)}${T.sp[i] ? " (거래가 드문 달)" : ""}`);
       if (state.mode !== "mkt" && T.lo[i] != null) out.push(`예상 범위 ${eok(conv(T.lo[i], i, base))} ~ ${eok(conv(T.hi[i], i, base))}`);
       if (state.mode === "real") out.push(`명목 ${eok(T.est[i])}`);
     }
     if (state.mode === "mkt") {
-      lines.forEach(l => { const w = l.get(i); if (w != null) out.push(`${l.name} 같은 비율이면 ${eok(w)}`); });
+      lines.forEach(l => { const w = l.get(i); if (w != null) out.push(`${l.name} 흐름대로였다면 ${eok(w)}`); });
       if (M && M.base) { const r1 = mk(M.base, i), r2 = mk(M.mort, i); if (r1 != null) out.push(`기준금리 ${r1}%${r2 != null ? ` · 주담대 ${r2}%` : ""}`); }
     } else {
       const tr = D.tr.filter(t => t[0] === i && t[2] === state.type && !(t[5] & F_CANCEL)).map(t => t[3]);
@@ -383,20 +383,20 @@
     const meta = head.querySelector("[data-pc-meta]"), badge = head.querySelector("[data-pc-badge]");
     const real = head.querySelector("[data-pc-real]");
     head.hidden = false;
-    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "추정할 거래가 부족합니다."; badge.hidden = true; return; }
+    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "시세를 추정할 거래가 부족해요."; badge.hidden = true; return; }
     nowB.textContent = eok(T.est[li]);
     rng.textContent = T.lo[li] != null ? `예상 거래 범위 ${eok(T.lo[li])} ~ ${eok(T.hi[li])} (10건 중 8건)` : "";
     const yr = D.tr.filter(t => t[2] === state.type && t[0] > D.n - 13 && !(t[5] & F_CANCEL));
     const last = D.tr.filter(t => t[2] === state.type && !(t[5] & F_CANCEL)).pop();
     const parts = [`전용 ${T.k}㎡${T.py ? `(${T.py}평)` : ""} 추정 시세`, `최근 12개월 ${yr.length}건`];
     if (last) parts.push(`최근 실거래 ${ym(last[0])}${last[4] > 0 ? " " + last[4] + "층" : ""} ${eok(last[3])}`);
-    if (li < D.n - 12) parts.push(`${ym(li)} 기준 (최근 1년 거래 없음)`);
+    if (li < D.n - 12) parts.push(`최근 1년 거래가 없어 ${ym(li)} 기준`);
     meta.textContent = parts.join(" · ");
     // 실질 환산
     const [i0] = view();
     if (state.mode === "real" && hasCpi()) {
       real.hidden = false;
-      real.textContent = `실질 환산 ${eok(conv(T.est[li], li, i0))} (${ym(i0)} 화폐가치)`;
+      real.textContent = `물가를 빼면 ${eok(conv(T.est[li], li, i0))} (${ym(i0)} 돈 가치로)`;
     } else real.hidden = true;
     // 고점 대비 (전체 기간)
     const useReal = state.mode === "real" && hasCpi();
@@ -410,7 +410,7 @@
     badge.hidden = pk == null || pi === li;
     if (!badge.hidden) {
       const r = cur / pk - 1;
-      badge.textContent = r > -0.005 ? `지금이 가장 높은 수준${useReal ? " (실질)" : ""}`
+      badge.textContent = r > -0.005 ? `지금이 가장 높아요${useReal ? " (실질)" : ""}`
         : `고점 대비 ${pct(r)} (${useReal ? "실질, " : ""}${ym(pi)} 고점)`;
       badge.classList.toggle("near", r > -0.05);
     }
@@ -430,8 +430,8 @@
     } else {
       items.push(item("k-line s1", state.mode === "real" ? "실질 추정 시세" : "추정 시세"));
       if (state.mode === "real") items.push(item("k-line ghost", "명목 추정 시세"));
-      items.push(item("k-dash s1", "거래 드묾·공백"));
-      items.push(item("k-band", "예상 범위(80%)"));
+      items.push(item("k-dash s1", "거래가 드문 달"));
+      items.push(item("k-band", "예상 거래 범위(80%)"));
       items.push(item("k-dot", "실거래"));
       items.push(item("k-dot low", "저층(1~3층)"));
       items.push(item("k-x", "해제 거래"));
@@ -495,7 +495,7 @@
         }
         t.tb.append(tr);
       });
-      if (any) box.append(section("임기별 추정 시세 변화", `전용 ${T.k}㎡ · * 거래 자료가 시작된 달부터`, t.t));
+      if (any) box.append(section("임기별 추정 시세 변화", `전용 ${T.k}㎡ · *표시는 거래 자료가 시작된 달부터`, t.t));
     }
     // 연도별 거래량 (모든 평형, 해제 제외)
     const byY = {};
@@ -517,7 +517,7 @@
       const full = years.filter(yr => yr !== lastY);
       const mean = full.reduce((a, yr) => a + (byY[yr] || 0), 0) / Math.max(1, full.length);
       const topY = full.reduce((a, yr) => (byY[yr] || 0) > (byY[a] || 0) ? yr : a, full[0]);
-      const note = el("p", "muted pc-note", `${full[0]}~${full[full.length - 1]}년 해마다 평균 ${mean.toFixed(1)}건 거래됐고, 가장 많았던 해는 ${topY}년(${byY[topY] || 0}건)입니다. * ${lastY}년은 ${ym(e).split(".")[1] * 1}월까지.`);
+      const note = el("p", "muted pc-note", `${full[0]}~${full[full.length - 1]}년에는 해마다 평균 ${mean.toFixed(1)}건 거래됐고, 가장 많았던 해는 ${topY}년(${byY[topY] || 0}건)이에요. *${lastY}년은 ${ym(e).split(".")[1] * 1}월까지예요.`);
       box.append(section("연도별 거래량", "모든 평형 · 해제 거래 제외", svg, note));
     }
   }

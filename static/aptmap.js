@@ -170,7 +170,7 @@
     if (!rows.length) rows.push([STOP, "1.5km 안에 없음", ""]);
     const e = nearest(r.ele, 1)[0];
     rows.push(["초등학교", e ? `${e.place_name} ${fmtM(dist(e))}` : "1.5km 안에 없음", e ? `걸어서 약 ${walk(dist(e))}분` : ""]);
-    facts(rows, "거리는 단지 중심에서 직선거리이고, 걷는 시간은 길이 1.3배 돌아간다고 보고 어림했습니다. 배정 학교는 교육청 학구도를 확인하세요.");
+    facts(rows, "거리는 단지 중심에서 잰 직선거리이고, 걷는 시간은 길을 1.3배쯤 돌아간다고 보고 계산했어요. 배정 학교는 교육청 학구도에서 꼭 확인하세요.");
   }
   function drawEdu(r) {
     const kind = p => /초등학교$/.test(p.place_name) ? "ele" : /중학교$/.test(p.place_name) ? "mid" : /고등학교$/.test(p.place_name) ? "high" : null;
@@ -191,8 +191,8 @@
     const aca = (r.aca || []).length;
     facts([["반경 1km 학교", `초 ${n("ele")} · 중 ${n("mid")} · 고 ${n("high")}`, ""],
       ["가까운 중학교", fmt(near("mid")), ""], ["가까운 고등학교", fmt(near("high")), ""],
-      ["반경 750m 학원", aca >= 45 ? "45곳 넘음" : `${aca}곳`, root.dataset.hub || ""]],
-      "학교 이름은 카카오 장소 정보 기준입니다. 고등학교는 평준화 지역이라 지망·추첨으로 배정됩니다.");
+      ["반경 750m 학원", aca >= 45 ? "45곳 이상" : `${aca}곳`, root.dataset.hub || ""]],
+      "학교 이름은 카카오 장소 정보 기준이에요. 고등학교는 평준화 지역이라 지원과 추첨으로 배정돼요.");
   }
   function drawLife(r) {
     ring(500, "반경 500m"); ring(1000, "1km");
@@ -206,7 +206,7 @@
     const m = nearest(r.mart, 1)[0];
     const c = arr => (arr || []).length;
     facts([["대형마트", m ? `${m.place_name} ${fmtM(dist(m))}` : "2km 안에 없음", m ? `걸어서 약 ${walk(dist(m))}분` : ""],
-      ["반경 1km 병원", c(r.hosp) >= 45 ? "45곳 넘음" : `${c(r.hosp)}곳`, ""],
+      ["반경 1km 병원", c(r.hosp) >= 45 ? "45곳 이상" : `${c(r.hosp)}곳`, ""],
       ["반경 500m 편의점", `${c(r.conv)}곳`, ""], ["반경 750m 약국", `${c(r.phar)}곳`, ""],
       ["반경 1km 은행·공공기관", `${c(r.bank)} · ${c(r.pub)}곳`, ""]]);
   }
@@ -219,7 +219,7 @@
     const in800 = (r.park || []).filter(x => dist(x) <= 800).length;
     facts([["가까운 공원", p ? `${p.place_name} ${fmtM(dist(p))}` : "1.5km 안에 없음", p ? `걸어서 약 ${walk(dist(p))}분` : ""],
       ["반경 800m 공원·숲", `${in800}곳`, ""], ["가까운 물가", w ? `${w.place_name} ${fmtM(dist(w))}` : "1.5km 안에 없음", ""]],
-      "공원은 카카오에 '공원'으로 등록된 곳입니다. 큰 산이나 녹지 면적은 위성 지도로 함께 보세요.");
+      "공원은 카카오에 '공원'으로 등록된 곳이에요. 산이나 큰 녹지는 위성 지도로 함께 보세요.");
   }
   function drawSafe(r) {
     const seen = new Set();
