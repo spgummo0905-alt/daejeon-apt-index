@@ -138,8 +138,15 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
 
 
 def _num(v) -> int | None:
-    v = re.sub(r"[^\d]", "", str(v or ""))
-    return int(v) if v else None
+    """'1,272' · '1272' · '1272.0'(V5 응답) → 1272. 숫자만 남기면 '1272.0'이 12720이 되므로 실수로 읽습니다."""
+    s = str(v if v is not None else "").replace(",", "").strip()
+    if not s:
+        return None
+    try:
+        return int(round(float(s)))
+    except ValueError:
+        m = re.search(r"\d+(?:\.\d+)?", s)
+        return int(round(float(m.group()))) if m else None
 
 
 def summarize(it: dict) -> dict:

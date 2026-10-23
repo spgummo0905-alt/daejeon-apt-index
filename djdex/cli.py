@@ -197,8 +197,10 @@ def cmd_build(cfg, args) -> None:
     if cfg.paths.kapt.exists():
         kl = kapt.load(cfg.paths.kapt, cfg.districts)
         kinfo = kapt.match(_complex_list(trades), kl, geo, log=print)
+        hh = sorted(v["hh"] for v in kinfo.values() if v.get("hh"))
         print(f"단지 정보(K-apt) {len(kl):,}곳 중 {len(kinfo):,}곳을 실거래 단지에 이음 "
-              f"(실거래 단지 {trades['complex_id'].nunique():,}곳)")
+              f"(실거래 단지 {trades['complex_id'].nunique():,}곳)"
+              + (f", 세대수 중간 {hh[len(hh) // 2]:,} · 최대 {hh[-1]:,}" if hh else ""))
     table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
