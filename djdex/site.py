@@ -459,6 +459,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                              leader_by_gu.get(c["gu"])),
             n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
+    # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)
+    tot = sum(r.get("n_trades") or 0 for r in rows) or 1
+    for label, key in (("전세 시세", "je"), ("월세", "wr")):
+        got = [r for r in rows if any(q.get(key) for q in r.get("quotes") or [])]
+        print(f"[반영] {label}: 단지 {len(got):,} / {len(rows):,}곳 ({len(got) / max(len(rows), 1):.0%}), "
+              f"거래 기준 {sum(r.get('n_trades') or 0 for r in got) / tot:.0%}")
     # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다. 평형별 시세(tp)는 위 시세 차트 계산에서 옵니다.
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
