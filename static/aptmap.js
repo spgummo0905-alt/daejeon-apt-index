@@ -12,6 +12,24 @@
   const walk = m => Math.max(1, Math.round(m * 1.3 / 80));   // 직선거리 → 걸어서 몇 분 (우회 1.3배, 분당 80m)
   const fmtM = m => m >= 1000 ? (m / 1000).toFixed(1) + "km" : Math.round(m) + "m";
 
+  // 키워드 검색은 이름에 그 낱말만 들어가도 잡혀서('세븐일레븐노은공원점', '공원빌라') 업종으로 한 번 더 거릅니다.
+  // 카카오 장소의 업종 분류(category_name '여행 > 공원 > 도시근린공원')와 업종 코드(category_group_code)를 봅니다.
+  const SHOPS = new Set(["MT1", "CS2", "PS3", "SC4", "AC5", "PK6", "OL7", "SW8", "BK9", "CT1", "AG2", "AD5", "FD6", "CE7", "HP8", "PM9"]);
+  const NOT_PLACE = new Set(["부동산", "가정,생활", "음식점", "서비스,산업", "교통,수송", "의료,건강", "교육,학문", "금융,보험",
+    "쇼핑", "회사", "기업", "숙박", "주거시설", "패션", "자동차"]);
+  const segs = p => String(p.category_name || "").split(">").map(x => x.trim()).filter(Boolean);
+  const words = p => segs(p).flatMap(x => x.split(","));   // '강,하천' → 강, 하천
+  // 공원 안의 부대시설은 공원 하나로 치려고 뺍니다
+  const PART = /(주차장|화장실|관리사무소|관리소|매표소|안내소|정류장|출입구|입구|정문|후문)$/;
+  const isPlace = p => !SHOPS.has(p.category_group_code) && !NOT_PLACE.has(segs(p)[0]) && !PART.test(p.place_name);
+  const PARK = /(공원|수목원|식물원|숲|휴양림|산책로|둘레길)$/;
+  const isPark = p => isPlace(p) && (words(p).some(w => PARK.test(w)) || PARK.test(p.place_name));
+  const isWater = p => isPlace(p) && !/온천/.test(p.place_name + p.category_name)
+    && (words(p).some(w => /^(강|하천|천|호수|저수지|계곡|생태하천)$/.test(w)) || /(천|강|호수|저수지)$/.test(p.place_name));
+  const isPolice = p => isPlace(p) && /(지구대|파출소|경찰서)$/.test(p.place_name);
+  const isFire = p => isPlace(p) && /(소방서|안전센터)$/.test(p.place_name) && /소방|119/.test(p.category_name + p.place_name);
+  const isER = p => p.category_group_code === "HP8" && /병원/.test(p.category_name || "") && !/(장례식장|주차장|약국)/.test(p.place_name);
+
   const STEPS = [
     { id: "walk", name: "도보권", level: 4, searches: [
         { key: "stn", code: "SW8", radius: 1500, max: 3 },
@@ -30,14 +48,14 @@
         { key: "pub", code: "PO3", radius: 1000, max: 8 }],
       draw: drawLife },
     { id: "green", name: "녹지", level: 5, searches: [
-        { key: "park", word: "공원", radius: 1500, filter: p => /공원|숲|수목원|산책로/.test(p.category_name + p.place_name), max: 15 },
-        { key: "water", word: "천", radius: 1500, filter: p => /하천|강|호수|천$/.test(p.category_name + p.place_name), max: 5 }],
+        { key: "park", word: "공원", radius: 1500, filter: isPark, max: 15 },
+        { key: "water", word: "천", radius: 1500, filter: isWater, max: 5 }],
       draw: drawGreen },
     { id: "safe", name: "치안·안전", level: 5, searches: [
-        { key: "police", word: "지구대", radius: 2000, filter: p => /지구대|파출소|경찰서/.test(p.place_name), max: 4 },
-        { key: "police2", word: "파출소", radius: 2000, filter: p => /지구대|파출소|경찰서/.test(p.place_name), max: 4 },
-        { key: "fire", word: "119안전센터", radius: 3000, filter: p => /소방서|안전센터/.test(p.place_name), max: 3 },
-        { key: "er", word: "응급실", radius: 5000, filter: p => /병원/.test(p.category_name + p.place_name), max: 2 }],
+        { key: "police", word: "지구대", radius: 2000, filter: isPolice, max: 4 },
+        { key: "police2", word: "파출소", radius: 2000, filter: isPolice, max: 4 },
+        { key: "fire", word: "119안전센터", radius: 3000, filter: isFire, max: 3 },
+        { key: "er", word: "응급실", radius: 5000, filter: isER, max: 2 }],
       draw: drawSafe },
   ];
 
@@ -219,7 +237,7 @@
     const in800 = (r.park || []).filter(x => dist(x) <= 800).length;
     facts([["가까운 공원", p ? `${p.place_name} ${fmtM(dist(p))}` : "1.5km 안에 없음", p ? `걸어서 약 ${walk(dist(p))}분` : ""],
       ["반경 800m 공원·숲", `${in800}곳`, ""], ["가까운 물가", w ? `${w.place_name} ${fmtM(dist(w))}` : "1.5km 안에 없음", ""]],
-      "공원은 카카오에 '공원'으로 등록된 곳이에요. 산이나 큰 녹지는 위성 지도로 함께 보세요.");
+      "카카오 지도에 공원·숲으로 분류된 곳만 셌어요. 이름에 '공원'이 들어간 가게나 주택은 빼요. 산이나 큰 녹지는 위성 지도로 함께 보세요.");
   }
   function drawSafe(r) {
     const seen = new Set();
