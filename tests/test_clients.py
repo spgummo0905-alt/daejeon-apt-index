@@ -135,3 +135,16 @@ def test_enrich_skips_osm_factor(tmp_path):
     geo, poi = tmp_path / "geo.json", tmp_path / "poi.json"
     kakao.enrich(cx, factors, "세종", geo, poi, FakeKakao(), log=lambda *_: None)
     assert json.loads(poi.read_text())["1"] == {"academy": 7}
+
+
+def test_school_command_collects_only_school_and_macro(tmp_path, monkeypatch):
+    from djdex import cli, ecos, school
+
+    monkeypatch.setenv("SCHOOLINFO_KEY", "x")
+    monkeypatch.delenv("ECOS_KEY", raising=False)
+    got = []
+    monkeypatch.setattr(school, "collect", lambda key, cfg, sggs, out, year: got.append((cfg["sido"], len(sggs), out.name)))
+    monkeypatch.setattr(ecos, "fetch", lambda *a: (_ for _ in ()).throw(AssertionError("ECOS 키가 없으면 부르지 않음")))
+    monkeypatch.setattr(cli, "cmd_build", lambda cfg, args: (_ for _ in ()).throw(AssertionError("사이트는 만들지 않음")))
+    cli.main(["--config", "config.seoul.toml", "--data", str(tmp_path), "school"])
+    assert got == [("11", 25, "school")]
