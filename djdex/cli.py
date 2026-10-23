@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import ecos, kakao, kapt, location, metrics, molit, osm, school, site
+from . import bldg, ecos, kakao, kapt, location, metrics, molit, osm, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -66,6 +66,12 @@ def cmd_collect(cfg, args) -> None:
             kapt.collect(key, cfg.districts, cfg.paths.kapt, budget=budget)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 수집 실패(활용신청 승인 전이면 정상), 세대수·주차 없이 진행합니다: {e}")
+    if cfg.collect.get("collect_bldg") and have >= need:
+        try:
+            bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
+                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)))
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
     if budget:
         # 나눠 받는 지역: 매매 실거래를 모든 구·달 다 받았으면 READY 를 남겨 사이트를 만들고 공개합니다.
         print(f"[{cfg.region_name}] 실거래 {have:,} / {need:,} (구×달) 받음")
@@ -202,7 +208,14 @@ def cmd_build(cfg, args) -> None:
         print(f"단지 정보(K-apt) {len(kl):,}곳 중 {len(kinfo):,}곳을 실거래 단지에 이음 "
               f"(실거래 단지 {trades['complex_id'].nunique():,}곳)"
               + (f", 세대수 중간 {hh[len(hh) // 2]:,} · 최대 {hh[-1]:,}" if hh else ""))
-    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo)
+    supply = bldg.load(cfg.paths.bldg)
+    if supply:
+        ids = set(trades["complex_id"].astype(str))
+        hit = [v for k, v in supply.items() if k in ids]
+        ratios = sorted(e / s for v in hit for e, s in v)
+        print(f"공급면적(건축물대장) {len(supply):,}곳 중 {len(hit):,}곳을 실거래 단지에 이음 (실거래 단지 {len(ids):,}곳)"
+              + (f", 전용률 중간 {ratios[len(ratios) // 2]:.3f} · 범위 {ratios[0]:.2f}~{ratios[-1]:.2f}" if ratios else ""))
+    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo, supply=supply)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
 

@@ -73,7 +73,7 @@
 {% block body %}{% endblock %}
 </main>
 <footer>
-  국토교통부 아파트 매매·분양권·전월세 실거래가 기준 ({{ meta.asof }}) · 단지 정보 공동주택관리정보시스템(K-apt) · 위치 정보 카카오 로컬 ·{% if factors and factors | selectattr("osm_route", "defined") | list %} {{ transit.stop }} © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 기여자 ·{% endif %}
+  국토교통부 아파트 매매·분양권·전월세 실거래가 기준 ({{ meta.asof }}) · 단지 정보 공동주택관리정보시스템(K-apt) · 공급면적 건축물대장 · 위치 정보 카카오 로컬 ·{% if factors and factors | selectattr("osm_route", "defined") | list %} {{ transit.stop }} © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 기여자 ·{% endif %}
   광고 없음 · 공개 데이터만 사용 · 지수와 점수는 참고용이며 투자 권유가 아닙니다. · <a href="{{ root }}methodology.html">산출 방법</a>
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">

@@ -28,6 +28,10 @@ class Paths:
         return self.data / "kapt"
 
     @property
+    def bldg(self) -> Path:
+        return self.data / "bldg"
+
+    @property
     def rents(self) -> Path:
         return self.data / "rents.csv"
 

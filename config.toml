@@ -42,6 +42,10 @@ rent_endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataS
 rent_start_ym = "201101"
 # 공동주택관리정보(K-apt) 세대수·동수·주차 (같은 인증키, 활용신청 필요)
 collect_kapt = true
+# 건축물대장 전유공용면적으로 평형별 공급면적 ('97㎡(전용 77)'). '국토교통부_건축HUB_건축물대장정보 서비스' 활용신청 필요.
+# 하루 1만 번 한도를 대전·세종이 나눠 쓰고, 다 받을 때까지 며칠에 걸쳐 이어 받습니다.
+collect_bldg = true
+bldg_calls_per_run = 4500
 
 [filters]
 # 해제(취소)된 거래 제외
