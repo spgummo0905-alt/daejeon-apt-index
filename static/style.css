@@ -1571,3 +1571,20 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .viewer-sub { margin: -6px 0 0; color: rgba(255,255,255,.75); font-size: 12.5px; text-align: center; max-width: 340px; line-height: 1.5; }
 .viewer-sub a { color: #fff; text-decoration: underline; }
 .viewer .btn { min-width: 140px; justify-content: center; margin: 0; }
+/* ===== 살아본 사람들 이야기 (바깥 후기 검색) ===== */
+.rv-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.rv-link { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px 16px; border-radius: 14px; background: var(--chip); color: var(--text);
+  text-decoration: none; transition: transform var(--t-fast) var(--ease-spring), background var(--t-fast); }
+.rv-link:hover { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border), var(--shadow); transform: translateY(-1px); }
+.rv-link:active { transform: scale(.97); }
+.rv-link .ic { width: 22px; height: 22px; padding: 9px; box-sizing: content-box; border-radius: 12px; background: var(--surface); color: var(--navy); }
+.rv-link span { display: flex; flex-direction: column; min-width: 0; }
+.rv-link b { font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+.rv-link small { font-size: 12.5px; color: var(--muted); }
+.rv-q { margin: 10px 0 0; font-size: 12.5px; }
+@media (max-width: 559px) {
+  .rv-links { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .rv-link { padding: 10px 14px 10px 10px; }
+  .rv-link .ic { width: 20px; height: 20px; padding: 8px; }
+  .rv-link span { flex-direction: row; align-items: baseline; gap: 8px; }
+}
