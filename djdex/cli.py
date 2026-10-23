@@ -255,7 +255,7 @@ def _outside_reviews(cfg) -> None:
         cx = sorted(_complex_list(trades), key=lambda c: -order.get(c["complex_id"], 0))
         geo = json.loads(cfg.paths.geo.read_text(encoding="utf-8")) if cfg.paths.geo.exists() else {}
         path = cfg.paths.kapt / "reviews.json"
-        reviews.kakao_places(cx, geo, path, kakao.Kakao(os.environ["KAKAO_REST_KEY"]))
+        reviews.kakao_places(cx, geo, path, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), time_limit=900)
         nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
         if nid and nsec:
             reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)))

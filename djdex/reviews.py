@@ -41,16 +41,21 @@ def _clean(s: str) -> str:
     return html.unescape(TAG.sub("", s or "")).strip()
 
 
-def kakao_places(complexes: list[dict], geo: dict, path: Path, client, log=print) -> None:
-    """단지 좌표 400m 안 '아파트' 분류 장소 중 이름이 닮은 가장 가까운 곳 (없으면 150m 안 가장 가까운 아파트)."""
+def kakao_places(complexes: list[dict], geo: dict, path: Path, client, log=print, time_limit: float | None = None) -> None:
+    """단지 좌표 400m 안 '아파트' 분류 장소 중 이름이 닮은 가장 가까운 곳 (없으면 150m 안 가장 가까운 아파트).
+    time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 (단지가 많은 서울)."""
     data = _load(path)
     old = (date.today() - timedelta(days=PLACE_RETRY_DAYS)).isoformat()
     found = tried = 0
+    t0 = time.monotonic()
     for c in complexes:
         cid, ll = c["complex_id"], geo.get(c["complex_id"])
         cur = data.get(cid, {})
         if not ll or cur.get("kp") or cur.get("kp_at", "") >= old:
             continue
+        if time_limit and time.monotonic() - t0 > time_limit:
+            log("::notice::[카카오 장소] 시간이 다 돼 나머지는 다음 실행 때 찾습니다")
+            break
         tried += 1
         try:
             docs = client._get("keyword", query=_base_name(c["name"]) or c["name"], x=ll[1], y=ll[0],
