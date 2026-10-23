@@ -1,0 +1,127 @@
+<!doctype html>
+<!-- 링크 미리보기 이미지 원본. ?r=대전|세종|서울 로 열어 1200×630 으로 찍습니다 (scripts/og/make.mjs). -->
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+@font-face { font-family: P; src: url("PretendardVariable.ttf") format("truetype"); font-weight: 100 900; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1200px; height: 630px; overflow: hidden; }
+body { font-family: P, sans-serif; color: #fff; letter-spacing: -0.02em;
+  background: radial-gradient(900px 520px at 78% 40%, #1e3a6e 0%, rgba(30,58,110,0) 70%),
+              radial-gradient(700px 500px at 0% 100%, #142a52 0%, rgba(20,42,82,0) 70%),
+              linear-gradient(160deg, #0a1428 0%, #0d1b36 55%, #0a1326 100%); position: relative; }
+.grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.2px); background-size: 22px 22px;
+  mask-image: linear-gradient(90deg, rgba(0,0,0,.9), rgba(0,0,0,.15) 60%); }
+.sky { position: absolute; left: 0; right: 0; bottom: 0; height: 170px; opacity: .55; }
+.left { position: absolute; left: 72px; top: 64px; width: 600px; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 700; color: rgba(255,255,255,.86); }
+.brand i { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 19px;
+  color: #1a1203; background: linear-gradient(135deg, #f7e3a1, #d4a640 55%, #f3d27a); box-shadow: 0 0 0 1px rgba(255,255,255,.25) inset; }
+.brand em { font-style: normal; color: rgba(255,255,255,.5); font-weight: 600; font-size: 18px; margin-left: 4px; }
+h1 { margin-top: 34px; font-size: 80px; line-height: 1.12; font-weight: 850; letter-spacing: -0.045em; }
+h1 .gold { background: linear-gradient(100deg, #fff1c1 0%, #e8bf5a 40%, #fff6d8 55%, #d9a63a 80%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sub { margin-top: 22px; font-size: 27px; line-height: 1.5; color: rgba(255,255,255,.72); font-weight: 500; }
+.sub b { color: #fff; font-weight: 700; }
+.grades { position: absolute; left: 72px; bottom: 62px; display: flex; align-items: center; gap: 10px; }
+.g { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-weight: 900; font-size: 22px; }
+.g.s { color: #2a1c02; background: linear-gradient(135deg, #fff0b8, #d9a63a 55%, #f6d47c); box-shadow: 0 6px 18px rgba(232,191,90,.45); }
+.g.a { color: #1d2430; background: linear-gradient(135deg, #f4f6f9, #aab3bf 60%, #e4e8ee); }
+.g.b { color: #fff; background: linear-gradient(135deg, #5d9cf0, #2a62c4); }
+.g.c { color: #fff; background: #4a5568; }
+.g.d { color: #c8ced8; background: #2c3442; }
+.grades span { margin-left: 10px; font-size: 21px; color: rgba(255,255,255,.62); font-weight: 600; }
+/* 카드 */
+.deck { position: absolute; right: 78px; top: 50%; width: 390px; height: 510px; transform: translateY(-50%); }
+.card { position: absolute; inset: 0; border-radius: 30px; padding: 12px; }
+.card .in { position: relative; height: 100%; border-radius: 21px; overflow: hidden; }
+.back { transform: rotate(-11deg) translate(-78px, 14px); background: linear-gradient(135deg, #c7ced8, #8e98a6 50%, #dfe4ea); box-shadow: 0 30px 60px rgba(0,0,0,.45); }
+.back .in { background: #142445; display: grid; place-items: center;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 2px, transparent 2px 22px), repeating-linear-gradient(-45deg, rgba(255,255,255,.05) 0 2px, transparent 2px 22px); }
+.back .in b { font-size: 120px; font-weight: 900; color: rgba(255,255,255,.12); }
+.mid { transform: rotate(8deg) translate(70px, 6px); background: linear-gradient(135deg, #f4f6f9, #aab3bf 50%, #e9edf2); box-shadow: 0 30px 60px rgba(0,0,0,.45); }
+.mid .in { background: linear-gradient(180deg, #1b2c4f, #111d36); }
+.front { background: linear-gradient(135deg, #fff1c1 0%, #d4a640 30%, #fff3cf 52%, #b8862a 75%, #f2d07a 100%);
+  box-shadow: 0 40px 80px rgba(0,0,0,.55), 0 0 60px rgba(232,191,90,.25); }
+.front .in { background: radial-gradient(420px 300px at 30% 0%, #24406f 0%, #13223f 60%, #0e1a33 100%); padding: 26px 26px 22px; }
+.holo { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.16) 42%, rgba(160,220,255,.12) 47%, rgba(255,210,240,.12) 52%, transparent 62%); pointer-events: none; }
+.top { display: flex; align-items: center; gap: 14px; }
+.coin { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 30px; color: #3a2702;
+  background: radial-gradient(circle at 35% 30%, #fff4cc, #e2b34e 55%, #a97a1c); box-shadow: 0 0 0 3px rgba(255,255,255,.18), 0 6px 16px rgba(0,0,0,.4); }
+.nm { flex: 1; }
+.nm b { display: block; height: 20px; width: 170px; border-radius: 6px; background: rgba(255,255,255,.22); filter: blur(1.2px); }
+.nm small { display: block; margin-top: 9px; font-size: 16px; color: rgba(255,255,255,.55); font-weight: 600; }
+.score { text-align: right; }
+.score small { display: block; font-size: 13px; color: rgba(255,255,255,.55); font-weight: 600; }
+.score strong { font-size: 54px; font-weight: 900; line-height: 1; background: linear-gradient(180deg, #fff3cf, #e1b04a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.art { margin-top: 18px; height: 150px; border-radius: 16px; border: 2px solid rgba(232,191,90,.7); position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #1d3a6c 0%, #2b4f86 55%, #f0c46a 140%); }
+.art svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; }
+.ask { position: absolute; inset: 0; display: grid; place-items: center; }
+.ask span { padding: 9px 18px; border-radius: 999px; background: rgba(10,20,40,.66); border: 1px solid rgba(255,255,255,.25); font-size: 19px; font-weight: 800; color: #fff3cf;
+  backdrop-filter: blur(2px); }
+.bars { margin-top: 20px; display: grid; gap: 13px; }
+.bar { display: grid; grid-template-columns: 60px 1fr 34px; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; color: rgba(255,255,255,.82); }
+.bar i { height: 9px; border-radius: 999px; background: rgba(255,255,255,.1); position: relative; overflow: hidden; }
+.bar i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: inherit; background: linear-gradient(90deg, #b8862a, #f6d987); }
+.bar em { font-style: normal; text-align: right; color: rgba(255,255,255,.4); filter: blur(2.5px); font-weight: 900; }
+.foot { position: absolute; left: 26px; right: 26px; bottom: 20px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.5); }
+.foot b { color: #e8bf5a; letter-spacing: 2px; }
+.spark { position: absolute; color: #ffe9a8; text-shadow: 0 0 12px rgba(255,220,130,.9); }
+</style></head>
+<body>
+<div class="grain"></div>
+<svg class="sky" viewBox="0 0 1200 170" preserveAspectRatio="none" aria-hidden="true">
+  <g fill="#0a1224">
+    <rect x="0" y="90" width="60" height="80"/><rect x="66" y="60" width="44" height="110"/><rect x="116" y="100" width="70" height="70"/>
+    <rect x="192" y="40" width="40" height="130"/><rect x="238" y="80" width="62" height="90"/><rect x="306" y="110" width="80" height="60"/>
+    <rect x="392" y="70" width="46" height="100"/><rect x="444" y="96" width="58" height="74"/><rect x="508" y="120" width="90" height="50"/>
+    <rect x="604" y="84" width="40" height="86"/><rect x="650" y="110" width="70" height="60"/>
+  </g>
+  <g fill="#f0c46a" opacity=".35">
+    <rect x="76" y="72" width="5" height="6"/><rect x="92" y="90" width="5" height="6"/><rect x="200" y="56" width="5" height="6"/><rect x="214" y="84" width="5" height="6"/>
+    <rect x="252" y="96" width="5" height="6"/><rect x="404" y="86" width="5" height="6"/><rect x="420" y="110" width="5" height="6"/><rect x="612" y="98" width="5" height="6"/>
+  </g>
+</svg>
+<div class="left">
+  <div class="brand"><i>D</i><span id="brand">서울 아파트 지수</span><em>· 매일 실거래 반영</em></div>
+  <h1>우리 아파트,<br><span class="gold">몇 등급</span>일까요?</h1>
+  <p class="sub" id="sub"><b>강남구부터 노원구까지</b>, 실거래가·입지·학군으로<br>매긴 단지 카드를 뒤집어 보세요</p>
+</div>
+<div class="grades"><div class="g s">S</div><div class="g a">A</div><div class="g b">B</div><div class="g c">C</div><div class="g d">D</div><span>당신의 단지는?</span></div>
+<div class="deck">
+  <div class="card back"><div class="in"><b>?</b></div></div>
+  <div class="card mid"><div class="in"></div></div>
+  <div class="card front"><div class="in">
+    <div class="top"><div class="coin">S</div><div class="nm"><b></b><small id="where">서울 · ○○동</small></div>
+      <div class="score"><small>종합 지수</small><strong>??</strong></div></div>
+    <div class="art">
+      <svg viewBox="0 0 340 150" preserveAspectRatio="none" aria-hidden="true">
+        <circle cx="270" cy="38" r="22" fill="#fff3cf" opacity=".55"/>
+        <g fill="#0f1f3d"><rect x="10" y="70" width="38" height="80"/><rect x="54" y="40" width="44" height="110"/><rect x="104" y="60" width="36" height="90"/>
+          <rect x="146" y="28" width="52" height="122"/><rect x="204" y="66" width="40" height="84"/><rect x="250" y="48" width="46" height="102"/><rect x="302" y="80" width="34" height="70"/></g>
+        <g fill="#f6d987" opacity=".85"><rect x="62" y="52" width="5" height="6"/><rect x="76" y="70" width="5" height="6"/><rect x="156" y="40" width="5" height="6"/>
+          <rect x="172" y="62" width="5" height="6"/><rect x="186" y="84" width="5" height="6"/><rect x="258" y="62" width="5" height="6"/><rect x="274" y="88" width="5" height="6"/><rect x="18" y="86" width="5" height="6"/></g>
+      </svg>
+      <div class="ask"><span>탭해서 카드 열기</span></div>
+    </div>
+    <div class="bars">
+      <div class="bar">입지<i style="--w:78%"></i><em>88</em></div>
+      <div class="bar">성장성<i style="--w:92%"></i><em>95</em></div>
+      <div class="bar">상승세<i style="--w:70%"></i><em>74</em></div>
+      <div class="bar">가성비<i style="--w:56%"></i><em>61</em></div>
+    </div>
+    <div class="foot"><span>No.???</span><b>◆◆◆◆◆</b></div>
+    <div class="holo"></div>
+  </div></div>
+</div>
+<div class="spark" style="right:470px; top:70px; font-size:26px">✦</div>
+<div class="spark" style="right:52px; top:96px; font-size:18px">✦</div>
+<div class="spark" style="right:96px; bottom:54px; font-size:22px">✦</div>
+<script>
+const R = { 서울: ["서울 아파트 지수", "강남구부터 노원구까지", "서울 · ○○동"], 대전: ["대전 아파트 지수", "둔산동부터 도안동까지", "대전 · ○○동"],
+  세종: ["세종 아파트 지수", "새롬동부터 나성동까지", "세종 · ○○동"] };
+const r = R[new URLSearchParams(location.search).get("r") || "서울"];
+document.getElementById("brand").textContent = r[0];
+document.querySelector("#sub b").textContent = r[1];
+document.getElementById("where").textContent = r[2];
+</script>
+</body></html>

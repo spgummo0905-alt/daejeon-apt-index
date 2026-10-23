@@ -8,3 +8,5 @@ data/scores.csv
 site/
 site-demo/
 __pycache__/
+scripts/og/*.png
+scripts/og/*.ttf

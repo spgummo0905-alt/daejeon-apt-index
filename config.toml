@@ -10,6 +10,8 @@ districts = { "30110" = "동구", "30140" = "중구", "30170" = "서구", "30200
 # 배포 주소. 링크 미리보기(카카오톡 등)와 사이트맵은 절대 주소가 필요합니다.
 # 내 도메인을 연결하면 이 값을 그 주소로 바꾸세요. 끝에 / 를 붙입니다.
 base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+# 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
+og_image = "static/og/daejeon.jpg"
 # 검색 등록 확인 코드: 네이버 서치어드바이저 / 구글 서치 콘솔에서 'HTML 태그' 방식으로 받은
 # content="..." 안의 값만 넣으세요. 비워 두면 태그를 넣지 않습니다.
 naver_site_verification = ""

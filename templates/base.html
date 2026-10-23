@@ -14,7 +14,7 @@
 <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
 <meta property="og:description" content="{{ self.description() }}">
 <meta property="og:url" content="{{ base }}{{ page_path }}">
-<meta property="og:image" content="{{ base }}static/og.png">
+<meta property="og:image" content="{{ base }}{{ site.og_image or 'static/og/daejeon.jpg' }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{{ region }} 아파트 지수: 실거래가, 입지, 수익률로 보는 단지 비교">
