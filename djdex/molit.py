@@ -151,6 +151,7 @@ def collect(
     endpoint: str,
     rows: int,
     refresh: set[str] = frozenset(),
+    budget: int | None = None,
     log=print,
 ) -> None:
     """원본 응답을 data/raw/<구코드>/<YYYYMM>.json 으로 캐시합니다. 이미 있는 달은 건너뜁니다.
@@ -159,27 +160,41 @@ def collect(
     넘어갑니다 (하루 늦은 자료로라도 사이트는 만들어지게). 아직 받은 적 없는 최근 달은 다음 번에
     채우고, 예전 달을 처음 받는 중에 실패하면 자료가 빠지므로 멈춥니다.
     여러 번 연달아 실패하면 서버가 내려간 것으로 보고 나머지 최근 달은 시도하지 않습니다.
+
+    budget 을 주면 한 번 실행에 그만큼만 받고 나머지는 다음 실행 때 이어서 받습니다 (공개 전 지역을
+    하루 호출 한도 안에서 며칠에 나눠 채울 때). 이때는 예전 달이 실패해도 오류를 내지 않고 그 달을 건너뛰며, 연달아 실패하면 멈춥니다.
     """
     s = requests.Session()
-    fails, down = 0, False
+    fails, down, used = 0, False, 0
     for lawd in districts:
         for ym in months:
             path = raw_dir / lawd / f"{ym}.json"
             if path.exists() and ym not in refresh:
                 continue
+            if budget is not None and used >= budget:
+                log(f"::notice::이번 실행에서 {used}번 받았습니다. 나머지는 다음 실행 때 이어서 받습니다")
+                return
             if down and ym in refresh:
                 log(f"::warning::{districts[lawd]} {ym}: 국토부 서버 응답 없음, {'받아 둔 자료 사용' if path.exists() else '다음 번에 받음'}")
                 continue
             try:
                 items = fetch_month(service_key, lawd, ym, endpoint, rows, session=s)
             except (requests.RequestException, MolitError) as e:
+                if ym not in refresh and budget is not None:
+                    # 나눠 받는 중: 그 달은 건너뛰고(다음 실행 때 다시) 연달아 실패하면 오늘은 멈춤
+                    fails += 1
+                    log(f"::warning::{districts[lawd]} {ym} 받기 실패, 다음 실행 때 다시 받습니다: {e}")
+                    if fails >= DOWN_AFTER:
+                        log("::warning::여러 번 연달아 실패해 이번 실행은 여기까지 받습니다")
+                        return
+                    continue
                 if ym not in refresh:
                     raise
                 fails += 1
                 down = fails >= DOWN_AFTER
                 log(f"::warning::{districts[lawd]} {ym} 받기 실패, {'받아 둔 자료 사용' if path.exists() else '다음 번에 받음'}: {e}")
                 continue
-            fails = 0
+            fails, used = 0, used + 1
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
             log(f"{districts[lawd]} {ym}: {len(items)}건")
