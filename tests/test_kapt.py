@@ -127,3 +127,14 @@ def test_fee_sums_money_fields_only(tmp_path):
     (d / "202605.json").write_text('{"op1": {"pay": "1"}}', encoding="utf-8")
     (d / "202606.json").write_text('{"op1": {"pay": "100", "searchDate": "202606"}, "op2": {"cleanCost": "50"}}', encoding="utf-8")
     assert fee.load(tmp_path) == {"A1": {"ym": "202606", "total": 150, "ops": {"op1": 100, "op2": 50}}}
+
+
+def test_empty_kapt_info_is_not_matched_or_shown():
+    kl = [{"gu": "유성구", "dong": "지족동", "jibun": "900", "key": "열매마을7단지", "name": "열매마을7단지", "ll": None, "code": "E"},
+          {"gu": "유성구", "dong": "지족동", "jibun": "900", "key": "열매마을7단지", "name": "열매마을7단지", "ll": None,
+           "code": "F", "hh": 600}]
+    cx = [{"complex_id": "a", "gu": "유성구", "dong": "지족동", "jibun": "900", "name": "열매7단지", "n": 100}]
+    lines = []
+    m = kapt.match(cx, kl, log=lines.append)
+    assert m["a"]["code"] == "F"                     # 세대수 등이 빈 'E' 대신
+    assert "정보가 비어 있어 뺀 곳 1곳" in lines[0]

@@ -14,7 +14,7 @@ import shapely
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
-from . import charts, heatmap, pricechart, trends
+from . import charts, heatmap, kapt, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -250,6 +250,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["lat"], d["lng"] = (ll[0], ll[1]) if ll else (None, None)
         # 공동주택관리정보(K-apt): 세대수·주차 등. 못 이은 단지는 빈 값
         d["ki"] = (kinfo or {}).get(cid) or {}
+        if not any(d["ki"].get(k) for k in kapt.SHOWN):
+            d["ki"] = {}   # K-apt 에 이었어도 세대수·주차 등이 비어 있으면 '단지 정보' 칸을 그리지 않음
         d["hh"], d["ppu"] = d["ki"].get("hh"), d["ki"].get("ppu")
         d["sup"] = (supply or {}).get(cid) or []
         d["ext"] = (outside or {}).get(cid) or {}

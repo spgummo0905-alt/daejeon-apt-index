@@ -25,6 +25,8 @@ LIST_URL = "https://apis.data.go.kr/1613000/AptListService4/getSigunguAptList4"
 BASS_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5"
 DTL_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfoV5"
 REFRESH_DAYS = 180  # 단지 정보는 잘 안 바뀌어서 반년마다 다시 받음
+EMPTY_RETRY_DAYS = 14  # 세대수 등이 비어 온 단지(새 단지·등록 중)는 두 주 뒤 다시
+SHOWN = ("hh", "dongs", "ppu", "top", "use", "heat", "hall", "elev", "evc", "builder", "mgr")   # 화면에 쓰는 항목
 
 
 def parse(text: str) -> tuple[list[dict], int]:
@@ -106,14 +108,16 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
             items = json.loads(path.read_text(encoding="utf-8"))
         codes += [it["kaptCode"] for it in items if it.get("kaptCode")]
     old = (date.today() - timedelta(days=REFRESH_DAYS)).isoformat()
+    old_empty = (date.today() - timedelta(days=EMPTY_RETRY_DAYS)).isoformat()
     todo = []
     for c in codes:
         p = root / "info" / f"{c}.json"
         if not p.exists():
             todo.append((0, c))
         else:
-            at = json.loads(p.read_text(encoding="utf-8")).get("_at", "")
-            if at < old:
+            got = json.loads(p.read_text(encoding="utf-8"))
+            empty = not any(summarize(got).get(k) for k in SHOWN)
+            if got.get("_at", "") < (old_empty if empty else old):
                 todo.append((1, c))
     todo.sort()  # 처음 받는 단지 먼저
     used, fails = 0, 0
@@ -293,6 +297,8 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
     4) 그래도 못 찾으면 좌표(geo: 매매 단지 좌표, K-apt 주소 좌표)로 가까운 단지: 60m 안이거나, 150m 안에서 이름이 비슷하면
     5) 끝으로 같은 동에서 서로가 서로의 가장 가까운 단지이고 200m 안이면 (세종처럼 실거래는 블록·브랜드 이름,
        K-apt 는 마을 이름인 경우). 작은 빌라가 큰 단지 정보를 잘못 받지 않게, 거래 수(c['n'])가 세대수의 1/20 이상일 때만"""
+    empty = [k for k in kapt if not any(k.get(f) for f in SHOWN)]
+    kapt = [k for k in kapt if any(k.get(f) for f in SHOWN)]   # 세대수 등이 빈 정보는 이어도 보여 줄 게 없어 뺌
     by_dong: dict[tuple, list] = {}
     for k in kapt:
         by_dong.setdefault((k["gu"], k["dong"]), []).append(k)
@@ -367,7 +373,8 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
     if log:
         used = {v["code"] for v in out.values()}
         miss = [k for k in kapt if k["code"] not in used]
-        log("단지 정보 잇기: " + ", ".join(f"{k} {v}곳" for k, v in how.items()) + f" / 못 이은 단지 정보 {len(miss)}곳")
+        log("단지 정보 잇기: " + ", ".join(f"{k} {v}곳" for k, v in how.items()) + f" / 못 이은 단지 정보 {len(miss)}곳"
+            + (f" (정보가 비어 있어 뺀 곳 {len(empty)}곳, 두 주 뒤 다시 받음)" if empty else ""))
         for line in new[:25]:
             log(line)
         for k in sorted(miss, key=lambda k: -(k.get("hh") or 0))[:15]:
