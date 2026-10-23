@@ -583,9 +583,102 @@
       new IntersectionObserver(es => es.forEach(e => dock.classList.toggle("shy", e.isIntersecting && !strip.hidden))).observe(strip);
     paint();
   }
+  // 인트로 '요즘 뜨거운 동네': 온도 상위 동네를 몇 초마다 넘깁니다. 동 이름은 위로 굴러 바뀌고 숫자는 새 값까지 굴러갑니다.
+  // 화면에 보일 때만 넘기고, 마우스·초점이 올라가 있으면 잠깐 멈춤. 순위를 누르거나 '멈춤'을 누르면 자동 넘김을 끕니다.
+  // 움직임 줄이기 설정이면 처음부터 자동 넘김 없이 (버튼으로 켤 수 있음).
+  function hotRoll(sec) {
+    let data;
+    try { data = JSON.parse(sec.querySelector("[data-hot-json]").textContent); } catch (e) { return; }
+    if (!data || !data.length) return;
+    const $ = k => sec.querySelector("[data-hot-" + k + "]");
+    const btns = [...sec.querySelectorAll("[data-hot-i]")], auto = $("auto"), roll = $("name").parentElement;
+    const DWELL = 4200;
+    let i = 0, timer = null, seen = false, hover = false, paused = DJ.calm;
+    const pct = v => v == null ? "-" : (v > 0.05 ? "+" : "") + v.toFixed(1) + "%";
+    const won = v => Math.round(v).toLocaleString("ko-KR");
+    // 숫자 굴리기: 지금 값에서 새 값까지 (도중에 또 바뀌면 새 값으로 이어서)
+    function tween(node, to, fmt) {
+      const from = node._v == null ? to : node._v;
+      node._v = to;
+      if (to == null || DJ.calm || from === to) { node.textContent = fmt(to); return; }
+      const t0 = performance.now(), dur = 650;
+      const step = now => {
+        if (node._v !== to) return;
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        node.textContent = fmt(k < 1 ? from + (to - from) * e : to);
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+    function swapName(t) {
+      const put = () => { $("name").textContent = t.d; $("j").textContent = t.j; };
+      if (DJ.calm) { put(); return; }
+      roll.classList.add("out");
+      setTimeout(() => {
+        put();
+        roll.classList.remove("out"); roll.classList.add("in");
+        requestAnimationFrame(() => requestAnimationFrame(() => roll.classList.remove("in")));
+      }, 200);
+    }
+    const running = () => !paused && !hover && seen && data.length > 1;
+    function arm() {
+      clearTimeout(timer);
+      sec.classList.remove("run"); void sec.offsetWidth;   // 진행 막대를 처음부터
+      if (running()) { sec.classList.add("run"); timer = setTimeout(() => show((i + 1) % data.length), DWELL); }
+    }
+    function paintAuto() {
+      if (!auto) return;
+      auto.textContent = paused ? "▶ 자동으로 넘기기" : "❚❚ 멈춤";
+      auto.setAttribute("aria-pressed", paused ? "false" : "true");
+    }
+    function show(k) {
+      i = k;
+      const t = data[k];
+      btns.forEach((b, n) => b.setAttribute("aria-pressed", n === k ? "true" : "false"));
+      swapName(t);
+      $("rank").textContent = "온도 " + (k + 1) + "위";
+      $("gu").textContent = t.gu || "";
+      tween($("t"), t.t, v => Math.round(v));
+      $("bar").style.width = t.t + "%";
+      const c = $("c");
+      tween(c, t.c, pct);
+      c.classList.toggle("pos", t.c > 0); c.classList.toggle("neg", t.c < 0);
+      tween($("h"), t.h, v => won(v) + "곳");
+      tween($("n3"), t.n3, v => won(v) + "건");
+      $("v").textContent = t.v ? "평소의 " + t.v : "최근 3개월";
+      const best = $("best");
+      best.hidden = !t.b;
+      if (t.b) {
+        best.href = ROOT + "apt/" + t.b.s + ".html";
+        const g = $("bg"); g.className = "grade g-" + t.b.g; g.textContent = t.b.g;
+        $("bn").textContent = t.b.n;
+        tween($("bi"), t.b.i, v => Math.round(v) + "점");
+      }
+      arm();
+    }
+    // 처음 값 기억 (첫 동네는 서버에서 그려 둠)
+    const t0 = data[0];
+    $("t")._v = t0.t; $("c")._v = t0.c; $("h")._v = t0.h; $("n3")._v = t0.n3;
+    if (t0.b) $("bi")._v = t0.b.i;
+    if ((t0.c || 0) > 0) $("c").classList.add("pos"); else if ((t0.c || 0) < 0) $("c").classList.add("neg");
+    btns.forEach((b, n) => b.addEventListener("click", () => { paused = true; paintAuto(); show(n); }));
+    if (auto && data.length > 1) {
+      auto.hidden = false; paintAuto();
+      auto.addEventListener("click", () => { paused = !paused; paintAuto(); if (!paused) show((i + 1) % data.length); else arm(); });
+    }
+    const grid = sec.querySelector(".it-live-grid");
+    const hold = on => { hover = on; sec.classList.toggle("hold", on); if (!on) arm(); else clearTimeout(timer); };
+    grid.addEventListener("mouseenter", () => hold(true));
+    grid.addEventListener("mouseleave", () => hold(false));
+    grid.addEventListener("focusin", () => hold(true));
+    grid.addEventListener("focusout", e => { if (!grid.contains(e.relatedTarget)) hold(false); });
+    if ("IntersectionObserver" in window)
+      new IntersectionObserver(es => es.forEach(e => { seen = e.isIntersecting; arm(); }), { threshold: 0.35 }).observe(sec);
+  }
   document.addEventListener("DOMContentLoaded", () => {
     regionPicker();
     recentDock();
+    document.querySelectorAll("[data-hot]").forEach(hotRoll);
     DJ.paintFavCount();
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();

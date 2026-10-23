@@ -351,8 +351,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     for d in grade_dist:
         d["pct"] = d["n"] / max(len(ranked), 1) * 100
     (out_dir / "intro.html").write_text(env.get_template("intro.html").render(
-        root="", page_path="intro.html", hero_cards=ranked[:3], grade_dist=grade_dist, board=month["board"],
-        pulse=month["pulse"], **common), encoding="utf-8")
+        root="", page_path="intro.html", hero_cards=ranked[:3], grade_dist=grade_dist, hot=hot_roll(month["board"]),
+        **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
@@ -637,6 +637,26 @@ def _transit(cfg) -> dict:
     t = {"tab": "역세권", "stop": "지하철역", "short": "역"}
     t.update(cfg.site.get("transit", {}))
     return t
+
+
+def _ieyo(word: str) -> str:
+    """'가정동' → '이에요', '종로1가' → '예요' (끝 글자에 받침이 있으면 '이에요')"""
+    ch = (word or " ")[-1]
+    if "가" <= ch <= "힣":
+        return "이에요" if (ord(ch) - 0xAC00) % 28 else "예요"
+    return "예요" if ch in "2459" else "이에요"   # 이·사·오·구 는 받침 없음
+
+
+def hot_roll(board: dict | None, n: int = 5) -> list[dict]:
+    """인트로 '요즘 뜨거운 동네'에서 차례로 넘겨 보는 온도 상위 동네 (온도·1년 전 대비·신고가·3개월 매매·대장 단지)"""
+    out = []
+    for t in (board or {}).get("hot", [])[:n]:
+        b = t["top"][0] if t.get("top") else None
+        out.append({"d": t["dong"], "gu": t["gu"] if t["gu"] != t["dong"] else "", "j": _ieyo(t["dong"]),
+                    "t": round(t["score"]), "c": t["chg"], "h": t["highs"], "n3": t["last3"],
+                    "v": t["vol"] if t["vol"].endswith("배") else "",
+                    "b": {"s": b[0], "n": b[1], "g": b[2], "i": b[3]} if b else None})
+    return out
 
 
 def _short_dong(name: str) -> str:

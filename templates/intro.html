@@ -130,25 +130,34 @@
   </div>
 </section>
 
-{# 5. 지금 이 동네는: 실제 자료 맛보기 #}
-{% if board and board.hot %}
-<section class="it-sec it-live">
+{# 5. 요즘 뜨거운 동네: 온도 상위 동네를 차례로 넘기며 실제 숫자 맛보기. 동이 바뀌면 숫자도 굴러갑니다 (app.js hotRoll) #}
+{% if hot %}{% set h = hot[0] %}
+<section class="it-sec it-live" data-hot>
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>04 · 지금 {{ region }}에서는</p>
-    <h2 data-reveal>가장 뜨거운 동네는<br><em>{{ board.hot[0].dong }}</em>이에요</h2>
+    <p class="it-kicker" data-reveal>04 · 동네 온도</p>
+    <h2 data-reveal>요즘 뜨거운 동네는<br><span class="it-roll"><em data-hot-name>{{ h.d }}</em></span><span data-hot-j>{{ h.j }}</span></h2>
+    <p class="it-live-lead" data-reveal>가격 흐름과 거래량으로 동네마다 온도를 매겨요. 순위는 매달 바뀌어요.</p>
     <div class="it-live-grid">
-      <ol class="it-hot" data-reveal>
-        {% for t in board.hot[:3] %}<li><span class="n">{{ loop.index }}</span><b>{{ t.dong }}</b>{% if t.gu != t.dong %}<small>{{ t.gu }}</small>{% endif %}
-          <span class="v {{ 'pos' if (t.chg or 0) > 0 else 'neg' if (t.chg or 0) < 0 else '' }}">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '-' }}</span></li>{% endfor %}
-      </ol>
-      {% if pulse %}
-      <div class="it-pulse" data-reveal>
-        <div><span>최근 90일 신고가</span><strong data-count>{{ "{:,}".format(pulse.highs) }}곳</strong></div>
-        <div><span>최근 3개월 매매</span><strong data-count>{{ "{:,}".format(pulse.recent3) }}건</strong></div>
+      <div class="it-dong" id="it-dong" data-reveal>
+        <div class="it-dong-top"><span class="it-rank" data-hot-rank>온도 1위</span><span class="it-gu" data-hot-gu>{{ h.gu }}</span></div>
+        <div class="it-temp"><strong><b data-hot-t>{{ h.t }}</b>°</strong><span class="it-temp-bar" aria-hidden="true"><i data-hot-bar style="width: {{ h.t }}%"></i></span></div>
+        <dl class="it-dong-stats">
+          <div><dt>가격 흐름</dt><dd><b data-hot-c>{{ ('%+.1f%%' % h.c) if h.c is not none else '-' }}</b><small>1년 전보다</small></dd></div>
+          <div><dt>신고가</dt><dd><b data-hot-h>{{ h.h }}곳</b><small>최근 90일</small></dd></div>
+          <div><dt>매매</dt><dd><b data-hot-n3>{{ h.n3 }}건</b><small data-hot-v>{{ ('평소의 ' ~ h.v) if h.v else '최근 3개월' }}</small></dd></div>
+        </dl>
+        <a class="it-best" data-hot-best href="{% if h.b %}apt/{{ h.b.s }}.html{% else %}rank.html{% endif %}"{% if not h.b %} hidden{% endif %}>
+          <span class="it-best-l">대장 단지</span><span class="grade g-{{ h.b.g if h.b else '-' }}" data-hot-bg>{{ h.b.g if h.b else '-' }}</span><b data-hot-bn>{{ h.b.n if h.b else '' }}</b><em data-hot-bi>{{ (h.b.i ~ '점') if h.b else '' }}</em><span class="it-best-go" aria-hidden="true">→</span></a>
       </div>
-      {% endif %}
+      <div class="it-hot-side" data-reveal>
+        <div class="it-hot-head"><span>온도 순위</span>{% if hot | length > 1 %}<button type="button" class="it-auto" data-hot-auto hidden>멈춤</button>{% endif %}</div>
+        <ol class="it-hot">
+          {% for t in hot %}<li><button type="button" data-hot-i="{{ loop.index0 }}" aria-controls="it-dong" aria-pressed="{{ 'true' if loop.first else 'false' }}"><span class="n">{{ loop.index }}</span><b>{{ t.d }}</b>{% if t.gu %}<small>{{ t.gu }}</small>{% endif %}<span class="v">{{ t.t }}°</span><i class="it-prog" aria-hidden="true"></i></button></li>{% endfor %}
+        </ol>
+      </div>
     </div>
   </div>
+  <script type="application/json" data-hot-json>{{ hot | tojson }}</script>
 </section>
 {% endif %}
 
