@@ -135,6 +135,24 @@
 </section>
 {% endif %}
 
+{# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로 (검색 결과를 새 창으로) #}
+{% set q = ((c.dong ~ " ") if c.dong else "") ~ c.name ~ ("" if c.name.endswith("아파트") else " 아파트") %}
+<section class="panel rv" id="reviews">
+  <div class="panel-head">
+    <h2>살아본 사람들 이야기</h2>
+    <p class="muted">소음·이웃·관리처럼 숫자로 안 보이는 이야기는 후기에서 찾아보세요. 새 창으로 열려요.</p>
+  </div>
+  <div class="rv-links">
+    <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.blog.all&amp;query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span><b>블로그 후기</b><small>네이버 블로그</small></span></a>
+    <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.cafe.all&amp;query={{ q | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span><b>카페 이야기</b><small>네이버 카페</small></span></a>
+    <a class="rv-link" href="https://www.youtube.com/results?search_query={{ (q ~ ' 임장') | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span><b>임장 영상</b><small>유튜브</small></span></a>
+  </div>
+  <p class="rv-q muted">검색어 ‘{{ q }}’ · 광고 글이 섞여 있을 수 있어요.</p>
+</section>
+
 <section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>
