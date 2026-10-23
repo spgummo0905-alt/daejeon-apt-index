@@ -44,6 +44,22 @@
     { id: "high", label: "최근 신고가", sub: "최근 90일 안 신고가 거래", test: c => !!c.h },
   ];
 
+  // 규제지역 집값 구간별 주택담보대출 최대 한도 [[집값 상한, 최대 대출], ...] (만원). 없으면 LTV·DSR 만.
+  const CAPS = Array.isArray(cfg.loan_caps) && cfg.loan_caps.length ? cfg.loan_caps : null;
+  // 살 수 있는 최대 가격 P: P − 자기자본 ≤ min(LTV × P, DSR 로 빌릴 수 있는 돈, 그 집값 구간의 한도)
+  // 반환 {p: 가격, why: 무엇이 한도를 정했는지(ltv·dsr·cap·edge), 그 구간의 hi·cap·next(다음 구간 한도)}
+  function maxPrice(equity, loanDsr, ltv) {
+    const byLtv = ltv < 1 ? equity / (1 - ltv) : Infinity;
+    if (!CAPS) return equity + loanDsr < byLtv ? { p: equity + loanDsr, why: "dsr" } : { p: byLtv, why: "ltv" };
+    let best = { p: equity, why: "none" }, lo = 0;
+    CAPS.forEach(([hi, cap], k) => {
+      const [p, why] = [[byLtv, "ltv"], [equity + loanDsr, "dsr"], [equity + cap, "cap"], [hi, "edge"]].reduce((a, b) => b[0] < a[0] ? b : a);
+      if (p >= lo && p > best.p) best = { p, why, hi, cap, next: (CAPS[k + 1] || [])[1] };
+      lo = hi;
+    });
+    return best;
+  }
+
   const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false,
     budget: 0, bmode: "price", af: { income: "", equity: "", rate: cfg.default_rate || 4, years: cfg.default_years || 30, debt: 0 },
     py: [], age: "", stn: 0, sch: 0, must: [], sort: "i", here: null });
@@ -228,13 +244,16 @@
       const r = rate / 100 / 12, n = years * 12;
       const monthly = Math.max(0, income * DSR - debt) / 12;
       const loanDsr = r > 0 ? monthly * (1 - Math.pow(1 + r, -n)) / r : monthly * n;
-      const byDsr = equity + loanDsr, byLtv = ltv < 1 ? equity / (1 - ltv) : Infinity;
-      const max = Math.min(byDsr, byLtv), loan = Math.max(0, max - equity);
+      const lim = maxPrice(equity, loanDsr, ltv), max = lim.p, loan = Math.max(0, max - equity);
+      const why = lim.why === "cap" ? `집값 ${eok(lim.hi)} 이하 대출 한도(${eok(lim.cap)}) 기준으로 정해져요`
+        : lim.why === "edge" ? `${DJ.josa(eok(lim.hi), "을/를")} 넘으면 대출 한도가 ${eok(lim.next)}으로 줄어서 여기까지예요`
+        : lim.why === "dsr" ? `소득(DSR ${Math.round(DSR * 100)}%) 기준으로 한도가 정해져요`
+        : lim.why === "ltv" ? `LTV ${Math.round(ltv * 100)}% 기준으로 한도가 정해져요` : "대출 없이 자기자본만으로 계산했어요";
       const pay = r > 0 ? loan * r / (1 - Math.pow(1 + r, -n)) : loan / n;
       const big = el("div", "af-big");
       big.append(el("span", "label", "최대로 살 수 있는 가격 (대략)"), el("strong", "", eok(max)));
       out.append(big, el("p", "muted", `대출 ${eok(loan)} · 매달 갚는 돈 약 ${Math.round(pay).toLocaleString()}만원 · ` +
-        (byDsr < byLtv ? `소득(DSR ${Math.round(DSR * 100)}%) 기준으로 한도가 정해져요` : `LTV ${Math.round(ltv * 100)}% 기준으로 한도가 정해져요`)));
+        why));
       const b = Math.max(0.5, Math.floor(max / 5000) / 2);
       const apply = el("button", "btn primary", `${b}억을 예산으로 정하기 (${countWith({ budget: b }).toLocaleString()}곳)`);
       apply.type = "button";

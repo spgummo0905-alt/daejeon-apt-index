@@ -15,9 +15,11 @@ base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
 naver_site_verification = ""
 google_site_verification = ""
 # 위쪽 지역 바꾸기 (각 지역 사이트 주소). 세종은 config.sejong.toml 로 /sejong/ 에 만듭니다.
+# ready 가 있으면 그 파일이 있을 때만 보여줍니다 (서울은 실거래를 다 모은 뒤 공개).
 regions = [
   { name = "대전", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/" },
   { name = "세종", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/" },
+  { name = "서울", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/", ready = "data/seoul/READY" },
 ]
 
 [collect]

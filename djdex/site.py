@@ -287,7 +287,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
-                  transit=_transit(cfg), regions=cfg.site.get("regions", []),
+                  transit=_transit(cfg), regions=_regions(cfg),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
@@ -397,7 +397,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                      "url": cfg.site.get("base_url", "")})
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
-                  [g.get("url", "") for g in cfg.site.get("regions", [])])
+                  [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
 
@@ -524,6 +524,12 @@ def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]
                       "up": None if _nan(ref) else g[key] > ref} for g in items],
         })
     return boards
+
+
+def _regions(cfg) -> list[dict]:
+    """위쪽 지역 바꾸기 메뉴. ready 파일이 있는 지역(예: 서울은 실거래를 다 모은 뒤)만, 지금 지역은 늘 보입니다."""
+    return [g for g in cfg.site.get("regions", [])
+            if not g.get("ready") or g.get("name") == cfg.region_name or (ROOT / g["ready"]).exists()]
 
 
 def _transit(cfg) -> dict:

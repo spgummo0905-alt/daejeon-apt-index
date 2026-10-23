@@ -37,17 +37,24 @@ def cmd_collect(cfg, args) -> None:
     end = args.end or date.today().strftime("%Y%m")
     months = molit.month_range(args.start or cfg.collect["start_ym"], end)
     recent = set(months[-cfg.collect["refresh_recent_months"]:])
+    budget = cfg.collect.get("max_calls_per_run")
     molit.collect(key, cfg.districts, months, cfg.paths.raw, cfg.collect["endpoint"],
-                  cfg.collect["rows_per_page"], refresh=recent)
+                  cfg.collect["rows_per_page"], refresh=recent, budget=budget)
     if cfg.collect.get("collect_presale"):
         try:
             molit.collect(key, cfg.districts, months, cfg.paths.raw_presale, cfg.collect["presale_endpoint"],
-                          cfg.collect["rows_per_page"], refresh=recent)
+                          cfg.collect["rows_per_page"], refresh=recent, budget=budget)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::분양권·입주권 수집 실패(활용신청 승인 전이면 정상), 매매 거래로만 진행합니다: {e}")
     rows = molit.load_raw(cfg.paths.raw, cfg.districts, cfg.paths.raw_presale)
     pd.DataFrame(rows).to_csv(cfg.paths.trades, index=False)
     print(f"거래 {len(rows):,}건 → {cfg.paths.trades}")
+    if budget:
+        # 나눠 받는 지역: 매매 실거래를 모든 구·달 다 받았으면 READY 를 남겨 사이트를 만들고 공개합니다.
+        have, need = molit.progress(cfg.paths.raw, cfg.districts, months)
+        print(f"[{cfg.region_name}] 실거래 {have:,} / {need:,} (구×달) 받음")
+        if have >= need:
+            (cfg.paths.data / "READY").write_text(f"{have}\n", encoding="utf-8")
 
 
 def _complex_list(trades: pd.DataFrame) -> list[dict]:
