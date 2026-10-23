@@ -3,8 +3,9 @@
 후기 사이트의 별점·글을 긁어 오는 것은 약관과 저작권 문제로 하지 않고, 공식 API로 허용된 만큼만 씁니다.
 - 카카오 로컬(키워드 검색, KAKAO_REST_KEY): 단지 좌표 근처 '아파트' 분류 장소를 찾아 카카오맵 장소 주소로 바로 잇습니다.
   별점·후기는 카카오맵에서 봅니다.
-- 네이버 검색 API(블로그·카페, NAVER_CLIENT_ID/NAVER_CLIENT_SECRET): 단지 이름으로 찾은 최근 글의 제목·요약·링크.
+- 네이버 검색 API(블로그, NAVER_CLIENT_ID/NAVER_CLIENT_SECRET): 단지 이름으로 찾은 최근 글의 제목·요약·링크.
   중개사무소 매물 글, 분양·체험단 광고 글은 제목·요약 낱말로 뺍니다. 키가 없으면 건너뜁니다.
+  카페 글은 대부분 로그인·카페 가입을 해야 열려서 받지 않습니다 (예전에 받아 둔 카페 글도 화면에 쓰지 않음).
 
 결과는 data/kapt/reviews.json 에 단지(complex_id)별로 둡니다 (단지 정보 캐시에 같이 들어감).
 """
@@ -24,6 +25,7 @@ from .molit import _norm_name
 
 NAVER = "https://openapi.naver.com/v1/search/{}.json"
 REFRESH_DAYS = 7          # 네이버 글은 일주일마다 새로
+POSTS = 5                 # 단지 페이지에 보여 주는 블로그 글 수
 PLACE_RETRY_DAYS = 60     # 카카오 장소를 못 찾은 단지는 두 달 뒤 다시
 # 거주 후기가 아닌 글 (매물·분양·광고·인테리어 시공 홍보)
 NOT_REVIEW = re.compile(r"급매|매물|매매가|전세가|월세|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|"
@@ -90,7 +92,7 @@ def _posts(s: requests.Session, kind: str, query: str, name: str, n: int = 3) ->
 
 def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, budget: int = 4000,
                 log=print) -> None:
-    """단지마다 블로그 후기 3개·카페 글 2개 (거래가 많은 단지부터, 일주일마다 새로)."""
+    """단지마다 블로그 후기 5개 (거래가 많은 단지부터, 일주일마다 새로). 로그인 없이 열리는 블로그 글만."""
     data = _load(path)
     s = requests.Session()
     s.headers.update({"X-Naver-Client-Id": client_id, "X-Naver-Client-Secret": secret})
@@ -101,18 +103,17 @@ def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, 
         cur = data.get(cid, {})
         if cur.get("nv_at", "") >= old:
             continue
-        if used + 2 > budget:
+        if used + 1 > budget:
             break
         q = " ".join(x for x in (c.get("dong"), c["name"]) if x)
         q = q if q.endswith("아파트") else q + " 아파트"
         try:
-            blog = _posts(s, "blog", q + " 후기", c["name"])
-            cafe = _posts(s, "cafearticle", q, c["name"], 2)
+            blog = _posts(s, "blog", q + " 후기", c["name"], POSTS)
         except requests.RequestException as e:
             log(f"::warning::[네이버 글] 받기 실패, 여기까지: {e}")
             break
-        used += 2
-        data[cid] = {**cur, "nv_at": date.today().isoformat(), "posts": blog + cafe}
+        used += 1
+        data[cid] = {**cur, "nv_at": date.today().isoformat(), "posts": blog}
         done += 1
         time.sleep(0.05)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -122,5 +123,15 @@ def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, 
 
 
 def load(path: Path) -> dict:
-    """complex_id → {kp: [장소 id, 이름], posts: [{t, d, u, s, at}]}"""
-    return {k: {kk: vv for kk, vv in v.items() if kk in ("kp", "posts")} for k, v in _load(path).items()}
+    """complex_id → {kp: [장소 id, 이름], posts: [{t, d, u, s, at}]} (로그인해야 열리는 카페 글은 뺌)"""
+    out = {}
+    for k, v in _load(path).items():
+        e = {}
+        if v.get("kp"):
+            e["kp"] = v["kp"]
+        posts = [p for p in v.get("posts") or [] if "cafe.naver.com" not in p.get("u", "")][:POSTS]
+        if posts:
+            e["posts"] = posts
+        if e:
+            out[k] = e
+    return out

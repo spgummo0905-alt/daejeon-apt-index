@@ -1,6 +1,7 @@
 name: portal-check
 
 # 공공데이터포털 점검: GitHub 서버에서 포털에 닿는지, 쓰는 오픈API 주소마다 무엇이라고 답하는지 (수동 실행)
+# 네이버 검색·카카오 로컬 API 도 키가 맞는지 상태 코드와 응답 앞부분으로 확인합니다.
 # 인증키는 로그에 가려지고, 응답의 결과 코드·메시지만 남깁니다.
 on:
   workflow_dispatch:
@@ -41,3 +42,18 @@ jobs:
           check "단지 상세 정보" AptBasisInfoServiceV5/getAphusDtlInfoV5 "kaptCode=A10025875"
           check "건축물대장 전유공용면적" BldRgstHubService/getBrExposPubuseAreaInfo "sigunguCd=30200&bjdongCd=14700&platGbCd=0&bun=0199&ji=0000&pageNo=1&numOfRows=1&_type=json"
           check "공용관리비(인건비)" AptCmnuseManageCostServiceV3/getHsmpLaborCostInfoV3 "kaptCode=A10025875&searchDate=202607&_type=json"
+      - name: 네이버 검색·카카오 로컬 API
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+        run: |
+          echo "네이버 키 길이: id ${#NAVER_CLIENT_ID}, secret ${#NAVER_CLIENT_SECRET} (0이면 비밀값이 비어 있음)"
+          for kind in blog cafearticle; do
+            r=$(curl -s -G -m 20 "https://openapi.naver.com/v1/search/$kind.json" --data-urlencode "query=둔산동 크로바아파트 후기" --data display=1 \
+                -H "X-Naver-Client-Id: $NAVER_CLIENT_ID" -H "X-Naver-Client-Secret: $NAVER_CLIENT_SECRET" -w " | HTTP %{http_code}")
+            echo "네이버 $kind: $(echo "$r" | head -c 260 | tr -d '\n')"
+          done
+          r=$(curl -s -G -m 20 "https://dapi.kakao.com/v2/local/search/keyword.json" --data-urlencode "query=둔산동 크로바아파트" --data size=1 \
+              -H "Authorization: KakaoAK $KAKAO_REST_KEY" -w " | HTTP %{http_code}")
+          echo "카카오 로컬: $(echo "$r" | head -c 200 | tr -d '\n')"

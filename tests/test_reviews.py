@@ -51,3 +51,15 @@ def test_naver_posts_skip_listings_and_other_complexes():
               "bloggername": "동네 기록", "postdate": "20260912"}]
     got = reviews._posts(_Sess(items), "blog", "q", "열매7단지현대")
     assert got == [{"t": "열매7단지 3년 살아 보니", "d": "조용하고 & 주차 넉넉", "u": "u3", "s": "동네 기록", "at": "20260912"}]
+
+
+def test_load_drops_cafe_posts_that_need_login(tmp_path):
+    import json
+    p = tmp_path / "reviews.json"
+    p.write_text(json.dumps({
+        "A": {"kp": ["1", "가"], "nv_at": "2026-10-01",
+              "posts": [{"t": "카페 글", "u": "https://cafe.naver.com/x/1"}] + [{"t": f"블로그 {i}", "u": f"https://blog.naver.com/a/{i}"} for i in range(7)]},
+        "B": {"nv_at": "2026-10-01", "posts": [{"t": "카페만", "u": "https://cafe.naver.com/x/2"}]}}, ensure_ascii=False))
+    got = reviews.load(p)
+    assert got["A"]["kp"] == ["1", "가"] and [x["t"] for x in got["A"]["posts"]] == [f"블로그 {i}" for i in range(5)]
+    assert "B" not in got   # 카페 글만 있던 단지는 보여 줄 글이 없음
