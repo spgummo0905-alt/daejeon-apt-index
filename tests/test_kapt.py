@@ -158,9 +158,12 @@ def test_collect_retries_blank_info_right_away(tmp_path, monkeypatch):
         return [{"kaptCode": params["kaptCode"], "kaptdaCnt": "300"}], 1
 
     monkeypatch.setattr(kapt, "_get", fake_get)
+    waits = []
+    monkeypatch.setattr(kapt.time, "sleep", waits.append)
     logs = []
     kapt.collect("k", {"30110": "동구"}, root, log=logs.append)
     assert sorted(set(calls)) == ["A1", "A3"]   # 정보가 있는 A2 는 다시 받지 않음
+    assert calls.count("A3") == 6 and 3 in waits and 10 in waits   # 빈 응답은 3초·10초 쉬고 두 번 더 (기본·상세 × 3)
     assert json.loads((root / "info" / "A1.json").read_text())["kaptdaCnt"] == "300"
     assert not (root / "info" / "A3.json").exists()
     assert "빈 응답 1곳은 다음 실행 때 다시" in logs[-1]
