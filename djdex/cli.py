@@ -85,9 +85,12 @@ def cmd_collect(cfg, args) -> None:
 
 
 def _complex_list(trades: pd.DataFrame) -> list[dict]:
+    """단지마다 complex_id, name, gu, dong, jibun 과 거래 수 n."""
     cols = ["complex_id", "name", "gu", "dong", "jibun"]
-    return (trades.sort_values("date").drop_duplicates("complex_id", keep="last")[cols]
+    n = trades["complex_id"].astype(str).value_counts()
+    rows = (trades.sort_values("date").drop_duplicates("complex_id", keep="last")[cols]
             .astype(str).to_dict("records"))
+    return [dict(r, n=int(n.get(r["complex_id"], 0))) for r in rows]
 
 
 def _read_trades(cfg) -> pd.DataFrame:

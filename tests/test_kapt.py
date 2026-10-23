@@ -67,7 +67,30 @@ def test_match_by_coordinates_and_log():
     lines = []
     m = kapt.match(cx, kl, geo, log=lines.append)
     assert m["c1"]["code"] == "K1" and m["c2"]["code"] == "K2"
-    assert lines[0].startswith("단지 정보 잇기: 지번 0곳, 이름 1곳, 좌표 1곳")
+    assert lines[0].startswith("단지 정보 잇기: 지번 0곳, 이름 1곳, 이름 조각 0곳, 좌표 1곳, 서로 가장 가까움 0곳")
+
+
+def test_match_by_name_pieces_and_mutual_nearest():
+    assert kapt._sim("열매7단지현대", "노은열매마을7단지현대아파트") > 0.8
+    assert kapt._sim("새뜸마을 9단지 (2-2 예미지)", "새뜸마을9단지") == 1.0
+    assert kapt._sim("열매7단지현대", "열매마을8단지현대") == 0      # 단지 번호가 다르면
+    kl = [{"gu": "유성구", "dong": "지족동", "jibun": "900", "key": "노은열매마을7단지현대", "name": "노은열매마을7단지현대아파트",
+           "ll": None, "code": "K7", "hh": 600},
+          {"gu": "유성구", "dong": "지족동", "jibun": "901", "key": "노은열매마을8단지", "name": "노은열매마을8단지", "ll": None,
+           "code": "K8", "hh": 500},
+          {"gu": "세종", "dong": "소담동", "jibun": "545", "key": "새샘마을4단지", "name": "새샘마을4단지아파트",
+           "ll": [36.48, 127.30], "code": "S4", "hh": 1100}]
+    cx = [{"complex_id": "a", "gu": "유성구", "dong": "지족동", "jibun": "1", "name": "열매7단지현대", "n": 300},
+          {"complex_id": "b", "gu": "세종", "dong": "소담동", "jibun": "BL-M1", "name": "중흥S클래스리버뷰(3-3생활권 M1)", "n": 400},
+          {"complex_id": "c", "gu": "세종", "dong": "소담동", "jibun": "12", "name": "소담빌라", "n": 9}]
+    geo = {"b": [36.4810, 127.3005], "c": [36.4795, 127.2999]}   # b 는 약 120m, c 는 약 60m 지만 거래가 너무 적음
+    lines = []
+    m = kapt.match(cx, kl, geo, log=lines.append)
+    assert m["a"]["code"] == "K7"
+    assert "c" not in m
+    cx = cx[:2]
+    m = kapt.match(cx, kl, geo, log=lines.append)
+    assert m["b"]["code"] == "S4" and any(l.startswith("[서로 가장 가까움] 중흥S클래스리버뷰") for l in lines)
 
 
 def test_coordinate_match_needs_name_beyond_60m():
