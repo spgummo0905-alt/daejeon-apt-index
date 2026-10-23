@@ -8,11 +8,6 @@ on:
   schedule:
     - cron: "17 18 * * *"
   workflow_dispatch:
-    inputs:
-      seoul_collect:
-        description: "서울 실거래 이어 받기 (공개 전, 배포 뒤에 실행)"
-        type: boolean
-        default: false
 
 jobs:
   test:
@@ -110,25 +105,3 @@ jobs:
           path: site
       - id: deploy
         uses: actions/deploy-pages@v4
-      # 서울은 아직 공개 전: 매일 예약 실행 때 (또는 수동 실행에서 고르면) 대전·세종 배포가 끝난 뒤
-      # 실거래를 하루 호출 한도 안에서 조금씩 받아 둡니다. 실패해도 배포에는 영향이 없습니다.
-      - name: 서울 수집 캐시 복원
-        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.seoul_collect) }}
-        uses: actions/cache/restore@v4
-        with:
-          path: data/seoul
-          key: djdex-seoul-${{ github.run_id }}
-          restore-keys: djdex-seoul-
-      - name: 서울 실거래 이어 받기 (공개 전)
-        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.seoul_collect) }}
-        continue-on-error: true
-        env:
-          PYTHONUNBUFFERED: "1"
-          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-        run: python -m djdex --config config.seoul.toml collect
-      - name: 서울 수집 캐시 저장
-        if: ${{ always() && (github.event_name == 'schedule' || inputs.seoul_collect) }}
-        uses: actions/cache/save@v4
-        with:
-          path: data/seoul
-          key: djdex-seoul-${{ github.run_id }}

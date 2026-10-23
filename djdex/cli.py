@@ -37,13 +37,12 @@ def cmd_collect(cfg, args) -> None:
     end = args.end or date.today().strftime("%Y%m")
     months = molit.month_range(args.start or cfg.collect["start_ym"], end)
     recent = set(months[-cfg.collect["refresh_recent_months"]:])
-    budget = cfg.collect.get("max_calls_per_run")
     molit.collect(key, cfg.districts, months, cfg.paths.raw, cfg.collect["endpoint"],
-                  cfg.collect["rows_per_page"], refresh=recent, budget=budget)
+                  cfg.collect["rows_per_page"], refresh=recent)
     if cfg.collect.get("collect_presale"):
         try:
             molit.collect(key, cfg.districts, months, cfg.paths.raw_presale, cfg.collect["presale_endpoint"],
-                          cfg.collect["rows_per_page"], refresh=recent, budget=budget)
+                          cfg.collect["rows_per_page"], refresh=recent)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::분양권·입주권 수집 실패(활용신청 승인 전이면 정상), 매매 거래로만 진행합니다: {e}")
     rows = molit.load_raw(cfg.paths.raw, cfg.districts, cfg.paths.raw_presale)
