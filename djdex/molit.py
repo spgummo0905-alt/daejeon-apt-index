@@ -200,6 +200,12 @@ def collect(
             log(f"{districts[lawd]} {ym}: {len(items)}건")
 
 
+def progress(raw_dir: Path, districts: dict[str, str], months: list[str]) -> tuple[int, int]:
+    """받아 둔 달 수와 받아야 할 달 수 (구 × 달)."""
+    have = sum((raw_dir / lawd / f"{ym}.json").exists() for lawd in districts for ym in months)
+    return have, len(districts) * len(months)
+
+
 def load_raw(raw_dir: Path, districts: dict[str, str], presale_dir: Path | None = None) -> list[dict]:
     rows = []
     sources = [(raw_dir, "매매")] + ([(presale_dir, "분양권")] if presale_dir else [])

@@ -16,6 +16,7 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
              start_year: int = 2010, end: str = "2026-08-31", seed: int = 7):
     rnd = random.Random(seed)
     gus = list(districts.values())
+    center = _center(districts)
     end_ts = pd.Timestamp(end)
     trades, poi, geo = [], {}, {}
     for i in range(1, n_complexes + 1):
@@ -51,7 +52,7 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
             for f in factors
         }
         poi[cid]["subway_name"] = rnd.choice(stations) + " 대전1호선"
-        geo[cid] = (CENTER[0] + rnd.uniform(-0.06, 0.06), CENTER[1] + rnd.uniform(-0.08, 0.08))
+        geo[cid] = (center[0] + rnd.uniform(-0.06, 0.06), center[1] + rnd.uniform(-0.08, 0.08))
     # 입주 직전 신축: 매매 없이 분양권·입주권 거래만 있는 단지
     cid = "DEMO-NEW1"
     for k in range(40):
@@ -62,8 +63,21 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
                        "date": d.strftime("%Y-%m-%d"), "floor": rnd.randint(1, 30), "cancelled": False,
                        "direct": False, "kind": "입주권" if k % 3 == 0 else "분양권"})
     poi[cid] = {f["key"]: (rnd.uniform(80, 600) if f["kind"] == "nearest" else rnd.randint(20, 120)) for f in factors}
-    geo[cid] = (CENTER[0] + 0.01, CENTER[1] - 0.02)
+    geo[cid] = (center[0] + 0.01, center[1] - 0.02)
     return pd.DataFrame(trades), pd.DataFrame.from_dict(poi, orient="index"), geo
+
+
+def _center(districts: dict[str, str]) -> tuple[float, float]:
+    """데모 단지를 뿌릴 가운데: 설정한 구 경계의 가운데 (경계가 없으면 대전시청 부근)."""
+    from shapely.geometry import shape
+    from shapely.ops import unary_union
+
+    from .heatmap import load_districts
+    shapes = [shape(g) for g in load_districts(districts).values()]
+    if not shapes:
+        return CENTER
+    c = unary_union(shapes).centroid
+    return (c.y, c.x)
 
 
 def macro(start: str = "2006-01", end: str = "2026-08") -> dict:
