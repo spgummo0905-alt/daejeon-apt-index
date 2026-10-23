@@ -136,10 +136,10 @@
         <g class="hm-hover" aria-hidden="true"><path class="dm-hl" d=""/></g>
         <g class="hm-gu" aria-hidden="true">{% for d in board.districts %}<text x="{{ d.x }}" y="{{ d.y }}">{{ d.name }}</text>{% endfor %}</g>
         <g class="hm-names" aria-hidden="true">
-        {% for t in board.tiles %}{% if t.show_label or t.pin %}<text class="dm-name b{{ t.band }}" data-for="{{ t.gu }}|{{ t.dong }}" x="{{ t.x }}" y="{{ t.y + (17 if t.pin else 4) }}">{{ t.label }}</text>{% endif %}{% endfor %}
+        {% for t in board.tiles %}{% if t.show_label or t.pin %}<text class="dm-name b{{ t.band }}{{ ' pinned' if t.pin }}" data-for="{{ t.gu }}|{{ t.dong }}" x="{{ t.x }}" y="{{ t.y + (17 if t.pin else 4) }}">{{ t.label }}</text>{% endif %}{% endfor %}
         </g>
         <g class="hm-pins" aria-hidden="true">
-        {% for t in board.tiles %}{% if t.pin %}<g class="pin" style="--i: {{ t.pin }}" transform="translate({{ t.x }} {{ t.y - 6 }})"><circle class="pin-pulse" r="11"/><circle class="pin-dot" r="10"/><text y="4">{{ t.pin }}</text></g>{% endif %}{% endfor %}
+        {% for t in board.tiles %}{% if t.pin %}<g class="pin" style="--i: {{ t.pin }}" transform="translate({{ t.x }} {{ t.y - 6 }})"><g class="pin-in"><circle class="pin-pulse" r="11"/><circle class="pin-dot" r="10"/><text y="4">{{ t.pin }}</text></g></g>{% endif %}{% endfor %}
         </g>
       </svg>
       <p class="heat-note muted">동 경계는 단지 위치로 그린 근사입니다. 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">온도 매기는 법</a></p>

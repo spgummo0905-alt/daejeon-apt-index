@@ -551,7 +551,8 @@
     const years = [];
     for (let yr = lastY - 9; yr <= lastY; yr++) if (yr >= Math.floor(D.m0 / 12)) years.push(yr);
     if (years.length >= 3) {
-      const W = 520, Hh = 150, bw = W / years.length;
+      // 좁은 화면에서는 그림 폭을 줄여 글자가 작아지지 않게
+      const W = matchMedia("(max-width: 560px)").matches ? 340 : 520, Hh = 150, bw = W / years.length;
       const vmax = Math.max(1, ...years.map(yr => byY[yr] || 0));
       const svg = s("svg", { viewBox: `0 0 ${W} ${Hh + 34}`, class: "pc-years", role: "img", "aria-label": "연도별 거래량" });
       years.forEach((yr, k) => {

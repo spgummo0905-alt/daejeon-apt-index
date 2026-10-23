@@ -604,6 +604,14 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .cmp-table thead th a { color: var(--text); font-weight: 700; }
 .cmp-table td.best { background: rgba(201,162,74,.16); font-weight: 800; color: var(--text); }
 .cmp-table td.best::after { content: " ●"; color: var(--gold); font-size: 9px; vertical-align: 2px; }
+/* 휴대폰: 단지 이름을 줄바꿈해서 두 단지가 한 화면에 나란히 보이게 */
+@media (max-width: 640px) {
+  .cmp-table th, .cmp-table td { padding: 9px 8px; font-size: 13.5px; }
+  .cmp-table thead th { white-space: normal; overflow-wrap: anywhere; min-width: 108px; line-height: 1.35; vertical-align: bottom; font-size: 13px; }
+  .cmp-table thead th:first-child { min-width: 0; }
+  .cmp-table tbody th { white-space: normal; min-width: 76px; max-width: 96px; line-height: 1.35; font-size: 12.5px; }
+  .cmp-table th.sub { padding-left: 14px; }
+}
 
 /* 입지 대비 가격이 좋은 단지 목록 */
 .value-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
@@ -846,6 +854,10 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   /* 좁은 화면: 지도는 화면 폭 그대로, 작은 이름표는 숨기고 고른 동과 순위 핀만 */
   .heat-map { margin: 0 -8px; }
   .dm-name:not(.on) { display: none; }
+  /* 지도가 절반 크기로 줄어드니 핀·이름표는 키워서 10px 안팎으로 보이게 */
+  .pin-in { transform: scale(1.8); }
+  .dm-name.on { font-size: 21px; stroke-width: 5px; }
+  .dm-name.on.pinned { transform: translateY(16px); }
   .hm-gu text { font-size: 22px; }
   .heat-ranks { grid-template-columns: 1fr; }
   .hs-end { display: none; }
@@ -1392,7 +1404,9 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .sv-top h2 { margin: 0; }
 .sv-top p { margin: 2px 0 0; font-size: 14px; }
+.sv-top > :first-child { flex: 1 1 220px; min-width: 0; }
 .sv-count-box { text-align: right; }
+.sv-count span { white-space: nowrap; }
 .sv-count { display: inline-flex; align-items: baseline; gap: 6px; padding: 10px 16px; border-radius: 14px; border: 1.5px solid color-mix(in srgb, var(--s3) 55%, transparent);
   background: color-mix(in srgb, var(--s3) 9%, var(--surface)); color: var(--text); text-decoration: none; font-weight: 700; }
 .sv-count b { font-size: 26px; font-weight: 800; color: color-mix(in srgb, var(--s3) 75%, var(--text)); font-variant-numeric: tabular-nums; }
@@ -1494,7 +1508,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
   /* 좁은 화면: 질문이 먼저 보이게 그림은 아래로, 제목 줄에 개수를 함께 */
   .sv-top { flex-wrap: nowrap; align-items: center; }
   .sv-top p.muted { display: none; }
-  .sv-top h2 { font-size: 18px; }
+  .sv-top h2 { font-size: 18px; white-space: nowrap; }
   .sv-count { padding: 8px 12px; gap: 4px; }
   .sv-count span { font-size: 13px; }
   .sv-delta { margin-top: 4px; font-size: 12px; }
