@@ -1,3 +1,4 @@
+import json
 from djdex import cli
 
 
@@ -180,11 +181,22 @@ def test_intro_page_and_first_visit(tmp_path):
     intro = (out / "intro.html").read_text(encoding="utf-8")
     # 실제 자료: 1위 카드, 등급 분포(S~D), 뜨거운 동네, 시작하기
     assert 'class="gcard it-card g-' in intro and "1위" in intro
-    assert intro.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
+    grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
+    assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
     assert 'class="it-hot"' in intro and 'href="index.html">시작하기' in intro
+    # 요즘 뜨거운 동네: 지역 이름 없이, 온도 상위 동네를 넘겨 볼 자료와 대장 단지
+    assert "요즘 뜨거운 동네는" in intro and "지금 대전에서는" not in intro
+    hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
+    assert 1 <= len(hot) <= 5 and all({"d", "j", "t", "h", "n3"} <= set(h) for h in hot)
+    assert [h["t"] for h in hot] == sorted((h["t"] for h in hot), reverse=True)
     assert 'localStorage.setItem("dj-intro","1")' in intro and 'class="it-skip"' in intro
     # 첫 화면: 처음 온 사람만 인트로로 (로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'location.replace("intro.html")' in index and "yeti" in index
     assert '<a href="intro.html">서비스 소개</a>' in index
     assert 'location.replace' not in (out / "rank.html").read_text(encoding="utf-8")
+
+
+def test_ieyo_follows_final_consonant():
+    from djdex.site import _ieyo
+    assert [_ieyo(w) for w in ["가정동", "종로1가", "조치원읍", "을지로2가", "연서면"]] == ["이에요", "예요", "이에요", "예요", "이에요"]
