@@ -406,7 +406,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
                              leader_by_gu.get(c["gu"])),
-            n_total=n_total, chips=_card_chips(c), gems=GEMS.get(c["grade"], 1), **common)
+            n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다. 평형별 시세(tp)는 위 시세 차트 계산에서 옵니다.
@@ -743,18 +743,26 @@ STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 GEMS = {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1}
 
 
-def _card_chips(c: dict) -> list[str]:
-    """메인 카드 그림 위 작은 아이콘 줄: 가까운 역(정류장)과 학원가."""
-    chips = []
+def _card_badges(c: dict) -> list[dict]:
+    """메인 카드 그림 위 배지: 아이콘과 짧은 값만 보여 주고, 누르면 설명(tip)이 나옵니다."""
+    out = []
     stn, dist = station_name(c.get("subway_name_raw")), c.get("subway_raw")
     if stn and not _nan(dist):
-        chips.append(("train", f"{stn} {dist:.0f}m"))
+        short = f"{dist / 1000:.1f}km" if dist >= 1000 else f"{dist:.0f}m"
+        out.append({"icon": "train", "short": short, "title": stn,
+                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {max(1, round(dist * 1.3 / 80))}분"})
     hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
     if isinstance(hub, str) and not _nan(mins) and mins <= 25:
-        chips.append(("book", f"{hub} {mins:.0f}분"))
+        out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 {mins:.0f}분"})
     if c.get("hh"):
-        chips.append(("home", f"{c['hh']:,}세대"))
-    return chips
+        ki, more = c.get("ki") or {}, []
+        if ki.get("dongs"):
+            more.append(f"{ki['dongs']}개 동")
+        if ki.get("ppu"):
+            more.append(f"세대당 주차 {ki['ppu']:.1f}대")
+        out.append({"icon": "home", "short": f"{c['hh']:,}", "unit": "세대", "title": f"{c['hh']:,}세대",
+                    "tip": " · ".join(more) or "공동주택관리정보시스템 기준"})
+    return out
 
 
 def station_name(raw) -> str | None:

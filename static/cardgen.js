@@ -440,6 +440,47 @@
       toggle.setAttribute("aria-expanded", on ? "true" : "false");
       deals.hidden = !on;
     });
+    // 배지가 한 줄에 다 안 들어가면 촘촘하게 (단위·날짜 줄을 접음)
+    const row = card.querySelector(".mc-badges");
+    const fit = () => {
+      if (!row) return;
+      const over = () => [...row.children].reduce((w, x) => w + x.scrollWidth, 0) + 6 * (row.children.length - 1) > row.clientWidth;
+      row.classList.remove("tight", "tighter");
+      if (over()) row.classList.add("tight");
+      if (over()) row.classList.add("tighter");   // 아주 좁은 화면: 아이콘만
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    if (document.fonts) document.fonts.ready.then(fit);
+    // 그림 위 배지: 누르면 설명 말풍선 (다시 누르거나 바깥을 누르면 닫힘)
+    const tip = card.querySelector("[data-mc-tip]");
+    let tipFor = null;
+    const closeTip = () => { if (tipFor) tipFor.setAttribute("aria-expanded", "false"); tipFor = null; if (tip) tip.hidden = true; };
+    card.querySelectorAll("[data-badge]").forEach(b => {
+      b.setAttribute("aria-expanded", "false");
+      b.addEventListener("click", e => {
+        e.stopPropagation();
+        if (tipFor === b) return closeTip();
+        closeTip();
+        const t = document.createElement("b");
+        t.textContent = b.dataset.title || "";
+        tip.replaceChildren(t, document.createTextNode(b.dataset.desc || ""));
+        tip.classList.toggle("top", b.classList.contains("mc-rank"));
+        tip.hidden = false;
+        b.setAttribute("aria-expanded", "true");
+        tipFor = b;
+      });
+    });
+    document.addEventListener("click", () => { if (tipFor) closeTip(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeTip(); });
+    const sumMore = document.querySelector("[data-sum-more]");
+    if (sumMore) sumMore.addEventListener("click", () => { sumMore.closest("[data-sum]").classList.add("open"); sumMore.setAttribute("aria-expanded", "true"); });
+    // 항목 설명: 줄을 누르면 펼침
+    card.querySelectorAll("[data-stat]").forEach(li => {
+      const flip = () => li.setAttribute("aria-expanded", li.getAttribute("aria-expanded") === "true" ? "false" : "true");
+      li.addEventListener("click", flip);
+      li.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    });
     const opener = document.querySelector("[data-share-sheet]");
     const open = opener && setupSheet(c.s, opener);
     // 카카오톡에서 '이미지 저장'으로 넘어온 경우: 공유 창을 바로 띄웁니다.

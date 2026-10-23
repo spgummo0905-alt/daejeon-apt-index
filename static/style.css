@@ -1037,7 +1037,8 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 
 
 /* ===== 단지 페이지 메인 카드 (이미지로 저장하는 카드와 같은 모양) ===== */
-.apt-hero { display: grid; gap: 18px; margin-top: 14px; }
+.apt-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
+.apt-hero > * { min-width: 0; }
 /* 넓은 화면: 왼쪽 메인 카드, 오른쪽에 한눈에 보기와 관련 점수 (휴대폰은 위에서 아래로 같은 순서) */
 .apt-side .summary { margin-top: 0; }
 @media (min-width: 900px) { .apt-hero { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); align-items: start; gap: 28px; }
@@ -1080,21 +1081,49 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   background: linear-gradient(180deg, var(--in1), var(--f3)); box-shadow: inset 0 0 0 3px var(--f2); }
 .mc-art canvas { display: block; width: 100%; height: 100%; }
 .mc-art::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 3px var(--f2); pointer-events: none; }
-.mc-rank { position: absolute; top: 10px; right: 10px; z-index: 1; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 800;
-  color: #fff; background: rgba(10,16,30,.55); border: 1px solid rgba(255,255,255,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.mc.g-S .mc-rank { color: #fff3c4; border-color: rgba(233,198,106,.55); }
-.mc-chips { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; display: flex; gap: 6px; flex-wrap: wrap; }
-.mc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22);
-  background: rgba(10,16,30,.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff;
-  font: inherit; font-size: 12.5px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
-button.mc-chip { cursor: pointer; transition: transform var(--t-fast) var(--ease-spring), background var(--t-fast); }
-button.mc-chip:hover { background: rgba(10,16,30,.78); } button.mc-chip:active { transform: scale(.96); }
-.mc-chip .ic { width: 15px; height: 15px; stroke: #e8c66c; stroke-width: 2; }
-.mc-chip b { color: #fff3c4; } .mc-chip-sub { color: rgba(255,255,255,.7); font-weight: 600; }
-.mc-caret { width: 7px; height: 7px; margin-left: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+/* 그림 위 배지: 아이콘과 짧은 값만, 누르면 설명 말풍선 */
+.mc-rank { position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-flex; align-items: baseline; gap: 1px;
+  min-height: 34px; padding: 5px 12px; border-radius: 12px; font: inherit; font-size: 12px; font-weight: 800; color: #fff; cursor: pointer;
+  background: rgba(10,16,30,.6); border: 1px solid rgba(232,198,108,.4); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.mc-rank b { font-size: 19px; font-weight: 900; letter-spacing: -0.02em; color: #fff3c4; font-variant-numeric: tabular-nums; }
+.mc-rank small { margin-left: 2px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.62); }
+.mc-badges { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
+.mc-medals { display: flex; gap: 6px; margin-left: auto; }
+.mc-price, .mc-medal { font: inherit; color: #fff; cursor: pointer; border: 1px solid rgba(232,198,108,.32); background: rgba(10,16,30,.62);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 14px;
+  transition: transform var(--t-fast) var(--ease-spring), background var(--t-fast), border-color var(--t-fast); }
+.mc-price:active, .mc-medal:active, .mc-rank:active { transform: scale(.95); }
+.mc-price:hover, .mc-medal:hover, .mc-rank:hover { background: rgba(10,16,30,.8); }
+.mc-price[aria-expanded="true"], .mc-medal[aria-expanded="true"], .mc-rank[aria-expanded="true"] { border-color: #e8c66c; background: rgba(10,16,30,.85); }
+.mc-price { position: relative; flex: none; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 50px; padding: 5px 12px; text-align: left; }
+.mc-price b { font-size: 18px; font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; color: #fff3c4; font-variant-numeric: tabular-nums; }
+.mc-price > span { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.7); white-space: nowrap; }
+.mc-price .mc-hi { position: absolute; top: -8px; right: -6px; margin: 0; font-style: normal; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.mc-medal { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 50px; height: 50px; padding: 0 8px; }
+.mc-medal .ic { width: 17px; height: 17px; stroke: #e8c66c; stroke-width: 2; }
+.mc-medal span { font-size: 12px; font-weight: 800; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mc-tip { position: absolute; left: 10px; right: 10px; bottom: 68px; z-index: 3; margin: 0; padding: 9px 12px; border-radius: 12px;
+  background: rgba(8,12,22,.9); border: 1px solid rgba(232,198,108,.45); color: rgba(255,255,255,.85); font-size: 12.5px; line-height: 1.45;
+  box-shadow: 0 6px 18px rgba(0,0,0,.35); animation: card-in 200ms var(--ease-out) both; pointer-events: none; }
+.mc-tip b { display: block; color: #fff3c4; font-size: 13.5px; font-weight: 800; }
+.mc-tip.top { top: 52px; bottom: auto; }
+.mc-caret { width: 6px; height: 6px; margin-left: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
   transform: translateY(-2px) rotate(45deg); opacity: .75; transition: transform var(--t-fast); }
-[aria-expanded="true"] > .mc-caret { transform: translateY(1px) rotate(-135deg); }
+[aria-expanded="true"] .mc-caret { transform: translateY(1px) rotate(-135deg); }
 .mc-hi { margin-left: 4px; padding: 1px 6px; border-radius: 999px; background: #d93f3e; color: #fff; font-size: 10px; font-weight: 800; }
+.mc-badges { padding-top: 8px; }   /* 신고가 리본 자리 */
+.mc-medal span small { font-size: inherit; font-weight: inherit; }
+/* 자리가 모자라면(좁은 화면에 배지 넷) 단위와 날짜 줄을 접음. 누르면 다 나옴 */
+.mc-badges.tight .mc-medal span small, .mc-badges.tight .mc-price > span { display: none; }
+.mc-badges.tight .mc-price { flex-direction: row; align-items: center; gap: 4px; }
+.mc-badges.tight .mc-price::after { content: ""; width: 6px; height: 6px; border-right: 2px solid rgba(255,255,255,.7); border-bottom: 2px solid rgba(255,255,255,.7);
+  transform: translateY(-2px) rotate(45deg); }
+.mc-badges.tight .mc-price[aria-expanded="true"]::after { transform: translateY(1px) rotate(-135deg); }
+.mc-badges.tighter .mc-medal span { display: none; }
+.mc-badges.tighter .mc-medal { min-width: 42px; padding: 0; }
+.mc-badges.tighter .mc-medal .ic { width: 19px; height: 19px; }
+@media (max-width: 400px) { .mc-medals { gap: 5px; } .mc-medal { min-width: 44px; padding: 0 6px; } .mc-medal span { font-size: 11.5px; }
+  .mc-price { padding: 5px 10px; } .mc-price b { font-size: 16.5px; } }
 .mc-tag { margin-left: 4px; padding: 1px 6px; border-radius: 999px; background: var(--glass); color: var(--sub); font-size: 10px; font-weight: 700; border: 1px solid var(--line); }
 .mc-deals { position: relative; margin-top: 10px; padding: 8px 12px 8px; border-radius: 14px; border: 1px solid var(--line); background: rgba(0,0,0,.22);
   font-size: 12.5px; animation: card-in 280ms var(--ease-out) both; }
@@ -1106,10 +1135,12 @@ button.mc-chip:hover { background: rgba(10,16,30,.78); } button.mc-chip:active {
 .mc-all { display: block; padding: 6px 0 2px; text-align: center; font-weight: 800; color: var(--b2); }
 .mc.g-D .mc-all { color: var(--accent); }
 .mc-note { margin: 4px 0 0; font-size: 11px; color: var(--sub); text-align: center; }
-.mc-strip { position: relative; margin-top: 12px; padding: 8px 12px; border-radius: 999px; text-align: center; font-size: 12.5px; font-weight: 600;
-  background: var(--glass); border: 1px solid var(--line); }
+.mc-strip { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 12px; }
+.mc-strip span { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--sub); background: var(--glass); border: 1px solid var(--line); }
+.mc-strip span.hot { color: #fff; background: #d93f3e; border-color: transparent; }
 .mc-stats { position: relative; list-style: none; margin: 14px 2px 0; padding: 0; display: grid; gap: 9px; }
-.mc-stats li { display: grid; grid-template-columns: 58px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
+.mc-stats li { display: grid; grid-template-columns: 76px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
+.mc-stats .n { white-space: nowrap; }
 .mc-stats .n { font-size: 14px; font-weight: 800; }
 .mc-stats .bar { height: 9px; border-radius: 99px; background: var(--track); overflow: hidden; }
 .mc-stats .bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--b1), var(--b2), var(--b3));
@@ -1118,7 +1149,13 @@ button.mc-chip:hover { background: rgba(10,16,30,.78); } button.mc-chip:active {
 .mc-stats li:nth-child(4) i { animation-delay: 180ms; } .mc-stats li:nth-child(5) i { animation-delay: 240ms; } .mc-stats li:nth-child(6) i { animation-delay: 300ms; }
 @keyframes mc-grow { from { transform: scaleX(0); } }
 .mc-stats .v { text-align: right; font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; }
-.mc-stats .ds { grid-column: 2 / 4; margin-top: -2px; font-size: 11px; color: var(--sub); }
+/* 항목 설명은 줄을 누르면 펼침 */
+.mc-stats li[data-stat] { cursor: pointer; border-radius: 8px; -webkit-tap-highlight-color: transparent; }
+.mc-stats li[data-stat]:focus-visible { outline: 2px solid var(--b2); outline-offset: 3px; }
+.mc-stats li[data-stat] .n::after { content: "i"; display: inline-grid; place-items: center; width: 13px; height: 13px; margin-left: 4px; vertical-align: 2px;
+  border-radius: 50%; border: 1px solid currentColor; font-size: 9px; font-weight: 800; font-style: italic; font-family: Georgia, serif; opacity: .45; }
+.mc-stats .ds { grid-column: 2 / 4; margin-top: -2px; font-size: 11.5px; color: var(--sub); display: none; }
+.mc-stats li[aria-expanded="true"] .ds { display: block; animation: card-in 200ms var(--ease-out) both; }
 /* 지수에 들어가는 세 항목과 참고 지표를 나눠 보여줌 */
 .mc-stats li.mc-grp { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 2px;
   font-size: 11.5px; font-weight: 800; color: var(--sub); }
@@ -1489,3 +1526,30 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .ki-grid .ki-main dd small { font-size: 14px; font-weight: 700; color: var(--text-2); margin: 0 2px; }
 .ki-grid .ki-main p { margin: 2px 0 0; font-size: 12.5px; color: var(--text-2); }
 @media (max-width: 719px) { .ki-grid .ki-main { grid-column: span 1; } .ki-grid .ki-main dd { font-size: 22px; } }
+
+/* 한눈에 보기: 모바일은 세 줄만 보이고 나머지는 펼쳐 봄 */
+.sum-more { display: none; }
+@media (max-width: 719px) {
+  .summary li.more { display: none; }
+  .summary.open li.more { display: list-item; }
+  .sum-more { display: inline-flex; align-items: center; min-height: 36px; margin: 4px 0 0 18px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: 999px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .summary.open .sum-more { display: none; }
+}
+
+/* 모바일 전용 배치: 단지 페이지를 짧게 */
+@media (max-width: 719px) {
+  .m-hide { display: none; }   /* 메인 카드와 같은 내용 */
+  /* 관련 점수 카드는 메인 카드와 겹치는 내용이 많아 가로로 넘겨 보기 */
+  .apt-side .cards { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-left: -16px; margin-right: -16px; padding: 2px 16px 8px; scroll-padding: 0 16px; }
+  .apt-side .cards::-webkit-scrollbar { display: none; }
+  .apt-side .cards > .card { flex: 0 0 72%; max-width: 260px; scroll-snap-align: start; }
+  /* 단지 정보: 큰 숫자 둘만 상자, 나머지는 한 줄 표 */
+  .ki-grid { gap: 8px; }
+  .ki-grid > div:not(.ki-main) { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 10px 2px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: none; }
+  .ki-grid > div:not(.ki-main) + div:not(.ki-main) { margin-top: -8px; }
+  .ki-grid > div:not(.ki-main) dd { margin: 0; text-align: right; font-size: 14.5px; }
+  .ki-grid > div:not(.ki-main):last-child { border-bottom: 0; }
+}
