@@ -701,7 +701,49 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
 .pager .btn { min-width: 160px; justify-content: center; }
 
-/* 지역 바꾸기 (대전 · 세종) */
+/* 최근 본 단지: 오른쪽 아래 작은 버튼 + 목록 (휴대폰은 아래 탭 위, 목록은 아래 시트) */
+.rcd { position: fixed; right: 20px; bottom: 24px; z-index: 55; }
+.rcd.open { z-index: 96; }   /* 휴대폰 시트가 어두운 뒤판(90) 위로 */
+.rcd-fab { display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 8px 0 12px; border-radius: 999px; border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(10,20,40,.14); color: var(--text); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
+  transition: transform 280ms var(--ease-out), opacity 200ms, border-color var(--t-fast); }
+.rcd-fab:hover { border-color: var(--text-2); }
+.rcd-fab .ic { width: 18px; height: 18px; color: var(--accent); }
+.rcd-fab b { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 999px;
+  background: var(--navy); color: var(--on-navy); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rcd.tuck .rcd-fab, .rcd.shy:not(.open) .rcd-fab { transform: translateY(calc(100% + 36px)); opacity: 0; pointer-events: none; }
+.rcd-pop { position: absolute; right: 0; bottom: calc(100% + 10px); width: 340px; max-height: min(62vh, 480px); overflow: auto; padding: 14px;
+  border-radius: 20px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 18px 48px rgba(8,12,20,.22);
+  opacity: 0; transform: translateY(8px) scale(.98); transform-origin: bottom right; transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out); }
+.rcd-pop.on { opacity: 1; transform: none; }
+.rcd-pop .sheet-grab { display: none; }
+.rcd-head { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; }
+.rcd-head b { font-size: 16px; }
+.rcd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rcd-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; color: var(--text); }
+.rcd-item:hover, .rcd-item:focus-visible { background: var(--chip); text-decoration: none; }
+.rcd-item .grade { width: 30px; height: 30px; border-radius: 9px; font-size: 14px; }
+.rcd-t { display: grid; min-width: 0; }
+.rcd-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; }
+.rcd-t small { font-size: 12px; color: var(--muted); }
+.rcd-p { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rcd-cmp { display: flex; align-items: center; justify-content: center; gap: 6px; height: 42px; margin-top: 10px; border-radius: 12px;
+  background: var(--navy); color: var(--on-navy); font-size: 14px; font-weight: 800; }
+.rcd-cmp:hover { text-decoration: none; opacity: .92; }
+@media (max-width: 720px) {
+  .rcd { right: 12px; bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .rcd-fab { height: 40px; padding: 0 6px 0 10px; }
+  .rcd-label { display: none; }   /* 휴대폰은 아이콘 + 숫자만 */
+  body[data-page="finder"] .rcd { bottom: calc(148px + env(safe-area-inset-bottom)); }   /* 질문 '다음' 버튼 줄 위로 */
+  .rcd-pop { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 75vh; border-radius: 22px 22px 0 0; z-index: 95;
+    padding: 10px 16px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); opacity: 1; }
+  .rcd-pop.on { transform: none; }
+  .rcd-pop .sheet-grab { display: block; }
+}
+@media (prefers-reduced-motion: reduce) { .rcd-fab, .rcd-pop { transition: none; } }
+@media print { .rcd { display: none; } }
+
 /* 지역 고르기: 위쪽 버튼 하나 + 권역별 지역 카드 (지역이 늘어도 위쪽은 그대로) */
 .rg { position: relative; margin-right: auto; margin-left: 6px; }
 .rg-btn { display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 10px 0 9px; border-radius: 999px; border: 1px solid var(--border);
@@ -1559,7 +1601,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-nav .btn.primary { background: color-mix(in srgb, var(--s3) 68%, #000); border-color: transparent; color: #fff; min-width: 96px; justify-content: center; }
 .sv-results { margin-top: 26px; scroll-margin-top: 70px; }
 .sv-res-title { margin: 0; font-size: 20px; }
-.sv-res-title span { color: var(--s3); }
+.sv-res-title span { color: var(--accent); }
 .sv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip.sm { padding: 4px 10px; font-size: 12.5px; cursor: default; }
 .sv-foot { margin-top: 18px; line-height: 1.6; }

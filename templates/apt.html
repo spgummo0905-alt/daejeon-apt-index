@@ -14,7 +14,7 @@
 
 {% set fresh = recent[:5] %}{# 메인 카드 펼침 목록 #}
 <div class="apt-hero">
-<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}"><div class="mc-in">
+<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}"><div class="mc-in">
   <div class="mc-top">
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
@@ -166,39 +166,6 @@
 </section>
 {% endif %}
 
-{# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로.
-   카카오맵 장소(별점·후기)와 네이버 블로그·카페 최근 글은 공식 API로 찾은 것만, 원문으로 잇습니다 #}
-{% set q = ((c.dong ~ " ") if c.dong else "") ~ c.name ~ ("" if c.name.endswith("아파트") else " 아파트") %}
-{% set ext = c.ext or {} %}
-<section class="panel rv" id="reviews">
-  <div class="panel-head">
-    <h2>살아본 사람들 이야기</h2>
-    <p class="muted">{% if ext.posts %}네이버 블로그에서 찾은 글이에요. 누르면 로그인 없이 원문이 바로 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기예요. 앱 설치나 로그인 없이 바로 열려요.{% endif %}</p>
-  </div>
-  {% if ext.posts %}
-  <ul class="rv-posts">
-    {% for p in ext.posts %}<li><a href="{{ p.u }}" target="_blank" rel="noopener nofollow">
-      <b>{{ p.t }}</b>{% if p.d %}<span>{{ p.d }}</span>{% endif %}
-      <small>블로그{% if p.s %} · {{ p.s }}{% endif %}{% if p.at | length == 8 %} · {{ p.at[:4] }}.{{ p.at[4:6] }}.{{ p.at[6:] }}{% endif %}</small></a></li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-  {# 모두 휴대폰에서 앱 설치·로그인 없이 열리는 주소 (scripts/review_check.py 로 확인) #}
-  <div class="rv-links">
-    <a class="rv-link" href="https://search.naver.com/search.naver?query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
-      <svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span><b>후기 한눈에</b><small>네이버 AI 요약·후기</small></span></a>
-    <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.blog.all&amp;query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
-      <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span><b>블로그 후기</b><small>네이버 블로그</small></span></a>
-    <a class="rv-link" href="https://www.youtube.com/results?search_query={{ (q ~ ' 임장') | urlencode }}" target="_blank" rel="noopener">
-      <svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span><b>임장 영상</b><small>유튜브</small></span></a>
-    {% if ext.kp %}<a class="rv-link" href="https://place.map.kakao.com/{{ ext.kp[0] }}" target="_blank" rel="noopener">
-      <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>사진·블로그</b><small>카카오맵</small></span></a>
-    {% else %}<a class="rv-link" href="https://m.map.naver.com/search?query={{ q | urlencode }}" target="_blank" rel="noopener">
-      <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>지도·리뷰</b><small>네이버 지도</small></span></a>{% endif %}
-  </div>
-  <p class="rv-q muted">검색어 ‘{{ q }}’ · 모두 앱 설치나 로그인 없이 열려요. 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공 홍보 글은 뺐어요.{% endif %}</p>
-</section>
-
 <section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>
@@ -308,6 +275,39 @@
     <p><a class="btn" href="https://map.kakao.com/link/map/{{ c.name | urlencode }},{{ latlng[0] }},{{ latlng[1] }}" target="_blank" rel="noopener">카카오맵에서 위치 보기 ↗</a></p>
     {% endif %}
   {% endif %}
+</section>
+
+{# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로.
+   카카오맵 장소(별점·후기)와 네이버 블로그·카페 최근 글은 공식 API로 찾은 것만, 원문으로 잇습니다 #}
+{% set q = ((c.dong ~ " ") if c.dong else "") ~ c.name ~ ("" if c.name.endswith("아파트") else " 아파트") %}
+{% set ext = c.ext or {} %}
+<section class="panel rv" id="reviews">
+  <div class="panel-head">
+    <h2>살아본 사람들 이야기</h2>
+    <p class="muted">{% if ext.posts %}네이버 블로그에서 찾은 글이에요. 누르면 로그인 없이 원문이 바로 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기예요. 앱 설치나 로그인 없이 바로 열려요.{% endif %}</p>
+  </div>
+  {% if ext.posts %}
+  <ul class="rv-posts">
+    {% for p in ext.posts %}<li><a href="{{ p.u }}" target="_blank" rel="noopener nofollow">
+      <b>{{ p.t }}</b>{% if p.d %}<span>{{ p.d }}</span>{% endif %}
+      <small>블로그{% if p.s %} · {{ p.s }}{% endif %}{% if p.at | length == 8 %} · {{ p.at[:4] }}.{{ p.at[4:6] }}.{{ p.at[6:] }}{% endif %}</small></a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {# 모두 휴대폰에서 앱 설치·로그인 없이 열리는 주소 (scripts/review_check.py 로 확인) #}
+  <div class="rv-links">
+    <a class="rv-link" href="https://search.naver.com/search.naver?query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span><b>후기 한눈에</b><small>네이버 AI 요약·후기</small></span></a>
+    <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.blog.all&amp;query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span><b>블로그 후기</b><small>네이버 블로그</small></span></a>
+    <a class="rv-link" href="https://www.youtube.com/results?search_query={{ (q ~ ' 임장') | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span><b>임장 영상</b><small>유튜브</small></span></a>
+    {% if ext.kp %}<a class="rv-link" href="https://place.map.kakao.com/{{ ext.kp[0] }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>사진·블로그</b><small>카카오맵</small></span></a>
+    {% else %}<a class="rv-link" href="https://m.map.naver.com/search?query={{ q | urlencode }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>지도·리뷰</b><small>네이버 지도</small></span></a>{% endif %}
+  </div>
+  <p class="rv-q muted">검색어 ‘{{ q }}’ · 모두 앱 설치나 로그인 없이 열려요. 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공 홍보 글은 뺐어요.{% endif %}</p>
 </section>
 
 <section class="panel">
