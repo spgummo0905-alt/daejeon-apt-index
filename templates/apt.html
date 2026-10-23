@@ -100,6 +100,10 @@
 </section>
 {% endif %}
 
+</div>
+</div>
+
+<div class="apt-more">
 <div class="sec-head">
   <h2>관련 점수</h2>
   <a href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg>다른 단지와 비교</a>
@@ -126,9 +130,9 @@
   {% endif %}
   {% for n in years %}
   <div class="card">
-    <span class="label">{{ n }}년 {{ "실질" if meta.real_returns else "명목" }} 연평균 수익률</span>
+    <span class="label">{{ n }}년 연평균 수익률</span>
     <span class="value {{ '' if c['cagr_%dy' % n] is nan else ('pos' if c['cagr_%dy' % n] > 0 else 'neg') }}">{{ c["cagr_%dy" % n] | pct }}</span>
-    {% set p = c["cagr_%dy_pct" % n] %}<span class="muted">{% if p is nan %}비교할 거래 부족{% else %}{{ region }} {{ (100 - p) | share }}{% endif %}</span>
+    {% set p = c["cagr_%dy_pct" % n] %}<span class="muted">{{ "실질" if meta.real_returns else "명목" }} · {% if p is nan %}비교할 거래 부족{% else %}{{ region }} {{ (100 - p) | share }}{% endif %}</span>
   </div>
   {% endfor %}
   <div class="card">
@@ -137,7 +141,6 @@
     <span class="muted">{% if c.location_top is nan %}입지 정보 없음{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span>
   </div>
 </section>
-</div>
 </div>
 
 {% if c.ki %}{% set k = c.ki %}
