@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% set rail_nav %}<div class="rail-nav"><button type="button" class="rail-btn" data-rail-prev aria-label="이전"><svg class="ic"><use href="#i-chev-left"/></svg></button><span class="rail-dots" aria-hidden="true"><i></i></span><button type="button" class="rail-btn" data-rail-next aria-label="다음"><svg class="ic"><use href="#i-chev-right"/></svg></button></div>{% endset %}
+{% block head_extra %}
+{# 처음 온 사람은 한 번 인트로로 (사이트 안에서 넘어왔거나 검색 로봇이면 그대로). 인트로를 열면 다시는 보내지 않습니다 #}
+<script>try{var r=document.referrer;if(!localStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent)&&!(r&&new URL(r).origin===location.origin)&&!/[?&]skip/.test(location.search))location.replace("intro.html")}catch(e){}</script>
+{% endblock %}
 {% block body %}
 <section class="hero hero-main">
   <div class="hero-grid">
