@@ -18,16 +18,21 @@
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
       <h1>{{ c.name }}</h1>
-      <p>{{ region }} {{ c | place }} {{ c.jibun }}{% if c.build_year %} · <span class="nw">{{ c.build_year }}년 준공</span>{% endif %}</p>
+      <p>{{ region }} {{ c | place }} {{ c.jibun }}</p>
     </div>
     <div class="mc-score"><small>종합 지수</small><strong>{{ c.index | score }}</strong></div>
   </div>
-  <div class="mc-art">
+  <div class="mc-art" data-mc-art>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
-    <span class="mc-rank">{{ c.grade_name }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% else %} · 순위 제외({{ c.small_reason or "소규모" }}){% endif %}</span>
-    <div class="mc-chips">
-      {% if lead %}{% set t0 = lead %}<button class="mc-chip" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals"><svg class="ic"><use href="#i-receipt"/></svg>최근 실거래 <b>{{ t0.price | price }}</b><span class="mc-chip-sub">· {{ t0.date.strftime("%m.%d") }}</span>{% if t0.high %}<span class="mc-hi">신고가</span>{% endif %}<span class="mc-caret" aria-hidden="true"></span></button>{% endif %}
-      {% for icon, text in chips %}<span class="mc-chip"><svg class="ic"><use href="#i-{{ icon }}"/></svg>{{ text }}</span>{% endfor %}
+    {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
+    {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{{ c.small_reason or '소규모' }} 단지라 순위와 TOP 목록에서는 뺐어요">순위 제외</button>{% endif %}
+    <p class="mc-tip" data-mc-tip role="status" hidden></p>
+    <div class="mc-badges">
+      {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="최근 실거래 {{ t0.price | price }}, 거래 내역 펼치기">
+        {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span>실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span></button>{% endif %}
+      <div class="mc-medals">
+        {% for b in badges %}<button type="button" class="mc-medal" data-badge data-title="{{ b.title }}" data-desc="{{ b.tip }}" aria-label="{{ b.title }} {{ b.short }}"><svg class="ic" aria-hidden="true"><use href="#i-{{ b.icon }}"/></svg><span>{{ b.short }}{% if b.unit %}<small>{{ b.unit }}</small>{% endif %}</span></button>{% endfor %}
+      </div>
     </div>
   </div>
   {% if fresh %}
@@ -41,12 +46,12 @@
     <p class="mc-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고해 최근 거래는 늦게 올라올 수 있습니다. 평은 전용면적으로 어림한 평형입니다.</p>
   </div>
   {% endif %}
-  <div class="mc-strip">{{ c.grade_name }} 등급{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %} · 거래 {{ c.n_trades }}건{% if c.new_high_recent %} · 최근 신고가{% endif %}{% if c.small %} · {{ c.small_reason }}{% endif %}</div>
+  <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
   <ul class="mc-stats" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<li class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></li>
     {% elif loop.index0 == 3 %}<li class="mc-grp"><span>참고 지표</span><em>지수에는 넣지 않아요</em></li>{% endif %}
-    <li{% if loop.index0 >= 3 %} class="ref"{% endif %}><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></li>
+    <li{% if loop.index0 >= 3 %} class="ref"{% endif %} data-stat tabindex="0" role="button" aria-expanded="false"><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></li>
   {% endfor %}
   </ul>
   {% set c10 = c["cagr_%dy" % years[0]] %}
@@ -60,9 +65,10 @@
 
 <div class="apt-side">
 {% if summary %}
-<section class="summary">
+<section class="summary" data-sum>
   <h2>한눈에 보기</h2>
-  <ul>{% for s in summary %}<li>{{ s }}</li>{% endfor %}</ul>
+  <ul>{% for s in summary %}<li{% if loop.index > 3 %} class="more"{% endif %}>{{ s }}</li>{% endfor %}</ul>
+  {% if summary | length > 3 %}<button type="button" class="sum-more" data-sum-more aria-expanded="false">{{ summary | length - 3 }}개 더 보기</button>{% endif %}
 </section>
 {% endif %}
 
@@ -129,7 +135,7 @@
 </section>
 {% endif %}
 
-<section class="panel">
+<section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>
     <p class="muted">입지·성장성·상승세 세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 {{ region }} 단지들의 한가운데(50)입니다.</p>
