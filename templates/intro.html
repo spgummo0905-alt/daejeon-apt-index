@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}{{ region }} 아파트 지수 · 우리 아파트, 카드 한 장으로{% endblock %}
+{% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가·입지·학군으로 평가해 S부터 D까지 등급 카드로 만들었어요. 우리 단지는 몇 등급일까요?{% endblock %}
+{% block page_id %}intro{% endblock %}
+{% block head_extra %}
+{# 인트로를 한 번 보면 첫 화면이 다시 이리로 보내지 않습니다 #}
+<script>try{localStorage.setItem("dj-intro","1")}catch(e){}</script>
+{% endblock %}
+{% block header_extra %}<a class="it-skip" href="index.html">건너뛰기 <span aria-hidden="true">→</span></a>{% endblock %}
+{% block body %}
+{% set top = hero_cards[0] if hero_cards else none %}
+{% set s = grade_dist | selectattr("g", "equalto", "S") | first %}
+
+{# 1. 첫 장면: 카드 한 장으로 보는 아파트 #}
+<section class="it-hero">
+  <div class="it-glow" aria-hidden="true"></div>
+  <div class="it-wrap it-hero-grid">
+    <div class="it-copy">
+      <p class="it-eyebrow"><span class="live-dot"></span>{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳 · 국토부 실거래 매일 반영</p>
+      <h1>집값·입지·학군,<br><span class="nw">이제 <em>카드 한 장</em>으로</span></h1>
+      <p class="it-lead">{{ region }} 아파트를 실거래가와 입지로 평가해 S부터 D까지 등급 카드로 만들었어요. 우리 단지는 몇 등급일까요?</p>
+      <div class="it-cta">
+        <a class="it-btn primary" href="index.html">시작하기 <span aria-hidden="true">→</span></a>
+        <a class="it-btn ghost" href="#it-card">카드 읽는 법</a>
+      </div>
+      <dl class="it-nums">
+        <div><dt>평가한 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_complexes) }}곳</dd></div>
+        <div><dt>반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
+        <div><dt>마지막 반영</dt><dd>{{ meta.updated or meta.asof }}</dd></div>
+      </dl>
+    </div>
+    {% if top %}
+    <div class="it-fan" aria-label="이번 달 지수 1위 카드">
+      <span class="it-back b1" aria-hidden="true"><b>?</b></span>
+      <span class="it-back b2" aria-hidden="true"><b>?</b></span>
+      <a class="gcard it-card g-{{ top.grade }}" href="apt/{{ top.slug }}.html" data-holo>
+        <div class="gcard-head">
+          <span class="grade big g-{{ top.grade }}">{{ top.grade }}</span>
+          <div class="gcard-title"><strong>{{ top.name }}</strong><span class="muted">{{ top | place }}{% if top.build_year %} · {{ top.build_year }}년{% endif %}</span></div>
+          <span class="gcard-score">{{ top.index | score }}</span>
+        </div>
+        <div class="gstats">
+        {% for key, label, desc in stats[:4] %}{% set v = top[key] %}
+          <div class="gstat"><span class="gstat-name">{{ label }}</span>
+            <span class="gbar"><span style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></span></span>
+            <span class="gstat-val">{{ v | score }}</span></div>
+        {% endfor %}
+        </div>
+        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | price }}</span></div>
+      </a>
+      <p class="it-fan-tag">이번 달 {{ region }} 1위 카드 · 다음 카드는 당신의 단지</p>
+    </div>
+    {% endif %}
+  </div>
+  <a class="it-scroll" href="#it-card" aria-label="아래로"><span></span></a>
+</section>
+
+{# 2. 카드 한 장에 담긴 것 #}
+{% set c2 = hero_cards[1] if hero_cards | length > 1 else top %}
+{% if c2 %}
+<section class="it-sec it-anatomy" id="it-card">
+  <div class="it-wrap">
+    <p class="it-kicker" data-reveal>01 · 카드 읽는 법</p>
+    <h2 data-reveal>숫자 몇 개가 아니라,<br>단지의 <em>성적표 한 장</em></h2>
+    <div class="it-ana-grid">
+      <div class="it-ana-card" data-reveal>
+        <a class="gcard g-{{ c2.grade }}" href="apt/{{ c2.slug }}.html" data-holo>
+          <div class="gcard-head">
+            <span class="grade big g-{{ c2.grade }}">{{ c2.grade }}</span>
+            <div class="gcard-title"><strong>{{ c2.name }}</strong><span class="muted">{{ c2 | place }}{% if c2.build_year %} · {{ c2.build_year }}년{% endif %}</span></div>
+            <span class="gcard-score">{{ c2.index | score }}</span>
+          </div>
+          <div class="gstats">
+          {% for key, label, desc in stats[:4] %}{% set v = c2[key] %}
+            <div class="gstat"><span class="gstat-name">{{ label }}</span>
+              <span class="gbar"><span style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></span></span>
+              <span class="gstat-val">{{ v | score }}</span></div>
+          {% endfor %}
+          </div>
+          <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 {{ c2.rank }}위</span><span>84㎡ {{ c2.price_ref | price }}</span></div>
+        </a>
+        <span class="it-pin p1" aria-hidden="true">1</span><span class="it-pin p2" aria-hidden="true">2</span>
+        <span class="it-pin p3" aria-hidden="true">3</span><span class="it-pin p4" aria-hidden="true">4</span>
+      </div>
+      <ol class="it-ana-list">
+        <li data-reveal><b><i>1</i>등급</b><span>지수 80점 이상은 S, 65점 이상 A … 금·은박으로 한눈에 갈려요.</span></li>
+        <li data-reveal><b><i>2</i>종합 지수</b><span>입지·성장성·상승세를 0~100으로 매겨 평균했어요. {{ region }} 단지끼리의 상대 순위예요.</span></li>
+        <li data-reveal><b><i>3</i>항목별 막대</b><span>지하철·학군·생활 편의(입지), 10년 수익률(성장성), 최근 흐름(상승세), 가격 대비 입지(가성비).</span></li>
+        <li data-reveal><b><i>4</i>순위와 가격</b><span>{{ region }} 전체 순위와 전용 84㎡로 환산한 가격. 평형이 달라도 나란히 비교돼요.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 3. 등급 사다리: 실제 분포 #}
+<section class="it-sec it-ladder">
+  <div class="it-wrap">
+    <p class="it-kicker" data-reveal>02 · 등급</p>
+    <h2 data-reveal>S등급은 단 <em>{{ "%.0f" | format(s.pct if s else 0) }}%</em>,<br>{{ "{:,}".format(s.n if s else 0) }}곳뿐이에요</h2>
+    <div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
+      {% for d in grade_dist %}{% if d.n %}<span class="seg g-{{ d.g }}" style="--w: {{ '%.2f' | format(d.pct) }}"><b>{{ d.g }}</b></span>{% endif %}{% endfor %}
+    </div>
+    <ul class="it-grades" data-reveal>
+      {% for d in grade_dist %}<li><span class="grade g-{{ d.g }}">{{ d.g }}</span><b>{{ d.name }}</b><span>{{ "{:,}".format(d.n) }}곳 · {{ "%.0f" | format(d.pct) }}%</span></li>{% endfor %}
+    </ul>
+    <p class="it-sub" data-reveal>우리 단지는 어디쯤일까요? 카드를 열어 확인해 보세요.</p>
+  </div>
+</section>
+
+{# 4. 이렇게 써 보세요 #}
+<section class="it-sec it-uses">
+  <div class="it-wrap">
+    <p class="it-kicker" data-reveal>03 · 이렇게 써 보세요</p>
+    <h2 data-reveal>임장 가기 전,<br><em>10분이면</em> 동네가 보여요</h2>
+    <div class="it-use-grid">
+      <a class="it-use" href="index.html#heat" data-reveal>
+        <div class="it-art heat" aria-hidden="true">{% for k in [5,4,3,4,2,5,3,1,2,3,4,1] %}<i class="h{{ k }}"></i>{% endfor %}</div>
+        <b>동네 온도</b><span>가격 흐름과 거래량으로 지금 뜨거운 동네를 지도에서</span></a>
+      <a class="it-use" href="compare.html" data-reveal>
+        <div class="it-art vs" aria-hidden="true"><span class="mini g-A"><i>A</i>71</span><em>VS</em><span class="mini g-S"><i>S</i>86</span></div>
+        <b>단지 대결</b><span>최대 네 단지를 입지·수익률·전세가율로 나란히</span></a>
+      <a class="it-use" href="finder.html" data-reveal>
+        <div class="it-art find" aria-hidden="true"><span>생애최초</span><span>학원가</span><span>5억 이하</span><strong>딱 맞는 단지 찾기</strong></div>
+        <b>조건으로 찾기</b><span>예산·직장·학군을 고르면 남는 단지가 바로 줄어요</span></a>
+      <a class="it-use" href="rank.html" data-reveal>
+        <div class="it-art chart" aria-hidden="true"><svg viewBox="0 0 120 56"><path class="band" d="M0 44 L20 40 L40 41 L60 30 L80 26 L100 18 L120 12 L120 24 L100 30 L80 36 L60 40 L40 50 L20 50 L0 54Z"/><path class="ln" d="M0 49 L20 45 L40 46 L60 35 L80 31 L100 24 L120 18"/><circle cx="120" cy="18" r="3.5"/></svg></div>
+        <b>시세와 랭킹</b><span>평형별 시세·전세가율, 이번 달 오른 단지와 신고가</span></a>
+    </div>
+  </div>
+</section>
+
+{# 5. 지금 이 동네는: 실제 자료 맛보기 #}
+{% if board and board.hot %}
+<section class="it-sec it-live">
+  <div class="it-wrap">
+    <p class="it-kicker" data-reveal>04 · 지금 {{ region }}에서는</p>
+    <h2 data-reveal>가장 뜨거운 동네는<br><em>{{ board.hot[0].dong }}</em>이에요</h2>
+    <div class="it-live-grid">
+      <ol class="it-hot" data-reveal>
+        {% for t in board.hot[:3] %}<li><span class="n">{{ loop.index }}</span><b>{{ t.dong }}</b>{% if t.gu != t.dong %}<small>{{ t.gu }}</small>{% endif %}
+          <span class="v {{ 'pos' if (t.chg or 0) > 0 else 'neg' if (t.chg or 0) < 0 else '' }}">{{ ('%+.1f%%' % t.chg) if t.chg is not none else '-' }}</span></li>{% endfor %}
+      </ol>
+      {% if pulse %}
+      <div class="it-pulse" data-reveal>
+        <div><span>최근 90일 신고가</span><strong data-count>{{ "{:,}".format(pulse.highs) }}곳</strong></div>
+        <div><span>최근 3개월 매매</span><strong data-count>{{ "{:,}".format(pulse.recent3) }}건</strong></div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 6. 지역 + 마지막 시작하기 #}
+<section class="it-sec it-end">
+  <div class="it-wrap">
+    {% if regions | length > 1 %}
+    <p class="it-kicker" data-reveal>05 · 지역</p>
+    <h2 data-reveal>어느 지역부터 볼까요?</h2>
+    <div class="it-regions" data-reveal>
+      {% for g in regions %}{% set cur = g.name == region %}
+      <a class="it-region{% if cur %} on{% endif %}" href="{{ g.url }}"{% if cur %} aria-current="page"{% endif %}>
+        <b>{{ g.name }}{% if g.badge %}<i class="rg-badge">{{ g.badge }}</i>{% endif %}</b><span>{{ "지금 보는 곳" if cur else (g.desc or "") }}</span></a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="it-final" data-reveal>
+      <h2>우리 단지 카드,<br>지금 열어 보세요</h2>
+      <div class="hero-search it-search">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input type="search" data-search-go placeholder="단지명 또는 동 이름 (예: {{ example_dong }})" aria-label="단지 검색">
+      </div>
+      <a class="it-btn primary" href="index.html">{{ region }} 아파트 지수 시작하기 <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+{% endblock %}

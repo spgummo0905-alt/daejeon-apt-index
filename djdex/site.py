@@ -345,6 +345,14 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         leaders=month["leaders"], pulse=month["pulse"],
         hero_cards=sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])[:3],
         kakao_js_key=kakao_js_key, **common), encoding="utf-8")
+    # 인트로: 처음 온 사람에게 한 번 보여 주는 소개 (첫 화면이 이리로 한 번 보냄). 등급 분포·1위 카드·뜨거운 동네는 실제 자료
+    ranked = sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])
+    grade_dist = [{"g": g, "name": gname, "n": sum(1 for r in ranked if r["grade"] == g)} for _, g, gname in charts.GRADES]
+    for d in grade_dist:
+        d["pct"] = d["n"] / max(len(ranked), 1) * 100
+    (out_dir / "intro.html").write_text(env.get_template("intro.html").render(
+        root="", page_path="intro.html", hero_cards=ranked[:3], grade_dist=grade_dist, board=month["board"],
+        pulse=month["pulse"], **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
@@ -452,7 +460,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                     {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
                      "url": cfg.site.get("base_url", "")})
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
