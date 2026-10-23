@@ -28,6 +28,7 @@ OPS = ["getHsmpLaborCostInfoV3", "getHsmpOfcrkCostInfoV3", "getHsmpTaxdueInfoV3"
        "getHsmpGuardCostInfoV3", "getHsmpDisinfectionCostInfoV3", "getHsmpElevatorMntncCostInfoV3",
        "getHsmpHomeNetworkMntncCostInfoV3", "getHsmpRepairsCostInfoV3", "getHsmpFacilityMntncCostInfoV3",
        "getHsmpSafetyCheckUpCostInfoV3", "getHsmpDisasterPreventionCostInfoV3", "getHsmpConsignManageFeeInfoV3"]
+PROBE = 6   # 공개 달을 찾을 때 볼 단지 수
 # 금액이 아닌 항목 (단지 코드·이름·날짜 등)
 NOT_MONEY = re.compile(r"(code|name|nm|date|ym|cd)$|^kapt|^search", re.I)
 
@@ -106,13 +107,18 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
     root = kapt_root / "fee"
     s = requests.Session()
     used = 0
-    # 최근 공개 달 찾기: 첫 단지의 인건비로 두 달 전부터 다섯 달 전까지
+    # 최근 공개 달 찾기: 두 달 전부터 다섯 달 전까지, 목록에서 고르게 뽑은 몇 단지의 인건비로.
+    # 한 단지만 보면 그 단지가 공개를 안 했거나 인건비가 비어 있을 때 달을 못 찾습니다 (대전에서 그랬음)
+    probe = cs[:: max(1, len(cs) // PROBE)][:PROBE]
     ym = None
     try:
         for back in range(2, 6):
-            used += 1
-            if _filled(_call(s, key, OPS[0], cs[0], _months_back(back))):
-                ym = _months_back(back)
+            for c in probe:
+                used += 1
+                if _filled(_call(s, key, OPS[0], c, _months_back(back))):
+                    ym = _months_back(back)
+                    break
+            if ym:
                 break
     except Stop as e:
         log(f"::warning::[관리비] 조회를 멈춤(활용신청 승인 전이거나 하루 한도): {e}")

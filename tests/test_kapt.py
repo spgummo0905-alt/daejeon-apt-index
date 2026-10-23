@@ -167,3 +167,23 @@ def test_collect_retries_blank_info_right_away(tmp_path, monkeypatch):
     assert json.loads((root / "info" / "A1.json").read_text())["kaptdaCnt"] == "300"
     assert not (root / "info" / "A3.json").exists()
     assert "빈 응답 1곳은 다음 실행 때 다시" in logs[-1]
+
+
+def test_fee_month_probe_looks_past_an_empty_first_complex(tmp_path, monkeypatch):
+    import json
+    from djdex import fee
+    root = tmp_path / "kapt"
+    (root / "list").mkdir(parents=True)
+    (root / "list" / "30110.json").write_text(json.dumps([{"kaptCode": f"K{i}"} for i in range(12)]), encoding="utf-8")
+    month = fee._months_back(3)
+    calls = []
+
+    def fake(s, key, op, code, ym):   # 첫 단지(K0)는 늘 비어 있고, 다른 단지는 석 달 전부터 공개
+        calls.append((code, ym))
+        return {"pay": "100"} if code != "K0" and ym <= month else {}
+    monkeypatch.setattr(fee, "_call", fake)
+    monkeypatch.setattr(fee.time, "sleep", lambda *_: None)
+    lines = []
+    fee.collect("k", root, {"30110": "동구"}, budget=10_000, log=lines.append)
+    assert (root / "fee" / "K1" / f"{month}.json").exists()
+    assert not any("찾지 못했습니다" in x for x in lines) and f"관리비(공용관리비) {month}" in lines[-1]
