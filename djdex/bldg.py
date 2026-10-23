@@ -27,7 +27,8 @@ from .molit import MolitError
 
 URL = "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo"
 ROWS = 100            # 서버 최대
-MAX_ROWS = 15000      # 이보다 큰 지번(초대형 단지)은 건너뜀
+MAX_ROWS = 30000      # 이보다 큰 지번은 건너뜀 (대전 가장 큰 단지가 2만 5천 줄쯤)
+PAUSE = 0.2           # 쪽 사이 쉬는 시간 (빨리 부르면 빈 응답이 옴)
 REFRESH_DAYS = 365    # 공급면적은 거의 안 바뀜
 RETRY_EMPTY_DAYS = 60  # 못 찾은 지번(택지 블록 등)은 두 달 뒤 다시
 
@@ -67,25 +68,25 @@ def targets(raw_dirs: list[Path]) -> dict[str, dict]:
 
 def _call(s: requests.Session, key: str, q: dict, page: int) -> tuple[list[dict], int]:
     params = {"serviceKey": key, **q, "numOfRows": ROWS, "pageNo": page, "_type": "json"}
-    for attempt in range(4):
+    tries = 6   # 빈 응답·503 은 잠깐 몰릴 때 나와서 1·2·4·8·16초 쉬며 다시
+    for attempt in range(tries):
         try:
-            r = s.get(URL, params=params, timeout=(10, 40))
+            r = s.get(URL, params=params, timeout=(10, 60))
+            if r.status_code == 403:   # 활용신청 승인 전이거나 승인한 키가 아직 안 켜짐: 더 불러도 소용없음
+                raise Stop("403 Forbidden (활용신청 승인 전이거나 키가 아직 안 켜짐)")
             if r.status_code >= 400:
                 parse(r.text)   # 포털 게이트웨이 오류는 본문에 이유가 있어 그것을 남깁니다
                 r.raise_for_status()
             return parse(r.text)
         except MolitError as e:
             msg = str(e)
-            if "PER_SECOND" in msg and attempt < 3:   # 초당 한도: 잠깐 쉬었다가
-                time.sleep(1.5)
-                continue
-            if any(k in msg for k in STOP):
+            if any(k in msg for k in STOP) and "PER_SECOND" not in msg:
                 raise Stop(msg) from e
-            if attempt == 3:
+            if attempt == tries - 1:
                 raise
             time.sleep(2 ** attempt)
         except requests.RequestException:
-            if attempt == 3:
+            if attempt == tries - 1:
                 raise
             time.sleep(2 ** attempt)
     return [], 0
@@ -152,14 +153,14 @@ def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=
             pages = -(-total // ROWS) if total else 1
             if total > MAX_ROWS:
                 log(f"::notice::[공급면적] {t['name']} 대장 {total:,}줄이라 건너뜀")
-                rows, total = [], 0
+                rows, pages = [], 1
             elif used + pages - 1 > budget:   # 이 단지를 다 못 받으면 다음 실행으로 (반쯤 받은 것은 안 씀)
                 break
             for page in range(2, pages + 1):
+                time.sleep(PAUSE)
                 more, _ = _call(s, key, t["q"], page)
                 used += 1
                 rows += more
-                time.sleep(0.05)
         except Stop as e:
             log(f"::warning::[공급면적] 건축물대장 조회를 멈춤(활용신청 승인 전이거나 하루 한도): {e}")
             break
@@ -169,7 +170,7 @@ def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=
         entry = {"_at": today.isoformat(), "q": t["q"], "name": t["name"], "total": total, **_shrink(rows, t["name"])}
         (root / f"{seq}.json").write_text(json.dumps(entry, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         done += 1
-        time.sleep(0.05)
+        time.sleep(PAUSE)
     have = len(list(root.glob("*.json")))
     log(f"공급면적(건축물대장): 대상 단지 {len(tg):,}곳, 이번에 {done:,}곳 받음 (호출 {used:,}번), 받아 둔 곳 {have:,}곳")
 
