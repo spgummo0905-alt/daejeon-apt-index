@@ -264,6 +264,9 @@ def _sim(a: str, b: str) -> float:
     da, db = set(re.findall(r"\d+", a)), set(re.findall(r"\d+", b))
     if da and db and not (da <= db or db <= da):
         return 0.0
+    ua, ub = set(re.findall(r"(\d+)단지", a)), set(re.findall(r"(\d+)단지", b))
+    if ua and ub and ua != ub:   # '도램마을17단지(…) L5블럭' 과 '도램마을5단지' 는 다른 단지
+        return 0.0
     ga, gb = {a[i:i + 2] for i in range(len(a) - 1)}, {b[i:i + 2] for i in range(len(b) - 1)}
     if min(len(ga), len(gb)) < 3:
         return 0.0

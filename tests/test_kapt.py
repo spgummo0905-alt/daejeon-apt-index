@@ -74,6 +74,8 @@ def test_match_by_name_pieces_and_mutual_nearest():
     assert kapt._sim("열매7단지현대", "노은열매마을7단지현대아파트") > 0.8
     assert kapt._sim("새뜸마을 9단지 (2-2 예미지)", "새뜸마을9단지") == 1.0
     assert kapt._sim("열매7단지현대", "열매마을8단지현대") == 0      # 단지 번호가 다르면
+    assert kapt._sim("도램마을17단지(모아미래도) L5블럭", "도램마을5단지") == 0   # 블록 번호와 단지 번호를 헷갈리지 않게
+    assert kapt._sim("판암역 삼정그린코아 2단지", "삼정그린코아포레스트2단지아파트") > 0.6
     kl = [{"gu": "유성구", "dong": "지족동", "jibun": "900", "key": "노은열매마을7단지현대", "name": "노은열매마을7단지현대아파트",
            "ll": None, "code": "K7", "hh": 600},
           {"gu": "유성구", "dong": "지족동", "jibun": "901", "key": "노은열매마을8단지", "name": "노은열매마을8단지", "ll": None,
