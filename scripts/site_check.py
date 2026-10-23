@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -12,11 +13,27 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else "https://spgummo0905-alt.github.io/
 REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/"}
 # 단지 페이지에 있어야 하는 화면 요소 (한눈에 보기 타일, 관련 점수 줄, 평형별 시세)
 MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"'}
+# 모든 화면에 있어야 하는 요소 (지역 고르기 버튼, 최근 본 단지 버튼)
+COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd"}
+# 수집 자료가 단지 페이지에 반영된 수 (전체 단지 페이지를 열어 셉니다)
+FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
+          "공급면적": lambda h: "공급면적 정보가 없어" not in h,
+          "카카오맵 장소": lambda h: "place.map.kakao.com/" in h,
+          "네이버 글": lambda h: 'class="rv-posts"' in h,
+          "후기가 입지 아래": lambda h: 0 < h.find("입지는 어떤가") < h.find('id="reviews"')}
 
 
 def text(html: str, pat: str) -> str:
     m = re.search(pat, html, re.S)
     return re.sub(r"<[^>]+>|\s+", " ", m.group(1)).strip() if m else ""
+
+
+def _get(s: requests.Session, url: str) -> str:
+    try:
+        r = s.get(url, timeout=30)
+        return r.text if r.ok else ""
+    except requests.RequestException:
+        return ""
 
 
 def main() -> None:
@@ -43,10 +60,16 @@ def main() -> None:
             sm = s.get(url + "sitemap.xml", timeout=30)
             apts = re.findall(r"<loc>[^<]*/apt/([^<]*)</loc>", sm.text) if sm.ok else []
             out["단지 페이지"] = len(apts)
+            out |= {k: v in html for k, v in COMMON.items()}
+            intro = s.get(url + "intro.html", timeout=30)
+            out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else ""}
             if apts:
                 page = s.get(url + "apt/" + apts[0], timeout=30)
                 out["단지 예시"] = {"주소": url + "apt/" + apts[0], "상태": page.status_code,
                                   **{k: v in page.text for k, v in MARKS.items()}}
+                with ThreadPoolExecutor(16) as ex:
+                    pages = [p for p in ex.map(lambda a: _get(s, url + "apt/" + a), apts) if p]
+                out["반영"] = {"열린 단지 페이지": len(pages), **{k: sum(map(f, pages)) for k, f in FILLED.items()}}
         print(json.dumps(out, ensure_ascii=False))
 
 
