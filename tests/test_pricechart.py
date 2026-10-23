@@ -75,3 +75,18 @@ def test_ecos_parse_and_market_macro():
                             cancelled=False, direct=False, kind="매매")])
     out = pc.market_payload(df, {}, "2024-02-29", "대전", {"cpi": {"2024-01": 113.2}})
     assert out["cpi"] == [113.2, None]
+
+
+def test_jeonse_estimate_skips_renewals_and_monthly():
+    tr = [_t(f"2024-{m:02d}-10", 50000) for m in range(1, 7)]
+    types = [{"key": "84", "n": 6, "py": 34}]
+    rents = ([dict(date=f"2024-{m:02d}-05", area=84.5, deposit=30000, monthly=0, floor=8, contract="신규")
+              for m in range(1, 7)] +
+             [dict(date="2024-03-05", area=84.5, deposit=20000, monthly=0, floor=8, contract="갱신"),
+              dict(date="2024-03-06", area=84.5, deposit=5000, monthly=80, floor=8, contract="신규"),
+              dict(date="2024-03-07", area=59.0, deposit=25000, monthly=0, floor=8, contract="")])
+    p = pc.complex_payload(tr, types, pc.month_no("2024-06-30"), exclude_direct=True, rents=rents)
+    t = p["types"][0]
+    assert all(29000 < v < 31000 for v in t["je"])          # 갱신(2억)·월세는 시세에서 빠짐, 59㎡는 다른 평형
+    rv = {row[0]: row[1:] for row in t["rv"]}
+    assert rv[2] == [1, 1, 0] and sum(sum(v) for v in rv.values()) == 7

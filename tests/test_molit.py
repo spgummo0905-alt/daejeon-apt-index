@@ -138,3 +138,34 @@ def test_collect_with_budget_stops_after_repeated_failures(tmp_path, monkeypatch
     molit.collect("k", DISTRICTS, ["202001", "202002", "202003", "202004", "202005"], tmp_path, "e", 1000,
                   budget=100, log=lambda m: None)
     assert calls == ["202001", "202002", "202003"]  # 서버가 응답하지 않으면 세 번째에서 멈춤
+
+
+def _rent(**k):
+    base = dict(sggCd="30200", umdNm="봉명동", aptNm="테스트 아파트", jibun="123", excluUseAr="84.97",
+                dealYear="2024", dealMonth="5", dealDay="2", deposit=" 32,000", monthlyRent="0", floor="7",
+                contractType="신규")
+    return {**base, **k}
+
+
+def test_normalize_rent():
+    r = molit.normalize_rent(_rent(), DISTRICTS)
+    assert r["deposit"] == 32000 and r["monthly"] == 0 and r["gu"] == "유성구"
+    assert r["date"] == "2024-05-02" and r["contract"] == "신규" and r["floor"] == 7
+    assert molit.normalize_rent(_rent(monthlyRent="50", contractType=" "), DISTRICTS)["contract"] == ""
+    assert molit.normalize_rent(_rent(deposit=""), DISTRICTS) is None
+
+
+def test_load_rent_links_to_sale_complex(tmp_path):
+    import json
+    d = tmp_path / "30200"
+    d.mkdir()
+    (d / "202405.json").write_text(json.dumps([
+        _rent(),                                            # 지번이 같음
+        _rent(jibun="999", aptNm="테스트아파트"),               # 지번은 다르지만 이름(공백 무시)이 같음
+        _rent(jibun="555", aptNm="다른단지"),                  # 못 이음 → 자체 번호
+        _rent(aptSeq="30200-77", jibun="1", aptNm="새단지"),    # 일련번호가 있으면 그대로
+    ], ensure_ascii=False), encoding="utf-8")
+    sale = [{"complex_id": "30200-1234", "gu": "유성구", "dong": "봉명동", "jibun": "123", "name": "테스트아파트",
+             "kind": "매매"}]
+    ids = [r["complex_id"] for r in molit.load_rent(tmp_path, DISTRICTS, sale)]
+    assert ids == ["30200-1234", "30200-1234", "30200-봉명동-555-다른단지", "30200-77"]

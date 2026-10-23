@@ -104,9 +104,10 @@ def _int(x) -> int | None:
 
 
 def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_direct: bool,
-                    start_m: int | None = None) -> dict | None:
+                    start_m: int | None = None, rents: list[dict] | None = None) -> dict | None:
     """단지 하나의 차트 자료. trades 는 거래 dict 목록(각각 'akey' 가 달린 상태), types 는 site._area_types 결과.
-    반환: {m0, n, types: [{k, py, a, n, est, lo, hi, sp}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}."""
+    rents(전월세)가 있으면 평형마다 전세 추정 보증금(je)과 달별 전세 계약 수(rv: [[달, 신규, 갱신, 미표기]])도 넣습니다.
+    반환: {m0, n, types: [{k, py, a, n, est, lo, hi, sp, je?, rv?}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}."""
     rows = [t for t in trades if t.get("akey") and not _nan(t.get("price")) and not _nan(t.get("area"))]
     if not rows:
         return None
@@ -136,6 +137,8 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
             "hi": [_int(v) for v in e * np.exp(Z80 * sig)],
             "sp": [1 if v else 0 for v in sp],
         })
+    if rents:
+        _add_jeonse(out_types, rents, m0, n, asof_m)
     tr_out = []
     for x in sorted(rows, key=lambda x: x["date"]):
         mo = month_no(x["date"])
@@ -147,6 +150,38 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
         tr_out.append([mo - m0, pd.Timestamp(x["date"]).day, idx[x["akey"]], int(x["price"]),
                        -1 if _nan(fl) else int(fl), flags])
     return {"m0": m0, "n": n, "types": out_types, "tr": tr_out}
+
+
+def _add_jeonse(types: list[dict], rents: list[dict], m0: int, n: int, asof_m: int) -> None:
+    """전세(월세 없는 계약)를 대표 면적이 가장 가까운(3㎡ 안) 평형에 붙여 평형별 전세 추정 보증금을 구합니다.
+    갱신 계약은 인상 폭이 묶여(5% 상한) 시세보다 낮게 나오므로 시세 계산에서는 빼고 계약 수에만 셉니다."""
+    areas = np.array([t["a"] for t in types])
+    picked: dict[int, list] = {}
+    for r in rents:
+        if r.get("monthly") or _nan(r.get("area")) or not r.get("deposit"):
+            continue
+        mo = month_no(r["date"])
+        if mo < m0 or mo > asof_m:
+            continue
+        k = int(np.argmin(np.abs(areas - r["area"])))
+        if abs(areas[k] - r["area"]) <= 3:
+            picked.setdefault(k, []).append((mo - m0, r))
+    for k, rows in picked.items():
+        t = types[k]
+        use = [(m, r) for m, r in rows if r.get("contract") != "갱신"]
+        low = [1 for _, r in use if _is_low(r)]
+        if use and len(low) <= len(use) / 2:
+            use = [(m, r) for m, r in use if not _is_low(r)]
+        if len(use) >= 3:
+            mm = np.array([m for m, _ in use], dtype=int)
+            lp = np.array([math.log(r["deposit"] / r["area"] * t["a"]) for _, r in use], dtype=float)
+            est, _, _ = estimate(mm, lp, n)
+            t["je"] = [_int(v) for v in np.exp(est)]
+        vol: dict[int, list] = {}
+        for m, r in rows:
+            c = vol.setdefault(m, [0, 0, 0])
+            c[0 if r.get("contract") == "신규" else 1 if r.get("contract") == "갱신" else 2] += 1
+        t["rv"] = [[m, *c] for m, c in sorted(vol.items())]
 
 
 def type_prices(payload: dict | None, recent: int = 24) -> list[list]:

@@ -130,6 +130,47 @@ def normalize(raw: dict, districts: dict[str, str], kind: str = "매매") -> dic
     }
 
 
+def normalize_rent(raw: dict, districts: dict[str, str]) -> dict | None:
+    """전월세 API 항목 → 한 줄. 보증금·월세는 만원. contract: 신규/갱신/''(2021년 6월 전에는 비어 있음)."""
+    sgg = raw.get("sggCd", "")
+    deposit = _int(raw.get("deposit"))
+    area = _float(raw.get("excluUseAr"))
+    y, m, d = _int(raw.get("dealYear")), _int(raw.get("dealMonth")), _int(raw.get("dealDay"))
+    if not (deposit and area and y and m and d):
+        return None
+    name, dong, jibun = raw.get("aptNm", ""), raw.get("umdNm", ""), raw.get("jibun", "")
+    return {
+        "complex_id": raw.get("aptSeq") or f"{sgg}-{dong}-{jibun}-{name}",
+        "name": name, "gu": districts.get(sgg, sgg), "dong": dong, "jibun": jibun,
+        "area": area, "deposit": deposit, "monthly": _int(raw.get("monthlyRent")) or 0,
+        "date": f"{y:04d}-{m:02d}-{d:02d}", "floor": _int(raw.get("floor")),
+        "contract": (raw.get("contractType") or "").strip(),
+    }
+
+
+def load_rent(raw_dir: Path, districts: dict[str, str], sale_rows: list[dict]) -> list[dict]:
+    """받아 둔 전월세를 읽어 매매 단지 일련번호에 잇습니다.
+    전월세 API에 단지 일련번호가 없으면 같은 구·동의 지번이나 이름(공백 무시)이 같은 매매 단지로 합칩니다."""
+    rows = []
+    for path in sorted(raw_dir.glob("*/*.json")):
+        for item in json.loads(path.read_text(encoding="utf-8")):
+            row = normalize_rent(item, districts)
+            if row:
+                rows.append(row)
+    ids = {r["complex_id"] for r in sale_rows if r.get("kind", "매매") == "매매"}
+    by_jibun, by_name = {}, {}
+    for r in sale_rows:
+        if r.get("kind", "매매") == "매매":
+            by_jibun.setdefault((r["gu"], r["dong"], str(r["jibun"])), r["complex_id"])
+            by_name.setdefault((r["gu"], r["dong"], _norm_name(r["name"])), r["complex_id"])
+    for r in rows:
+        if r["complex_id"] not in ids:
+            cid = by_jibun.get((r["gu"], r["dong"], str(r["jibun"]))) or by_name.get((r["gu"], r["dong"], _norm_name(r["name"])))
+            if cid:
+                r["complex_id"] = cid
+    return rows
+
+
 DOWN_AFTER = 3  # 최근 달 받기가 이만큼 연달아 실패하면 서버가 내려간 것으로 봄
 
 

@@ -49,9 +49,20 @@ def cmd_collect(cfg, args) -> None:
     rows = molit.load_raw(cfg.paths.raw, cfg.districts, cfg.paths.raw_presale)
     pd.DataFrame(rows).to_csv(cfg.paths.trades, index=False)
     print(f"거래 {len(rows):,}건 → {cfg.paths.trades}")
+    have, need = molit.progress(cfg.paths.raw, cfg.districts, months) if budget else (1, 1)
+    # 나눠 받는 지역은 매매를 다 모은 뒤에 전월세를 받습니다 (매매가 먼저 공개돼야 하니까).
+    if cfg.collect.get("collect_rent") and have >= need:
+        rent_months = [ym for ym in months if ym >= cfg.collect.get("rent_start_ym", "201101")]
+        try:
+            molit.collect(key, cfg.districts, rent_months, cfg.paths.raw_rent, cfg.collect["rent_endpoint"],
+                          cfg.collect["rows_per_page"], refresh=recent, budget=budget)
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::전월세 수집이 중간에 멈췄습니다(활용신청 승인 전이면 정상), 받은 데까지만 씁니다: {e}")
+        rents = molit.load_rent(cfg.paths.raw_rent, cfg.districts, rows)
+        pd.DataFrame(rents).to_csv(cfg.paths.rents, index=False)
+        print(f"전월세 {len(rents):,}건 (전세 {sum(1 for r in rents if not r['monthly']):,}건) → {cfg.paths.rents}")
     if budget:
         # 나눠 받는 지역: 매매 실거래를 모든 구·달 다 받았으면 READY 를 남겨 사이트를 만들고 공개합니다.
-        have, need = molit.progress(cfg.paths.raw, cfg.districts, months)
         print(f"[{cfg.region_name}] 실거래 {have:,} / {need:,} (구×달) 받음")
         if have >= need:
             (cfg.paths.data / "READY").write_text(f"{have}\n", encoding="utf-8")
@@ -102,7 +113,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
             print(f"[규모:{title}] " + " | ".join(f"{c}={r[c]}" for c in cols))
 
 
-def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None):
+def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -163,7 +174,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                     print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
-                   macro=macro if macro is not None else ecos.load(cfg.paths.macro))
+                   macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents)
     return table, meta, n
 
 
@@ -175,7 +186,8 @@ def cmd_build(cfg, args) -> None:
         print("입지 정보(data/poi.json)가 없어 입지점수 없이 만듭니다. `locate` 를 먼저 돌리세요.")
     poi_df = pd.DataFrame.from_dict(poi, orient="index")
     out = Path(args.out or ROOT / "site")
-    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out)
+    rents = pd.read_csv(cfg.paths.rents, dtype={"jibun": str, "contract": str}) if cfg.paths.rents.exists() else None
+    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
 
@@ -214,7 +226,8 @@ def cmd_demo(cfg, args) -> None:
     trades, poi_df, geo = demo_mod.generate(cfg.districts, cfg.location_factors)
     out = Path(args.out or ROOT / "site-demo")
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
-                                  kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro())
+                                  kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
+                                  rents=demo_mod.rents(trades))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 

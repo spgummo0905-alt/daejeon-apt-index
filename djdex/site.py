@@ -157,7 +157,7 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
 
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
-          geo: dict | None = None, macro: dict | None = None) -> int:
+          geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None) -> int:
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -332,6 +332,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     (out_dir / "apt" / "d").mkdir()
     by_cid = dict(tuple(trades.sort_values("date", ascending=False).groupby("complex_id")))
+    rent_by = {} if rents is None or rents.empty else dict(tuple(rents.groupby("complex_id")))
     hist_by = dict(tuple(hist.groupby("complex_id")))
     region_line = [(y, v * ref) for y, v in meta.get("region_history", [])]
     factor_med = {f["key"]: table[f["key"] + "_pct"].median() if f["key"] + "_pct" in table else float("nan")
@@ -351,7 +352,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         tr = by_cid.get(cid)
         tr_list = [] if tr is None else tr.to_dict("records")
         _mark_highs(tr_list, skip_direct=cfg.filters.get("exclude_direct", False))
-        pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct)
+        rl = rent_by.get(cid)
+        pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct,
+                                             rents=None if rl is None else rl.to_dict("records"))
         c["tp"] = pricechart.type_prices(pc_data)
         if pc_data:
             (out_dir / "apt" / "d" / f"{c['slug']}.json").write_text(

@@ -139,6 +139,7 @@
         <button type="button" class="seg-btn active" data-pc-mode="nom" aria-pressed="true">명목</button>
         <button type="button" class="seg-btn" data-pc-mode="real" hidden>실질</button>
         <button type="button" class="seg-btn" data-pc-mode="mkt" hidden>시장 흐름</button>
+        <button type="button" class="seg-btn" data-pc-mode="gap" hidden>전세·갭</button>
       </div>
     </div>
     <div class="pc-plot" data-pc-plot>
@@ -153,7 +154,9 @@
       거래가 드문 달은 앞뒤 12개월까지 넓혀 보고 점선으로 그려요. 해제 거래{% if exclude_direct %}와 직거래{% endif %}, 1~3층 거래(시세보다 싸게 팔리는 일이 많아요)는 빼고,
       시세와 크게 동떨어진 거래도 한 번 걸러내요. 예상 거래 범위는 10건 중 8건이 들어오는 폭이에요.
       실질은 소비자물가지수로 물가 오른 만큼을 뺀 값이고, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 견줘서 구한 가격 수준이에요.
-      출처: 국토교통부 실거래가, 한국은행 경제통계(물가·금리).</p>
+      전세는 월세 없는 계약만 같은 방식으로 구했고, 갱신 계약은 인상 폭이 5%로 묶여 있어 시세에서는 빼고 계약 수에만 넣었어요.
+      갭은 매매 추정 시세에서 전세 추정 보증금을 뺀 값이에요.
+      출처: 국토교통부 실거래가(매매·전월세), 한국은행 경제통계(물가·금리).</p>
     </details>
   </div>
   <div class="pc-tables" data-pc-tables hidden></div>

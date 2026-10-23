@@ -20,6 +20,14 @@ class Paths:
         return self.data / "raw_presale"
 
     @property
+    def raw_rent(self) -> Path:
+        return self.data / "raw_rent"
+
+    @property
+    def rents(self) -> Path:
+        return self.data / "rents.csv"
+
+    @property
     def trades(self) -> Path:
         return self.data / "trades.csv"
 
