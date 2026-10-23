@@ -62,7 +62,7 @@ def test_market_index_ignores_which_complexes_traded():
     idx = out["region"]["idx"]
     assert idx[0] == pytest.approx(100.0) and idx[22] / idx[2] == pytest.approx(1.01 ** 20, rel=0.005)
     assert out["region"]["vol"][0] == 45 and set(out["gu"]) == {"서구"}
-    assert out["terms"][0][0] == "노무현"
+    assert "terms" not in out
 
 
 def test_ecos_parse_and_market_macro():

@@ -100,7 +100,7 @@
     const base = i0;
     const market = state.mode === "mkt", gapMode = state.mode === "gap", plain = !market && !gapMode;
     // 좁은 화면은 오른쪽 이름표를 차트 안에 넣습니다 (시장 흐름은 오른쪽에 % 눈금)
-    const padL = 46, padR = market ? (narrow ? 42 : 56) : (narrow ? 10 : 70), top = market ? 26 : 14;
+    const padL = 46, padR = market ? (narrow ? 42 : 56) : (narrow ? 10 : 70), top = 14;
     const mainH = narrow ? 230 : 300, volH = narrow ? 58 : 70, gap = 30;
     const rates = market && M && M.base && M.base.some(v => v != null);
     // 전세·갭: 거래량은 위(매매)·아래(전세 계약)로 나눠 높게, 그 아래 전세가율
@@ -157,16 +157,6 @@
       s("line", { x1: padL, x2: W - padR, y1: y(v), y2: y(v) }, g);
       s("text", { x: padL - 6, y: y(v) + 4, class: "pc-ylab", "text-anchor": "end" }, g, eok(v, true));
       if (market && E0) s("text", { x: W - padR + 6, y: y(v) + 4, class: "pc-ylab" }, g, pct(v / E0 - 1, 0));
-    }
-    // 대통령 취임 (시장 흐름)
-    if (market && M && M.terms) {
-      const tg = s("g", { class: "pc-term" }, svg);
-      M.terms.forEach(([name, start]) => {
-        const i = ymStr(start);
-        if (i < i0 || i > i1) return;
-        s("line", { x1: x(i), x2: x(i), y1: top - 4, y2: top + mainH }, tg);
-        s("text", { x: x(i) + 4, y: top - 8 }, tg, name);
-      });
     }
     // 80% 범위
     if (plain) {
@@ -499,7 +489,6 @@
       items.push(item("k-line s1", "이 단지 추정 시세"));
       items.push(item("k-line s2", region + " 지수"));
       if (M && M.gu && M.gu[gu] && gu !== region) items.push(item("k-line s3", gu + " 지수"));
-      items.push(item("k-vline", "대통령 취임"));
       items.push(item("k-bar m", "지역 거래량"));
       if (rates) { items.push(item("k-line navy", "기준금리")); items.push(item("k-line s1 thin", "주담대 금리")); }
     } else {
@@ -515,7 +504,7 @@
     box.replaceChildren(...items);
   }
 
-  // ---------- 아래 표: 지역과 비교, 임기별 변화, 연도별 거래량 ----------
+  // ---------- 아래 표: 지역과 비교, 연도별 거래량 ----------
   function renderTables() {
     const box = root.parentElement.querySelector("[data-pc-tables]");
     if (!box) return;
@@ -549,28 +538,6 @@
         });
         box.append(section("지역과 비교", `${ym(st)} ~ ${ym(e)} · 처음과 끝 석 달 평균`, t.t));
       }
-    }
-    // 임기별
-    if (M && M.terms) {
-      const t = table(["임기", "관측 구간", "명목", ...(real ? ["실질"] : [])]);
-      let any = false;
-      M.terms.forEach(([name, a, b]) => {
-        let ia = ymStr(a), ib = b ? ymStr(b) : e;
-        const clipped = ia < fv;
-        ia = Math.max(ia, fv); ib = Math.min(ib, e);
-        if (ib - ia < 6) return;
-        const va = avg3(estAt, ia + 2), vb = avg3(estAt, ib);
-        if (va == null || vb == null) return;
-        any = true;
-        const tr = el("tr");
-        tr.append(el("th", "", name), el("td", "muted", `${ym(ia)}~${ym(ib)}${clipped ? "*" : ""}`), el("td", "", pct(vb / va - 1)));
-        if (real) {
-          const d = cpiAt(ib) && cpiAt(ia + 2) ? cpiAt(ib) / cpiAt(ia + 2) : null;
-          tr.append(el("td", "strong", d ? pct(vb / va / d - 1) : "-"));
-        }
-        t.tb.append(tr);
-      });
-      if (any) box.append(section("임기별 추정 시세 변화", `전용 ${T.k}㎡ · *표시는 거래 자료가 시작된 달부터`, t.t));
     }
     // 연도별 거래량 (모든 평형, 해제 제외)
     const byY = {};

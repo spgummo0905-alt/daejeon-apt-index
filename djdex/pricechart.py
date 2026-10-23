@@ -23,16 +23,6 @@ H, H_WIDE, H_BAND = 7, 13, 13   # 삼각 가중 반폭(개월): 6개월, 12개�
 Z80 = 1.2816                     # 80% 범위 (양쪽 10%씩)
 LOW_FLOOR = 3
 
-# 대통령 취임 달 (시장 흐름 표시와 임기별 변화 표). (이름, 시작 YYYY-MM, 끝 YYYY-MM 또는 None)
-TERMS = [
-    ("노무현", "2003-02", "2008-02"),
-    ("이명박", "2008-02", "2013-02"),
-    ("박근혜", "2013-02", "2017-03"),
-    ("문재인", "2017-05", "2022-05"),
-    ("윤석열", "2022-05", "2025-04"),
-    ("이재명", "2025-06", None),
-]
-
 F_CANCEL, F_DIRECT, F_PRESALE, F_LOW = 1, 2, 4, 8
 
 
@@ -261,7 +251,7 @@ def market_payload(trades: pd.DataFrame, filters: dict, asof, region: str, macro
 
     out = {"m0": m0, "n": n, "region": {"name": region, "idx": market_index(df, m0, n, 30),
                                         "vol": vol(pd.Series(True, index=vol_df.index))},
-           "gu": {}, "terms": [[a, b, c] for a, b, c in TERMS]}
+           "gu": {}}
     for gu, g in df.groupby("gu"):
         out["gu"][gu] = {"idx": market_index(g, m0, n, 8), "vol": vol(vol_df["gu"] == gu)}
     if macro:
