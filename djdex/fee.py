@@ -48,6 +48,8 @@ def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
             r = s.get(BASE + op, params=params, timeout=(10, 30))
             if r.status_code == 403:
                 raise Stop("403 Forbidden (활용신청 승인 전이거나 키가 아직 안 켜짐)")
+            if r.status_code == 429 and attempt:   # 한 번 쉬고도 또 429 면 하루 한도: 오늘은 그만
+                raise Stop("429 Too Many Requests (하루 호출 한도)")
             if r.status_code >= 400:
                 parse(r.text)
                 r.raise_for_status()
@@ -93,8 +95,11 @@ def codes(kapt_root: Path, districts: dict[str, str]) -> list[str]:
     return out
 
 
-def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 2400, log=print) -> None:
-    """가장 최근 공개된 달 하나를 단지마다 받습니다 (17번씩). 이미 그 달을 받은 단지는 건너뜀."""
+def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 2400, log=print,
+            time_limit: float | None = None) -> None:
+    """가장 최근 공개된 달 하나를 단지마다 받습니다 (17번씩). 이미 그 달을 받은 단지는 건너뜀.
+    time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다."""
+    t0 = time.monotonic()
     cs = codes(kapt_root, districts)
     if not cs:
         return
@@ -120,7 +125,7 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
         path = root / c / f"{ym}.json"
         if path.exists():
             continue
-        if used + len(OPS) > budget:
+        if used + len(OPS) > budget or (time_limit and time.monotonic() - t0 > time_limit):
             break
         got = {}
         try:

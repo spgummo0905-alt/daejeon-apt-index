@@ -148,3 +148,21 @@ def test_school_command_collects_only_school_and_macro(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "cmd_build", lambda cfg, args: (_ for _ in ()).throw(AssertionError("사이트는 만들지 않음")))
     cli.main(["--config", "config.seoul.toml", "--data", str(tmp_path), "school"])
     assert got == [("11", 25, "school")]
+
+
+def test_slow_puts_supply_area_last_with_time_limits(tmp_path, monkeypatch):
+    # 공급면적(건축물대장)이 한도에 걸려 시간을 다 써도 관리비·후기는 먼저 받게
+    from djdex import bldg, cli, fee, kapt
+
+    monkeypatch.setenv("DATA_GO_KR_KEY", "x")
+    monkeypatch.setenv("KAKAO_REST_KEY", "x")
+    (tmp_path / "kapt").mkdir()
+    (tmp_path / "trades.csv").write_text("complex_id\n1\n", encoding="utf-8")
+    order = []
+    monkeypatch.setattr(kapt, "collect", lambda *a, **k: order.append(("kapt", k.get("time_limit"))))
+    monkeypatch.setattr(fee, "collect", lambda *a, **k: order.append(("fee", k.get("time_limit"))))
+    monkeypatch.setattr(cli, "_outside_reviews", lambda cfg: order.append(("reviews", None)))
+    monkeypatch.setattr(bldg, "collect", lambda *a, **k: order.append(("bldg", k.get("time_limit"))))
+    cli.main(["--data", str(tmp_path), "slow"])
+    assert [n for n, _ in order] == ["kapt", "fee", "reviews", "bldg"]
+    assert sum(t or 0 for _, t in order) < 45 * 60   # 단계별 상한 합이 워크플로 45분 제한 안

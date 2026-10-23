@@ -89,3 +89,32 @@ def test_call_stops_on_http_403_and_retries_empty(monkeypatch):
         bldg._call(Seq([_Resp("", 403)]), "k", {}, 1)
     ok = json.dumps({"response": {"header": {"resultCode": "00"}, "body": {"items": {"item": [{"area": "1"}]}, "totalCount": 1}}})
     assert bldg._call(Seq([_Resp(""), _Resp(""), _Resp(ok)]), "k", {}, 2) == ([{"area": "1"}], 1)   # 빈 응답은 다시
+
+
+def test_call_stops_on_repeated_429(monkeypatch):
+    # 공공데이터포털 하루 한도(429)는 한 번 쉬고도 또 나오면 그날은 그만 (단지마다 32초씩 다시 하다 시간을 다 쓰지 않게)
+    import requests
+    monkeypatch.setattr(bldg.time, "sleep", lambda *_: None)
+
+    class R429:
+        text, status_code = "", 429
+
+        def raise_for_status(self):
+            raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    calls = []
+
+    class S:
+        def get(self, *a, **k):
+            calls.append(1)
+            return R429()
+
+    with pytest.raises(bldg.Stop):
+        bldg._call(S(), "k", {}, 1)
+    assert len(calls) == 2
+
+
+def test_pick_pages_spreads_over_big_complex():
+    assert bldg.pick_pages(5) == [1, 2, 3, 4, 5]
+    got = bldg.pick_pages(300)
+    assert len(got) == bldg.MAX_PAGES and got[0] == 1 and got[-1] == 300 and got == sorted(set(got))
