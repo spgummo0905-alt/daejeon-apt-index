@@ -107,10 +107,10 @@ def dot_map(points: list[dict], width: int = 960, max_height: int = 560) -> str:
         idx = "-" if nan(p.get("index")) else f"{p['index']:.0f}"
         tip = f"{p['name']}\n{p.get('gu', '')} {p.get('dong', '')}\n지수 {idx} · {g}등급 {gname}"
         dots.append(
-            f'<a href="{escape(p["href"])}" class="mark" {_tip(tip)}>'
+            f'<a href="{escape(p["href"])}" class="mark" aria-label="{escape(p["name"], quote=True)} 지수 {idx} {g}등급" {_tip(tip)}>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="12" class="hit"/>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6.5" class="dot g-{g}"/></a>')
-    return (f'<svg viewBox="0 0 {width} {height}" class="chart map" role="img" '
+    return (f'<svg viewBox="0 0 {width} {height}" class="chart map" role="group" '
             f'aria-label="{REGION} 단지 위치와 등급 지도">{"".join(labels)}{"".join(dots)}</svg>')
 
 
@@ -152,7 +152,7 @@ def hbar(items: list[tuple[str, float, str]], width: int = 360, unit_tip: str = 
         mx = label_w + marker / vmax * plot_w
         out.append(f'<line x1="{mx:.1f}" x2="{mx:.1f}" y1="0" y2="{height - 16}" class="ref"/>'
                    f'<text x="{mx:.1f}" y="{height - 2}" text-anchor="middle" class="axis">{escape(marker_label)}</text>')
-    return f'<svg viewBox="0 0 {width} {height}" class="chart hbar" role="img">{"".join(out)}</svg>'
+    return f'<svg viewBox="0 0 {width} {height}" class="chart hbar" role="group" aria-label="항목별 점수 막대">{"".join(out)}</svg>'
 
 
 def _bar_path(x: float, y: float, w: float, h: float, r: float = 4) -> str:

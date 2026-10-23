@@ -318,23 +318,23 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         hr = main_t[main_t["new_high_recent"].fillna(False).astype(bool)].sort_values("last_date", ascending=False)
         highs = [by_id[cid] for cid in hr.index[:5]]
     tops = [
-        {"title": "종합 지수 상위 5곳", "items": top(main_t.dropna(subset=["index"]), "index"),
+        {"title": "종합 지수 상위 5곳", "tab": "지수 TOP", "items": top(main_t.dropna(subset=["index"]), "index"),
          "value": lambda r: f"{r['index']:.0f}점"},
-        {"title": f"{years[0]}년 수익률 상위 5곳", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
+        {"title": f"{years[0]}년 수익률 상위 5곳", "tab": "수익률 TOP", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
          "value": lambda r, k=f"cagr_{years[0]}y": fmt_pct(r[k])},
     ]
     dips = [by_id[cid] for cid in main_t[main_t.get("from_peak", pd.Series(dtype=float)) <= -0.10]
             .sort_values("from_peak").index[:5]] if "from_peak" in main_t else []
     if dips:
-        tops.append({"title": "전고점 대비 많이 내린 단지", "items": dips,
+        tops.append({"title": "전고점 대비 많이 내린 단지", "tab": "고점 대비 하락", "items": dips,
                      "value": lambda r: f"{r['from_peak'] * 100:.0f}% · {int(r['peak_year'])}년 고점"})
     news = sorted([r for r in rows if not r["small"] and r["is_new"] and not _nan(r.get("location_score"))],
                   key=lambda r: -r["location_score"])[:5]
     if news:
-        tops.append({"title": "신축·분양권 단지 입지 순위", "items": news,
+        tops.append({"title": "신축·분양권 단지 입지 순위", "tab": "신축 입지", "items": news,
                      "value": lambda r: f"입지 {r['location_score']:.0f}" + (f" · {r['build_year']}년" if r.get("build_year") else "")})
     if highs:
-        tops.insert(0, {"title": "최근 신고가", "items": highs,
+        tops.insert(0, {"title": "최근 신고가", "tab": "신고가", "items": highs,
                         "value": lambda r: f"{eok(r['last_price'])} · {int(r['last_area'])}㎡ · {r['last_date']:%m.%d}"})
 
     link = "apt/{}.html"
