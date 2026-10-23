@@ -94,14 +94,43 @@
     save("recent", r.slice(0, 30));
   };
 
-  // ---------- 공유 ----------
+  // ---------- 복사·공유 ----------
+  // 클립보드 → (앱 안 브라우저처럼 막힌 곳은) 숨긴 글상자 복사 순서로 시도. 둘 다 안 되면 false
+  DJ.copy = async function (text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* 아래 방법으로 */ }
+    try {
+      const ta = el("textarea");
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;";
+      document.body.append(ta);
+      ta.select(); ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch (e) { return false; }
+  };
+  // 복사가 막힌 브라우저: 페이지 안 작은 창에 링크를 골라 둔 채로 띄움 (시스템 입력창 대신)
+  DJ.copyBox = function (text) {
+    const back = el("div", "copybox-back"), box = el("div", "copybox");
+    box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", "링크 복사");
+    const inp = el("input"); inp.readOnly = true; inp.value = text;
+    const close = () => { back.remove(); box.remove(); };
+    const ok = el("button", "btn primary", "닫기"); ok.type = "button"; ok.onclick = close; back.onclick = close;
+    box.append(el("strong", "", "링크를 길게 눌러 복사해 주세요"), inp, ok);
+    document.body.append(back, box);
+    inp.focus(); inp.select(); inp.setSelectionRange(0, text.length);
+  };
+  DJ.copyLink = async function (url) {
+    if (await DJ.copy(url)) { DJ.toast("링크를 복사했어요", "카카오톡이나 메신저에 붙여 넣어 보내세요"); return true; }
+    DJ.copyBox(url);
+    return false;
+  };
   DJ.share = async function (title, text, url) {
     url = url || location.href;
     try {
       if (navigator.share) { await navigator.share({ title, text, url }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
-    try { await navigator.clipboard.writeText(url); DJ.toast("링크를 복사했습니다", "카카오톡이나 메신저에 붙여 넣어 보내세요"); }
-    catch (e) { prompt("이 링크를 복사하세요", url); }
+    await DJ.copyLink(url);
   };
 
   // ---------- 검색 자동완성 ----------
