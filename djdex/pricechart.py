@@ -97,7 +97,8 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
                     start_m: int | None = None, rents: list[dict] | None = None) -> dict | None:
     """단지 하나의 차트 자료. trades 는 거래 dict 목록(각각 'akey' 가 달린 상태), types 는 site._area_types 결과.
     rents(전월세)가 있으면 평형마다 전세 추정 보증금(je)과 달별 전세 계약 수(rv: [[달, 신규, 갱신, 미표기]])도 넣습니다.
-    반환: {m0, n, types: [{k, py, a, n, est, lo, hi, sp, je?, rv?}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}."""
+    반환: {m0, n, types: [{k, py, su, a, n, est, lo, hi, sp, je?, rv?}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}.
+    su 는 공급면적(㎡, 모르면 None), py 는 공급 평형(모르면 어림)."""
     rows = [t for t in trades if t.get("akey") and not _nan(t.get("price")) and not _nan(t.get("area"))]
     if not rows:
         return None
@@ -121,7 +122,7 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
         est, sp, sig = estimate(mm, lp, n)
         e = np.exp(est)
         out_types.append({
-            "k": t["key"], "py": t.get("py"), "a": round(a_rep, 1), "n": len(tr),
+            "k": t["key"], "py": t.get("py"), "su": t.get("su"), "a": round(a_rep, 1), "n": len(tr),
             "est": [_int(v) for v in e],
             "lo": [_int(v) for v in e * np.exp(-Z80 * sig)],
             "hi": [_int(v) for v in e * np.exp(Z80 * sig)],

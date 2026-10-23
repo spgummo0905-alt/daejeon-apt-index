@@ -119,7 +119,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
-                     kinfo=None):
+                     kinfo=None, supply=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -180,7 +180,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                     print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
-                   macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo)
+                   macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo,
+                   supply=supply)
     return table, meta, n
 
 
@@ -244,7 +245,8 @@ def cmd_demo(cfg, args) -> None:
     out = Path(args.out or ROOT / "site-demo")
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
-                                  rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades))
+                                  rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades),
+                                  supply=demo_mod.supply(trades))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 

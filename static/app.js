@@ -116,6 +116,30 @@
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => false);
     return Promise.resolve(false);
   };
+  // 면적 단위 (㎡ / 평): <html class="u-py"> 로 고르고 기기에 기억합니다. 바꾸면 'dj:unit' 이벤트
+  const PY = 3.3058;
+  DJ.unit = () => document.documentElement.classList.contains("u-py") ? "py" : "m2";
+  const syncUnit = () => document.querySelectorAll("[data-area-unit]").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.areaUnit === DJ.unit())));
+  DJ.setUnit = function (u) {
+    document.documentElement.classList.toggle("u-py", u === "py");
+    try { localStorage.setItem("dj-unit", u); } catch (e) { /* 저장 못 해도 이번 화면은 바뀜 */ }
+    syncUnit();
+    document.dispatchEvent(new CustomEvent("dj:unit", { detail: u }));
+  };
+  document.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("[data-area-unit]");
+    if (b) DJ.setUnit(b.dataset.areaUnit);
+  });
+  syncUnit();
+  // 글자로 쓰는 면적 (select 처럼 태그를 못 넣는 곳): '97㎡(전용 77)' · '29평(전용 23)', 공급면적을 모르면 '전용 77㎡'
+  DJ.area = function (ex, su, dec) {
+    if (ex == null) return "";
+    const py = DJ.unit() === "py";
+    const exs = py ? Math.round(ex / PY) : (dec ? (+ex).toFixed(dec) : Math.floor(ex));
+    if (su) return py ? `${Math.round(su / PY)}평(전용 ${exs})` : `${Math.round(su)}㎡(전용 ${exs})`;
+    return `전용 ${exs}${py ? "평" : "㎡"}`;
+  };
   // 복사가 막힌 브라우저: 페이지 안 작은 창에 링크를 골라 둔 채로 띄움 (시스템 입력창 대신)
   DJ.copyBox = function (text) {
     const back = el("div", "copybox-back"), box = el("div", "copybox");

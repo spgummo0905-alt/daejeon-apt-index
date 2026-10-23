@@ -47,9 +47,21 @@ def test_mark_highs_by_area_band():
 def test_area_types_group_neighbouring_sizes():
     tr = [{"area": a} for a in (59.9, 60.2, 59.8, 84.97, 84.5, 114.7)]
     types = site._area_types(tr)
-    assert types == [{"key": "59", "n": 3, "py": 24}, {"key": "84", "n": 2, "py": 34}, {"key": "114", "n": 1, "py": 45}]  # 59·60㎡는 한 묶음
+    assert [(t["key"], t["n"], t["py"], t["su"]) for t in types] == [("59", 3, 24, None), ("84", 2, 34, None), ("114", 1, 45, None)]  # 59·60㎡는 한 묶음
     assert [site.pyeong(a) for a in (59.9, 84.97, 74.8, 101.5, None)] == [24, 34, 30, 40, None]  # 흔히 부르는 평형
     assert [t["akey"] for t in tr] == ["59", "59", "59", "84", "84", "114"]
+    # 공급면적을 알면 그 값으로 (평형도 공급면적 기준)
+    types = site._area_types(tr, [[59.9, 79.3], [84.97, 112.4]])
+    assert [(t["key"], t["su"], t["py"]) for t in types] == [("59", 79.3, 24), ("84", 112.4, 34), ("114", None, 45)]
+
+
+def test_area_html_supply_and_exclusive():
+    assert site.supply_of([[77.04, 97.0], [84.9, 112.0]], 77.05) == 97.0
+    assert site.supply_of([[77.04, 97.0]], 84.9) is None and site.supply_of([], 77) is None
+    h = str(site.area_html(77.04, 97.0))
+    assert "97㎡<small>(전용 77)</small>" in h and "29평<small>(전용 23)</small>" in h   # 네이버와 같은 꼴
+    h = str(site.area_html(77.04, None, 2))
+    assert "전용 77.04㎡" in h and "전용 23평" in h   # 공급면적을 모르면 전용만
 
 
 def test_mark_highs_skips_direct_when_excluded():
