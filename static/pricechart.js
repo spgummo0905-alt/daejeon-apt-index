@@ -98,13 +98,16 @@
     const W = Math.max(300, plot.clientWidth || 640), narrow = W < 560;
     const [i0, i1] = view();
     const base = i0;
-    const market = state.mode === "mkt";
+    const market = state.mode === "mkt", gapMode = state.mode === "gap", plain = !market && !gapMode;
     // 좁은 화면은 오른쪽 이름표를 차트 안에 넣습니다 (시장 흐름은 오른쪽에 % 눈금)
     const padL = 46, padR = market ? (narrow ? 42 : 56) : (narrow ? 10 : 70), top = market ? 26 : 14;
     const mainH = narrow ? 230 : 300, volH = narrow ? 58 : 70, gap = 30;
     const rates = market && M && M.base && M.base.some(v => v != null);
-    const rateH = rates ? (narrow ? 70 : 84) : 0;
-    const H = top + mainH + gap + volH + (rates ? gap + rateH : 0) + 24;
+    // 전세·갭: 거래량은 위(매매)·아래(전세 계약)로 나눠 높게, 그 아래 전세가율
+    const volBox = gapMode ? volH + 34 : volH;
+    const extra = rates || (gapMode && T.je);
+    const rateH = extra ? (narrow ? 70 : 84) : 0;
+    const H = top + mainH + gap + volBox + (extra ? gap + rateH : 0) + 24;
     const x = i => padL + (i - i0) / Math.max(1, i1 - i0) * (W - padL - padR);
     const typeTr = D.tr.filter(t => t[2] === state.type && t[0] >= i0 && t[0] <= i1);
 
@@ -131,12 +134,13 @@
     // 세로 범위
     const vals = [];
     for (let i = i0; i <= i1; i++) {
-      if (!market) { [T.lo[i], T.hi[i]].forEach(v => { const c = conv(v, i, base); if (c != null) vals.push(c); }); }
+      if (plain) { [T.lo[i], T.hi[i]].forEach(v => { const c = conv(v, i, base); if (c != null) vals.push(c); }); }
+      if (gapMode && T.je && T.je[i] != null) vals.push(T.je[i]);
       const v = est(i); if (v != null) vals.push(v);
       if (state.mode === "real" && T.est[i] != null) vals.push(T.est[i]);
       lines.forEach(l => { const w = l.get(i); if (w != null) vals.push(w); });
     }
-    if (!market) typeTr.forEach(t => { if (!(t[5] & F_CANCEL)) { const c = conv(t[3], t[0], base); if (c != null) vals.push(c); } });
+    if (plain) typeTr.forEach(t => { if (!(t[5] & F_CANCEL)) { const c = conv(t[3], t[0], base); if (c != null) vals.push(c); } });
     if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 보여 줄 거래가 없어요.")); return; }
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const padV = (hi - lo) * 0.08 || hi * 0.05;
@@ -165,7 +169,7 @@
       });
     }
     // 80% 범위
-    if (!market) {
+    if (plain) {
       runs(i0, i1, i => T.lo[i] != null && T.hi[i] != null && conv(T.lo[i], i, base) != null).forEach(([a, b]) => {
         let d = "";
         for (let i = a; i <= b; i++) d += (i === a ? "M" : "L") + x(i).toFixed(1) + "," + y(conv(T.hi[i], i, base)).toFixed(1);
@@ -196,10 +200,19 @@
       if (state.mode === "real") pathLines(svg, i => T.est[i], "pc-ghost");
     }
     lines.forEach(l => pathLines(svg, l.get, "pc-line " + l.cls));
+    if (gapMode && T.je) {   // 매매와 전세 사이 = 갭
+      runs(i0, i1, i => T.est[i] != null && T.je[i] != null).forEach(([a, b]) => {
+        let d = "";
+        for (let i = a; i <= b; i++) d += (i === a ? "M" : "L") + x(i).toFixed(1) + "," + y(T.est[i]).toFixed(1);
+        for (let i = b; i >= a; i--) d += "L" + x(i).toFixed(1) + "," + y(T.je[i]).toFixed(1);
+        s("path", { d: d + "Z", class: "pc-gap" }, svg);
+      });
+      pathLines(svg, i => T.je[i], "pc-line pc-je");
+    }
     pathLines(svg, est, "pc-line pc-main", i => T.sp[i]);
 
     // 고점 표시 (명목·실질)
-    if (!market) {
+    if (plain) {
       let pk = null, pi = -1;
       for (let i = i0; i <= i1; i++) { const v = est(i); if (v != null && (pk == null || v > pk)) { pk = v; pi = i; } }
       const marks = [];
@@ -244,8 +257,36 @@
       });
     }
     let vmax = 1;
-    for (let q = q0; q <= q1; q++) vmax = Math.max(vmax, (qa[q] || 0) + (qb[q] || 0));
+    for (let q = q0; q <= q1; q++) vmax = Math.max(vmax, (qa[q] || 0) + (gapMode ? 0 : (qb[q] || 0)));
     const vg = s("g", { class: "pc-vol" }, svg);
+    if (gapMode) {
+      // 위 = 이 평형 매매, 아래 = 전세 계약(신규·갱신·미표기). 눈금은 따로
+      const rq = {};
+      (T.rv || []).forEach(([m, a, b, c]) => {
+        if (m < i0 || m > i1) return;
+        const q = Math.floor(abs(m) / 3), r = rq[q] = rq[q] || [0, 0, 0];
+        r[0] += a; r[1] += b; r[2] += c;
+      });
+      let rmax = 1;
+      for (let q = q0; q <= q1; q++) if (rq[q]) rmax = Math.max(rmax, rq[q][0] + rq[q][1] + rq[q][2]);
+      const upH = volBox * 0.48, dnH = volBox * 0.48, mid = vTop + upH + 2;
+      s("text", { x: padL, y: vTop - 8, class: "pc-ylab strong" }, vg, "거래량(분기) · 위 매매 · 아래 전세 계약");
+      s("text", { x: padL - 6, y: vTop + 9, class: "pc-ylab", "text-anchor": "end" }, vg, String(vmax));
+      s("text", { x: padL - 6, y: mid + dnH, class: "pc-ylab", "text-anchor": "end" }, vg, String(rmax));
+      s("line", { x1: padL, x2: W - padR, y1: mid - 1, y2: mid - 1, class: "pc-axis" }, vg);
+      const qw = Math.max(1.5, (x(i0 + 3) - x(i0)) - 2);
+      for (let q = q0; q <= q1; q++) {
+        const cx = x(q * 3 + 1 - D.m0), a = qa[q] || 0, h = a / vmax * upH;
+        if (a) s("rect", { x: cx - qw / 2, y: mid - 2 - h, width: qw, height: h, class: "pc-va" }, vg);
+        let yy = mid + 1;
+        (rq[q] || [0, 0, 0]).forEach((v, k) => {
+          if (!v) return;
+          const hh = v / rmax * dnH;
+          s("rect", { x: cx - qw / 2, y: yy, width: qw, height: hh, class: "pc-rn" + k }, vg);
+          yy += hh;
+        });
+      }
+    } else {
     const where = M && M.gu && M.gu[gu] ? gu : region;
     const label = market ? (narrow ? `${where} 거래량(분기)` : `${where} 전체 아파트 매매 거래량(분기)`) : "거래량(분기)";
     s("text", { x: padL, y: vTop - 8, class: "pc-ylab strong" }, vg, label + volChange(market, narrow));
@@ -259,8 +300,20 @@
       if (b) s("rect", { x: cx - qw / 2, y: vTop + volH - ha - hb, width: qw, height: hb, class: "pc-vb" + cls }, vg);
       if (a) s("rect", { x: cx - qw / 2, y: vTop + volH - ha, width: qw, height: ha, class: (market ? "pc-vm" : "pc-va") + cls }, vg);
     }
+    }
     // 금리 (시장 흐름, 자료가 있을 때)
     let rTop = 0;
+    if (gapMode && T.je) {   // 전세가율 = 전세 ÷ 매매
+      rTop = vTop + volBox + gap;
+      const rg = s("g", { class: "pc-rate" }, svg);
+      const ry = v => rTop + (1 - v / 100) * rateH;
+      s("text", { x: padL, y: rTop - 8, class: "pc-ylab strong" }, rg, "전세가율 (전세 ÷ 매매)");
+      [0, 50, 100].forEach(v => {
+        s("line", { x1: padL, x2: W - padR, y1: ry(v), y2: ry(v), class: v ? "pc-gridl" : "pc-axis" }, rg);
+        s("text", { x: padL - 6, y: ry(v) + 4, class: "pc-ylab", "text-anchor": "end" }, rg, v + "%");
+      });
+      pathLines(rg, i => T.est[i] != null && T.je[i] != null ? T.je[i] / T.est[i] * 100 : null, "pc-line pc-je", null, x, ry, i0, i1);
+    }
     if (rates) {
       rTop = vTop + volH + gap;
       const rg = s("g", { class: "pc-rate" }, svg);
@@ -285,7 +338,7 @@
       s("line", { x1: x(i), x2: x(i), y1: top + mainH, y2: top + mainH + 4, class: "pc-axis" }, xg);
     }
     // 마우스·손가락: 세로선과 그 달 설명
-    const cross = s("line", { class: "pc-cross", y1: top, y2: (rates ? rTop + rateH : vTop + volH), visibility: "hidden" }, svg);
+    const cross = s("line", { class: "pc-cross", y1: top, y2: (extra ? rTop + rateH : vTop + volBox), visibility: "hidden" }, svg);
     const hit = s("rect", { x: padL, y: 0, width: W - padL - padR, height: H, fill: "transparent", class: "pc-hit" }, svg);
     const move = ev => {
       const r = svg.getBoundingClientRect();
@@ -300,7 +353,7 @@
     hit.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); hideTip(); });
 
     plot.replaceChildren(svg);
-    renderLegend(market, rates);
+    renderLegend(market, rates, gapMode);
     renderHead();
 
     function pathLines(parent, get, cls, sparse, xf = x, yf = y, a = i0, b = i1) {
@@ -347,7 +400,15 @@
       if (state.mode !== "mkt" && T.lo[i] != null) out.push(`예상 범위 ${eok(conv(T.lo[i], i, base))} ~ ${eok(conv(T.hi[i], i, base))}`);
       if (state.mode === "real") out.push(`명목 ${eok(T.est[i])}`);
     }
-    if (state.mode === "mkt") {
+    if (state.mode === "gap") {
+      const j = T.je && T.je[i];
+      if (j != null) {
+        out.push(`전세 추정 ${eok(j)}`);
+        if (T.est[i] != null) out.push(`갭 ${eok(T.est[i] - j)} · 전세가율 ${Math.round(j / T.est[i] * 100)}%`);
+      }
+      const rv = (T.rv || []).find(r => r[0] === i);
+      if (rv) out.push(`전세 계약 ${rv[1] + rv[2] + rv[3]}건` + (rv[1] || rv[2] ? ` (신규 ${rv[1]} · 갱신 ${rv[2]})` : ""));
+    } else if (state.mode === "mkt") {
       lines.forEach(l => { const w = l.get(i); if (w != null) out.push(`${l.name} 흐름대로였다면 ${eok(w)}`); });
       if (M && M.base) { const r1 = mk(M.base, i), r2 = mk(M.mort, i); if (r1 != null) out.push(`기준금리 ${r1}%${r2 != null ? ` · 주담대 ${r2}%` : ""}`); }
     } else {
@@ -394,7 +455,13 @@
     meta.textContent = parts.join(" · ");
     // 실질 환산
     const [i0] = view();
-    if (state.mode === "real" && hasCpi()) {
+    const lj = T.je ? lastValid(T.je) : -1;
+    if (state.mode === "gap" && lj >= 0) {
+      real.hidden = false;
+      const sale = T.est[lj];
+      real.textContent = `전세 추정 ${eok(T.je[lj])}` + (sale ? ` · 갭 ${eok(sale - T.je[lj])} · 전세가율 ${Math.round(T.je[lj] / sale * 100)}%` : "") +
+        (lj < D.n - 6 ? ` (${ym(lj)} 기준)` : "");
+    } else if (state.mode === "real" && hasCpi()) {
       real.hidden = false;
       real.textContent = `물가를 빼면 ${eok(conv(T.est[li], li, i0))} (${ym(i0)} 돈 가치로)`;
     } else real.hidden = true;
@@ -416,11 +483,19 @@
     }
   }
 
-  function renderLegend(market, rates) {
+  function renderLegend(market, rates, gapMode) {
     const box = root.querySelector("[data-pc-legend]");
     const item = (cls, text) => { const s1 = el("span", "pc-key"); s1.append(el("i", cls), document.createTextNode(text)); return s1; };
     const items = [];
-    if (market) {
+    if (gapMode) {
+      items.push(item("k-line s1", "매매 추정 시세"));
+      items.push(item("k-line je", "전세 추정 보증금"));
+      items.push(item("k-gap", "갭(매매 − 전세)"));
+      items.push(item("k-bar a", "매매 거래"));
+      items.push(item("k-rn0", "전세 신규"));
+      items.push(item("k-rn1", "전세 갱신"));
+      items.push(item("k-rn2", "2021년 6월 전(구분 없음)"));
+    } else if (market) {
       items.push(item("k-line s1", "이 단지 추정 시세"));
       items.push(item("k-line s2", region + " 지수"));
       if (M && M.gu && M.gu[gu] && gu !== region) items.push(item("k-line s3", gu + " 지수"));
@@ -553,6 +628,8 @@
     const realBtn = ctrl.querySelector('[data-pc-mode="real"]'), mktBtn = ctrl.querySelector('[data-pc-mode="mkt"]');
     realBtn.hidden = !hasCpi();
     mktBtn.hidden = !(M && M.region);
+    const gapBtn = ctrl.querySelector('[data-pc-mode="gap"]');
+    if (gapBtn) gapBtn.hidden = !D.types.some(t => t.je);
     ctrl.querySelectorAll("[data-pc-mode]").forEach(b => b.addEventListener("click", () => {
       state.mode = b.dataset.pcMode; mark(ctrl, "[data-pc-mode]", b); render();
     }));

@@ -35,6 +35,11 @@ rows_per_page = 1000
 # 승인 전이면 경고만 남기고 매매 거래로만 진행합니다.
 collect_presale = true
 presale_endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade"
+# 전월세 실거래 (단지 페이지 '전세·갭' 보기). '국토교통부_아파트 전월세 실거래가 자료' 활용신청이 필요하고 2011년부터 공개됩니다.
+# 승인 전이면 경고만 남기고 넘어갑니다.
+collect_rent = true
+rent_endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent"
+rent_start_ym = "201101"
 
 [filters]
 # 해제(취소)된 거래 제외

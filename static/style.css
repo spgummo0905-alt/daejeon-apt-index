@@ -1245,6 +1245,15 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .k-bar { width: 10px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, var(--text-2) 50%, var(--dim) 50%); opacity: .8; }
 .k-bar.m { background: var(--s1); opacity: .35; }
 .k-vline { width: 0; height: 12px; border-left: 1.5px dotted var(--muted); }
+.pc-je { stroke: var(--s3); stroke-width: 2.2; }
+.pc-gap { fill: var(--s2); opacity: .13; }
+.pc-gridl { stroke: var(--grid); }
+.pc-rn0 { fill: var(--s3); opacity: .85; } .pc-rn1 { fill: var(--s3); opacity: .4; } .pc-rn2 { fill: var(--dim); }
+.k-line.je { background: var(--s3); }
+.k-gap { width: 16px; height: 10px; border-radius: 3px; background: var(--s2); opacity: .3; }
+.k-bar.a { background: var(--text-2); opacity: .75; }
+.k-rn0, .k-rn1, .k-rn2 { width: 10px; height: 10px; border-radius: 2px; background: var(--s3); }
+.k-rn0 { opacity: .85; } .k-rn1 { opacity: .4; } .k-rn2 { background: var(--dim); }
 .pc-how { margin-top: 12px; font-size: 13px; }
 .pc-how summary { cursor: pointer; color: var(--text-2); font-weight: 600; }
 .pc-how p { margin: 8px 0 0; line-height: 1.6; }

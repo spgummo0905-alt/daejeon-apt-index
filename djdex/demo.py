@@ -91,3 +91,21 @@ def macro(start: str = "2006-01", end: str = "2026-08") -> dict:
         base[key] = round(max(0.5, min(b, 3.5)) * 4) / 4
         mort[key] = round(base[key] + 1.6 + 0.2 * math.sin(k / 9), 2)
     return {"cpi": cpi, "base": base, "mort": mort}
+
+
+def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
+    """데모용 가짜 전세 계약: 같은 단지 매매가의 55~75%, 2011년부터, 2021년 6월부터 신규·갱신 표시."""
+    rnd = random.Random(seed)
+    sale = trades[trades["kind"] == "매매"]
+    out = []
+    for cid, g in sale.groupby("complex_id"):
+        for _, t in g.sample(frac=1.2, replace=True, random_state=rnd.randint(0, 9999)).iterrows():
+            d = pd.Timestamp(t["date"]) + pd.Timedelta(days=rnd.randint(-40, 40))
+            if d.year < 2011:
+                continue
+            renew = d >= pd.Timestamp("2021-06-01") and rnd.random() < 0.35
+            out.append({"complex_id": cid, "name": t["name"], "gu": t["gu"], "dong": t["dong"], "jibun": t["jibun"],
+                        "area": t["area"], "deposit": round(t["price"] * rnd.uniform(0.55, 0.72) * (0.95 if renew else 1)),
+                        "monthly": 0 if rnd.random() < 0.7 else rnd.randint(30, 120), "date": d.strftime("%Y-%m-%d"),
+                        "floor": t["floor"], "contract": ("갱신" if renew else "신규") if d >= pd.Timestamp("2021-06-01") else ""})
+    return pd.DataFrame(out)
