@@ -91,3 +91,14 @@ def test_num_reads_decimal_strings():
     assert kapt._num("") is None and kapt._num(None) is None and kapt._num("약 30대") == 30
     s = kapt.summarize({"kaptCode": "A1", "kaptdaCnt": "1100.0", "kaptdPcnt": "200.0", "kaptdPcntu": "1120.0", "kaptDongCnt": "12.0"})
     assert s["hh"] == 1100 and s["park"] == 1320 and s["dongs"] == 12 and s["ppu"] == 1.2
+
+
+def test_fee_sums_money_fields_only(tmp_path):
+    from djdex import fee
+    item = {"kaptCode": "A1", "kaptName": "한빛", "searchDate": "202606", "pay": "1,200,000", "bonus": "300000.0", "pension": None}
+    assert fee.money(item) == 1500000 and not fee._filled({"kaptCode": "A1", "searchDate": "202606", "pay": None})
+    d = tmp_path / "fee" / "A1"
+    d.mkdir(parents=True)
+    (d / "202605.json").write_text('{"op1": {"pay": "1"}}', encoding="utf-8")
+    (d / "202606.json").write_text('{"op1": {"pay": "100", "searchDate": "202606"}, "op2": {"cleanCost": "50"}}', encoding="utf-8")
+    assert fee.load(tmp_path) == {"A1": {"ym": "202606", "total": 150, "ops": {"op1": 100, "op2": 50}}}
