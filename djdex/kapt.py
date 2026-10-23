@@ -19,7 +19,7 @@ from pathlib import Path
 
 import requests
 
-from .molit import MolitError, _norm_name
+from .molit import MolitError, _norm_name, portal_down, portal_result
 
 LIST_URL = "https://apis.data.go.kr/1613000/AptListService4/getSigunguAptList4"
 BASS_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5"
@@ -64,6 +64,8 @@ def parse(text: str) -> tuple[list[dict], int]:
 
 
 def _get(s: requests.Session, url: str, params: dict, retries: int = 3) -> tuple[list[dict], int]:
+    if portal_down():
+        raise MolitError("공공데이터포털 연결 안 됨 (이번 실행은 건너뜀)")
     for attempt in range(retries):
         try:
             r = s.get(url, params=params, timeout=(10, 30))
@@ -71,9 +73,12 @@ def _get(s: requests.Session, url: str, params: dict, retries: int = 3) -> tuple
                 # 포털 게이트웨이 오류는 본문 XML에 이유가 있어(인증 오류, 없는 서비스 등) 그것을 남깁니다
                 parse(r.text)
                 r.raise_for_status()
-            return parse(r.text)
-        except (requests.RequestException, MolitError):
-            if attempt == retries - 1:
+            got = parse(r.text)
+            portal_result(None)
+            return got
+        except (requests.RequestException, MolitError) as e:
+            portal_result(e)
+            if attempt == retries - 1 or portal_down():
                 raise
             time.sleep(2 ** attempt)
     return [], 0

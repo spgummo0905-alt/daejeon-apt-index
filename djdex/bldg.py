@@ -23,7 +23,7 @@ from pathlib import Path
 import requests
 
 from .kapt import _score, parse
-from .molit import MolitError
+from .molit import MolitError, portal_down, portal_result
 
 URL = "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo"
 ROWS = 100            # 서버 최대
@@ -69,6 +69,8 @@ def targets(raw_dirs: list[Path]) -> dict[str, dict]:
 def _call(s: requests.Session, key: str, q: dict, page: int) -> tuple[list[dict], int]:
     params = {"serviceKey": key, **q, "numOfRows": ROWS, "pageNo": page, "_type": "json"}
     tries = 6   # 빈 응답·503 은 잠깐 몰릴 때 나와서 1·2·4·8·16초 쉬며 다시
+    if portal_down():
+        raise Stop("공공데이터포털 연결 안 됨")
     for attempt in range(tries):
         try:
             r = s.get(URL, params=params, timeout=(10, 60))
@@ -77,7 +79,9 @@ def _call(s: requests.Session, key: str, q: dict, page: int) -> tuple[list[dict]
             if r.status_code >= 400:
                 parse(r.text)   # 포털 게이트웨이 오류는 본문에 이유가 있어 그것을 남깁니다
                 r.raise_for_status()
-            return parse(r.text)
+            got = parse(r.text)
+            portal_result(None)
+            return got
         except MolitError as e:
             msg = str(e)
             if any(k in msg for k in STOP) and "PER_SECOND" not in msg:
@@ -85,7 +89,11 @@ def _call(s: requests.Session, key: str, q: dict, page: int) -> tuple[list[dict]
             if attempt == tries - 1:
                 raise
             time.sleep(2 ** attempt)
-        except requests.RequestException:
+        except requests.RequestException as e:
+            if isinstance(e, (requests.ConnectionError, requests.ConnectTimeout)):
+                portal_result(e)
+                if portal_down():
+                    raise Stop("공공데이터포털 연결 안 됨") from e
             if attempt == tries - 1:
                 raise
             time.sleep(2 ** attempt)
