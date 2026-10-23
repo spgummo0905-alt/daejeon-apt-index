@@ -136,14 +136,26 @@
 </section>
 {% endif %}
 
-{# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로 (검색 결과를 새 창으로) #}
+{# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로.
+   카카오맵 장소(별점·후기)와 네이버 블로그·카페 최근 글은 공식 API로 찾은 것만, 원문으로 잇습니다 #}
 {% set q = ((c.dong ~ " ") if c.dong else "") ~ c.name ~ ("" if c.name.endswith("아파트") else " 아파트") %}
+{% set ext = c.ext or {} %}
 <section class="panel rv" id="reviews">
   <div class="panel-head">
     <h2>살아본 사람들 이야기</h2>
-    <p class="muted">소음·이웃·관리처럼 숫자로 안 보이는 이야기는 후기에서 찾아보세요. 새 창으로 열려요.</p>
+    <p class="muted">{% if ext.posts %}네이버 블로그·카페에서 찾은 글이에요. 누르면 원문이 새 창으로 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기는 후기에서 찾아보세요. 새 창으로 열려요.{% endif %}</p>
   </div>
+  {% if ext.posts %}
+  <ul class="rv-posts">
+    {% for p in ext.posts %}<li><a href="{{ p.u }}" target="_blank" rel="noopener nofollow">
+      <b>{{ p.t }}</b>{% if p.d %}<span>{{ p.d }}</span>{% endif %}
+      <small>{{ "카페" if "cafe." in p.u else "블로그" }}{% if p.s %} · {{ p.s }}{% endif %}{% if p.at | length == 8 %} · {{ p.at[:4] }}.{{ p.at[4:6] }}.{{ p.at[6:] }}{% endif %}</small></a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   <div class="rv-links">
+    <a class="rv-link" href="{{ ('https://place.map.kakao.com/' ~ ext.kp[0]) if ext.kp else ('https://map.kakao.com/?q=' ~ (q | urlencode)) }}" target="_blank" rel="noopener">
+      <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>별점·후기</b><small>카카오맵</small></span></a>
     <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.blog.all&amp;query={{ (q ~ ' 후기') | urlencode }}" target="_blank" rel="noopener">
       <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span><b>블로그 후기</b><small>네이버 블로그</small></span></a>
     <a class="rv-link" href="https://search.naver.com/search.naver?ssc=tab.cafe.all&amp;query={{ q | urlencode }}" target="_blank" rel="noopener">
@@ -151,7 +163,7 @@
     <a class="rv-link" href="https://www.youtube.com/results?search_query={{ (q ~ ' 임장') | urlencode }}" target="_blank" rel="noopener">
       <svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span><b>임장 영상</b><small>유튜브</small></span></a>
   </div>
-  <p class="rv-q muted">검색어 ‘{{ q }}’ · 광고 글이 섞여 있을 수 있어요.</p>
+  <p class="rv-q muted">검색어 ‘{{ q }}’ · 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공 홍보 글은 뺐어요.{% endif %}</p>
 </section>
 
 <section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">

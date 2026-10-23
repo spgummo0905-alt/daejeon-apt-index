@@ -111,6 +111,26 @@ def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
+def outside(trades: pd.DataFrame) -> dict:
+    """데모용 바깥 후기: 카카오맵 장소(둘에 하나), 네이버 글(셋에 둘)."""
+    out = {}
+    for i, (cid, g) in enumerate(trades.groupby("complex_id")):
+        name = g["name"].iloc[0]
+        e = {}
+        if i % 2 == 0:
+            e["kp"] = [str(10000000 + i), name]
+        if i % 3:
+            e["posts"] = [{"t": f"{name} 3년 살아 본 솔직 후기", "d": "단지 안이 조용하고 놀이터가 넓어요. 다만 주차는 저녁에 조금 빠듯해요.",
+                           "u": "https://blog.naver.com/", "s": "동네 기록", "at": "20260912"},
+                          {"t": f"{name} 겨울 난방비와 관리비 이야기", "d": "지역난방이라 겨울 난방비가 생각보다 덜 나왔어요.",
+                           "u": "https://blog.naver.com/", "s": "살림 일기", "at": "20260130"},
+                          {"t": f"{name} 사시는 분들 학원 차량 어디서 타나요?", "d": "아이 학원 셔틀이 정문 앞까지 오는지 궁금해요.",
+                           "u": "https://cafe.naver.com/", "s": "대전 맘카페", "at": ""}]
+        if e:
+            out[cid] = e
+    return out
+
+
 def supply(trades: pd.DataFrame, seed: int = 13) -> dict:
     """데모용 가짜 공급면적: 단지마다 [[전용㎡, 공급㎡], ...] (전용률 0.74~0.80). 넷에 하나는 비워 둠(정보 없는 단지)."""
     rnd = random.Random(seed)

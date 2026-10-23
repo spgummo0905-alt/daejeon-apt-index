@@ -191,8 +191,9 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
-          kinfo: dict | None = None, supply: dict | None = None) -> int:
-    """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다."""
+          kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None) -> int:
+    """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다.
+    outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load)."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -251,6 +252,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["ki"] = (kinfo or {}).get(cid) or {}
         d["hh"], d["ppu"] = d["ki"].get("hh"), d["ki"].get("ppu")
         d["sup"] = (supply or {}).get(cid) or []
+        d["ext"] = (outside or {}).get(cid) or {}
         rows.append(d)
     # 세대수·세대당 주차가 지역에서 어디쯤인지 (정보가 있는 단지끼리)
     for key in ("hh", "ppu"):

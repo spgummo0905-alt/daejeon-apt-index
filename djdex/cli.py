@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, fee, kakao, kapt, location, metrics, molit, osm, school, site
+from . import bldg, ecos, fee, kakao, kapt, location, metrics, molit, osm, reviews, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -130,7 +130,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
-                     kinfo=None, supply=None):
+                     kinfo=None, supply=None, outside=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -192,7 +192,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
                    macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo,
-                   supply=supply)
+                   supply=supply, outside=outside)
     return table, meta, n
 
 
@@ -227,9 +227,27 @@ def cmd_build(cfg, args) -> None:
         ratios = sorted(e / s for v in hit for e, s in v)
         print(f"공급면적(건축물대장) {len(supply):,}곳 중 {len(hit):,}곳을 실거래 단지에 이음 (실거래 단지 {len(ids):,}곳)"
               + (f", 전용률 중간 {ratios[len(ratios) // 2]:.3f} · 범위 {ratios[0]:.2f}~{ratios[-1]:.2f}" if ratios else ""))
-    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo, supply=supply)
+    outside = reviews.load(cfg.paths.kapt / "reviews.json")
+    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo, supply=supply,
+                                      outside=outside)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
+
+
+def _outside_reviews(cfg) -> None:
+    """바깥 후기: 카카오맵 장소 잇기, 네이버 블로그·카페 글 (네이버 키가 있을 때). 거래가 많은 단지부터."""
+    try:
+        trades = _read_trades(cfg)
+        order = trades["complex_id"].value_counts()
+        cx = sorted(_complex_list(trades), key=lambda c: -order.get(c["complex_id"], 0))
+        geo = json.loads(cfg.paths.geo.read_text(encoding="utf-8")) if cfg.paths.geo.exists() else {}
+        path = cfg.paths.kapt / "reviews.json"
+        reviews.kakao_places(cx, geo, path, kakao.Kakao(os.environ["KAKAO_REST_KEY"]))
+        nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
+        if nid and nsec:
+            reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)))
+    except Exception as e:   # 바깥 후기는 없어도 사이트는 만듭니다
+        print(f"::warning::바깥 후기 잇기 실패, 검색 버튼만 둡니다: {e!r}")
 
 
 def cmd_all(cfg, args) -> None:
@@ -239,6 +257,7 @@ def cmd_all(cfg, args) -> None:
             cmd_locate(cfg, args)
             if cfg.paths.kapt.exists():   # 단지 정보(K-apt) 주소 → 좌표 (지번·이름으로 못 이을 때 씀)
                 kapt.locate(cfg.paths.kapt, cfg.districts, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), cfg.geo_region)
+            _outside_reviews(cfg)
         except requests.RequestException as e:
             # 입지 수집이 실패해도 이미 받은 실거래 데이터로 사이트는 만듭니다.
             # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
@@ -271,7 +290,7 @@ def cmd_demo(cfg, args) -> None:
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
                                   rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades),
-                                  supply=demo_mod.supply(trades))
+                                  supply=demo_mod.supply(trades), outside=demo_mod.outside(trades))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 
