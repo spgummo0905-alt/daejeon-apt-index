@@ -152,12 +152,17 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
         else:
             gap = c["price_ref"] / leader["price"] - 1
             out.append(f"{c['gu']} 대장 단지 {leader['name']}({leader['price_text']})의 {(1 + gap) * 100:.0f}% 가격입니다.")
+    if c.get("hh"):
+        size = "대단지" if c["hh"] >= 1000 else "중간 규모 단지" if c["hh"] >= 500 else "작은 단지"
+        park = f" 주차는 세대당 {c['ppu']:.1f}대로 {region} {share(c['ppu_top'])}입니다." if c.get("ppu") and not _nan(c.get("ppu_top")) else ""
+        out.append(f"{c['hh']:,}세대 {size}입니다.{park}")
     return out
 
 
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
-          geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None) -> int:
+          geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
+          kinfo: dict | None = None) -> int:
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -212,7 +217,15 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["new_high_recent"] = bool(d.get("new_high_recent")) if not _nan(d.get("new_high_recent")) else False
         ll = geo.get(cid)
         d["lat"], d["lng"] = (ll[0], ll[1]) if ll else (None, None)
+        # 공동주택관리정보(K-apt): 세대수·주차 등. 못 이은 단지는 빈 값
+        d["ki"] = (kinfo or {}).get(cid) or {}
+        d["hh"], d["ppu"] = d["ki"].get("hh"), d["ki"].get("ppu")
         rows.append(d)
+    # 세대수·세대당 주차가 지역에서 어디쯤인지 (정보가 있는 단지끼리)
+    for key in ("hh", "ppu"):
+        top = _top_share(pd.Series({r["complex_id"]: r[key] for r in rows if not r["small"]}, dtype=float))
+        for r in rows:
+            r[key + "_top"] = top.get(r["complex_id"], float("nan"))
 
     # 구별 통계
     gus = list(cfg.districts.values())
@@ -356,6 +369,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct,
                                              rents=None if rl is None else rl.to_dict("records"))
         c["tp"] = pricechart.type_prices(pc_data)
+        if pc_data and c["hh"]:
+            pc_data["hh"] = c["hh"]   # 연도별 거래량 표의 회전율
         if pc_data:
             (out_dir / "apt" / "d" / f"{c['slug']}.json").write_text(
                 _json.dumps(pc_data, separators=(",", ":")), encoding="utf-8")
@@ -737,6 +752,8 @@ def _card_chips(c: dict) -> list[str]:
     hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
     if isinstance(hub, str) and not _nan(mins) and mins <= 25:
         chips.append(("book", f"{hub} {mins:.0f}분"))
+    if c.get("hh"):
+        chips.append(("home", f"{c['hh']:,}세대"))
     return chips
 
 
@@ -837,6 +854,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
             "tp": r.get("tp") or [],
+            "hh": r.get("hh"), "pk": r.get("ppu"),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

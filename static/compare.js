@@ -26,6 +26,8 @@
     ["· 주변 수학 학원", c => c.f.academy_math, c => c.f.academy_math == null ? "-" : c.f.academy_math + "곳", "high"],
     ["초등학교", c => c.f.elementary, c => c.f.elementary == null ? "-" : c.f.elementary + "m", "low"],
     ["준공", c => c.y, c => c.y ? c.y + "년" : "-", null],
+    ["세대수", c => c.hh, c => c.hh ? c.hh.toLocaleString() + "세대" : "-", "high"],
+    ["세대당 주차", c => c.pk, c => c.pk ? c.pk.toFixed(1) + "대" : "-", "high"],
   ];
 
   DJ.data().then(d => {

@@ -42,6 +42,9 @@
     { id: "rising", label: "상승세", sub: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
     { id: "dip", label: "고점 대비 하락", sub: "전고점보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
     { id: "high", label: "최근 신고가", sub: "최근 90일 안 신고가 거래", test: c => !!c.h },
+    { id: "big", label: "대단지", sub: "1,000세대 이상", test: c => c.hh != null && c.hh >= 1000 },
+    { id: "mid", label: "500세대 이상", sub: "중간 규모 이상 단지", test: c => c.hh != null && c.hh >= 500 },
+    { id: "park", label: "주차 넉넉", sub: "세대당 1.2대 이상", test: c => c.pk != null && c.pk >= 1.2 },
   ];
 
   // 규제지역 집값 구간별 주택담보대출 최대 한도 [[집값 상한, 최대 대출], ...] (만원). 없으면 LTV·DSR 만.
@@ -516,6 +519,8 @@
     ctx = { hasHub: ALL.some(c => c.hm != null), acadQ: q70(ALL.map(c => c.f.academy_math ?? c.f.academy)),
             eduQ: q70(ALL.map(c => c.ed)), hospQ: q70(ALL.map(c => c.f.hospital)) };
     if (!ALL.some(c => c.f.mart !== undefined)) MUST.splice(MUST.findIndex(m => m.id === "mart"), 1);
+    // 단지 정보(세대수·주차)가 없으면 그 조건은 빼요
+    if (!ALL.some(c => c.hh)) for (const id of ["big", "mid", "park"]) MUST.splice(MUST.findIndex(m => m.id === id), 1);
     document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x.dataset.sort === S.sort); x.setAttribute("aria-pressed", x.dataset.sort === S.sort); });
     changed();
   });

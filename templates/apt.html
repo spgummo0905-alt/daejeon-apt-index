@@ -106,6 +106,29 @@
 </div>
 </div>
 
+{% if c.ki %}{% set k = c.ki %}
+<section class="panel ki" id="info">
+  <div class="panel-head">
+    <h2>단지 정보</h2>
+    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 내용이에요.</p>
+  </div>
+  <dl class="ki-grid">
+    {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
+      <p>{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</p></div>{% endif %}
+    {% if k.ppu %}<div class="ki-main"><dt>주차</dt><dd><small>세대당</small> {{ "%.1f" | format(k.ppu) }}<small>대</small></dd>
+      <p>총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</p></div>{% endif %}
+    {% if k.top %}<div><dt>층수</dt><dd>최고 {{ k.top }}층{% if k.base %}, 지하 {{ k.base }}층{% endif %}</dd></div>{% endif %}
+    {% if k.use %}<div><dt>사용승인</dt><dd>{{ k.use }}</dd></div>{% endif %}
+    {% if k.heat %}<div><dt>난방</dt><dd>{{ k.heat }}</dd></div>{% endif %}
+    {% if k.hall %}<div><dt>복도</dt><dd>{{ k.hall }}</dd></div>{% endif %}
+    {% if k.elev %}<div><dt>승강기</dt><dd>{{ k.elev }}대</dd></div>{% endif %}
+    {% if k.evc %}<div><dt>전기차 충전기</dt><dd>{{ k.evc }}기</dd></div>{% endif %}
+    {% if k.builder %}<div><dt>시공사</dt><dd>{{ k.builder }}</dd></div>{% endif %}
+    {% if k.mgr %}<div><dt>관리 방식</dt><dd>{{ k.mgr }}</dd></div>{% endif %}
+  </dl>
+</section>
+{% endif %}
+
 <section class="panel">
   <div class="panel-head">
     <h2>지수는 이렇게 나왔어요</h2>

@@ -40,6 +40,8 @@ presale_endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMS
 collect_rent = true
 rent_endpoint = "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent"
 rent_start_ym = "201101"
+# 공동주택관리정보(K-apt) 세대수·동수·주차 (같은 인증키, 활용신청 필요)
+collect_kapt = true
 
 [filters]
 # 해제(취소)된 거래 제외

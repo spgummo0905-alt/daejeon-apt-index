@@ -24,6 +24,10 @@ class Paths:
         return self.data / "raw_rent"
 
     @property
+    def kapt(self) -> Path:
+        return self.data / "kapt"
+
+    @property
     def rents(self) -> Path:
         return self.data / "rents.csv"
 

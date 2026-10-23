@@ -170,7 +170,7 @@
     head.append(el("span", "grade big g-" + c.g, c.g));
     const t = el("div", "gcard-title");
     const a = el("a", "", c.n); a.href = DJ.href(c);
-    t.append(a, el("span", "muted", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")));
+    t.append(a, el("span", "muted", DJ.place(c) + (c.y ? " · " + c.y + "년" : "") + (c.hh ? " · " + c.hh.toLocaleString() + "세대" : "")));
     head.append(t, el("span", "gcard-score", c.i == null ? "-" : String(c.i)));
     card.append(head);
     const rows = el("div", "gstats");

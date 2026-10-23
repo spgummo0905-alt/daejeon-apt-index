@@ -592,7 +592,9 @@
       const full = years.filter(yr => yr !== lastY);
       const mean = full.reduce((a, yr) => a + (byY[yr] || 0), 0) / Math.max(1, full.length);
       const topY = full.reduce((a, yr) => (byY[yr] || 0) > (byY[a] || 0) ? yr : a, full[0]);
-      const note = el("p", "muted pc-note", `${full[0]}~${full[full.length - 1]}년에는 해마다 평균 ${mean.toFixed(1)}건 거래됐고, 가장 많았던 해는 ${topY}년(${byY[topY] || 0}건)이에요. *${lastY}년은 ${ym(e).split(".")[1] * 1}월까지예요.`);
+      // 회전율: 한 해 거래 ÷ 세대수 (단지 정보가 있을 때)
+      const turn = D.hh ? ` 세대수(${D.hh.toLocaleString()}세대) 대비 한 해에 ${(mean / D.hh * 100).toFixed(1)}%가 손바뀜한 셈이에요.` : "";
+      const note = el("p", "muted pc-note", `${full[0]}~${full[full.length - 1]}년에는 해마다 평균 ${mean.toFixed(1)}건 거래됐고, 가장 많았던 해는 ${topY}년(${byY[topY] || 0}건)이에요.${turn} *${lastY}년은 ${ym(e).split(".")[1] * 1}월까지예요.`);
       box.append(section("연도별 거래량", "모든 평형 · 해제 거래 제외", svg, note));
     }
   }

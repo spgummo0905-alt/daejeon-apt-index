@@ -109,3 +109,23 @@ def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
                         "monthly": 0 if rnd.random() < 0.7 else rnd.randint(30, 120), "date": d.strftime("%Y-%m-%d"),
                         "floor": t["floor"], "contract": ("갱신" if renew else "신규") if d >= pd.Timestamp("2021-06-01") else ""})
     return pd.DataFrame(out)
+
+
+def kinfo(trades: pd.DataFrame, seed: int = 12) -> dict:
+    """데모용 가짜 단지 정보(K-apt). 열에 하나는 비워 둠(정보 없는 단지)."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, (cid, g) in enumerate(trades.groupby("complex_id")):
+        if i % 10 == 9:
+            continue
+        hh = rnd.choice([180, 320, 498, 640, 920, 1240, 1850, 2600])
+        dongs = max(2, hh // rnd.randint(80, 140))
+        up, dn = rnd.randint(0, hh // 4), int(hh * rnd.uniform(0.7, 1.4))
+        y = int(g["build_year"].dropna().min()) if g["build_year"].notna().any() else 2005
+        out[cid] = {"code": f"A{10000000 + i}", "name": g["name"].iloc[0], "hh": hh, "dongs": dongs,
+                    "top": rnd.choice([15, 20, 25, 29, 35]), "base": rnd.choice([1, 2, 3]),
+                    "use": f"{y}.{rnd.randint(1, 12):02d}", "park": up + dn, "park_up": up, "park_dn": dn,
+                    "ppu": round((up + dn) / hh, 2), "heat": rnd.choice(["개별난방", "지역난방", "중앙난방"]),
+                    "hall": rnd.choice(["계단식", "복도식", "혼합식"]), "builder": rnd.choice(["대한건설", "한빛종합건설", "우리주택"]),
+                    "mgr": "위탁관리", "elev": dongs * 2, "evc": rnd.randint(0, 30), "cctv": rnd.randint(40, 400)}
+    return out
