@@ -414,16 +414,7 @@
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();
-      if (!IN_APP || KAKAO) kakaoReadyState();
-    }
-    // 카드 이미지가 카카오에 올라갈 때까지 카카오톡 버튼은 '이미지 준비 중' (먼저 누르면 글만 가던 문제)
-    const kakaoBtn = sheet.querySelector('[data-act="kakao"]'), kakaoLabel = kakaoBtn.querySelector("span");
-    function kakaoReadyState() {
-      if (!save || !sheet.dataset.kakaoKey || kakaoImg) return uploadKakao();
-      kakaoBtn.setAttribute("aria-busy", "true");
-      kakaoLabel.textContent = "이미지 준비 중";
-      const done = () => { kakaoBtn.removeAttribute("aria-busy"); kakaoLabel.textContent = "카카오톡"; };
-      Promise.race([uploadKakao(), new Promise(r => setTimeout(r, 12000))]).then(done, done);
+      if (save && sheet.dataset.kakaoKey) uploadKakao();   // 카톡 미리보기에 카드 이미지를 쓰려고 미리 올려 둠 (버튼은 기다리지 않음)
     }
     function close() {
       back.classList.remove("on"); sheet.classList.remove("on");
@@ -434,13 +425,14 @@
     function esc(e) { if (e.key === "Escape") close(); }
     document.querySelectorAll("[data-sheet-close]").forEach(b => b.addEventListener("click", close));
 
-    sheet.querySelector('[data-act="kakao"]').addEventListener("click", async () => {
+    // 카카오톡: 누른 그 순간 바로 공유 창. SDK는 페이지를 열 때 미리 불러 두고, 이미지는 기다리지 않습니다
+    // (카드 이미지가 올라가 있으면 그것, 아니면 사이트 대표 이미지)
+    sheet.querySelector('[data-act="kakao"]').addEventListener("click", () => {
       const url = pageUrl(), link = { mobileWebUrl: url, webUrl: url };
-      if (await loadKakao(sheet.dataset.kakaoKey)) {
+      if (window.Kakao && Kakao.Share && Kakao.isInitialized && Kakao.isInitialized()) {
         try {
-          // 카드 이미지가 올라가 있으면 이미지가 보이는 피드 메시지, 아니면 글 메시지
-          const img = kakaoImg || (save ? await Promise.race([uploadKakao(), new Promise(r => setTimeout(() => r(null), 1500))]) : null);
-          if (img && img.url) {
+          const img = kakaoImg && kakaoImg.url ? kakaoImg : (sheet.dataset.og ? { url: sheet.dataset.og, width: 1200, height: 630 } : null);
+          if (img) {
             Kakao.Share.sendDefault({ objectType: "feed",
               content: { title, description: text, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height, link },
               buttons: [{ title: "점수 보기", link }] });
@@ -451,8 +443,7 @@
         } catch (e) { /* 아래 대체 방법으로 */ }
       }
       if (navigator.share) { shareWithImage(url); return; }
-      if (await DJ.copy(url)) DJ.toast("링크를 복사했어요", "카카오톡 대화창에 붙여 넣어 보내세요");
-      else DJ.copyBox(url);
+      DJ.copyLink(url, "카카오톡 대화창에 붙여 넣어 보내세요");
     });
     sheet.querySelector('[data-act="link"]').addEventListener("click", () => DJ.copyLink(pageUrl()));
     // 다른 앱으로: 카드 이미지 파일과 글(링크 포함)을 함께. 이미지를 못 넘기는 브라우저는 글과 링크만
@@ -467,6 +458,9 @@
     });
     more.addEventListener("click", () => shareWithImage(pageUrl()));
     opener.addEventListener("click", open);
+    // 누르면 바로 되게: 카카오 SDK와 카드 이미지를 페이지가 한가할 때 미리 준비
+    const idle = window.requestIdleCallback || (f => setTimeout(f, 1200));
+    idle(() => { if (sheet.dataset.kakaoKey) loadKakao(sheet.dataset.kakaoKey); prepare(); });
     return open;
   }
 

@@ -95,19 +95,26 @@
   };
 
   // ---------- 복사·공유 ----------
-  // 클립보드 → (앱 안 브라우저처럼 막힌 곳은) 숨긴 글상자 복사 순서로 시도. 둘 다 안 되면 false
-  DJ.copy = async function (text) {
-    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* 아래 방법으로 */ }
-    try {
-      const ta = el("textarea");
-      ta.value = text; ta.setAttribute("readonly", "");
-      ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;";
-      document.body.append(ta);
-      ta.select(); ta.setSelectionRange(0, text.length);
-      const ok = document.execCommand("copy");
-      ta.remove();
-      return ok;
-    } catch (e) { return false; }
+  // 누른 그 순간(동기)에 숨긴 글상자로 복사합니다. 앱 안 브라우저·아이폰에서도 되는 방법이라 먼저 쓰고,
+  // 안 되면 클립보드 API. 둘 다 안 되면 false
+  function copyNow(text) {
+    const active = document.activeElement;
+    const ta = el("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;";
+    document.body.append(ta);
+    ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.remove();
+    if (window.getSelection) window.getSelection().removeAllRanges();
+    if (active && active.focus) active.focus({ preventScroll: true });
+    return ok;
+  }
+  DJ.copy = function (text) {
+    if (copyNow(text)) return Promise.resolve(true);
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => false);
+    return Promise.resolve(false);
   };
   // 복사가 막힌 브라우저: 페이지 안 작은 창에 링크를 골라 둔 채로 띄움 (시스템 입력창 대신)
   DJ.copyBox = function (text) {
@@ -120,9 +127,9 @@
     document.body.append(back, box);
     inp.focus(); inp.select(); inp.setSelectionRange(0, text.length);
   };
-  DJ.copyLink = async function (url) {
-    if (await DJ.copy(url)) { DJ.toast("링크를 복사했어요", "카카오톡이나 메신저에 붙여 넣어 보내세요"); return true; }
-    DJ.copyBox(url);
+  DJ.copyLink = async function (url, sub) {
+    if (await DJ.copy(url)) { DJ.toast("링크를 복사했어요", sub || "카카오톡이나 메신저에 붙여 넣어 보내세요"); return true; }
+    DJ.copyBox(url);   // 복사가 완전히 막힌 브라우저에서만
     return false;
   };
   DJ.share = async function (title, text, url) {
