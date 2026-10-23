@@ -319,6 +319,7 @@
         const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
         const c = data.bySlug[slug];
         if (!c) throw new Error("no card");
+        await glyphs(JSON.stringify(c) + (data.region || "") + "아파트 지수 등급 점 위 상위 하위 억 만 원 년 평 ㎡");
         const cv = draw(c, data);
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
@@ -414,6 +415,14 @@
     return open;
   }
 
+  // 프리텐다드는 페이지에 나온 글자 묶음만 내려받아서, 카드에만 쓰는 글자는 그리기 전에 미리 받아 둡니다
+  // (안 그러면 그 글자만 다른 글꼴로 그려짐). 실패해도 대체 글꼴로 그립니다.
+  function glyphs(text) {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([500, 600, 700, 800, 900].map(w => document.fonts.load(`${w} 20px "Pretendard Variable"`, text).catch(() => null)))
+      .then(() => null, () => null);
+  }
+
   DJ.drawCard = draw; // 테스트·다른 페이지에서 쓰도록
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -422,7 +431,7 @@
     const c = { s: card.dataset.apt, g: card.dataset.grade, d: card.dataset.dong };
     card.querySelectorAll("canvas[data-art]").forEach(cv => {
       const paint = () => drawArt(cv, c);
-      if (document.fonts) document.fonts.ready.then(paint); else paint(); // 동 이름 글꼴이 들어온 뒤 그리기
+      if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); // 동 이름 글꼴이 들어온 뒤 그리기
     });
     // 최근 실거래: 그림 위 아이콘을 누르면 카드 안에서 펼침
     const toggle = card.querySelector("[data-deals-toggle]"), deals = document.getElementById("mc-deals");
