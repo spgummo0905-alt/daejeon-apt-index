@@ -1,0 +1,43 @@
+name: portal-check
+
+# 공공데이터포털 점검: GitHub 서버에서 포털에 닿는지, 쓰는 오픈API 주소마다 무엇이라고 답하는지 (수동 실행)
+# 인증키는 로그에 가려지고, 응답의 결과 코드·메시지만 남깁니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 연결 확인 (DNS·https·http)
+        run: |
+          echo "이 러너의 공인 IP: $(curl -s -m 10 https://api.ipify.org || echo 알 수 없음)"
+          for h in apis.data.go.kr www.data.go.kr ecos.bok.or.kr dapi.kakao.com openapi.naver.com; do
+            ip=$(getent ahostsv4 "$h" | awk 'NR==1{print $1}')
+            s=$(curl -s -o /dev/null -m 20 --connect-timeout 10 -w "HTTP %{http_code}, 접속 %{time_connect}s" "https://$h/" 2>&1) || s="https 접속 실패: $s"
+            p=$(curl -s -o /dev/null -m 20 --connect-timeout 10 -w "HTTP %{http_code}, 접속 %{time_connect}s" "http://$h/" 2>&1) || p="http 접속 실패: $p"
+            echo "$h → ${ip:-DNS 실패} | https: $s | http: $p"
+          done
+      - name: 오픈API 주소마다 응답 (https, 안 되면 http)
+        env:
+          KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: |
+          B=apis.data.go.kr/1613000
+          check() {   # 이름, 경로, 파라미터
+            for scheme in https http; do
+              body=$(curl -s -G -m 30 --connect-timeout 10 "$scheme://$B/$2" --data-urlencode "serviceKey=$KEY" --data "$3") && break
+              body="(접속 실패: $scheme)"
+            done
+            code=$(echo "$body" | grep -oE '<(resultCode|returnReasonCode)>[^<]*|"resultCode" *: *"?[0-9A-Z]+' | head -1)
+            msg=$(echo "$body" | grep -oE '<(resultMsg|returnAuthMsg|errMsg)>[^<]*|"resultMsg" *: *"[^"]*' | head -2 | tr '\n' ' ')
+            echo "[$scheme] $1 ($2): ${code:-코드 없음} ${msg} | $(echo "$body" | head -c 160 | tr -d '\n')"
+          }
+          check "매매 실거래 상세" RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev "LAWD_CD=30170&DEAL_YMD=202609&pageNo=1&numOfRows=1"
+          check "분양권·입주권" RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade "LAWD_CD=30170&DEAL_YMD=202609&pageNo=1&numOfRows=1"
+          check "전월세 실거래" RTMSDataSvcAptRent/getRTMSDataSvcAptRent "LAWD_CD=30170&DEAL_YMD=202609&pageNo=1&numOfRows=1"
+          check "단지 목록" AptListService4/getSigunguAptList4 "sigunguCode=30170&pageNo=1&numOfRows=1"
+          check "단지 기본 정보" AptBasisInfoServiceV5/getAphusBassInfoV5 "kaptCode=A10025875"
+          check "단지 상세 정보" AptBasisInfoServiceV5/getAphusDtlInfoV5 "kaptCode=A10025875"
+          check "건축물대장 전유공용면적" BldRgstHubService/getBrExposPubuseAreaInfo "sigunguCd=30200&bjdongCd=14700&platGbCd=0&bun=0199&ji=0000&pageNo=1&numOfRows=1&_type=json"
+          check "공용관리비(인건비)" AptCmnuseManageCostServiceV3/getHsmpLaborCostInfoV3 "kaptCode=A10025875&searchDate=202607&_type=json"
