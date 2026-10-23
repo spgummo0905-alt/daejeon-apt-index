@@ -27,7 +27,7 @@ from .molit import MolitError, portal_down, portal_result
 
 URL = "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo"
 ROWS = 100            # 서버 최대
-MAX_ROWS = 30000      # 이보다 큰 지번은 건너뜀 (대전 가장 큰 단지가 2만 5천 줄쯤)
+MAX_PAGES = 12        # 큰 단지는 대장 쪽을 이만큼만 고르게 골라 받음 (평형은 동·호마다 되풀이되어 몇 쪽이면 충분)
 PAUSE = 0.2           # 쪽 사이 쉬는 시간 (빨리 부르면 빈 응답이 옴)
 REFRESH_DAYS = 365    # 공급면적은 거의 안 바뀜
 RETRY_EMPTY_DAYS = 60  # 못 찾은 지번(택지 블록 등)은 두 달 뒤 다시
@@ -76,6 +76,8 @@ def _call(s: requests.Session, key: str, q: dict, page: int) -> tuple[list[dict]
             r = s.get(URL, params=params, timeout=(10, 60))
             if r.status_code == 403:   # 활용신청 승인 전이거나 승인한 키가 아직 안 켜짐: 더 불러도 소용없음
                 raise Stop("403 Forbidden (활용신청 승인 전이거나 키가 아직 안 켜짐)")
+            if r.status_code == 429 and attempt:   # 한 번 쉬고도 또 429 면 하루 한도: 오늘은 그만
+                raise Stop("429 Too Many Requests (하루 호출 한도)")
             if r.status_code >= 400:
                 parse(r.text)   # 포털 게이트웨이 오류는 본문에 이유가 있어 그것을 남깁니다
                 r.raise_for_status()
@@ -134,8 +136,18 @@ def _shrink(rows: list[dict], name: str) -> dict:
     return {"names": names, "p": purp, "u": out}
 
 
-def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=print) -> None:
-    """거래가 많은 단지부터, 아직 없거나 오래된 것만 받습니다. budget 은 이번 실행의 호출 수 한도."""
+def pick_pages(pages: int, most: int = MAX_PAGES) -> list[int]:
+    """받을 쪽 번호. 쪽이 많으면 처음부터 끝까지 고르게 most 쪽만 (1쪽은 늘 받음)."""
+    if pages <= most:
+        return list(range(1, pages + 1))
+    return sorted({1 + round(i * (pages - 1) / (most - 1)) for i in range(most)})
+
+
+def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=print,
+            time_limit: float | None = None) -> None:
+    """거래가 많은 단지부터, 아직 없거나 오래된 것만 받습니다. budget 은 이번 실행의 호출 수 한도,
+    time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다."""
+    t0 = time.monotonic()
     root.mkdir(parents=True, exist_ok=True)
     tg = targets(raw_dirs)
     today = date.today()
@@ -153,18 +165,15 @@ def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=
     used = done = 0
     for *_, seq in todo:
         t = tg[seq]
-        if used + 1 > budget:
+        if used + 1 > budget or (time_limit and time.monotonic() - t0 > time_limit):
             break
         try:
             rows, total = _call(s, key, t["q"], 1)
             used += 1
-            pages = -(-total // ROWS) if total else 1
-            if total > MAX_ROWS:
-                log(f"::notice::[공급면적] {t['name']} 대장 {total:,}줄이라 건너뜀")
-                rows, pages = [], 1
-            elif used + pages - 1 > budget:   # 이 단지를 다 못 받으면 다음 실행으로 (반쯤 받은 것은 안 씀)
+            pick = pick_pages(-(-total // ROWS) if total else 1)
+            if used + len(pick) - 1 > budget:   # 이 단지를 다 못 받으면 다음 실행으로 (반쯤 받은 것은 안 씀)
                 break
-            for page in range(2, pages + 1):
+            for page in pick[1:]:
                 time.sleep(PAUSE)
                 more, _ = _call(s, key, t["q"], page)
                 used += 1
@@ -175,7 +184,8 @@ def collect(key: str, raw_dirs: list[Path], root: Path, budget: int = 4500, log=
         except (requests.RequestException, MolitError) as e:
             log(f"::warning::[공급면적] {t['name']} 받기 실패: {e}")
             continue
-        entry = {"_at": today.isoformat(), "q": t["q"], "name": t["name"], "total": total, **_shrink(rows, t["name"])}
+        entry = {"_at": today.isoformat(), "q": t["q"], "name": t["name"], "total": total, "pages": len(pick),
+                 **_shrink(rows, t["name"])}
         (root / f"{seq}.json").write_text(json.dumps(entry, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         done += 1
         time.sleep(PAUSE)
