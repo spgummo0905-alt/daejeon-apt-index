@@ -97,11 +97,14 @@
     cur = i;
     const st = STEPS[i];
     root.querySelectorAll(".lm-tab").forEach((b, k) => { b.classList.toggle("on", k === i); b.setAttribute("aria-pressed", k === i); });
-    root.querySelector("[data-lm-count]").textContent = `${i + 1} / ${STEPS.length}`;
+    // 몇 번째 지도인지: 점으로 (지금 것은 길게)
+    const count = root.querySelector("[data-lm-count]");
+    count.setAttribute("aria-label", `${i + 1} / ${STEPS.length}`);
+    count.replaceChildren(...STEPS.map((_, k) => el("i", k === i ? "on" : "")));
     const prev = root.querySelector("[data-lm-prev]"), next = root.querySelector("[data-lm-next]");
     prev.hidden = i === 0;
     if (!prev.hidden) prev.querySelector("b").textContent = STEPS[i - 1].name;
-    next.querySelector("span").textContent = i === STEPS.length - 1 ? "처음으로" : "다음 지도";
+    next.querySelector(".lm-t span").textContent = i === STEPS.length - 1 ? "처음으로" : "다음 지도";
     next.querySelector("b").textContent = STEPS[(i + 1) % STEPS.length].name;
     clear();
     map.setLevel(st.level);

@@ -257,6 +257,24 @@ def _score(a: str, b: str) -> int:
     return 2 if (a in b or b in a) else 1 if a[:2] == b[:2] else 0
 
 
+def _sim(a: str, b: str) -> float:
+    """두 글자씩 끊은 조각이 짧은 쪽 기준으로 얼마나 겹치는지 (0~1). 단지 번호가 어긋나면 0.
+    '열매7단지현대' ↔ '노은열매마을7단지현대' 0.83, '새뜸마을 9단지 (2-2 예미지)' ↔ '새뜸마을9단지' 1.0, 7단지 ↔ 8단지 0."""
+    a, b = _base_name(a), _base_name(b)
+    da, db = set(re.findall(r"\d+", a)), set(re.findall(r"\d+", b))
+    if da and db and not (da <= db or db <= da):
+        return 0.0
+    ga, gb = {a[i:i + 2] for i in range(len(a) - 1)}, {b[i:i + 2] for i in range(len(b) - 1)}
+    if min(len(ga), len(gb)) < 3:
+        return 0.0
+    return len(ga & gb) / min(len(ga), len(gb))
+
+
+def _too_few(c: dict, k: dict) -> bool:
+    """좌표로만 이을 때: 거래 수가 세대수의 1/20도 안 되면(큰 단지 옆 빌라 등) 같은 단지로 보지 않음."""
+    return bool(k.get("hh")) and c.get("n") is not None and c["n"] < k["hh"] / 20
+
+
 def _dist(a, b) -> float:
     import math
     dy = (a[0] - b[0]) * 111_000
@@ -268,11 +286,15 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
     """매매 단지(complex_id, gu, dong, jibun, name) → K-apt 정보.
     1) 같은 구·동에서 지번이 같으면(본번만 같아도) 그 단지, 여럿이면 이름이 더 비슷한 쪽
     2) 지번으로 못 찾으면 같은 동에서 이름이 하나만 비슷한 단지
-    3) 그래도 못 찾으면 좌표(geo: 매매 단지 좌표, K-apt 주소 좌표)로 가까운 단지: 60m 안이거나, 150m 안에서 이름이 비슷하면"""
+    3) 그래도 못 찾으면 같은 동에서 이름 조각이 가장 많이 겹치는 단지 (0.6 이상, 둘째와 0.15 넘게 차이)
+    4) 그래도 못 찾으면 좌표(geo: 매매 단지 좌표, K-apt 주소 좌표)로 가까운 단지: 60m 안이거나, 150m 안에서 이름이 비슷하면
+    5) 끝으로 같은 동에서 서로가 서로의 가장 가까운 단지이고 200m 안이면 (세종처럼 실거래는 블록·브랜드 이름,
+       K-apt 는 마을 이름인 경우). 작은 빌라가 큰 단지 정보를 잘못 받지 않게, 거래 수(c['n'])가 세대수의 1/20 이상일 때만"""
     by_dong: dict[tuple, list] = {}
     for k in kapt:
         by_dong.setdefault((k["gu"], k["dong"]), []).append(k)
-    out, how = {}, {"지번": 0, "이름": 0, "좌표": 0}
+    out, how = {}, {"지번": 0, "이름": 0, "이름 조각": 0, "좌표": 0, "서로 가장 가까움": 0}
+    new = []   # 3)·5)로 이은 것: 로그로 확인
     strip = ("gu", "dong", "jibun", "key", "ll")
 
     for c in complexes:
@@ -289,10 +311,16 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
             how["지번"] += 1
         else:
             named = [k for k in cands if _score(nm, k["key"]) >= 2 and len(_base_name(nm)) >= 2]
-            if len(named) != 1:
-                continue
-            best = named[0]
-            how["이름"] += 1
+            if len(named) == 1:
+                best = named[0]
+                how["이름"] += 1
+            else:
+                sims = sorted(((_sim(nm, k.get("name") or k["key"]), i) for i, k in enumerate(cands)), reverse=True)
+                if not sims or sims[0][0] < 0.6 or (len(sims) > 1 and sims[0][0] - sims[1][0] <= 0.15):
+                    continue
+                best = cands[sims[0][1]]
+                how["이름 조각"] += 1
+                new.append(f"[이름 조각] {nm} ↔ {best.get('name')} ({sims[0][0]:.2f})")
         out[c["complex_id"]] = {k: v for k, v in best.items() if k not in strip}
 
     if geo:
@@ -303,7 +331,7 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
                 continue
             near = []
             for c in left:
-                if c["complex_id"] in out or (c["gu"] and k["gu"] and c["gu"] != k["gu"]):
+                if c["complex_id"] in out or (c["gu"] and k["gu"] and c["gu"] != k["gu"]) or _too_few(c, k):
                     continue
                 d = _dist(k["ll"], geo[c["complex_id"]])
                 if d <= 150:
@@ -314,11 +342,31 @@ def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=
                     used.add(k["code"])
                     how["좌표"] += 1
                 break
+        # 5) 서로 가장 가까운 짝 (같은 동, 200m 안)
+        used = {v["code"] for v in out.values()}
+        ks = [k for k in kapt if k["code"] not in used and k.get("ll")]
+        cs = [c for c in complexes if c["complex_id"] not in out and geo.get(c["complex_id"])]
+        same = lambda c, k: c["gu"] == k["gu"] and c["dong"] == k["dong"]
+        for k in ks:
+            near_c = min((c for c in cs if same(c, k)), key=lambda c: _dist(k["ll"], geo[c["complex_id"]]), default=None)
+            if not near_c or near_c["complex_id"] in out:
+                continue
+            d = _dist(k["ll"], geo[near_c["complex_id"]])
+            if d > 200 or _too_few(near_c, k):
+                continue
+            back = min((kk for kk in ks if same(near_c, kk)), key=lambda kk: _dist(kk["ll"], geo[near_c["complex_id"]]))
+            if back is not k:
+                continue
+            out[near_c["complex_id"]] = {kk: v for kk, v in k.items() if kk not in strip}
+            how["서로 가장 가까움"] += 1
+            new.append(f"[서로 가장 가까움] {near_c['name']} ↔ {k.get('name')} ({d:.0f}m)")
 
     if log:
         used = {v["code"] for v in out.values()}
         miss = [k for k in kapt if k["code"] not in used]
-        log(f"단지 정보 잇기: 지번 {how['지번']}곳, 이름 {how['이름']}곳, 좌표 {how['좌표']}곳 / 못 이은 단지 정보 {len(miss)}곳")
+        log("단지 정보 잇기: " + ", ".join(f"{k} {v}곳" for k, v in how.items()) + f" / 못 이은 단지 정보 {len(miss)}곳")
+        for line in new[:25]:
+            log(line)
         for k in sorted(miss, key=lambda k: -(k.get("hh") or 0))[:15]:
             cands = [c for c in complexes if c["gu"] == k["gu"] and c["dong"] == k["dong"]]
             near = ", ".join(f"{c['name']}({c.get('jibun')})" for c in cands[:6]) or "같은 동에 실거래 단지 없음"
