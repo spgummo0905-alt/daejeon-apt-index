@@ -169,3 +169,48 @@ def test_load_rent_links_to_sale_complex(tmp_path):
              "kind": "매매"}]
     ids = [r["complex_id"] for r in molit.load_rent(tmp_path, DISTRICTS, sale)]
     assert ids == ["30200-1234", "30200-1234", "30200-봉명동-555-다른단지", "30200-77"]
+
+
+def test_portal_down_skips_remaining_calls(monkeypatch):
+    import requests
+    from djdex import bldg, kapt
+    monkeypatch.setattr(molit.time, "sleep", lambda s: None)
+    calls = []
+
+    class Down:
+        def get(self, *a, **k):
+            calls.append(1)
+            raise requests.ConnectTimeout("apis.data.go.kr timed out")
+
+    # 한 번은 다시 해 보고, 두 번 연달아 연결이 안 되면 내려간 것으로 봄
+    with pytest.raises(requests.ConnectTimeout):
+        molit.fetch_month("k", "30200", "202610", "e", 1000, session=Down())
+    assert len(calls) == 2 and molit.portal_down()
+    # 그 뒤 조회는 기다리지 않고 바로 멈춤
+    with pytest.raises(molit.MolitError):
+        molit.fetch_month("k", "30200", "202609", "e", 1000, session=Down())
+    with pytest.raises(molit.MolitError):
+        kapt._get(Down(), "u", {})
+    with pytest.raises(bldg.Stop):
+        bldg._call(Down(), "k", {}, 1)
+    assert len(calls) == 2
+
+
+def test_portal_blip_does_not_trip(monkeypatch):
+    import requests
+    monkeypatch.setattr(molit.time, "sleep", lambda s: None)
+    ok = '<response><header><resultCode>000</resultCode></header><body><items></items><totalCount>0</totalCount></body></response>'
+
+    class Blip:
+        n = 0
+
+        def get(self, *a, **k):
+            self.n += 1
+            if self.n == 1:
+                raise requests.ConnectTimeout("timed out")
+            r = requests.Response()
+            r.status_code, r._content = 200, ok.encode()
+            return r
+
+    assert molit.fetch_month("k", "30200", "202610", "e", 1000, session=Blip()) == []
+    assert not molit.portal_down() and molit._PORTAL["fails"] == 0

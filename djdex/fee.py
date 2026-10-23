@@ -20,7 +20,7 @@ import requests
 
 from .bldg import STOP, Stop
 from .kapt import _num, parse
-from .molit import MolitError
+from .molit import MolitError, portal_down, portal_result
 
 BASE = "https://apis.data.go.kr/1613000/AptCmnuseManageCostServiceV3/"
 OPS = ["getHsmpLaborCostInfoV3", "getHsmpOfcrkCostInfoV3", "getHsmpTaxdueInfoV3", "getHsmpClothingCostInfoV3",
@@ -41,6 +41,8 @@ def _months_back(n: int) -> str:
 
 def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
     params = {"serviceKey": key, "kaptCode": code, "searchDate": ym, "_type": "json"}
+    if portal_down():
+        raise Stop("공공데이터포털 연결 안 됨")
     for attempt in range(4):
         try:
             r = s.get(BASE + op, params=params, timeout=(10, 30))
@@ -50,6 +52,7 @@ def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
                 parse(r.text)
                 r.raise_for_status()
             items, _ = parse(r.text)
+            portal_result(None)
             return items[0] if items else {}
         except MolitError as e:
             msg = str(e)
@@ -61,7 +64,11 @@ def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
             if attempt == 3:
                 raise
             time.sleep(2 ** attempt)
-        except requests.RequestException:
+        except requests.RequestException as e:
+            if isinstance(e, (requests.ConnectionError, requests.ConnectTimeout)):
+                portal_result(e)
+                if portal_down():
+                    raise Stop("공공데이터포털 연결 안 됨") from e
             if attempt == 3:
                 raise
             time.sleep(2 ** attempt)

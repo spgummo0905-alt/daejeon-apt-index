@@ -46,6 +46,26 @@ def parse_response(xml_text: str) -> tuple[list[dict], int]:
     return items, total
 
 
+# 공공데이터포털에 아예 연결이 안 될 때(연결 시간 초과): 한 번 실행 안에서 두 번 연달아 그러면 내려간 것으로 보고
+# 남은 조회(매매·전월세·단지 정보·공급면적·관리비)는 바로 건너뜁니다. 받아 둔 자료로 사이트는 그대로 만듭니다.
+_PORTAL = {"fails": 0, "down": False}
+
+
+def portal_down() -> bool:
+    return _PORTAL["down"]
+
+
+def portal_result(exc: BaseException | None) -> None:
+    """조회 결과를 알립니다. 연결 자체가 안 된 실패만 셉니다 (HTTP 오류·빈 응답은 서버가 살아 있는 것)."""
+    if exc is None:
+        _PORTAL["fails"] = 0
+    elif isinstance(exc, (requests.ConnectionError, requests.ConnectTimeout)) and not _PORTAL["down"]:
+        _PORTAL["fails"] += 1
+        if _PORTAL["fails"] >= 2:
+            _PORTAL["down"] = True
+            print("::warning::공공데이터포털(apis.data.go.kr)에 연결이 안 됩니다. 이번 실행의 남은 조회는 건너뛰고 받아 둔 자료를 씁니다")
+
+
 def fetch_month(
     service_key: str,
     lawd_cd: str,
@@ -57,6 +77,8 @@ def fetch_month(
 ) -> list[dict]:
     """한 구의 한 달치 거래를 페이지를 넘겨가며 모두 받습니다."""
     s = session or requests.Session()
+    if portal_down():
+        raise MolitError("공공데이터포털 연결 안 됨 (이번 실행은 건너뜀)")
     page, items = 1, []
     while True:
         params = {
@@ -71,9 +93,11 @@ def fetch_month(
                 r = s.get(endpoint, params=params, timeout=(10, 40))  # 연결 10초, 응답 40초
                 r.raise_for_status()
                 batch, total = parse_response(r.text)
+                portal_result(None)
                 break
-            except (requests.RequestException, MolitError):
-                if attempt == retries - 1:
+            except (requests.RequestException, MolitError) as e:
+                portal_result(e)
+                if attempt == retries - 1 or portal_down():
                     raise
                 time.sleep(2 ** attempt)
         items.extend(batch)
