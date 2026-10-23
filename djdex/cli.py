@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, kakao, kapt, location, metrics, molit, osm, school, site
+from . import bldg, ecos, fee, kakao, kapt, location, metrics, molit, osm, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -66,6 +66,11 @@ def cmd_collect(cfg, args) -> None:
             kapt.collect(key, cfg.districts, cfg.paths.kapt, budget=budget)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 수집 실패(활용신청 승인 전이면 정상), 세대수·주차 없이 진행합니다: {e}")
+    if cfg.collect.get("collect_fee") and have >= need and cfg.paths.kapt.exists():
+        try:
+            fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)))
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
     if cfg.collect.get("collect_bldg") and have >= need:
         try:
             bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
@@ -208,6 +213,13 @@ def cmd_build(cfg, args) -> None:
         print(f"단지 정보(K-apt) {len(kl):,}곳 중 {len(kinfo):,}곳을 실거래 단지에 이음 "
               f"(실거래 단지 {trades['complex_id'].nunique():,}곳)"
               + (f", 세대수 중간 {hh[len(hh) // 2]:,} · 최대 {hh[-1]:,}" if hh else ""))
+        fees = fee.load(cfg.paths.kapt)
+        if fees:   # 화면에 쓰기 전에 항목 구조와 ㎡당 금액이 그럴듯한지 로그로 확인
+            fee.log_fields(cfg.paths.kapt)
+            area = {k["code"]: k.get("marea") for k in kl}
+            per = sorted(v["total"] / area[c] for c, v in fees.items() if area.get(c))
+            print(f"관리비(공용관리비) {len(fees):,}곳" + (f", ㎡당 중간 {per[len(per) // 2]:,.0f}원 · "
+                  f"아래 10% {per[len(per) // 10]:,.0f}원 · 위 10% {per[len(per) * 9 // 10]:,.0f}원" if per else ""))
     supply = bldg.load(cfg.paths.bldg)
     if supply:
         ids = set(trades["complex_id"].astype(str))

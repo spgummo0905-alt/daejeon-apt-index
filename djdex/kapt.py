@@ -165,6 +165,7 @@ def summarize(it: dict) -> dict:
         "heat": it.get("codeHeatNm") or None, "hall": it.get("codeHallNm") or None,
         "builder": it.get("kaptBcompany") or None, "mgr": it.get("codeMgrNm") or None,
         "elev": _num(it.get("kaptdEcnt")), "evc": ev, "cctv": _num(it.get("kaptdCccnt")),
+        "marea": _num(it.get("kaptMarea")),   # 관리비 부과면적(㎡): 관리비 ㎡당 금액에 씀
     }
     return {k: v for k, v in out.items() if v not in (None, "", 0) or k in ("code",)}
 

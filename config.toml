@@ -46,6 +46,10 @@ collect_kapt = true
 # 하루 1만 번 한도를 대전·세종이 나눠 쓰고, 다 받을 때까지 며칠에 걸쳐 이어 받습니다.
 collect_bldg = true
 bldg_calls_per_run = 4500
+# 관리비(공용관리비, 최근 공개 달). '국토교통부_공동주택관리비(공용관리비)정보제공서비스'(V3) 활용신청 필요.
+# 단지마다 17번 불러야 해서 하루 5천 번 한도 안에서 며칠에 걸쳐 받습니다.
+collect_fee = true
+fee_calls_per_run = 2400
 
 [filters]
 # 해제(취소)된 거래 제외
