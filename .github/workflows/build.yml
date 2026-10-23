@@ -66,21 +66,26 @@ jobs:
           key: djdex-data-${{ github.run_id }}
           restore-keys: djdex-data-
       # 전월세·단지 정보(K-apt)는 따로 캐시합니다 (대전 캐시의 경로 목록을 바꾸면 캐시를 못 찾아 처음부터 다시 받기 때문).
+      # 캐시 이름 끝의 2: 오래 도는 옛 실행이 나중에 끝나며 옛 자료로 덮어쓰지 않게 이름을 바꿨습니다 (옛 이름은 처음 한 번만 이어받음).
       - name: 전월세·단지 정보 캐시 복원
         uses: actions/cache/restore@v4
         with:
           path: |
             data/raw_rent
             data/kapt
-          key: djdex-rent-${{ github.run_id }}
-          restore-keys: djdex-rent-
+          key: djdex-rent2-${{ github.run_id }}
+          restore-keys: |
+            djdex-rent2-
+            djdex-rent-
       # 건축물대장 공급면적도 따로 캐시합니다 (며칠에 걸쳐 이어 받음).
       - name: 공급면적 캐시 복원
         uses: actions/cache/restore@v4
         with:
           path: data/bldg
-          key: djdex-bldg-${{ github.run_id }}
-          restore-keys: djdex-bldg-
+          key: djdex-bldg2-${{ github.run_id }}
+          restore-keys: |
+            djdex-bldg2-
+            djdex-bldg-
       # 서울 자료는 먼저 복원합니다. 실거래를 다 모았으면(data/seoul/READY) 대전·세종 지역 메뉴에 서울이 나오고
       # 아래에서 서울 사이트도 만듭니다.
       - name: 서울 수집 캐시 복원
@@ -119,21 +124,23 @@ jobs:
           path: |
             data/raw_rent
             data/kapt
-          key: djdex-rent-${{ github.run_id }}
+          key: djdex-rent2-${{ github.run_id }}
       - name: 공급면적 캐시 저장
         if: always()
         uses: actions/cache/save@v4
         with:
           path: data/bldg
-          key: djdex-bldg-${{ github.run_id }}
+          key: djdex-bldg2-${{ github.run_id }}
       # 세종은 대전 사이트 안 /sejong/ 에 만듭니다. 세종이 실패해도 대전은 배포합니다.
       # 캐시는 대전과 따로 둡니다 (대전 캐시의 경로 목록을 바꾸면 캐시를 못 찾아 처음부터 다시 받기 때문).
       - name: 세종 수집 캐시 복원
         uses: actions/cache/restore@v4
         with:
           path: data/sejong
-          key: djdex-sejong-${{ github.run_id }}
-          restore-keys: djdex-sejong-
+          key: djdex-sejong2-${{ github.run_id }}
+          restore-keys: |
+            djdex-sejong2-
+            djdex-sejong-
       - name: 세종 수집, 계산, 사이트 생성
         continue-on-error: true
         env:
@@ -151,7 +158,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/sejong
-          key: djdex-sejong-${{ github.run_id }}
+          key: djdex-sejong2-${{ github.run_id }}
       # 서울: 실거래를 다 모은 뒤부터 /seoul/ 에 만듭니다. 실패해도 대전·세종은 배포합니다.
       - name: 서울 수집, 계산, 사이트 생성
         id: seoul_site
@@ -211,13 +218,13 @@ jobs:
           path: |
             data/raw_rent
             data/kapt
-          key: djdex-rent-${{ github.run_id }}-slow
+          key: djdex-rent2-${{ github.run_id }}-slow
       - name: 대전 이어 받은 공급면적 저장
         if: ${{ always() && (steps.slow_dj.outcome == 'success' || steps.slow_dj.outcome == 'failure') }}
         uses: actions/cache/save@v4
         with:
           path: data/bldg
-          key: djdex-bldg-${{ github.run_id }}-slow
+          key: djdex-bldg2-${{ github.run_id }}-slow
       - name: 세종 공급면적·관리비·후기 이어 받기
         id: slow_sj
         if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) }}
@@ -235,4 +242,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/sejong
-          key: djdex-sejong-${{ github.run_id }}-slow
+          key: djdex-sejong2-${{ github.run_id }}-slow
