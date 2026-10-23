@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import ecos, kakao, location, metrics, molit, osm, school, site
+from . import ecos, kakao, kapt, location, metrics, molit, osm, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -61,6 +61,11 @@ def cmd_collect(cfg, args) -> None:
         rents = molit.load_rent(cfg.paths.raw_rent, cfg.districts, rows)
         pd.DataFrame(rents).to_csv(cfg.paths.rents, index=False)
         print(f"전월세 {len(rents):,}건 (전세 {sum(1 for r in rents if not r['monthly']):,}건) → {cfg.paths.rents}")
+    if cfg.collect.get("collect_kapt") and have >= need:
+        try:
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, budget=budget)
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::단지 정보(K-apt) 수집 실패(활용신청 승인 전이면 정상), 세대수·주차 없이 진행합니다: {e}")
     if budget:
         # 나눠 받는 지역: 매매 실거래를 모든 구·달 다 받았으면 READY 를 남겨 사이트를 만들고 공개합니다.
         print(f"[{cfg.region_name}] 실거래 {have:,} / {need:,} (구×달) 받음")
@@ -113,7 +118,8 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
             print(f"[규모:{title}] " + " | ".join(f"{c}={r[c]}" for c in cols))
 
 
-def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None):
+def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
+                     kinfo=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -174,7 +180,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                     print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
-                   macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents)
+                   macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo)
     return table, meta, n
 
 
@@ -187,7 +193,13 @@ def cmd_build(cfg, args) -> None:
     poi_df = pd.DataFrame.from_dict(poi, orient="index")
     out = Path(args.out or ROOT / "site")
     rents = pd.read_csv(cfg.paths.rents, dtype={"jibun": str, "contract": str}) if cfg.paths.rents.exists() else None
-    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents)
+    kinfo = None
+    if cfg.paths.kapt.exists():
+        kl = kapt.load(cfg.paths.kapt, cfg.districts)
+        kinfo = kapt.match(_complex_list(trades), kl)
+        print(f"단지 정보(K-apt) {len(kl):,}곳 중 {len(kinfo):,}곳을 실거래 단지에 이음 "
+              f"(실거래 단지 {trades['complex_id'].nunique():,}곳)")
+    table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
 
@@ -228,7 +240,7 @@ def cmd_demo(cfg, args) -> None:
     out = Path(args.out or ROOT / "site-demo")
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
-                                  rents=demo_mod.rents(trades))
+                                  rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 

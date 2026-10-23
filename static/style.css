@@ -1477,3 +1477,15 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
     border-radius: 0 0 16px 16px; }
   .sv-nav .btn { padding: 10px 14px; }
 }
+
+/* 단지 정보 (K-apt) */
+.ki-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; }
+@media (min-width: 720px) { .ki-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ki-grid > div { min-width: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.ki-grid dt { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.ki-grid dd { margin: 4px 0 0; font-size: 15px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+.ki-grid .ki-main { grid-column: span 2; background: var(--chip); border-color: transparent; }
+.ki-grid .ki-main dd { font-size: 26px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ki-grid .ki-main dd small { font-size: 14px; font-weight: 700; color: var(--text-2); margin: 0 2px; }
+.ki-grid .ki-main p { margin: 2px 0 0; font-size: 12.5px; color: var(--text-2); }
+@media (max-width: 719px) { .ki-grid .ki-main { grid-column: span 1; } .ki-grid .ki-main dd { font-size: 22px; } }
