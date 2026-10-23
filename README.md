@@ -30,6 +30,7 @@ python -m http.server -d site-demo 8000
 | `KAKAO_REST_KEY` | [카카오 개발자](https://developers.kakao.com) → 내 애플리케이션 → REST API 키 | 좌표, 주변 시설 (입지점수) |
 | (같은 `DATA_GO_KR_KEY`) | 공공데이터포털 → "국토교통부_아파트 분양권전매 신고 자료" 활용신청 | 입주 전후 신축의 분양권·입주권 거래 (권장) |
 | `KAKAO_JS_KEY` | 같은 곳의 JavaScript 키 + 플랫폼에 사이트 도메인 등록 | 단지 페이지 지도 (선택) |
+| `ECOS_KEY` | [한국은행 경제통계시스템](https://ecos.bok.or.kr) → 개발 가이드 → 인증키 신청 | 시세 차트의 실질(물가 반영) 보기와 금리 (선택) |
 
 공공데이터포털 키는 **Decoding 키**를 쓰세요. 요청 라이브러리가 다시 인코딩하므로 Encoding 키를 넣으면 인증 오류가 납니다.
 활용신청 직후에는 키가 활성화되기까지 1~2시간 걸릴 수 있습니다.

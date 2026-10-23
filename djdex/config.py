@@ -44,6 +44,11 @@ class Paths:
         return self.data / "cpi.csv"
 
     @property
+    def macro(self) -> Path:
+        """한국은행 물가·금리 (ecos.py 가 씀)"""
+        return self.data / "macro.json"
+
+    @property
     def scores(self) -> Path:
         return self.data / "scores.csv"
 

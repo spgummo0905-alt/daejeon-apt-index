@@ -1,5 +1,3 @@
-import pandas as pd
-
 from djdex import charts
 
 
@@ -22,10 +20,6 @@ def test_charts_render_and_handle_empty_input():
     assert "chart-empty" in charts.line_compare([(2020, 1.0)], [], "a", "b")
     svg = charts.line_compare([(2016, 40000), (2020, 50000)], [(2016, 30000), (2020, 35000)], "이 단지", "대전 중위")
     assert svg.count('class="col"') == 2 and "이 단지 5.0억" in svg
-    trades = [{"date": pd.Timestamp("2020-01-05"), "price": 50000, "area": 84.9, "floor": 3},
-              {"date": pd.Timestamp("2021-03-05"), "price": 30000, "area": 59.0, "floor": None}]
-    out = charts.trade_dots(trades)
-    assert "중형" in out and "소형" in out and "대형" not in out
     hist = charts.histogram([10, 55, 57, 90], highlight=56)
     # 5점 간격 20칸, 막대 색은 등급 (55점 칸은 B), 이 단지 칸 말고는 흐리게
     assert "이 단지" in hist and hist.count(" dim") == 19 and 'class="bar g-B"' in hist and "bar g-S dim" in hist

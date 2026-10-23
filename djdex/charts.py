@@ -9,8 +9,6 @@ from __future__ import annotations
 import math
 from html import escape
 
-import pandas as pd
-
 REGION = "대전"  # 그래프 문구의 지역 이름. site.build 가 설정 값으로 바꿉니다.
 
 GRADES = [  # (하한, 등급, 이름)
@@ -317,56 +315,6 @@ def line_compare(main: list[tuple[int, float]], ref: list[tuple[int, float]],
 
 
 # ---------------------------------------------------------------- 거래 점그래프
-
-AREA_GROUPS = [("소형 60㎡ 이하", 0, 60, "s1"), ("중형 60~85㎡", 60, 85.5, "s2"), ("대형 85㎡ 초과", 85.5, 1e9, "s3")]
-
-
-def trade_dots(trades: list[dict], width: int = 720, height: int = 260) -> str:
-    """trades: date(Timestamp), price(만원), area, floor. 평형대별 색 3개."""
-    ts = [t for t in trades if not t.get("cancelled")]
-    if len(ts) < 2:
-        return _empty("표시할 거래가 부족합니다.")
-    d0 = min(t["date"] for t in ts)
-    d1 = max(t["date"] for t in ts)
-    span = (d1 - d0).days or 1
-    yt = _nice_ticks(0, max(t["price"] for t in ts) * 1.05)
-    ymax = yt[-1]
-    pl, pr, pt, pb = 56, 16, 12, 28
-
-    def px(d):
-        return pl + (d - d0).days / span * (width - pl - pr)
-
-    def py(v):
-        return pt + (1 - v / ymax) * (height - pt - pb)
-
-    out = []
-    for t in yt:
-        out.append(f'<line x1="{pl}" x2="{width - pr}" y1="{py(t):.1f}" y2="{py(t):.1f}" class="grid"/>'
-                   f'<text x="{pl - 8}" y="{py(t) + 4:.1f}" text-anchor="end" class="axis">{eok(t, 0)}</text>')
-    n_labels = max(3, (width - pl - pr) // 56)
-    ticks = [(yr, px(max(d0, pd.Timestamp(year=yr, month=1, day=1))))
-             for yr in range(d0.year, d1.year + 1, max(1, math.ceil((d1.year - d0.year + 1) / n_labels)))]
-    if len(ticks) > 1 and ticks[1][1] - ticks[0][1] < 34:  # 첫 해가 몇 달뿐이면 다음 해 글자와 겹치므로 뺌
-        ticks = ticks[1:]
-    for yr, x in ticks:
-        out.append(f'<text x="{x:.1f}" y="{height - 8}" text-anchor="middle" class="axis">{yr}</text>')
-    for t in ts:
-        cls = next(c for _, lo, hi, c in AREA_GROUPS if lo <= t["area"] < hi)
-        fl = "" if nan(t.get("floor")) or t.get("floor") is None else f" · {int(t['floor'])}층"
-        kind = t.get("kind") or "매매"
-        pre = kind != "매매"
-        tip = f"{eok(t['price'], 2)}\n{t['date']:%Y.%m.%d} · 전용 {t['area']:.0f}㎡{fl}" + (f" · {kind}" if pre else "")
-        x, y = px(t["date"]), py(t["price"])
-        out.append(f'<g class="mark" {_tip(tip)}><circle cx="{x:.1f}" cy="{y:.1f}" r="10" class="hit"/>'
-                   f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" class="dot {cls} {"hollow" if pre else "ring"}"/></g>')
-    present = {next(c for _, lo, hi, c in AREA_GROUPS if lo <= t["area"] < hi) for t in ts}
-    legend = "".join(f'<span class="legend-item"><span class="key-dot {c}"></span>{escape(n)}</span>'
-                     for n, _, _, c in AREA_GROUPS if c in present)
-    if any((t.get("kind") or "매매") != "매매" for t in ts):
-        legend += '<span class="legend-item"><span class="key-dot hollow"></span>분양권·입주권 (속 빈 점)</span>'
-    return (f'<svg viewBox="0 0 {width} {height}" class="chart" role="img" aria-label="거래 점그래프">{"".join(out)}</svg>'
-            f'<div class="legend">{legend}</div>')
-
 
 # ---------------------------------------------------------------- 레이더 (입지)
 
