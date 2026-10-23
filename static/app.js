@@ -474,7 +474,52 @@
     }), { rootMargin: "-40% 0px -55% 0px" });
     pairs.forEach(p => io.observe(p[1]));
   }
+  // 지역 고르기: 위쪽 지역 버튼(또는 첫 화면 제목의 지역 이름)을 누르면 권역별 지역 카드가 열립니다.
+  // 휴대폰은 아래에서 올라오는 시트, 넓은 화면은 버튼 아래 작은 창. 지역이 많으면 검색칸으로 거릅니다.
+  function regionPicker() {
+    const pop = document.getElementById("rg-pop");
+    if (!pop) return;
+    const openers = document.querySelectorAll("[data-rg-open]");
+    const head = document.querySelector(".rg-btn");
+    const narrow = matchMedia("(max-width: 719px)");
+    let back = null, from = null;
+    const open = btn => {
+      from = btn;
+      pop.hidden = false;
+      openers.forEach(b => b.setAttribute("aria-expanded", "true"));
+      // 첫 화면 제목에서 열면 넓은 화면에서도 가운데 시트처럼 (위쪽 버튼에 붙이면 멀리 떨어져 보여서)
+      pop.classList.toggle("float", btn !== head && !narrow.matches);
+      if (narrow.matches || btn !== head) {
+        back = el("div", "sheet-back");
+        back.addEventListener("click", close);
+        document.body.append(back);
+      }
+      requestAnimationFrame(() => { pop.classList.add("on"); if (back) back.classList.add("on"); });
+      (pop.querySelector("[data-rg-q]") || pop.querySelector(".rg-item.on") || pop.querySelector(".rg-item")).focus({ preventScroll: true });
+    };
+    function close() {
+      if (pop.hidden) return;
+      pop.classList.remove("on");
+      openers.forEach(b => b.setAttribute("aria-expanded", "false"));
+      if (back) { back.remove(); back = null; }
+      setTimeout(() => { if (!pop.classList.contains("on")) pop.hidden = true; }, 220);
+      if (from) from.focus({ preventScroll: true });
+    }
+    openers.forEach(b => b.addEventListener("click", e => { e.stopPropagation(); pop.hidden || !pop.classList.contains("on") ? open(b) : close(); }));
+    document.addEventListener("click", e => { if (!pop.hidden && !pop.contains(e.target)) close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+    const q = pop.querySelector("[data-rg-q]");
+    if (q) q.addEventListener("input", () => {
+      const v = q.value.trim();
+      pop.querySelectorAll(".rg-item").forEach(a => { a.hidden = !!v && !a.dataset.rgName.includes(v); });
+      pop.querySelectorAll("[data-rg-grp]").forEach(g => {
+        g.hidden = ![...g.nextElementSibling.children].some(a => !a.hidden);
+        g.nextElementSibling.hidden = g.hidden;
+      });
+    });
+  }
   document.addEventListener("DOMContentLoaded", () => {
+    regionPicker();
     DJ.paintFavCount();
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();
