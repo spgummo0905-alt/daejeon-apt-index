@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -29,11 +30,18 @@ def text(html: str, pat: str) -> str:
 
 
 def _get(s: requests.Session, url: str) -> str:
-    try:
-        r = s.get(url, timeout=30)
-        return r.text if r.ok else ""
-    except requests.RequestException:
-        return ""
+    # GitHub Pages 가 한꺼번에 많이 열면 잠깐 막을 때가 있어(429 등) 조금 쉬었다 두 번 더 열어 봅니다
+    for wait in (0, 2, 6):
+        time.sleep(wait)
+        try:
+            r = s.get(url, timeout=30)
+        except requests.RequestException:
+            continue
+        if r.ok:
+            return r.text
+        if r.status_code == 404:
+            return ""
+    return ""
 
 
 def main() -> None:
@@ -62,14 +70,15 @@ def main() -> None:
             out["단지 페이지"] = len(apts)
             out |= {k: v in html for k, v in COMMON.items()}
             intro = s.get(url + "intro.html", timeout=30)
-            out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else ""}
+            out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else "",
+                           "뜨거운 동네 넘기기": "data-hot-json" in intro.text}
             if apts:
                 page = s.get(url + "apt/" + apts[0], timeout=30)
                 out["단지 예시"] = {"주소": url + "apt/" + apts[0], "상태": page.status_code,
                                   **{k: v in page.text for k, v in MARKS.items()}}
-                with ThreadPoolExecutor(16) as ex:
+                with ThreadPoolExecutor(8) as ex:
                     pages = [p for p in ex.map(lambda a: _get(s, url + "apt/" + a), apts) if p]
-                out["반영"] = {"열린 단지 페이지": len(pages), **{k: sum(map(f, pages)) for k, f in FILLED.items()}}
+                out["반영"] = {"열린 단지 페이지": f"{len(pages)} / {len(apts)}", **{k: sum(map(f, pages)) for k, f in FILLED.items()}}
         print(json.dumps(out, ensure_ascii=False))
 
 
