@@ -120,7 +120,21 @@ def test_collect_with_budget_fills_in_over_several_runs(tmp_path, monkeypatch):
     logs = []
     molit.collect("k", DISTRICTS, months, tmp_path, "e", 1000, budget=2, log=logs.append)
     assert calls == ["202001", "202002"] and any("다음 실행 때 이어서" in m for m in logs)
-    # 다음 실행: 받아 둔 달은 건너뛰고, 한도 초과 같은 실패는 오류 없이 멈춤 (공개 전 지역)
+    # 다음 실행: 받아 둔 달은 건너뛰고, 실패한 달은 오류 없이 넘어가 다음 달을 받음 (공개 전 지역)
     molit.collect("k", DISTRICTS, months, tmp_path, "e", 1000, budget=2, log=logs.append)
-    assert calls[2:] == ["202003", "202004"]
-    assert sorted(p.stem for p in (tmp_path / "30200").glob("*.json")) == ["202001", "202002", "202003"]
+    assert calls[2:] == ["202003", "202004", "202005"]
+    assert sorted(p.stem for p in (tmp_path / "30200").glob("*.json")) == ["202001", "202002", "202003", "202005"]
+
+
+def test_collect_with_budget_stops_after_repeated_failures(tmp_path, monkeypatch):
+    import requests
+    calls = []
+
+    def fake(key, lawd, ym, endpoint, rows, session=None):
+        calls.append(ym)
+        raise requests.ConnectTimeout("apis.data.go.kr timed out")
+
+    monkeypatch.setattr(molit, "fetch_month", fake)
+    molit.collect("k", DISTRICTS, ["202001", "202002", "202003", "202004", "202005"], tmp_path, "e", 1000,
+                  budget=100, log=lambda m: None)
+    assert calls == ["202001", "202002", "202003"]  # 서버가 응답하지 않으면 세 번째에서 멈춤

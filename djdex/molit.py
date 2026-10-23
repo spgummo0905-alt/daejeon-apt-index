@@ -162,7 +162,7 @@ def collect(
     여러 번 연달아 실패하면 서버가 내려간 것으로 보고 나머지 최근 달은 시도하지 않습니다.
 
     budget 을 주면 한 번 실행에 그만큼만 받고 나머지는 다음 실행 때 이어서 받습니다 (공개 전 지역을
-    하루 호출 한도 안에서 며칠에 나눠 채울 때). 이때는 예전 달이 실패해도 멈추기만 하고 오류를 내지 않습니다.
+    하루 호출 한도 안에서 며칠에 나눠 채울 때). 이때는 예전 달이 실패해도 오류를 내지 않고 그 달을 건너뛰며, 연달아 실패하면 멈춥니다.
     """
     s = requests.Session()
     fails, down, used = 0, False, 0
@@ -181,8 +181,13 @@ def collect(
                 items = fetch_month(service_key, lawd, ym, endpoint, rows, session=s)
             except (requests.RequestException, MolitError) as e:
                 if ym not in refresh and budget is not None:
-                    log(f"::warning::{districts[lawd]} {ym} 받기 실패, 다음 실행 때 이어서 받습니다: {e}")
-                    return
+                    # 나눠 받는 중: 그 달은 건너뛰고(다음 실행 때 다시) 연달아 실패하면 오늘은 멈춤
+                    fails += 1
+                    log(f"::warning::{districts[lawd]} {ym} 받기 실패, 다음 실행 때 다시 받습니다: {e}")
+                    if fails >= DOWN_AFTER:
+                        log("::warning::여러 번 연달아 실패해 이번 실행은 여기까지 받습니다")
+                        return
+                    continue
                 if ym not in refresh:
                     raise
                 fails += 1
