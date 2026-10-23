@@ -63,3 +63,12 @@ def test_load_drops_cafe_posts_that_need_login(tmp_path):
     got = reviews.load(p)
     assert got["A"]["kp"] == ["1", "가"] and [x["t"] for x in got["A"]["posts"]] == [f"블로그 {i}" for i in range(5)]
     assert "B" not in got   # 카페 글만 있던 단지는 보여 줄 글이 없음
+
+
+def test_kakao_place_stops_at_time_limit(tmp_path, monkeypatch):
+    clock = iter([0.0, 0.0, 1000.0, 1000.0])   # 첫 단지는 바로, 둘째 단지 앞에서 시간이 다 됨
+    monkeypatch.setattr(reviews.time, "monotonic", lambda: next(clock))
+    cl, lines = _Client([]), []
+    cx = [{"complex_id": "A", "name": "한빛"}, {"complex_id": "B", "name": "가람"}]
+    reviews.kakao_places(cx, {"A": [36.3, 127.4], "B": [36.3, 127.4]}, tmp_path / "r.json", cl, log=lines.append, time_limit=900)
+    assert cl.calls == 1 and "다음 실행" in lines[0] and "이번에 1곳 찾아" in lines[-1]

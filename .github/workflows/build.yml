@@ -203,13 +203,6 @@ jobs:
             python -m djdex --config config.seoul.toml collect
             python -m djdex --config config.seoul.toml locate || echo "::warning::서울 입지 조사 실패, 다음 실행 때 이어서 합니다"
           fi
-      # 서울 자료를 받은 실행에서만 저장합니다 (배포 때마다 큰 캐시를 새로 쌓지 않게)
-      - name: 서울 수집 캐시 저장
-        if: ${{ always() && (steps.seoul_collect.outcome == 'success' || steps.seoul_collect.outcome == 'failure' || steps.seoul_site.outputs.fresh == 'true') }}
-        uses: actions/cache/save@v4
-        with:
-          path: data/seoul
-          key: djdex-seoul-${{ github.run_id }}
       # 오래 걸리는 수집(공급면적·관리비·카카오맵 장소·네이버 글)은 배포가 끝난 뒤에 합니다.
       # 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 캐시에 저장해 다음 배포부터 화면에 나옵니다. 실패해도 배포에는 영향이 없습니다.
       - name: 대전 공급면적·관리비·후기 이어 받기
@@ -256,3 +249,23 @@ jobs:
         with:
           path: data/sejong
           key: djdex-sejong2-${{ github.run_id }}-slow
+      # 서울 관리비·카카오맵 장소·네이버 글·공급면적: 단지가 많아 대전·세종을 먼저 받고 맨 뒤에서 하루 몫씩 이어 받습니다.
+      - name: 서울 관리비·후기 이어 받기
+        id: slow_se
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) && hashFiles('data/seoul/READY') != '' }}
+        continue-on-error: true
+        timeout-minutes: 60
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m djdex --config config.seoul.toml slow
+      # 서울 자료를 받은 실행에서만 저장합니다 (배포 때마다 큰 캐시를 새로 쌓지 않게). 서울 관리비·후기까지 받은 뒤 한 번에
+      - name: 서울 수집 캐시 저장
+        if: ${{ always() && (steps.seoul_collect.outcome == 'success' || steps.seoul_collect.outcome == 'failure' || steps.slow_se.outcome == 'success' || steps.slow_se.outcome == 'failure' || steps.seoul_site.outputs.fresh == 'true') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/seoul
+          key: djdex-seoul-${{ github.run_id }}
