@@ -66,17 +66,6 @@ def cmd_collect(cfg, args) -> None:
             kapt.collect(key, cfg.districts, cfg.paths.kapt, budget=budget)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 수집 실패(활용신청 승인 전이면 정상), 세대수·주차 없이 진행합니다: {e}")
-    if cfg.collect.get("collect_fee") and have >= need and cfg.paths.kapt.exists():
-        try:
-            fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)))
-        except (molit.MolitError, requests.RequestException) as e:
-            print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
-    if cfg.collect.get("collect_bldg") and have >= need:
-        try:
-            bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
-                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)))
-        except (molit.MolitError, requests.RequestException) as e:
-            print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
     if budget:
         # 나눠 받는 지역: 매매 실거래를 모든 구·달 다 받았으면 READY 를 남겨 사이트를 만들고 공개합니다.
         print(f"[{cfg.region_name}] 실거래 {have:,} / {need:,} (구×달) 받음")
@@ -253,6 +242,27 @@ def _outside_reviews(cfg) -> None:
         print(f"::warning::바깥 후기 잇기 실패, 검색 버튼만 둡니다: {e!r}")
 
 
+def cmd_slow(cfg, args) -> None:
+    """오래 걸리는 수집: 공급면적(건축물대장)·관리비·카카오맵 장소·네이버 글.
+    배포가 끝난 뒤에 돌려 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 다음 배포부터 화면에 나옵니다."""
+    if cfg.collect.get("max_calls_per_run") and not (cfg.paths.data / "READY").exists():
+        return   # 실거래를 다 모으기 전인 지역(서울)
+    key = _need("DATA_GO_KR_KEY")
+    if cfg.collect.get("collect_bldg"):
+        try:
+            bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
+                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)))
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
+    if cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
+        try:
+            fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)))
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
+    if os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
+        _outside_reviews(cfg)
+
+
 def cmd_all(cfg, args) -> None:
     cmd_collect(cfg, args)
     if os.environ.get("KAKAO_REST_KEY"):
@@ -260,7 +270,6 @@ def cmd_all(cfg, args) -> None:
             cmd_locate(cfg, args)
             if cfg.paths.kapt.exists():   # 단지 정보(K-apt) 주소 → 좌표 (지번·이름으로 못 이을 때 씀)
                 kapt.locate(cfg.paths.kapt, cfg.districts, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), cfg.geo_region)
-            _outside_reviews(cfg)
         except requests.RequestException as e:
             # 입지 수집이 실패해도 이미 받은 실거래 데이터로 사이트는 만듭니다.
             # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
@@ -308,10 +317,11 @@ def main(argv: list[str] | None = None) -> None:
         s.add_argument("--end", help="수집 끝 YYYYMM (기본: 이번 달)")
         s.add_argument("--out", help="사이트 출력 폴더")
     sub.add_parser("locate")
+    sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
     args = p.parse_args(argv)
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
-     "all": cmd_all, "demo": cmd_demo}[args.cmd](cfg, args)
+     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow}[args.cmd](cfg, args)

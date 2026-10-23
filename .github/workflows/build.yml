@@ -186,3 +186,49 @@ jobs:
         with:
           path: data/seoul
           key: djdex-seoul-${{ github.run_id }}
+      # 오래 걸리는 수집(공급면적·관리비·카카오맵 장소·네이버 글)은 배포가 끝난 뒤에 합니다.
+      # 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 캐시에 저장해 다음 배포부터 화면에 나옵니다. 실패해도 배포에는 영향이 없습니다.
+      - name: 대전 공급면적·관리비·후기 이어 받기
+        id: slow_dj
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 45
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m djdex slow
+      - name: 대전 이어 받은 단지 정보 저장
+        if: ${{ always() && (steps.slow_dj.outcome == 'success' || steps.slow_dj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/raw_rent
+            data/kapt
+          key: djdex-rent-${{ github.run_id }}-slow
+      - name: 대전 이어 받은 공급면적 저장
+        if: ${{ always() && (steps.slow_dj.outcome == 'success' || steps.slow_dj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/bldg
+          key: djdex-bldg-${{ github.run_id }}-slow
+      - name: 세종 공급면적·관리비·후기 이어 받기
+        id: slow_sj
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 45
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m djdex --config config.sejong.toml slow
+      - name: 세종 이어 받은 자료 저장
+        if: ${{ always() && (steps.slow_sj.outcome == 'success' || steps.slow_sj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/sejong
+          key: djdex-sejong-${{ github.run_id }}-slow
