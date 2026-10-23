@@ -1133,11 +1133,16 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 /* ===== 단지 페이지 메인 카드 (이미지로 저장하는 카드와 같은 모양) ===== */
 .apt-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
 .apt-hero > * { min-width: 0; }
-/* 넓은 화면: 왼쪽 메인 카드, 오른쪽에 한눈에 보기와 관련 점수 (휴대폰은 위에서 아래로 같은 순서) */
+/* 넓은 화면: 왼쪽 메인 카드, 오른쪽에 평형별 시세와 한눈에 보기 (휴대폰은 위에서 아래로 같은 순서).
+   관련 점수는 두 칸 아래 한 줄로 두어 오른쪽만 길어지지 않게 하고,
+   오른쪽이 길어도 메인 카드가 화면을 따라 내려와 빈자리가 생기지 않게 */
 .apt-side .points { margin-top: 0; }
 @media (min-width: 900px) { .apt-hero { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); align-items: start; gap: 28px; }
-  .apt-side .sec-head { margin-top: 22px; }
-  .apt-side .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .apt-more .sec-head { margin-top: 28px; } }
+@media (min-width: 900px) and (min-height: 880px) {
+  .apt-hero > .mc { position: sticky; top: 16px; }
+  .apt-hero > .mc:has(.mc-deals:not([hidden])) { position: static; }  /* 거래 내역을 펼치면 화면보다 길어지니 따라오지 않게 */
+}
 /* 등급별 색: 테두리 금속, 안쪽 바탕, 글자, 막대 (cardgen.js 의 TIER 와 같음) */
 .mc { --f1: #f4f5f7; --f2: #b9c0ca; --f3: #8a929e; --f4: #e3e6ea; --in1: #f4f5f7; --in2: #e6e9ee; --in3: #f7f8fa;
   --ink: #1d232c; --sub: rgba(29,35,44,.65); --b1: #8a929e; --b2: #b9c0ca; --b3: #dfe3e8; --track: rgba(0,0,0,.08); --em-ink: #1a1406;
@@ -1633,10 +1638,10 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 @media (max-width: 719px) {
   .m-hide { display: none; }   /* 메인 카드와 같은 내용 */
   /* 관련 점수 카드는 메인 카드와 겹치는 내용이 많아 가로로 넘겨 보기 */
-  .apt-side .cards { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  .apt-more .cards { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
     margin-left: -16px; margin-right: -16px; padding: 2px 16px 8px; scroll-padding: 0 16px; }
-  .apt-side .cards::-webkit-scrollbar { display: none; }
-  .apt-side .cards > .card { flex: 0 0 72%; max-width: 260px; scroll-snap-align: start; }
+  .apt-more .cards::-webkit-scrollbar { display: none; }
+  .apt-more .cards > .card { flex: 0 0 72%; max-width: 260px; scroll-snap-align: start; }
   /* 단지 정보: 큰 숫자 둘만 상자, 나머지는 한 줄 표 */
   .ki-grid { gap: 8px; }
   .ki-grid > div:not(.ki-main) { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
