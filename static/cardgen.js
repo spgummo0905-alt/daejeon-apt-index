@@ -578,8 +578,6 @@
     });
     document.addEventListener("click", () => { if (tipFor) closeTip(); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") closeTip(); });
-    const sumMore = document.querySelector("[data-sum-more]");
-    if (sumMore) sumMore.addEventListener("click", () => { sumMore.closest("[data-sum]").classList.add("open"); sumMore.setAttribute("aria-expanded", "true"); });
     // 항목 설명: 줄을 누르면 펼침
     card.querySelectorAll("[data-stat]").forEach(li => {
       const flip = () => li.setAttribute("aria-expanded", li.getAttribute("aria-expanded") === "true" ? "false" : "true");

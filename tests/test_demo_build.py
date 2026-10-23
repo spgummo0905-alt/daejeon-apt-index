@@ -14,6 +14,10 @@ def test_demo_builds_site(tmp_path):
     full = [a for a in apts if 'class="quotes"' in a and "전세가율" in a and 'data-trade-kind="w"' in a]
     assert len(full) > len(pages) // 2
     assert 'data-trade-kind="j"' in full[0] and '<tbody data-k="w" hidden>' in full[0]
+    # 한눈에 보기: 문장 대신 숫자 타일 (입지·학군 막대, 구 중간 가격 대비 기준선)
+    pts = [a for a in apts if 'class="pt-grid"' in a]
+    assert len(pts) > len(pages) // 2
+    assert sum('<span class="pt-k">입지</span>' in a for a in pts) > len(pts) // 2 and any("<em style=" in a for a in pts)
 
 
 def test_build_handles_missing_build_year_and_floor(tmp_path):

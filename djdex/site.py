@@ -147,53 +147,35 @@ def _env() -> Environment:
     return env
 
 
-def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int],
-             real: bool, region: str, leader: dict | None = None) -> list[str]:
-    """단지 페이지 맨 위 '한눈에 보기' 문장들."""
+def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dict | None = None) -> list[dict]:
+    """단지 페이지 '한눈에 보기' 타일. 메인 카드에 이미 있는 지수·순위·최근 거래·수익률은 빼고
+    카드에 없는 강점과 비교만 짧은 값으로. bar: 막대 길이(0~1), mid: 막대 위 기준선 자리(0~1), tone: up/down."""
     out = []
-    if not _nan(c["index"]):
-        g, gname = grade(c["index"])
-        if c.get("rank"):
-            out.append(f"종합 지수 {c['index']:.0f}점, {region} {n}개 단지 중 {c['rank']}위로 {share(c['index_top'])}입니다 ({g}등급 {gname}).")
-        else:
-            out.append(f"종합 지수 {c['index']:.0f}점입니다. 거래가 적은 소규모 단지라 순위와 TOP 목록에서는 뺐습니다.")
-    if not _nan(c.get("last_price")):
-        kind = "" if c.get("last_kind") == "매매" else f" {c['last_kind']}"
-        high = " 같은 면적 기준 신고가입니다." if c.get("new_high") else ""
-        sup = supply_of(c.get("sup"), c["last_area"])
-        size = f"{round(sup)}㎡(전용 {int(c['last_area'])}㎡)" if sup else f"전용 {int(c['last_area'])}㎡"
-        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} {size}{kind} "
-                   f"{eok(c['last_price'], 2)}입니다.{high}")
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
-        out.append(f"입지점수는 {region} {share(c['location_top'])}이고, 가장 강한 항목은 {best['label']}입니다.")
-        if not _nan(c.get("grp_edu_top")):
-            out.append(f"학군(중학교 전입·학원가·주변 수학 학원)은 {region} {share(c['grp_edu_top'])}입니다.")
-    for n_y in years:
-        v = c.get(f"cagr_{n_y}y")
-        if not _nan(v):
-            kind = "실질" if real else "명목"
-            word = "올랐습니다" if v > 0 else "내렸습니다"
-            out.append(f"최근 {n_y}년 동안 {kind} 기준 연평균 {abs(v) * 100:.1f}%씩 {word}.")
-            break
+        out.append({"k": "입지", "v": share(c["location_top"]), "s": f"가장 강한 항목은 {best.get('short') or best['label']}",
+                    "bar": 1 - c["location_top"] / 100})
+    if not _nan(c.get("grp_edu_top")):
+        out.append({"k": "학군", "v": share(c["grp_edu_top"]), "s": "중학교 전입·학원가·수학 학원", "bar": 1 - c["grp_edu_top"] / 100})
     med = gu_med.get(c["gu"])
     if not _nan(c.get("price_ref")) and med:
-        diff = c["price_ref"] / med - 1
-        if abs(diff) < 0.03:
-            out.append(f"84㎡ 환산가는 {c['gu']} 중간 가격과 거의 같습니다.")
-        else:
-            out.append(f"84㎡ 환산가는 {c['gu']} 중간 가격보다 {abs(diff) * 100:.0f}% {'비쌉' if diff > 0 else '저렴합'}니다."
-                       )
+        ratio = c["price_ref"] / med
+        v = "비슷" if abs(ratio - 1) < 0.03 else f"{(ratio - 1) * 100:+.0f}%"
+        out.append({"k": f"{c['gu']} 중간 가격 대비", "v": v, "s": f"84㎡ 환산가 · {c['gu']} 중간 {eok(med)}",
+                    "bar": min(ratio / 2, 1), "mid": 0.5, "tone": "up" if ratio >= 1.03 else "down" if ratio <= 0.97 else None})
     if leader and not c["small"] and not _nan(c.get("price_ref")):
         if leader["complex_id"] == c["complex_id"]:
-            out.append(f"{c['gu']}에서 84㎡ 환산가가 가장 높은 대장 단지입니다.")
+            out.append({"k": f"{c['gu']} 대장 단지", "v": "1위", "s": "84㎡ 환산가가 가장 높아요", "bar": 1})
         else:
-            gap = c["price_ref"] / leader["price"] - 1
-            out.append(f"{c['gu']} 대장 단지 {leader['name']}({leader['price_text']})의 {(1 + gap) * 100:.0f}% 가격입니다.")
+            ratio = c["price_ref"] / leader["price"]
+            out.append({"k": f"{c['gu']} 대장 단지 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
+                        "bar": min(ratio, 1)})
     if c.get("hh"):
-        size = "대단지" if c["hh"] >= 1000 else "중간 규모 단지" if c["hh"] >= 500 else "작은 단지"
-        park = f" 주차는 세대당 {c['ppu']:.1f}대로 {region} {share(c['ppu_top'])}입니다." if c.get("ppu") and not _nan(c.get("ppu_top")) else ""
-        out.append(f"{c['hh']:,}세대 {size}입니다.{park}")
+        size = "대단지" if c["hh"] >= 1000 else "중간 규모" if c["hh"] >= 500 else "작은 단지"
+        park = f" · 주차 세대당 {c['ppu']:.1f}대" if c.get("ppu") else ""
+        if park and not _nan(c.get("ppu_top")):
+            park += f"({share(c['ppu_top'])})"
+        out.append({"k": "규모", "v": f"{c['hh']:,}세대", "s": size + park, "bar": None})
     return out
 
 
@@ -455,8 +437,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
-            summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
-                             leader_by_gu.get(c["gu"])),
+            points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
             n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)

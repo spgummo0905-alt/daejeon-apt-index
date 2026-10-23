@@ -85,11 +85,18 @@
     <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
 </section>
 {% endif %}
-{% if summary %}
-<section class="summary" data-sum>
+{% if points or c.small %}
+<section class="points">
   <h2>한눈에 보기</h2>
-  <ul>{% for s in summary %}<li{% if loop.index > 3 %} class="more"{% endif %}>{{ s }}</li>{% endfor %}</ul>
-  {% if summary | length > 3 %}<button type="button" class="sum-more" data-sum-more aria-expanded="false">{{ summary | length - 3 }}개 더 보기</button>{% endif %}
+  {% if points %}<ul class="pt-grid">
+  {% for p in points %}<li class="pt">
+    <span class="pt-k">{{ p.k }}</span>
+    <b class="pt-v{% if p.tone %} {{ p.tone }}{% endif %}">{{ p.v }}</b>
+    {% if p.bar is not none %}<span class="pt-bar" aria-hidden="true"><i style="width: {{ '%.0f' | format(p.bar * 100) }}%"></i>{% if p.mid %}<em style="left: {{ '%.0f' | format(p.mid * 100) }}%"></em>{% endif %}</span>{% endif %}
+    <span class="pt-s">{{ p.s }}</span>
+  </li>{% endfor %}
+  </ul>{% endif %}
+  {% if c.small %}<p class="pt-note">거래가 적은 소규모 단지라 순위와 TOP 목록에서는 뺐어요.</p>{% endif %}
 </section>
 {% endif %}
 
