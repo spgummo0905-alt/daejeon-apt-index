@@ -85,7 +85,33 @@ def pyeong(area) -> int | None:
         return None
     a = float(area)
     ratio = min(0.79, max(0.74, 0.73 + 0.0004 * a))
-    return round(a / ratio / 3.3058)
+    return round(a / ratio / PY)
+
+
+PY = 3.3058  # 1평 = 3.3058㎡
+
+
+def supply_of(pairs, ex) -> float | None:
+    """단지의 [[전용㎡, 공급㎡], ...] 에서 이 전용면적의 공급면적 (0.6㎡ 안에서 가장 가까운 것). 없으면 None."""
+    if not pairs or ex is None or _nan(ex):
+        return None
+    d, s = min((abs(float(e) - float(ex)), s) for e, s in pairs)
+    return float(s) if d <= 0.6 else None
+
+
+def area_html(ex, sup=None, dec: int = 0) -> Markup:
+    """면적 표시: ㎡ 보기 '97㎡(전용 77)' · 평 보기 '29평(전용 23)'. 공급면적을 모르면 '전용 77㎡' · '전용 23평'.
+    둘 다 그려 두고 <html class="u-py"> 로 고릅니다 (평/㎡ 바꾸기 버튼)."""
+    if ex is None or _nan(ex):
+        return Markup("")
+    ex = float(ex)
+    exs = f"{ex:.{dec}f}" if dec else f"{int(ex)}"
+    if sup:
+        m = f"{round(sup)}㎡<small>(전용 {exs})</small>"
+        p = f"{round(sup / PY)}평<small>(전용 {round(ex / PY)})</small>"
+    else:
+        m, p = f"전용 {exs}㎡", f"전용 {round(ex / PY)}평"
+    return Markup(f'<span class="ar"><span class="ar-m">{m}</span><span class="ar-p">{p}</span></span>')
 
 
 def place(r) -> str:
@@ -106,6 +132,8 @@ def _env() -> Environment:
                       autoescape=select_autoescape(["html"]))
     env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
                        pyeong=pyeong)
+    # 면적: ar(c, 전용㎡[, 소수 자리]) → 공급(전용) 표시. 공급면적은 c.sup ([[전용, 공급], ...])에서 찾습니다
+    env.globals["ar"] = lambda c, ex, dec=0: area_html(ex, supply_of(c.get("sup"), ex), dec)
     env.tests["nan"] = _nan
     return env
 
@@ -123,8 +151,9 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
     if not _nan(c.get("last_price")):
         kind = "" if c.get("last_kind") == "매매" else f" {c['last_kind']}"
         high = " 같은 면적 기준 신고가입니다." if c.get("new_high") else ""
-        py = pyeong(c["last_area"])
-        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} 전용 {int(c['last_area'])}㎡{f'({py}평)' if py else ''}{kind} "
+        sup = supply_of(c.get("sup"), c["last_area"])
+        size = f"{round(sup)}㎡(전용 {int(c['last_area'])}㎡)" if sup else f"전용 {int(c['last_area'])}㎡"
+        out.append(f"가장 최근 거래는 {c['last_date']:%Y.%m.%d} {size}{kind} "
                    f"{eok(c['last_price'], 2)}입니다.{high}")
     if not _nan(c.get("location_top")):
         best = max(factors, key=lambda f: -1 if _nan(c.get(f["key"] + "_pct")) else c[f["key"] + "_pct"])
@@ -162,7 +191,8 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
-          kinfo: dict | None = None) -> int:
+          kinfo: dict | None = None, supply: dict | None = None) -> int:
+    """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -220,6 +250,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 공동주택관리정보(K-apt): 세대수·주차 등. 못 이은 단지는 빈 값
         d["ki"] = (kinfo or {}).get(cid) or {}
         d["hh"], d["ppu"] = d["ki"].get("hh"), d["ki"].get("ppu")
+        d["sup"] = (supply or {}).get(cid) or []
         rows.append(d)
     # 세대수·세대당 주차가 지역에서 어디쯤인지 (정보가 있는 단지끼리)
     for key in ("hh", "ppu"):
@@ -366,7 +397,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         tr_list = [] if tr is None else tr.to_dict("records")
         _mark_highs(tr_list, skip_direct=cfg.filters.get("exclude_direct", False))
         rl = rent_by.get(cid)
-        pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct,
+        pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list, c["sup"]), asof_m, exclude_direct,
                                              rents=None if rl is None else rl.to_dict("records"))
         c["tp"] = pricechart.type_prices(pc_data)
         if pc_data and c["hh"]:
@@ -401,7 +432,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         shown = tr_list[:TRADE_ROWS]
         html = tpl.render(
-            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), lm_hubs=lm_hubs, area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
+            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), lm_hubs=lm_hubs, area_types=_area_types(shown, c["sup"]), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
@@ -453,9 +484,10 @@ def _group_score(table: pd.DataFrame, factors: list[dict]) -> pd.Series:
 TRADE_ROWS = 80  # 단지 페이지 거래 표에 싣는 최근 거래 수 (처음엔 15건, 나머지는 '더 보기')
 
 
-def _area_types(trades: list[dict]) -> list[dict]:
+def _area_types(trades: list[dict], sup=None) -> list[dict]:
     """거래 표 면적 고르기: 전용면적을 1㎡ 단위로 내림해 붙어 있는 값(59·60)은 한 묶음으로.
-    거래마다 t['akey'] 에 묶음 이름('84')을 달고, [{key, n}] 을 작은 면적부터 돌려줍니다."""
+    거래마다 t['akey'] 에 묶음 이름('84')을 달고, [{key, n, a(가운데 전용㎡), su(공급㎡), py}] 를 작은 면적부터 돌려줍니다.
+    py(공급 평형)는 공급면적을 알면 그 값, 모르면 전용면적으로 어림한 값 (조건으로 찾기의 평형 고르기에만 씀)."""
     ints = sorted({int(t["area"]) for t in trades if not _nan(t.get("area"))})
     group, out = {}, []
     for a in ints:
@@ -481,7 +513,13 @@ def _area_types(trades: list[dict]) -> list[dict]:
     for t in trades:
         if t["akey"]:
             areas.setdefault(t["akey"], []).append(float(t["area"]))
-    return [{"key": k, "n": n[k], "py": pyeong(sorted(areas[k])[len(areas[k]) // 2])} for k in sorted(n, key=int)]
+    out = []
+    for k in sorted(n, key=int):
+        a = sorted(areas[k])[len(areas[k]) // 2]
+        su = supply_of(sup, a)
+        out.append({"key": k, "n": n[k], "a": a, "su": round(su, 1) if su else None,
+                    "py": round(su / PY) if su else pyeong(a)})
+    return out
 
 
 def _mark_highs(trades: list[dict], band: float = 3, skip_direct: bool = False) -> None:

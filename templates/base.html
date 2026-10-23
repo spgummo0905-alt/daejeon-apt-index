@@ -23,7 +23,7 @@
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
-<script>document.documentElement.classList.add("js")</script>
+<script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">

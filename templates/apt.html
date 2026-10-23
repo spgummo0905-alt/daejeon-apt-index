@@ -6,6 +6,7 @@
 <div class="apt-topbar">
   <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
   <div class="icon-actions">
+    <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div>
     <button class="icon-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic"><use href="#i-star"/></svg></button>
     <button class="icon-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic"><use href="#i-share"/></svg></button>
   </div>
@@ -39,7 +40,7 @@
   <div class="mc-deals" id="mc-deals" hidden>
     {% for t in fresh %}
     <div class="mc-deal{% if t.cancelled %} struck{% endif %}"><span class="d">{{ t.date.strftime("%y.%m.%d") }}</span>
-      <span>{{ t.area | int }}㎡{% if t.area | pyeong %} <span class="py">({{ t.area | pyeong }}평)</span>{% endif %}{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}{% if t.high %}<span class="mc-hi">신고가</span>{% endif %}{% if t.cancelled %}<span class="mc-tag">해제</span>{% elif t.direct %}<span class="mc-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="mc-tag">{{ t.kind }}</span>{% endif %}</span>
+      <span>{{ ar(c, t.area) }}{% if t.floor is not nan %} · {{ t.floor | int }}층{% endif %}{% if t.high %}<span class="mc-hi">신고가</span>{% endif %}{% if t.cancelled %}<span class="mc-tag">해제</span>{% elif t.direct %}<span class="mc-tag">직거래</span>{% endif %}{% if t.kind and t.kind != "매매" %}<span class="mc-tag">{{ t.kind }}</span>{% endif %}</span>
       <strong>{{ t.price | price }}</strong></div>
     {% endfor %}
     <a class="mc-all" href="#trades">거래 내역 더 보기 ›</a>
@@ -93,7 +94,7 @@
   <div class="card">
     <span class="label">가장 최근 거래</span>
     <span class="value">{{ c.last_price | price }}{% if c.new_high %}<span class="badge-high">신고가</span>{% endif %}</span>
-    <span class="muted">{{ c.last_date.strftime("%Y.%m.%d") }} · 전용 {{ c.last_area | int }}㎡{% if c.last_area | pyeong %}({{ c.last_area | pyeong }}평){% endif %}{% if c.last_kind != "매매" %} · {{ c.last_kind }}{% endif %}{% if c.prev_high is not nan and not c.new_high %} · 이전 최고 {{ c.prev_high | price }}{% endif %}</span>
+    <span class="muted">{{ c.last_date.strftime("%Y.%m.%d") }} · {{ ar(c, c.last_area) }}{% if c.last_kind != "매매" %} · {{ c.last_kind }}{% endif %}{% if c.prev_high is not nan and not c.new_high %} · 이전 최고 {{ c.prev_high | price }}{% endif %}</span>
   </div>
   {% endif %}
   {% for n in years %}
@@ -285,23 +286,24 @@
 {% endif %}
 
 <section class="panel" id="trades">
-  <div class="panel-head"><h2>최근 거래</h2>
+  <div class="panel-head ph-row"><div><h2>최근 거래</h2>
     <p class="muted">계약일 순입니다. 해제된 거래{% if exclude_direct %}와 직거래{% endif %}는 흐리게 표시했고 지수·신고가 계산에서 뺐습니다.
-    평은 실거래 자료에 공급면적이 없어 전용면적으로 어림한 평형이라 단지마다 1~2평 다를 수 있습니다.</p></div>
+    {% if c.sup %}면적은 공급면적(전용면적)이에요.{% else %}이 단지는 공급면적 정보가 없어 전용면적으로 보여 드려요.{% endif %}</p></div>
+    <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div></div>
   {% if area_types | length > 1 %}
   <div class="chips trade-area" role="group" aria-label="전용면적으로 거르기">
     <button type="button" class="chip active" data-area="">전체 <span class="cnt">{{ recent | length }}</span></button>
-    {% for a in area_types %}<button type="button" class="chip" data-area="{{ a.key }}">{{ a.key }}㎡{% if a.py %}<span class="py"> · {{ a.py }}평</span>{% endif %} <span class="cnt">{{ a.n }}</span></button>{% endfor %}
+    {% for a in area_types %}<button type="button" class="chip" data-area="{{ a.key }}">{{ ar(c, a.a) }} <span class="cnt">{{ a.n }}</span></button>{% endfor %}
   </div>
   {% endif %}
   <div class="table-wrap">
   <table class="trades" data-trades data-page="15">
-    <thead><tr><th>계약일</th><th>전용면적</th><th>층</th><th>거래가</th><th>비고</th></tr></thead>
+    <thead><tr><th>계약일</th><th>{{ "면적(전용)" if c.sup else "면적" }}</th><th>층</th><th>거래가</th><th>비고</th></tr></thead>
     <tbody>
     {% for t in recent %}
     <tr class="{{ 'struck' if t.cancelled }}{{ ' off' if exclude_direct and t.direct and not t.cancelled }}" data-a="{{ t.akey }}">
       <td><span class="yy">{{ t.date.strftime("%Y")[:2] }}</span>{{ t.date.strftime("%y.%m.%d") }}</td>
-      <td>{{ "%.2f" | format(t.area) }}㎡{% if t.area | pyeong %}<small class="py">{{ t.area | pyeong }}평</small>{% endif %}</td>
+      <td>{{ ar(c, t.area, 2) }}</td>
       <td>{{ "-" if t.floor is nan else t.floor | int }}</td>
       <td>{{ t.price | price }}</td>
       <td>{% if t.high %}<span class="badge-high">신고가</span> {% endif %}{{ "해제" if t.cancelled else ("직거래" if t.direct else "") }}{% if t.kind and t.kind != "매매" %} {{ t.kind }}{% endif %}</td>

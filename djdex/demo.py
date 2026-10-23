@@ -111,6 +111,18 @@ def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
+def supply(trades: pd.DataFrame, seed: int = 13) -> dict:
+    """데모용 가짜 공급면적: 단지마다 [[전용㎡, 공급㎡], ...] (전용률 0.74~0.80). 넷에 하나는 비워 둠(정보 없는 단지)."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, (cid, g) in enumerate(trades.groupby("complex_id")):
+        if i % 4 == 3:
+            continue
+        ratio = rnd.uniform(0.74, 0.80)
+        out[cid] = [[round(a, 2), round(a / ratio, 2)] for a in sorted(g["area"].dropna().round(2).unique())]
+    return out
+
+
 def kinfo(trades: pd.DataFrame, seed: int = 12) -> dict:
     """데모용 가짜 단지 정보(K-apt). 열에 하나는 비워 둠(정보 없는 단지)."""
     rnd = random.Random(seed)

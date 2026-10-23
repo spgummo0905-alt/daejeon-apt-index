@@ -439,7 +439,7 @@
     rng.textContent = T.lo[li] != null ? `예상 거래 범위 ${eok(T.lo[li])} ~ ${eok(T.hi[li])} (10건 중 8건)` : "";
     const yr = D.tr.filter(t => t[2] === state.type && t[0] > D.n - 13 && !(t[5] & F_CANCEL));
     const last = D.tr.filter(t => t[2] === state.type && !(t[5] & F_CANCEL)).pop();
-    const parts = [`전용 ${T.k}㎡${T.py ? `(${T.py}평)` : ""} 추정 시세`, `최근 12개월 ${yr.length}건`];
+    const parts = [`${DJ.area(T.a, T.su)} 추정 시세`, `최근 12개월 ${yr.length}건`];
     if (last) parts.push(`최근 실거래 ${ym(last[0])}${last[4] > 0 ? " " + last[4] + "층" : ""} ${eok(last[3])}`);
     if (li < D.n - 12) parts.push(`최근 1년 거래가 없어 ${ym(li)} 기준`);
     meta.textContent = parts.join(" · ");
@@ -584,12 +584,17 @@
   function controls() {
     const ctrl = root.querySelector("[data-pc-ctrl]");
     const sel = ctrl.querySelector("[data-pc-type]");
-    sel.replaceChildren(...D.types.map((t, i) => {
-      const o = el("option", "", `전용 ${t.k}㎡${t.py ? ` (${t.py}평)` : ""} · ${t.n}건`);
-      o.value = i;
-      return o;
-    }));
-    sel.value = state.type;
+    const fill = () => {
+      sel.replaceChildren(...D.types.map((t, i) => {
+        const o = el("option", "", `${DJ.area(t.a, t.su)} · ${t.n}건`);
+        o.value = i;
+        return o;
+      }));
+      sel.value = state.type;
+    };
+    fill();
+    // ㎡/평을 바꾸면 고르기 칸과 머리글만 다시 씀
+    document.addEventListener("dj:unit", () => { fill(); renderHead(); });
     sel.addEventListener("change", () => { state.type = +sel.value; render(); renderTables(); });
     ctrl.querySelectorAll("[data-pc-years]").forEach(b => b.addEventListener("click", () => {
       state.years = +b.dataset.pcYears; mark(ctrl, "[data-pc-years]", b); render();
