@@ -264,11 +264,17 @@ def _outside_reviews(cfg) -> None:
 
 
 def cmd_slow(cfg, args) -> None:
-    """오래 걸리는 수집: 공급면적(건축물대장)·관리비·카카오맵 장소·네이버 글.
+    """오래 걸리는 수집: 단지 정보 나머지·공급면적(건축물대장)·관리비·카카오맵 장소·네이버 글.
     배포가 끝난 뒤에 돌려 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 다음 배포부터 화면에 나옵니다."""
     if cfg.collect.get("max_calls_per_run") and not (cfg.paths.data / "READY").exists():
         return   # 실거래를 다 모으기 전인 지역(서울)
     key = _need("DATA_GO_KR_KEY")
+    if cfg.collect.get("collect_kapt"):
+        # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
+        try:
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=900)
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
     if cfg.collect.get("collect_bldg"):
         try:
             bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,

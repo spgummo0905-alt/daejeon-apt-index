@@ -27,6 +27,8 @@ DTL_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfo
 REFRESH_DAYS = 180  # 단지 정보는 잘 안 바뀌어서 반년마다 다시 받음
 EMPTY_RETRY_DAYS = 14  # 세대수 등이 비어 온 단지(새 단지·등록 중)는 두 주 뒤 다시
 BLANK_STOP = 20        # 기본·상세가 모두 빈 응답이 이만큼 연달아 오면 이번 실행은 멈춤
+BLANK_WAITS = (3, 10, None)   # 빈 응답이면 3초, 10초 쉬었다 다시 (세 번째도 비면 빈 응답으로)
+PAUSE = 0.3            # 단지 사이 쉬는 시간 (빨리 부르면 빈 응답이 옴)
 SHOWN = ("hh", "dongs", "ppu", "top", "use", "heat", "hall", "elev", "evc", "builder", "mgr")   # 화면에 쓰는 항목
 
 
@@ -96,8 +98,10 @@ def fetch_list(key: str, sgg: str, session=None, rows: int = 1000) -> list[dict]
         page += 1
 
 
-def collect(key: str, districts: dict[str, str], root: Path, budget: int | None = None, log=print) -> None:
-    """단지 목록(시군구별)은 매번, 단지별 기본·상세 정보는 없거나 오래된 것만 받습니다."""
+def collect(key: str, districts: dict[str, str], root: Path, budget: int | None = None, log=print,
+            time_limit: float = 600) -> None:
+    """단지 목록(시군구별)은 매번, 단지별 기본·상세 정보는 없거나 오래된 것만 받습니다.
+    배포 전 단계에서 돌므로 time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다."""
     s = requests.Session()
     (root / "list").mkdir(parents=True, exist_ok=True)
     (root / "info").mkdir(parents=True, exist_ok=True)
@@ -127,13 +131,20 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
                 todo.append((1, c))
     todo.sort()  # 처음 받는 단지 먼저
     used, fails, done, blank, blank_run = 0, 0, 0, 0, 0
+    t0 = time.monotonic()
     for _, c in todo:
-        if budget is not None and used + 2 > budget:
+        if (budget is not None and used + 2 > budget) or time.monotonic() - t0 > time_limit:
             log(f"::notice::단지 정보 {done}곳 받음, 나머지는 다음 실행 때 받습니다")
             break
         try:
-            bass, _ = _get(s, BASS_URL, {"serviceKey": key, "kaptCode": c})
-            dtl, _ = _get(s, DTL_URL, {"serviceKey": key, "kaptCode": c})
+            for wait in BLANK_WAITS:   # 몰아서 부르면 포털이 빈 응답을 줄 때가 있어, 비면 쉬었다가 다시
+                bass, _ = _get(s, BASS_URL, {"serviceKey": key, "kaptCode": c})
+                dtl, _ = _get(s, DTL_URL, {"serviceKey": key, "kaptCode": c})
+                used += 2
+                if bass or dtl or wait is None:
+                    break
+                time.sleep(wait)
+            time.sleep(PAUSE)
         except (requests.RequestException, MolitError) as e:
             fails += 1
             log(f"::warning::단지 정보 {c} 받기 실패: {e}")
@@ -141,7 +152,7 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
                 log("::warning::여러 번 연달아 실패해 단지 정보는 여기까지 받습니다")
                 break
             continue
-        fails, used = 0, used + 2
+        fails = 0
         if not bass and not dtl:
             # 기본·상세가 모두 빈 응답: 저장하지 않고 다음 실행 때 다시 (포털이 잠깐 빈 응답을 줄 때 두 주씩 묵히지 않게)
             blank, blank_run = blank + 1, blank_run + 1
