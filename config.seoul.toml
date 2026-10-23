@@ -40,6 +40,8 @@ example_dong = "잠실동"
 
 [site]
 base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/"
+# 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
+og_image = "static/og/seoul.jpg"
 
 [collect]
 # 한 번 실행에 API(매매·분양권 각각)를 이 횟수만큼만 부르고, 나머지는 다음 실행 때 이어서 받습니다.

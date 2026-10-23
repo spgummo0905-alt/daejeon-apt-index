@@ -380,7 +380,7 @@
 
 <div class="sheet-back" data-sheet-close hidden></div>
 <div class="sheet" id="share-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden
-     data-kakao-key="{{ kakao_js_key or '' }}" data-og="{{ site.base_url }}static/og.png" data-title="{{ c.name }} {{ c.index | score }}점{% if c.grade != '-' %} · {{ c.grade }}등급{% endif %}"
+     data-kakao-key="{{ kakao_js_key or '' }}" data-og="{{ site.base_url }}{{ site.og_image or 'static/og/daejeon.jpg' }}" data-title="{{ c.name }} {{ c.index | score }}점{% if c.grade != '-' %} · {{ c.grade }}등급{% endif %}"
      data-text="{{ c | place }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% endif %}">
   <div class="sheet-grab" aria-hidden="true"></div>
   <h3 id="sheet-title">공유하기</h3>

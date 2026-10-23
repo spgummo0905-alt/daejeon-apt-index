@@ -48,9 +48,9 @@ def test_share_tags_and_sitemap(tmp_path):
     base = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert f'<meta property="og:url" content="{base}apt/DEMO-0001.html">' in page
-    assert f'<meta property="og:image" content="{base}static/og.png">' in page
+    assert f'<meta property="og:image" content="{base}static/og/daejeon.jpg">' in page
     assert 'property="og:title" content="데모단지 01 · 지수' in page
-    assert (out / "static" / "og.png").exists() and (out / "static" / "favicon.svg").exists()
+    assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
     assert sitemap.count("<url>") == 63 + 6  # 단지 비교, 조건으로 찾기, 관심 단지, 역세권, 랭킹, 테마 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
