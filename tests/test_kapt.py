@@ -83,3 +83,11 @@ def test_plain_addr():
     assert kapt._plain_addr("대전광역시 서구 둔산동 920 크로바아파트") == "대전광역시 서구 둔산동 920"
     assert kapt._plain_addr("세종특별자치시 조치원읍 죽림리 77, 조치원e편한") == "세종특별자치시 조치원읍 죽림리 77"
     assert kapt._plain_addr("주소 없음") == ""
+
+
+def test_num_reads_decimal_strings():
+    # V5 응답은 숫자를 '1272.0'처럼 줍니다. 12720 으로 읽으면 세대수가 10배가 됨
+    assert kapt._num("1272.0") == 1272 and kapt._num("1,272") == 1272 and kapt._num("1272") == 1272
+    assert kapt._num("") is None and kapt._num(None) is None and kapt._num("약 30대") == 30
+    s = kapt.summarize({"kaptCode": "A1", "kaptdaCnt": "1100.0", "kaptdPcnt": "200.0", "kaptdPcntu": "1120.0", "kaptDongCnt": "12.0"})
+    assert s["hh"] == 1100 and s["park"] == 1320 and s["dongs"] == 12 and s["ppu"] == 1.2
