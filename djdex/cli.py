@@ -308,6 +308,12 @@ def cmd_all(cfg, args) -> None:
                 osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
             except (ValueError, OSError) as e:  # 정류장을 못 받아도 사이트는 만듭니다 (그 항목만 빠짐)
                 print(f"::warning::OSM 정류장 수집 실패: {e}")
+    cmd_school(cfg, args)
+    cmd_build(cfg, args)
+
+
+def cmd_school(cfg, args) -> None:
+    """학교알리미(중학교 위치·전출입)와 ECOS(물가·금리). 호출이 적어 배포 때도 받습니다 (이미 받은 해는 건너뜀)."""
     if os.environ.get("SCHOOLINFO_KEY") and cfg.school:
         try:
             school.collect(os.environ["SCHOOLINFO_KEY"], cfg.school, list(cfg.districts), cfg.paths.school,
@@ -320,7 +326,6 @@ def cmd_all(cfg, args) -> None:
         if macro:
             ecos.save(cfg.paths.macro, macro)
             print("ECOS " + ", ".join(f"{k} {len(v)}개월(~{max(v)})" for k, v in macro.items()))
-    cmd_build(cfg, args)
 
 
 def cmd_demo(cfg, args) -> None:
@@ -345,10 +350,11 @@ def main(argv: list[str] | None = None) -> None:
         s.add_argument("--out", help="사이트 출력 폴더")
     sub.add_parser("locate")
     sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    sub.add_parser("school", help="학교알리미 중학교 전출입과 물가·금리만 받기 (빠름)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
     args = p.parse_args(argv)
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
-     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow}[args.cmd](cfg, args)
+     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school}[args.cmd](cfg, args)

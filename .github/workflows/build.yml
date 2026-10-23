@@ -161,6 +161,7 @@ jobs:
           key: djdex-sejong2-${{ github.run_id }}
       # 서울: 실거래를 다 모은 뒤부터 /seoul/ 에 만듭니다. 실패해도 대전·세종은 배포합니다.
       # 서울은 단지가 많아 수집(최근 거래·전월세·단지 정보·입지)을 배포 뒤로 미루고, 여기서는 받아 둔 자료로 사이트만 만듭니다.
+      # 학교알리미(중학교 순전입률)·물가는 호출이 적어 여기서 받습니다 (이미 받은 해는 건너뜀).
       - name: 서울 계산, 사이트 생성
         id: seoul_site
         if: ${{ hashFiles('data/seoul/READY') != '' }}
@@ -168,7 +169,14 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
-        run: python -m djdex --config config.seoul.toml build --out site/seoul
+          SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
+          ECOS_KEY: ${{ secrets.ECOS_KEY }}
+        run: |
+          before=$(ls data/seoul/school 2>/dev/null | wc -l)
+          python -m djdex --config config.seoul.toml school
+          # 학교 자료를 새로 받았으면 아래에서 서울 캐시를 저장해 다음 배포 때 다시 받지 않게
+          if [ "$(ls data/seoul/school 2>/dev/null | wc -l)" != "$before" ]; then echo "fresh=true" >> "$GITHUB_OUTPUT"; fi
+          python -m djdex --config config.seoul.toml build --out site/seoul
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
@@ -197,7 +205,7 @@ jobs:
           fi
       # 서울 자료를 받은 실행에서만 저장합니다 (배포 때마다 큰 캐시를 새로 쌓지 않게)
       - name: 서울 수집 캐시 저장
-        if: ${{ always() && (steps.seoul_collect.outcome == 'success' || steps.seoul_collect.outcome == 'failure') }}
+        if: ${{ always() && (steps.seoul_collect.outcome == 'success' || steps.seoul_collect.outcome == 'failure' || steps.seoul_site.outputs.fresh == 'true') }}
         uses: actions/cache/save@v4
         with:
           path: data/seoul
