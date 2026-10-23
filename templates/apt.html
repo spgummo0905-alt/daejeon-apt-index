@@ -297,7 +297,7 @@
 
 <div class="sheet-back" data-sheet-close hidden></div>
 <div class="sheet" id="share-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden
-     data-kakao-key="{{ kakao_js_key or '' }}" data-title="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}"
+     data-kakao-key="{{ kakao_js_key or '' }}" data-og="{{ site.base_url }}static/og.png" data-title="{{ c.name }} 지수 {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}"
      data-text="{{ region }} {{ c | place }} · {{ c.grade_name }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% endif %} | {{ region }} 아파트 지수">
   <div class="sheet-grab" aria-hidden="true"></div>
   <h3 id="sheet-title">공유하기</h3>
