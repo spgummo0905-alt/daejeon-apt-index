@@ -1,0 +1,16 @@
+name: site-check
+
+# 배포된 사이트 점검 (수동 실행): 대전·세종·서울 첫 화면과 단지 페이지를 실제 주소로 열어 로그에 남깁니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests && python scripts/site_check.py
