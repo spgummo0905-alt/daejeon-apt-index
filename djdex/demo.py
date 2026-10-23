@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import math
 import random
 
 import pandas as pd
@@ -63,3 +64,16 @@ def generate(districts: dict[str, str], factors: list[dict], n_complexes: int = 
     poi[cid] = {f["key"]: (rnd.uniform(80, 600) if f["kind"] == "nearest" else rnd.randint(20, 120)) for f in factors}
     geo[cid] = (CENTER[0] + 0.01, CENTER[1] - 0.02)
     return pd.DataFrame(trades), pd.DataFrame.from_dict(poi, orient="index"), geo
+
+
+def macro(start: str = "2006-01", end: str = "2026-08") -> dict:
+    """데모용 가짜 물가·금리 (실제 값 아님): 물가 연 2.3%, 금리는 오르내리는 계단."""
+    months = pd.period_range(start, end, freq="M")
+    cpi, base, mort = {}, {}, {}
+    for k, p in enumerate(months):
+        key = str(p)
+        cpi[key] = round(76.0 * 1.023 ** (k / 12), 2)
+        b = 3.25 + 1.25 * math.sin(k / 30) if k < 160 else 0.75 + 0.25 * ((k - 160) // 6)
+        base[key] = round(max(0.5, min(b, 3.5)) * 4) / 4
+        mort[key] = round(base[key] + 1.6 + 0.2 * math.sin(k / 9), 2)
+    return {"cpi": cpi, "base": base, "mort": mort}

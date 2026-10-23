@@ -1184,3 +1184,87 @@ button.mc-chip:hover { background: rgba(10,16,30,.78); } button.mc-chip:active {
 .finder-bar .seg { margin-top: 0; }
 .cmp-table th.sub { padding-left: 22px; font-weight: 500; color: var(--text-2); }
 .prose tr.grp-row th { background: var(--chip); text-align: left; font-size: 13.5px; }
+
+/* 단지 시세 차트 (static/pricechart.js) */
+.pc-head { margin: 4px 0 6px; }
+.pc-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.pc-now b { font-size: 32px; font-weight: 800; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.pc-now span { font-size: 14px; font-weight: 700; color: var(--text-2); }
+.pc-meta, .pc-real { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.pc-real { color: var(--text-2); font-weight: 600; }
+.pc-badge { display: inline-block; margin: 8px 0 0; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  background: var(--chip); color: var(--text-2); }
+.pc-badge.near { background: var(--banner); color: var(--banner-text); }
+.pc-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 6px; }
+.pc-ctrl .seg { margin-top: 0; }
+.pc-sel { height: 36px; padding: 0 30px 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; max-width: 100%; }
+.pc-plot { position: relative; margin-top: 8px; min-height: 120px; touch-action: pan-y; }
+.pc-svg { display: block; width: 100%; height: auto; overflow: visible; user-select: none; -webkit-user-select: none; }
+.pc-grid line { stroke: var(--grid); }
+.pc-ylab { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.pc-ylab.strong, .pc-lab.strong { fill: var(--text-2); font-weight: 700; }
+.pc-lab { fill: var(--muted); font-size: 11px; }
+.pc-axis { stroke: var(--axis); }
+.pc-band { fill: var(--s1); opacity: .13; }
+.pc-wh line { stroke: var(--s1); stroke-width: 1.5; opacity: .35; }
+.pc-dot { fill: var(--s1); opacity: .5; }
+.pc-dot.low { fill: var(--surface); stroke: var(--s1); stroke-width: 1.3; opacity: .85; }
+.pc-dot.pre { fill: var(--s2); opacity: .7; }
+.pc-x { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.pc-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.pc-main { stroke: var(--s1); stroke-width: 2.6; }
+.pc-line.sp { stroke-dasharray: 5 5; }
+.pc-ghost { fill: none; stroke: var(--ref); stroke-width: 1.6; opacity: .55; }
+.pc-reg { stroke: var(--s2); } .pc-gu { stroke: var(--s3); }
+.pc-rbase { stroke: var(--navy); stroke-width: 1.8; } .pc-rmort { stroke: var(--s1); stroke-width: 1.6; opacity: .8; }
+.pc-peak { stroke: var(--text-2); stroke-dasharray: 4 4; opacity: .7; }
+.pc-peak2 { stroke: var(--pos); stroke-dasharray: 2 3; opacity: .8; }
+text.pc-peak, text.pc-peak2 { stroke: none; opacity: 1; }
+text.pc-peak2 { fill: var(--pos); }
+circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
+.pc-va { fill: var(--text-2); opacity: .75; } .pc-vb { fill: var(--dim); } .pc-vm { fill: var(--s1); opacity: .35; }
+.pc-va.part, .pc-vb.part, .pc-vm.part { opacity: .3; }
+.pc-term line { stroke: var(--axis); stroke-dasharray: 2 3; }
+.pc-term text { fill: var(--muted); font-size: 11px; font-weight: 600; }
+.pc-cross { stroke: var(--text-2); stroke-width: 1; opacity: .5; pointer-events: none; }
+.pc-hit { cursor: crosshair; }
+.pc-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--text-2); }
+.pc-key { display: inline-flex; align-items: center; gap: 6px; }
+.pc-key i { display: inline-block; flex: none; }
+.k-line { width: 16px; height: 3px; border-radius: 2px; background: var(--s1); }
+.k-line.s2 { background: var(--s2); } .k-line.s3 { background: var(--s3); } .k-line.navy { background: var(--navy); }
+.k-line.ghost { background: var(--ref); opacity: .6; } .k-line.thin { height: 2px; }
+.k-dash { width: 16px; height: 0; border-top: 2.5px dashed var(--s1); }
+.k-band { width: 16px; height: 10px; border-radius: 3px; background: var(--s1); opacity: .2; }
+.k-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--s1); opacity: .55; }
+.k-dot.low { background: transparent; border: 1.5px solid var(--s1); opacity: .9; box-sizing: border-box; width: 8px; height: 8px; }
+.k-x { width: 9px; height: 9px; position: relative; }
+.k-x::before, .k-x::after { content: ""; position: absolute; left: 4px; top: -1px; width: 1.5px; height: 11px; background: var(--muted); transform: rotate(45deg); }
+.k-x::after { transform: rotate(-45deg); }
+.k-bar { width: 10px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, var(--text-2) 50%, var(--dim) 50%); opacity: .8; }
+.k-bar.m { background: var(--s1); opacity: .35; }
+.k-vline { width: 0; height: 12px; border-left: 1.5px dotted var(--muted); }
+.pc-how { margin-top: 12px; font-size: 13px; }
+.pc-how summary { cursor: pointer; color: var(--text-2); font-weight: 600; }
+.pc-how p { margin: 8px 0 0; line-height: 1.6; }
+.pc-tables { display: grid; gap: 20px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+@media (min-width: 900px) { .pc-tables { grid-template-columns: 1fr 1fr; } .pc-tables .pc-sec:last-child { grid-column: 1 / -1; } }
+.pc-sec h3.sub { margin: 0 0 8px; font-size: 15px; }
+.pc-sec h3.sub .muted { font-size: 12px; font-weight: 500; }
+.pc-table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.pc-table th, .pc-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+.pc-table th:first-child { text-align: left; font-weight: 700; }
+.pc-table thead th { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pc-table td.strong { font-weight: 800; color: var(--text); }
+.pc-table td.muted { color: var(--muted); font-size: 12.5px; }
+.pc-sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--s1); vertical-align: 1px; }
+.pc-sw.s2 { background: var(--s2); } .pc-sw.s3 { background: var(--s3); }
+.pc-years { display: block; width: 100%; max-width: 640px; height: auto; }
+.pc-yb { fill: var(--s1); opacity: .8; } .pc-yb.part { fill: var(--dim); opacity: 1; }
+.pc-note { margin: 8px 0 0; font-size: 13px; line-height: 1.6; }
+@media (max-width: 560px) {
+  .pc-ctrl .seg-btn { padding: 6px 11px; font-size: 13px; }
+  .pc-sel { height: 34px; font-size: 13px; }
+  .pc-now b { font-size: 28px; }
+}

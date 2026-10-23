@@ -115,15 +115,48 @@
   {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
 </section>
 
-<section class="panel">
+<section class="panel" id="price">
   <div class="panel-head">
-    <h2>가격은 어떻게 변했나</h2>
-    <p class="muted">연도별 {{ ref_area }}㎡ 환산가입니다. 회색 선은 같은 해 {{ region }} 전체의 중간값입니다. 파란 선이 회색 선보다 위에 있으면 {{ region }}에서 비싼 편인 단지입니다.</p>
+    <h2>시세</h2>
+    <p class="muted">같은 평형 거래로 달마다 추정한 시세와 실제 거래입니다. 평형·기간·보기를 바꿔 볼 수 있어요.</p>
   </div>
-  {{ charts.price | safe }}
-  <h3 class="sub">최근 10년 실제 거래</h3>
-  <p class="muted">점 하나가 거래 한 건입니다. 색은 평형대이고, 속이 빈 점은 분양권·입주권 거래입니다.</p>
-  {{ charts.trades | safe }}
+  <div class="pc" data-pc data-src="d/{{ c.slug }}.json" data-market="{{ root }}market.json" data-gu="{{ c.gu }}" data-region="{{ region }}">
+    <div class="pc-head" data-pc-head hidden>
+      <div class="pc-now"><b data-pc-now></b><span data-pc-range></span></div>
+      <p class="pc-meta" data-pc-meta></p>
+      <p class="pc-real" data-pc-real hidden></p>
+      <p class="pc-badge" data-pc-badge hidden></p>
+    </div>
+    <div class="pc-ctrl" data-pc-ctrl hidden>
+      <select class="pc-sel" data-pc-type aria-label="평형"></select>
+      <div class="seg" role="group" aria-label="기간">
+        <button type="button" class="seg-btn" data-pc-years="3">3년</button>
+        <button type="button" class="seg-btn" data-pc-years="5">5년</button>
+        <button type="button" class="seg-btn active" data-pc-years="10" aria-pressed="true">10년</button>
+        <button type="button" class="seg-btn" data-pc-years="0">전체</button>
+      </div>
+      <div class="seg" role="group" aria-label="보기">
+        <button type="button" class="seg-btn active" data-pc-mode="nom" aria-pressed="true">명목</button>
+        <button type="button" class="seg-btn" data-pc-mode="real" hidden>실질</button>
+        <button type="button" class="seg-btn" data-pc-mode="mkt" hidden>시장 흐름</button>
+      </div>
+    </div>
+    <div class="pc-plot" data-pc-plot>
+      {# 자바스크립트가 차트를 그리기 전·못 그릴 때 보이는 연도별 가격 #}
+      <p class="muted">연도별 {{ ref_area }}㎡ 환산가입니다. 회색 선은 같은 해 {{ region }} 전체의 중간값입니다.</p>
+      {{ charts.price | safe }}
+    </div>
+    <div class="pc-legend" data-pc-legend></div>
+    <details class="pc-how">
+      <summary>계산 기준</summary>
+      <p class="muted">추정 시세: 같은 평형 거래를 그 평형 대표 면적으로 맞춘 뒤, 달마다 앞뒤 6개월 거래를 가까울수록 크게 쳐서 평균합니다.
+      거래가 드문 달은 앞뒤 12개월까지 넓혀 보고 점선으로 그립니다. 해제 거래{% if exclude_direct %}·직거래{% endif %}와 1~3층 거래(시세보다 싸게 거래되는 일이 많음)는 빼고,
+      크게 벗어난 거래도 한 번 걸러냅니다. 예상 거래 범위는 시세에서 벗어난 정도로 구한 80% 범위(10건 중 8건이 이 안)입니다.
+      실질은 소비자물가지수로 보기 시작한 달의 화폐가치로 바꾼 값, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 견줘 구한 가격 수준입니다.
+      출처: 국토교통부 실거래가{% if has_pc %}, 한국은행 경제통계(물가·금리, 있을 때){% endif %}.</p>
+    </details>
+  </div>
+  <div class="pc-tables" data-pc-tables hidden></div>
 </section>
 
 <section class="panel">
@@ -231,6 +264,7 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
+{% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>{% endif %}
 {% if latlng and kakao_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false"></script>
 <script src="{{ root }}static/map.js?v={{ v }}"></script>

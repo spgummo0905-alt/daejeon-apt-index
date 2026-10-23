@@ -14,7 +14,7 @@ import shapely
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
-from . import charts, heatmap, trends
+from . import charts, heatmap, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -157,7 +157,7 @@ def _summary(c: dict, n: int, gu_med: dict, factors: list[dict], years: list[int
 
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
-          geo: dict | None = None) -> int:
+          geo: dict | None = None, macro: dict | None = None) -> int:
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -328,6 +328,14 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 단지 페이지
     trades = trades.copy()
     trades["date"] = pd.to_datetime(trades["date"])
+    # 시세 차트: 지역·구 지수와 거래량(모든 단지가 함께 씀), 단지마다 평형별 추정 시세 (apt/d/)
+    asof_ts = pd.Timestamp(meta["asof"].replace(".", "-") + "-01")
+    asof_m = pricechart.month_no(asof_ts)
+    exclude_direct = bool(cfg.filters.get("exclude_direct", False))
+    (out_dir / "market.json").write_text(_json.dumps(
+        pricechart.market_payload(trades, cfg.filters, asof_ts, cfg.region_name, macro or None),
+        ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out_dir / "apt" / "d").mkdir()
     by_cid = dict(tuple(trades.sort_values("date", ascending=False).groupby("complex_id")))
     hist_by = dict(tuple(hist.groupby("complex_id")))
     region_line = [(y, v * ref) for y, v in meta.get("region_history", [])]
@@ -345,10 +353,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         tr = by_cid.get(cid)
         tr_list = [] if tr is None else tr.to_dict("records")
         _mark_highs(tr_list, skip_direct=cfg.filters.get("exclude_direct", False))
+        pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct)
+        if pc_data:
+            (out_dir / "apt" / "d" / f"{c['slug']}.json").write_text(
+                _json.dumps(pc_data, separators=(",", ":")), encoding="utf-8")
         # 카드에 내세우는 최근 거래는 지수 계산과 같은 기준 (해제·제외한 직거래는 목록에만)
         lead = next((t for t in tr_list if not t.get("cancelled") and not (t.get("direct") and cfg.filters.get("exclude_direct"))),
                     tr_list[0] if tr_list else None)
-        cutoff = pd.Timestamp(meta["asof"].replace(".", "-") + "-01") - pd.DateOffset(years=10)
         has_loc_c = not _nan(c.get("location_score"))
         # 카드의 항목 이름(입지·성장성·상승세)과 같게
         comps = [("입지", c.get("location_score"), fmt_score(c.get("location_score")))]
@@ -360,8 +371,6 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                             desk={"width": 520}, mob={"width": 340}),
             "price": charts.responsive(charts.line_compare, main, region_line, "이 단지", f"{cfg.region_name} 중간값",
                                        mob={"width": 360, "height": 240}),
-            "trades": charts.responsive(charts.trade_dots, [t for t in tr_list if t["date"] >= cutoff],
-                                        mob={"width": 360, "height": 240}),
             "radar": charts.radar([(f.get("short") or f["label"], c.get(f["key"] + "_pct"), factor_med[f["key"]])
                                    for g in loc_groups for f in g["factors"]]) if has_loc_c else "",
             "hist": charts.responsive(charts.histogram, index_values, highlight=c.get("index"), height=180,
@@ -375,7 +384,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         shown = tr_list[:TRADE_ROWS]
         html = tpl.render(
-            c=c, charts=c_charts, recent=shown, area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
+            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,

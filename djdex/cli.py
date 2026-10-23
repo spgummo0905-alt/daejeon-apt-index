@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import kakao, location, metrics, molit, osm, school, site
+from . import ecos, kakao, location, metrics, molit, osm, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -96,7 +96,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
             print(f"[규모:{title}] " + " | ".join(f"{c}={r[c]}" for c in cols))
 
 
-def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None):
+def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -156,7 +156,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
                 if len(names):
                     print(f"[입지] {f['label']} 가장 많이 잡힌 곳: " + ", ".join(f"{n}({c})" for n, c in names.items()))
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
-                   kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo)
+                   kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
+                   macro=macro if macro is not None else ecos.load(cfg.paths.macro))
     return table, meta, n
 
 
@@ -195,6 +196,11 @@ def cmd_all(cfg, args) -> None:
                            date.today().year)
         except (requests.RequestException, ValueError) as e:
             print(f"::warning::학교알리미 수집 실패, 학군 항목 없이 진행합니다: {e}")
+    if os.environ.get("ECOS_KEY"):
+        # 물가·금리: 시세 차트의 실질 보기와 금리 표시 (없으면 그 부분만 빠짐)
+        macro = ecos.fetch(os.environ["ECOS_KEY"], cfg.collect["start_ym"])
+        if macro:
+            ecos.save(cfg.paths.macro, macro)
     cmd_build(cfg, args)
 
 
@@ -202,7 +208,7 @@ def cmd_demo(cfg, args) -> None:
     trades, poi_df, geo = demo_mod.generate(cfg.districts, cfg.location_factors)
     out = Path(args.out or ROOT / "site-demo")
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
-                                  kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None)
+                                  kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro())
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 
