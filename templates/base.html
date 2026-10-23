@@ -49,15 +49,34 @@
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></symbol>
   <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
   <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
 </svg>
 <header class="site">
-  <a class="brand" href="{{ root }}index.html"><span class="brand-mark">D</span><span>{{ region }} 아파트 지수</span></a>
+  {# 지역이 여럿이면 이름 대신 '아파트 지수' + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
+  <a class="brand" href="{{ root }}index.html"><span class="brand-mark">D</span><span>{% if regions | length > 1 %}아파트 지수{% else %}{{ region }} 아파트 지수{% endif %}</span></a>
   {% if regions | length > 1 %}
-  <nav class="region-switch" aria-label="지역 바꾸기">
-    {% for g in regions %}<a href="{{ g.url }}"{% if g.name == region %} class="active" aria-current="page"{% endif %}>{{ g.name }}</a>{% endfor %}
-  </nav>
+  <div class="rg">
+    <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="지역 바꾸기, 지금 {{ region }}">
+      <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>{{ region }}</span><svg class="ic rg-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
+    <div class="rg-pop" id="rg-pop" role="dialog" aria-label="지역 고르기" hidden>
+      <div class="sheet-grab" aria-hidden="true"></div>
+      <div class="rg-head"><b>어느 지역을 볼까요?</b><span class="muted">{{ regions | length }}곳</span></div>
+      {% if regions | length > 6 %}<input class="rg-q" type="search" placeholder="지역 이름으로 찾기" aria-label="지역 찾기" data-rg-q>{% endif %}
+      {% for grp in region_groups %}
+      <p class="rg-grp" data-rg-grp>{{ grp.name }}</p>
+      <div class="rg-grid">
+        {% for g in grp["items"] %}{% set cur = g.name == region %}
+        <a class="rg-item{% if cur %} on{% endif %}" href="{{ g.url }}" data-rg-name="{{ g.name }}"{% if cur %} aria-current="page"{% endif %}>
+          <b>{{ g.name }}{% if g.badge %}<i class="rg-badge">{{ g.badge }}</i>{% endif %}</b>
+          <small>{{ "지금 보는 곳" if cur else (g.desc or "") }}</small></a>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
   {% endif %}
   <nav class="top-nav">
     <a href="{{ root }}index.html#map">지도</a>

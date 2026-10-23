@@ -132,9 +132,12 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     out = tmp_path / "sejong"
     cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert "세종에서" in index and "동별로 비교하기" in index and "구별" not in index
+    assert ">세종<svg" in index and "동별로 비교하기" in index and "구별" not in index
     assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
-    assert 'class="region-switch"' in index and 'aria-current="page">세종</a>' in index
+    # 지역 고르기: 위쪽은 버튼 하나, 창 안에 권역별 지역 카드 (지금 지역 표시)
+    assert 'class="rg-btn"' in index and '<span>아파트 지수</span>' in index
+    assert '<p class="rg-grp" data-rg-grp>충청권</p>' in index and 'data-rg-name="세종" aria-current="page"' in index
+    assert 'data-rg-name="대전"' in index
     stations = (out / "stations.html").read_text(encoding="utf-8")
     assert "BRT 정류장마다" in stations and "지하철" not in stations
     robots = (out / "robots.txt").read_text(encoding="utf-8")
