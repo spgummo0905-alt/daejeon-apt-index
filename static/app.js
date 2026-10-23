@@ -90,7 +90,7 @@
   DJ.recent = () => load("recent", []);
   DJ.addRecent = function (c) {
     const r = DJ.recent().filter(x => x.s !== c.s);
-    r.unshift({ s: c.s, gu: c.gu, g: c.g });
+    r.unshift(c);   // {s, gu, g} + 단지 페이지에서는 이름·지수·가격·지역·주소까지 (떠 있는 '최근 본' 목록용)
     save("recent", r.slice(0, 30));
   };
 
@@ -269,7 +269,8 @@
     // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼
     const apt = document.querySelector("[data-apt]");
     if (apt) {
-      const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade };
+      const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade, n: apt.dataset.name, i: apt.dataset.score,
+        p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
       DJ.addRecent(c);
       const fav = document.querySelector("[data-fav]");
       if (fav) {
@@ -518,8 +519,73 @@
       });
     });
   }
+  // 최근 본 단지: 오른쪽 아래 작은 버튼 → 누르면 목록(휴대폰은 아래 시트). 다른 지역에서 본 단지도 함께.
+  // 내려 읽을 때는 비켜 주고, 올리거나 멈추면 다시 나타납니다. 인트로·지금 보는 단지만 있으면 숨김.
+  function recentDock() {
+    const dock = document.querySelector("[data-rcd]");
+    if (!dock || document.body.dataset.page === "intro") return;
+    const pop = document.getElementById("rcd-pop"), btn = dock.querySelector("[data-rcd-open]");
+    const base = new URL(ROOT || "./", location.href).pathname;
+    const narrow = matchMedia("(max-width: 720px)");
+    let back = null;
+    const items = () => DJ.recent().filter(r => r.n && r.u && r.u !== location.pathname).slice(0, 8);
+    function paint() {
+      const list = items();
+      dock.hidden = !list.length;
+      dock.querySelector("[data-rcd-n]").textContent = list.length;
+      btn.setAttribute("aria-label", "최근 본 단지 " + list.length + "곳");
+      const box = dock.querySelector("[data-rcd-list]");
+      box.replaceChildren(...list.map(r => {
+        const a = el("a", "rcd-item"); a.href = r.u;
+        a.append(el("span", "grade g-" + (r.g || "-"), r.g || "-"));
+        const t = el("span", "rcd-t"); t.append(el("b", "", r.n), el("small", "", [r.r, r.i && r.i !== "-" ? "지수 " + r.i : ""].filter(Boolean).join(" · ")));
+        a.append(t, el("span", "rcd-p", r.p || ""));
+        const li = el("li"); li.append(a); return li;
+      }));
+      // 같은 지역 단지가 둘 이상이면 (지금 보는 단지 포함) 바로 비교
+      const here = document.querySelector("[data-apt]");
+      const same = [...(here ? [here.dataset.apt] : []), ...list.filter(r => r.u === base + "apt/" + r.s + ".html").map(r => r.s)];
+      const cmp = dock.querySelector("[data-rcd-cmp]");
+      cmp.hidden = same.length < 2;
+      cmp.href = ROOT + "compare.html?s=" + same.slice(0, 4).map(encodeURIComponent).join(",");
+    }
+    const open = () => {
+      paint();
+      pop.hidden = false;
+      dock.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
+      if (narrow.matches) { back = el("div", "sheet-back"); back.addEventListener("click", close); document.body.append(back); }
+      requestAnimationFrame(() => { pop.classList.add("on"); if (back) back.classList.add("on"); });
+      const first = pop.querySelector(".rcd-item"); if (first) first.focus({ preventScroll: true });
+    };
+    function close() {
+      if (pop.hidden) return;
+      pop.classList.remove("on");
+      btn.setAttribute("aria-expanded", "false");
+      if (back) { back.remove(); back = null; }
+      setTimeout(() => { if (!pop.classList.contains("on")) { pop.hidden = true; dock.classList.remove("open"); } }, 220);
+    }
+    btn.addEventListener("click", e => { e.stopPropagation(); pop.classList.contains("on") ? close() : open(); });
+    document.addEventListener("click", e => { if (!pop.hidden && !dock.contains(e.target)) close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { close(); btn.focus(); } });
+    dock.querySelector("[data-rcd-clear]").addEventListener("click", () => { save("recent", []); close(); paint(); });
+    let lastY = scrollY;
+    addEventListener("scroll", () => {
+      const y = scrollY;
+      if (pop.hidden) dock.classList.toggle("tuck", y > lastY + 4 && y > 240);
+      if (Math.abs(y - lastY) > 4) lastY = y;
+    }, { passive: true });
+    addEventListener("storage", e => { if (e.key === "djdex:recent") paint(); });   // 다른 탭에서 본 단지도 바로
+    addEventListener("dj:recent", paint);
+    // 메인의 '최근 본 단지' 줄이 화면에 보이는 동안은 같은 내용이니 비켜 둡니다
+    const strip = document.getElementById("recent-strip");
+    if (strip && "IntersectionObserver" in window)
+      new IntersectionObserver(es => es.forEach(e => dock.classList.toggle("shy", e.isIntersecting && !strip.hidden))).observe(strip);
+    paint();
+  }
   document.addEventListener("DOMContentLoaded", () => {
     regionPicker();
+    recentDock();
     DJ.paintFavCount();
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();

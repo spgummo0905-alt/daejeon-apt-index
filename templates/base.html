@@ -51,6 +51,7 @@
   <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
   <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
   <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
@@ -104,6 +105,17 @@
   <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-filter"/></svg>찾기</a>
   <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심<span class="fav-count" data-fav-count hidden></span></a>
 </nav>
+{# 최근 본 단지: 어느 화면에서든 오른쪽 아래 작은 버튼으로. 내려 읽을 때는 숨고 올리면 다시 (app.js recentDock) #}
+<div class="rcd" data-rcd hidden>
+  <button type="button" class="rcd-fab" data-rcd-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rcd-pop">
+    <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span class="rcd-label">최근 본</span><b data-rcd-n>0</b></button>
+  <div class="rcd-pop" id="rcd-pop" role="dialog" aria-label="최근 본 단지" hidden>
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <div class="rcd-head"><b>최근 본 단지</b><button type="button" class="link-btn" data-rcd-clear>모두 지우기</button></div>
+    <ol class="rcd-list" data-rcd-list></ol>
+    <a class="rcd-cmp" data-rcd-cmp href="{{ root }}compare.html" hidden>이 단지들 나란히 비교하기 <span aria-hidden="true">→</span></a>
+  </div>
+</div>
 <div class="toast-zone" id="toast-zone" aria-live="polite"></div>
 <script>window.DJ_ROOT = "{{ root }}";</script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>

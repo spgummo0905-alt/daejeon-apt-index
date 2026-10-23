@@ -21,7 +21,7 @@
   strip(DJ.favs(), "my-strip", "my-strip-list");
   strip(DJ.recent().map(r => r.s), "recent-strip", "recent-strip-list");
   const clr = document.getElementById("recent-clear");
-  if (clr) clr.addEventListener("click", () => { DJ.save("recent", []); document.getElementById("recent-strip").hidden = true; });
+  if (clr) clr.addEventListener("click", () => { DJ.save("recent", []); document.getElementById("recent-strip").hidden = true; dispatchEvent(new Event("dj:recent")); });
   // 첫 화면 카드 덱: 휴대폰에선 세 장 모두 넘겨 보고 누를 수 있게, 넓은 화면에선 뒤 카드는 장식
   const mq = matchMedia("(max-width: 900px)");
   const deck = () => document.querySelectorAll("[data-deck-back]").forEach(a => {
