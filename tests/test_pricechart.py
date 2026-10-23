@@ -42,6 +42,7 @@ def test_complex_payload_low_floors_cancelled_and_flags():
     assert t84["k"] == "84" and t84["n"] == 5 and len(t84["est"]) == 3
     assert 50000 < t84["est"][2] < 53000                      # 1층 4억·해제 6억은 시세 계산에서 빠짐
     assert t84["lo"][2] < t84["est"][2] < t84["hi"][2]
+    assert pc.type_prices(p) == [[24, p["types"][0]["est"][2], "59"], [34, t84["est"][2], "84"]]
     flags = {(row[3]): row[5] for row in p["tr"]}
     assert flags[40000] == pc.F_LOW and flags[60000] == pc.F_CANCEL and p["tr"][-1][2] == 0
 

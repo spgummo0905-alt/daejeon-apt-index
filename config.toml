@@ -76,6 +76,8 @@ workplaces = [
 ]
 # 감당 가능 금액 계산 기본값 (대전은 비규제지역 기준 LTV 70%)
 ltv = 0.70
+# 설문으로 찾기의 상황별 LTV (비규제지역 일반 기준 어림값). 정책이 바뀌면 여기만 고치면 됩니다.
+ltv_by = { first = 0.80, none = 0.70, switch = 0.70, multi = 0.60 }
 dsr = 0.40
 default_rate = 4.0
 default_years = 30
