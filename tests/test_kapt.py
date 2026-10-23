@@ -165,8 +165,28 @@ def test_collect_retries_blank_info_right_away(tmp_path, monkeypatch):
     assert sorted(set(calls)) == ["A1", "A3"]   # 정보가 있는 A2 는 다시 받지 않음
     assert calls.count("A3") == 6 and 3 in waits and 10 in waits   # 빈 응답은 3초·10초 쉬고 두 번 더 (기본·상세 × 3)
     assert json.loads((root / "info" / "A1.json").read_text())["kaptdaCnt"] == "300"
-    assert not (root / "info" / "A3.json").exists()
-    assert "빈 응답 1곳은 다음 실행 때 다시" in logs[-1]
+    assert "_blank" in json.loads((root / "info" / "A3.json").read_text())   # 빈 응답은 표시만 해 두고
+    assert "빈 응답 1곳은 사흘 뒤 다시" in logs[-1]
+    calls.clear()
+    kapt.collect("k", {"30110": "동구"}, root, log=logs.append)
+    assert calls == []   # 사흘 안에는 다시 부르지 않음 (다음 실행이 같은 단지에서 막히지 않게)
+
+
+def test_blank_marked_complex_is_retried_after_three_days(tmp_path, monkeypatch):
+    import json
+    from datetime import date, timedelta
+    from djdex import kapt
+    root = tmp_path / "kapt"
+    (root / "info").mkdir(parents=True)
+    old = (date.today() - timedelta(days=4)).isoformat()
+    (root / "info" / "B1.json").write_text(json.dumps({"_blank": old}))
+    (root / "info" / "B2.json").write_text(json.dumps({"_blank": date.today().isoformat()}))
+    monkeypatch.setattr(kapt, "fetch_list", lambda key, sgg, s: [{"kaptCode": "B1"}, {"kaptCode": "B2"}])
+    calls = []
+    monkeypatch.setattr(kapt, "_get", lambda s, url, params: calls.append(params["kaptCode"]) or ([{"kaptdaCnt": "100"}], 1))
+    monkeypatch.setattr(kapt.time, "sleep", lambda *_: None)
+    kapt.collect("k", {"30110": "동구"}, root, log=lambda *_: None)
+    assert set(calls) == {"B1"} and "kaptdaCnt" in json.loads((root / "info" / "B1.json").read_text())
 
 
 def test_fee_month_probe_looks_past_an_empty_first_complex(tmp_path, monkeypatch):
@@ -187,3 +207,22 @@ def test_fee_month_probe_looks_past_an_empty_first_complex(tmp_path, monkeypatch
     fee.collect("k", root, {"30110": "동구"}, budget=10_000, log=lines.append)
     assert (root / "fee" / "K1" / f"{month}.json").exists()
     assert not any("찾지 못했습니다" in x for x in lines) and f"관리비(공용관리비) {month}" in lines[-1]
+
+
+def test_fee_month_probe_logs_what_came_back(tmp_path, monkeypatch):
+    import json
+    from djdex import fee
+    root = tmp_path / "kapt"
+    (root / "list").mkdir(parents=True)
+    (root / "list" / "30110.json").write_text(json.dumps([{"kaptCode": f"K{i}"} for i in range(30)]), encoding="utf-8")
+    ops = set()
+
+    def fake(s, key, op, code, ym):   # 어느 달·어느 항목도 비어 있음
+        ops.add(op)
+        fee.LAST["text"] = '{"response": {"header": {"resultCode": "00"}, "body": {"item": {"kaptCode": "%s"}}}}' % code
+        return {}
+    monkeypatch.setattr(fee, "_call", fake)
+    lines = []
+    fee.collect("SECRETKEY", root, {"30110": "동구"}, log=lines.append)
+    assert ops == set(fee.PROBE_OPS) and "찾지 못했습니다 (단지 12곳 × 2항목" in lines[-1] and '"resultCode"' in lines[-1]
+    assert "SECRETKEY" not in lines[-1]
