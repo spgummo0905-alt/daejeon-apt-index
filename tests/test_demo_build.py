@@ -52,7 +52,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 6  # 단지 비교, 조건으로 찾기, 관심 단지, 역세권, 랭킹, 테마 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 7  # 단지 비교, 조건으로 찾기, 관심 단지, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -172,3 +172,19 @@ def test_pages_have_filters_and_index_next_to_name(tmp_path):
     apt = next(p for p in (out / "apt").glob("*.html") if "data-trades" in p.read_text(encoding="utf-8"))
     html = apt.read_text(encoding="utf-8")
     assert "종합 지수에 들어가는 항목" in html and "참고 지표" in html
+
+
+def test_intro_page_and_first_visit(tmp_path):
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    intro = (out / "intro.html").read_text(encoding="utf-8")
+    # 실제 자료: 1위 카드, 등급 분포(S~D), 뜨거운 동네, 시작하기
+    assert 'class="gcard it-card g-' in intro and "1위" in intro
+    assert intro.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
+    assert 'class="it-hot"' in intro and 'href="index.html">시작하기' in intro
+    assert 'localStorage.setItem("dj-intro","1")' in intro and 'class="it-skip"' in intro
+    # 첫 화면: 처음 온 사람만 인트로로 (로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'location.replace("intro.html")' in index and "yeti" in index
+    assert '<a href="intro.html">서비스 소개</a>' in index
+    assert 'location.replace' not in (out / "rank.html").read_text(encoding="utf-8")
