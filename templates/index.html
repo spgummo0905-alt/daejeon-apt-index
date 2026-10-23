@@ -5,7 +5,7 @@
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">국토부 실거래 기준 · {{ meta.updated }} 업데이트</p>
-      <h1>우리 아파트,<br>{{ region }}에서 <span class="hl">몇 점</span>일까요?</h1>
+      <h1>우리 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">몇 점</span>일까요?</h1>
       <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가, 입지, 수익률로 평가했습니다. 단지 이름이나 동 이름으로 찾아보세요.</p>
       <div class="hero-search">
         <svg class="ic"><use href="#i-search"/></svg>

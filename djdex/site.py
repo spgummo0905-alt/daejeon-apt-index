@@ -326,7 +326,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
-                  transit=_transit(cfg), regions=_regions(cfg),
+                  transit=_transit(cfg), regions=_regions(cfg), region_groups=region_groups(_regions(cfg)),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
@@ -608,6 +608,14 @@ def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]
                       "up": None if _nan(ref) else g[key] > ref} for g in items],
         })
     return boards
+
+
+def region_groups(regions: list[dict]) -> list[dict]:
+    """지역 고르기 창: 권역(group)별로 묶되 설정에 적힌 순서대로. 권역이 없으면 '지역' 하나로."""
+    out: dict[str, list[dict]] = {}
+    for g in regions:
+        out.setdefault(g.get("group") or "지역", []).append(g)
+    return [{"name": k, "items": v} for k, v in out.items()]
 
 
 def _regions(cfg) -> list[dict]:
