@@ -27,6 +27,7 @@ DTL_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfo
 REFRESH_DAYS = 180  # 단지 정보는 잘 안 바뀌어서 반년마다 다시 받음
 EMPTY_RETRY_DAYS = 14  # 세대수 등이 비어 온 단지(새 단지·등록 중)는 두 주 뒤 다시
 BLANK_STOP = 20        # 기본·상세가 모두 빈 응답이 이만큼 연달아 오면 이번 실행은 멈춤
+BLANK_RETRY_DAYS = 3   # 빈 응답만 온 단지는 표시해 두고 사흘 뒤 다시 (같은 단지들이 매번 맨 앞에서 '연달아 빈 응답'으로 막지 않게)
 BLANK_WAITS = (3, 10, None)   # 빈 응답이면 3초, 10초 쉬었다 다시 (세 번째도 비면 빈 응답으로)
 PAUSE = 0.3            # 단지 사이 쉬는 시간 (빨리 부르면 빈 응답이 옴)
 SHOWN = ("hh", "dongs", "ppu", "top", "use", "heat", "hall", "elev", "evc", "builder", "mgr")   # 화면에 쓰는 항목
@@ -119,10 +120,15 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
         codes += [it["kaptCode"] for it in items if it.get("kaptCode")]
     old = (date.today() - timedelta(days=REFRESH_DAYS)).isoformat()
     old_empty = (date.today() - timedelta(days=EMPTY_RETRY_DAYS)).isoformat()
+    old_blank = (date.today() - timedelta(days=BLANK_RETRY_DAYS)).isoformat()
     todo = []
     for c in codes:
         p = root / "info" / f"{c}.json"
         got = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+        if "_blank" in got:
+            if got["_blank"] < old_blank:
+                todo.append((0, c))   # 사흘 전에 빈 응답이었던 단지: 다시
+            continue
         if not any(k != "_at" for k in got):
             todo.append((0, c))   # 아직 없거나, 예전에 빈 응답만 받아 둔 단지: 바로 받음
         else:
@@ -154,7 +160,9 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
             continue
         fails = 0
         if not bass and not dtl:
-            # 기본·상세가 모두 빈 응답: 저장하지 않고 다음 실행 때 다시 (포털이 잠깐 빈 응답을 줄 때 두 주씩 묵히지 않게)
+            # 기본·상세가 모두 빈 응답: 정보 없이 '빈 응답'만 표시해 두고 사흘 뒤 다시
+            # (저장하지 않으면 같은 단지들이 다음 실행에도 맨 앞에 와서 '연달아 빈 응답'으로 또 멈춤. 서울에서 매번 두 곳만 받고 멈췄음)
+            (root / "info" / f"{c}.json").write_text(json.dumps({"_blank": date.today().isoformat()}), encoding="utf-8")
             blank, blank_run = blank + 1, blank_run + 1
             if blank_run >= BLANK_STOP:
                 log(f"::warning::단지 정보가 {BLANK_STOP}곳 연달아 비어 와서 여기까지 받습니다 (포털 쪽 문제일 수 있어 다음 실행 때 다시)")
@@ -165,7 +173,7 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
         (root / "info" / f"{c}.json").write_text(json.dumps(info, ensure_ascii=False), encoding="utf-8")
         done += 1
     log(f"단지 정보: 목록 {len(codes):,}곳, 받을 곳 {len(todo):,}곳 중 이번에 {done:,}곳 받음"
-        + (f", 빈 응답 {blank:,}곳은 다음 실행 때 다시" if blank else ""))
+        + (f", 빈 응답 {blank:,}곳은 사흘 뒤 다시" if blank else ""))
 
 
 def _num(v) -> int | None:

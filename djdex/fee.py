@@ -28,7 +28,9 @@ OPS = ["getHsmpLaborCostInfoV3", "getHsmpOfcrkCostInfoV3", "getHsmpTaxdueInfoV3"
        "getHsmpGuardCostInfoV3", "getHsmpDisinfectionCostInfoV3", "getHsmpElevatorMntncCostInfoV3",
        "getHsmpHomeNetworkMntncCostInfoV3", "getHsmpRepairsCostInfoV3", "getHsmpFacilityMntncCostInfoV3",
        "getHsmpSafetyCheckUpCostInfoV3", "getHsmpDisasterPreventionCostInfoV3", "getHsmpConsignManageFeeInfoV3"]
-PROBE = 6   # 공개 달을 찾을 때 볼 단지 수
+PROBE = 12   # 공개 달을 찾을 때 볼 단지 수
+PROBE_OPS = ("getHsmpLaborCostInfoV3", "getHsmpCleaningCostInfoV3")   # 인건비가 비어 있는 단지도 있어 청소비도 함께 봄
+LAST = {"text": ""}   # 마지막 응답 앞부분 (공개 달을 못 찾았을 때 무엇이 왔는지 로그로)
 # 금액이 아닌 항목 (단지 코드·이름·날짜 등)
 NOT_MONEY = re.compile(r"(code|name|nm|date|ym|cd)$|^kapt|^search", re.I)
 
@@ -47,6 +49,7 @@ def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
     for attempt in range(4):
         try:
             r = s.get(BASE + op, params=params, timeout=(10, 30))
+            LAST["text"] = r.text[:300]
             if r.status_code == 403:
                 raise Stop("403 Forbidden (활용신청 승인 전이거나 키가 아직 안 켜짐)")
             if r.status_code == 429 and attempt:   # 한 번 쉬고도 또 429 면 하루 한도: 오늘은 그만
@@ -114,9 +117,12 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
     try:
         for back in range(2, 6):
             for c in probe:
-                used += 1
-                if _filled(_call(s, key, OPS[0], c, _months_back(back))):
-                    ym = _months_back(back)
+                for op in PROBE_OPS:
+                    used += 1
+                    if _filled(_call(s, key, op, c, _months_back(back))):
+                        ym = _months_back(back)
+                        break
+                if ym:
                     break
             if ym:
                 break
@@ -124,7 +130,11 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
         log(f"::warning::[관리비] 조회를 멈춤(활용신청 승인 전이거나 하루 한도): {e}")
         return
     if not ym:
-        log("::warning::[관리비] 최근 다섯 달 안에 공개된 달을 찾지 못했습니다")
+        sample = re.sub(r"\s+", " ", LAST["text"])
+        if key:
+            sample = sample.replace(key, "***")   # 응답에 키가 섞여 오는 일은 없지만 혹시 몰라 가림
+        log(f"::warning::[관리비] 최근 다섯 달 안에 공개된 달을 찾지 못했습니다 (단지 {len(probe)}곳 × {len(PROBE_OPS)}항목, "
+            f"마지막 응답: {sample[:240]!r})")
         return
     done = 0
     for c in cs:
