@@ -53,6 +53,12 @@ def parse(text: str) -> tuple[list[dict], int]:
         data = json.loads(t)
     except ValueError as e:
         raise MolitError(f"응답 파싱 실패: {t[:200]!r}") from e
+    gw = data.get("OpenAPI_ServiceResponse") if isinstance(data, dict) else None
+    if gw is not None:
+        # 포털 게이트웨이 오류가 JSON 으로 올 때 (예: HTTP 에러 04). 예전엔 header 가 없어 '빈 정상 응답'으로 읽혀
+        # 관리비 '공개 달 없음', 단지 정보 '빈 응답', 단지 목록 0곳(받아 둔 목록을 덮어씀)이 됐습니다.
+        h = (gw or {}).get("cmmMsgHeader") or {}
+        raise MolitError(f"포털 오류: {h.get('returnAuthMsg') or h.get('errMsg')} ({h.get('returnReasonCode')})")
     resp = data.get("response", data)
     head = resp.get("header") or {}
     code = str(head.get("resultCode", "00")).strip()
@@ -111,6 +117,8 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
         path = root / "list" / f"{sgg}.json"
         try:
             items = fetch_list(key, sgg, s)
+            if not items and path.exists() and json.loads(path.read_text(encoding="utf-8")):
+                raise MolitError("목록이 비어 옴")   # 받아 둔 목록을 빈 목록으로 덮지 않음
             path.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
         except (requests.RequestException, MolitError) as e:
             if not path.exists():

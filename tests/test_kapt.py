@@ -226,3 +226,28 @@ def test_fee_month_probe_logs_what_came_back(tmp_path, monkeypatch):
     fee.collect("SECRETKEY", root, {"30110": "동구"}, log=lines.append)
     assert ops == set(fee.PROBE_OPS) and "찾지 못했습니다 (단지 12곳 × 2항목" in lines[-1] and '"resultCode"' in lines[-1]
     assert "SECRETKEY" not in lines[-1]
+
+
+def test_json_gateway_error_is_an_error_not_empty():
+    import pytest
+    from djdex import kapt
+    from djdex.molit import MolitError
+    text = '{ "OpenAPI_ServiceResponse": { "cmmMsgHeader": { "errMsg": "HTTP_ERROR", "returnAuthMsg": "HTTP 에러", "returnReasonCode": "04" } } }'
+    with pytest.raises(MolitError, match="HTTP 에러 \\(04\\)"):
+        kapt.parse(text)
+
+
+def test_empty_list_does_not_overwrite_saved_list(tmp_path, monkeypatch):
+    import json
+    from djdex import kapt
+    root = tmp_path / "kapt"
+    (root / "list").mkdir(parents=True)
+    saved = [{"kaptCode": "A1"}, {"kaptCode": "A2"}]
+    (root / "list" / "30110.json").write_text(json.dumps(saved))
+    monkeypatch.setattr(kapt, "fetch_list", lambda key, sgg, s: [])
+    monkeypatch.setattr(kapt, "_get", lambda s, url, params: ([{"kaptdaCnt": "100"}], 1))
+    monkeypatch.setattr(kapt.time, "sleep", lambda *_: None)
+    logs = []
+    kapt.collect("k", {"30110": "동구"}, root, log=logs.append)
+    assert json.loads((root / "list" / "30110.json").read_text()) == saved
+    assert any("받아 둔 목록 사용" in x for x in logs) and "목록 2곳" in logs[-1]
