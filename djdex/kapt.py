@@ -1,8 +1,9 @@
 """공동주택관리정보시스템(K-apt) 단지 정보: 세대수·동수·주차·승강기 등.
 
 API (공공데이터포털, 매매 실거래와 같은 인증키)
-- 국토교통부_공동주택 단지 목록제공 서비스: AptListService3/getSigunguAptList3 (sigunguCode = 시군구 5자리)
-- 국토교통부_공동주택 기본 정보제공 서비스: AptBasisInfoServiceV4/getAphusBassInfoV4 (기본), getAphusDtlInfoV4 (상세)
+- 국토교통부_공동주택 단지 목록제공 서비스: AptListService4/getSigunguAptList4 (sigunguCode = 시군구 5자리)
+- 국토교통부_공동주택 기본 정보제공 서비스: AptBasisInfoServiceV5/getAphusBassInfoV5 (기본), getAphusDtlInfoV5 (상세)
+  (포털이 버전을 올리면 예전 주소는 400 '없는 서비스'로 응답합니다. 응답 항목 이름은 그대로)
 
 받은 원본은 data/kapt/list/<시군구>.json, data/kapt/info/<단지코드>.json 에 둡니다.
 K-apt 에는 의무관리대상(대략 150세대 이상) 단지만 있어 작은 단지는 정보가 없을 수 있어요.
@@ -20,9 +21,9 @@ import requests
 
 from .molit import MolitError, _norm_name
 
-LIST_URL = "https://apis.data.go.kr/1613000/AptListService3/getSigunguAptList3"
-BASS_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV4/getAphusBassInfoV4"
-DTL_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV4/getAphusDtlInfoV4"
+LIST_URL = "https://apis.data.go.kr/1613000/AptListService4/getSigunguAptList4"
+BASS_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5"
+DTL_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfoV5"
 REFRESH_DAYS = 180  # 단지 정보는 잘 안 바뀌어서 반년마다 다시 받음
 
 
@@ -36,7 +37,7 @@ def parse(text: str) -> tuple[list[dict], int]:
             raise MolitError(f"XML 파싱 실패: {t[:200]!r}") from e
         auth = root.findtext(".//returnAuthMsg")
         if auth:
-            raise MolitError(f"인증 오류: {auth} ({root.findtext('.//returnReasonCode')})")
+            raise MolitError(f"포털 오류: {auth} ({root.findtext('.//returnReasonCode')})")   # 인증 키·없는 서비스·호출 한도 등
         code = (root.findtext(".//resultCode") or "").strip()
         if code not in ("00", "000"):
             raise MolitError(f"API 오류 {code}: {root.findtext('.//resultMsg')}")
@@ -64,7 +65,10 @@ def _get(s: requests.Session, url: str, params: dict, retries: int = 3) -> tuple
     for attempt in range(retries):
         try:
             r = s.get(url, params=params, timeout=(10, 30))
-            r.raise_for_status()
+            if r.status_code >= 400:
+                # 포털 게이트웨이 오류는 본문 XML에 이유가 있어(인증 오류, 없는 서비스 등) 그것을 남깁니다
+                parse(r.text)
+                r.raise_for_status()
             return parse(r.text)
         except (requests.RequestException, MolitError):
             if attempt == retries - 1:

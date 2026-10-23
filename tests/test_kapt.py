@@ -46,3 +46,13 @@ def test_load_and_match(tmp_path):
           {"complex_id": "c4", "gu": "유성구", "dong": "봉명동", "jibun": "1", "name": "없는단지"}]
     m = kapt.match(cx, kl)
     assert m["c1"]["hh"] == 1240 and m["c2"]["code"] == "A2" and m["c3"]["code"] == "A2" and "c4" not in m
+
+
+def test_gateway_error_reason():
+    import pytest
+    from djdex.molit import MolitError
+    xml = ("<OpenAPI_ServiceResponse><cmmMsgHeader><errMsg>SERVICE ERROR</errMsg>"
+           "<returnAuthMsg>NO_OPENAPI_SERVICE_ERROR</returnAuthMsg><returnReasonCode>12</returnReasonCode>"
+           "</cmmMsgHeader></OpenAPI_ServiceResponse>")
+    with pytest.raises(MolitError, match="NO_OPENAPI_SERVICE_ERROR"):
+        kapt.parse(xml)
