@@ -93,6 +93,8 @@ jobs:
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: python -m djdex all
       # 뒤 단계가 실패해도 받아 둔 실거래·입지 데이터는 저장해서 다음 실행 때 다시 받지 않습니다.
       - name: 수집 캐시 저장
@@ -137,6 +139,8 @@ jobs:
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: python -m djdex --config config.sejong.toml all --out site/sejong
       - name: 세종 수집 캐시 저장
         if: always()
