@@ -1,0 +1,21 @@
+name: review-check
+
+# 후기 링크 점검 (수동 실행): 휴대폰 브라우저처럼 열어 앱 설치·로그인을 요구하는지, 후기가 바로 보이는지 로그로 남깁니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright requests && python -m playwright install --with-deps chromium
+      - env:
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python scripts/review_check.py
