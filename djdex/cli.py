@@ -188,23 +188,23 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     return table, meta, n
 
 
-def _log_samples(cfg, trades, supply, kinfo) -> None:
-    """설정의 [log] sample_names 단지: 공급면적·단지 정보가 제대로 붙었는지 빌드 로그로 확인."""
-    names = cfg.raw.get("log", {}).get("sample_names", [])
-    if not names:
+def _log_coverage(cfg, trades, supply, kinfo) -> None:
+    """공급면적·단지 정보가 전체 단지에 얼마나 붙었는지 (단지 수, 거래 기준), 거래가 많은 단지 다섯 곳 예시."""
+    cx = sorted(_complex_list(trades), key=lambda c: -c["n"])
+    if not cx:
         return
-    for c in _complex_list(trades):
-        if not any(n in c["name"] for n in names):
-            continue
-        cid = c["complex_id"]
-        pairs = (supply or {}).get(cid)
-        got = (cfg.paths.bldg / f"{cid}.json").exists()
-        if pairs:
-            area = ", ".join(f"전용 {e:g}㎡ → 공급 {s:.1f}㎡ ({round(s / site.PY)}평)" for e, s in pairs[:6])
-        else:
-            area = "대장은 받았지만 공급면적을 못 구함" if got else "공급면적 아직 안 받음"
-        ki = (kinfo or {}).get(cid) or {}
-        print(f"[확인] {c['name']} ({c['dong']}, 거래 {c['n']}건): {area} · 단지 정보 "
+    total = sum(c["n"] for c in cx) or 1
+    for label, has in (("공급면적", lambda c: (supply or {}).get(c["complex_id"])),
+                       ("단지 정보", lambda c: (kinfo or {}).get(c["complex_id"]))):
+        got = [c for c in cx if has(c)]
+        print(f"[반영] {label}: 단지 {len(got):,} / {len(cx):,}곳 ({len(got) / len(cx):.0%}), "
+              f"거래 기준 {sum(c['n'] for c in got) / total:.0%}")
+    for c in cx[:5]:
+        pairs = (supply or {}).get(c["complex_id"])
+        area = ", ".join(f"전용 {e:g}㎡ → 공급 {s:.1f}㎡ ({round(s / site.PY)}평)" for e, s in pairs[:4]) if pairs \
+            else "공급면적 아직 없음"
+        ki = (kinfo or {}).get(c["complex_id"]) or {}
+        print(f"[예시] {c['name']} ({c['dong']}, 거래 {c['n']:,}건): {area} · 단지 정보 "
               + (f"{ki.get('name')} {ki.get('hh')}세대" if ki else "없음"))
 
 
@@ -233,7 +233,7 @@ def cmd_build(cfg, args) -> None:
             print(f"관리비(공용관리비) {len(fees):,}곳" + (f", ㎡당 중간 {per[len(per) // 2]:,.0f}원 · "
                   f"아래 10% {per[len(per) // 10]:,.0f}원 · 위 10% {per[len(per) * 9 // 10]:,.0f}원" if per else ""))
     supply = bldg.load(cfg.paths.bldg)
-    _log_samples(cfg, trades, supply, kinfo)
+    _log_coverage(cfg, trades, supply, kinfo)
     if supply:
         ids = set(trades["complex_id"].astype(str))
         hit = [v for k, v in supply.items() if k in ids]
@@ -272,8 +272,7 @@ def cmd_slow(cfg, args) -> None:
     if cfg.collect.get("collect_bldg"):
         try:
             bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
-                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)),
-                         first=cfg.raw.get("log", {}).get("sample_names", []))
+                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)))
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
     if cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
