@@ -56,3 +56,30 @@ def test_gateway_error_reason():
            "</cmmMsgHeader></OpenAPI_ServiceResponse>")
     with pytest.raises(MolitError, match="NO_OPENAPI_SERVICE_ERROR"):
         kapt.parse(xml)
+
+
+def test_match_by_coordinates_and_log():
+    kl = [{"gu": "유성구", "dong": "봉명동", "jibun": "77", "key": "한빛", "ll": [36.35, 127.35], "code": "K1", "name": "한빛", "hh": 900},
+          {"gu": "유성구", "dong": "봉명동", "jibun": "88", "key": "먼곳", "ll": [36.40, 127.40], "code": "K2", "name": "먼곳", "hh": 300}]
+    cx = [{"complex_id": "c1", "gu": "유성구", "dong": "봉명동", "jibun": "12", "name": "한빛마을"},       # 지번 다름, 이름은 같은 동에 한빛 하나 → 이름
+          {"complex_id": "c2", "gu": "유성구", "dong": "봉명동", "jibun": "13", "name": "다른이름"}]       # 좌표 30m → 좌표
+    geo = {"c1": [36.35, 127.35], "c2": [36.4002, 127.4001]}   # c2 는 '먼곳' 주소에서 약 25m
+    lines = []
+    m = kapt.match(cx, kl, geo, log=lines.append)
+    assert m["c1"]["code"] == "K1" and m["c2"]["code"] == "K2"
+    assert lines[0].startswith("단지 정보 잇기: 지번 0곳, 이름 1곳, 좌표 1곳")
+
+
+def test_coordinate_match_needs_name_beyond_60m():
+    kl = [{"gu": "유성구", "dong": "봉명동", "jibun": "77", "key": "한빛", "ll": [36.35, 127.35], "code": "K1", "name": "한빛", "hh": 900}]
+    far = [36.35 + 100 / 111_000, 127.35]   # 100m
+    cx = [{"complex_id": "c1", "gu": "유성구", "dong": "궁동", "jibun": "1", "name": "전혀다름"}]
+    assert kapt.match(cx, kl, {"c1": far}) == {}
+    cx[0]["name"] = "한빛타운"
+    assert kapt.match(cx, kl, {"c1": far})["c1"]["code"] == "K1"
+
+
+def test_plain_addr():
+    assert kapt._plain_addr("대전광역시 서구 둔산동 920 크로바아파트") == "대전광역시 서구 둔산동 920"
+    assert kapt._plain_addr("세종특별자치시 조치원읍 죽림리 77, 조치원e편한") == "세종특별자치시 조치원읍 죽림리 77"
+    assert kapt._plain_addr("주소 없음") == ""

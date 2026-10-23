@@ -166,15 +166,58 @@ _JIBUN = re.compile(r"^(산\s?)?\d+(-\d+)?(번지)?$")
 
 
 def _addr_jibun(addr: str) -> str | None:
-    for tok in (addr or "").split():
+    for tok in (addr or "").replace(",", " ").split():
+        tok = tok.strip(".()")
         if _JIBUN.match(tok):
             return tok.replace("번지", "").replace(" ", "")
     return None
 
 
+def _plain_addr(addr: str) -> str:
+    """'대전광역시 서구 둔산동 920 크로바아파트' → '대전광역시 서구 둔산동 920' (주소 검색이 잘 되게 단지명을 뗌)."""
+    out = []
+    for tok in (addr or "").replace(",", " ").split():
+        out.append(tok)
+        if _JIBUN.match(tok.strip(".()")):
+            return " ".join(out)
+    return ""
+
+
+def locate(root: Path, districts: dict[str, str], client, region: str = "", log=print) -> None:
+    """지번·이름으로 못 잇는 단지를 위해 단지 주소를 카카오로 좌표로 바꿔 data/kapt/geo.json 에 둡니다 (처음 한 번만)."""
+    path = root / "geo.json"
+    geo = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    new = 0
+    for sgg in districts:
+        p = root / "list" / f"{sgg}.json"
+        if not p.exists():
+            continue
+        for it in json.loads(p.read_text(encoding="utf-8")):
+            code = it.get("kaptCode")
+            if not code or code in geo:
+                continue
+            ip = root / "info" / f"{code}.json"
+            info = json.loads(ip.read_text(encoding="utf-8")) if ip.exists() else {}
+            addr = _plain_addr(info.get("kaptAddr", "")) or info.get("doroJuso")
+            if not addr:
+                continue
+            try:
+                ll = client.geocode(addr, [f"{region} {it.get('kaptName', '')}".strip()])
+            except Exception as e:   # 좌표를 못 구해도 지번·이름으로 잇는 것은 그대로
+                log(f"::warning::단지 정보 좌표 찾기 실패: {type(e).__name__}")
+                break
+            geo[code] = list(ll) if ll else None
+            new += 1
+    path.write_text(json.dumps(geo, ensure_ascii=False), encoding="utf-8")
+    if new:
+        log(f"단지 정보 좌표: 이번에 {new}곳 찾음 (모두 {sum(1 for v in geo.values() if v)}곳)")
+
+
 def load(root: Path, districts: dict[str, str]) -> list[dict]:
     """받아 둔 목록·정보를 합쳐 [{gu, dong, jibun, name, ...정보}] 로."""
     out = []
+    gp = root / "geo.json"
+    geo = json.loads(gp.read_text(encoding="utf-8")) if gp.exists() else {}
     for sgg, gu in districts.items():
         p = root / "list" / f"{sgg}.json"
         if not p.exists():
@@ -184,40 +227,92 @@ def load(root: Path, districts: dict[str, str]) -> list[dict]:
             info = json.loads(ip.read_text(encoding="utf-8")) if ip.exists() else {}
             dong = " ".join(x for x in (it.get("as3"), it.get("as4")) if x)
             out.append({"gu": gu, "dong": dong, "jibun": _addr_jibun(info.get("kaptAddr", "")),
-                        "key": _norm_name(it.get("kaptName", "")), **summarize({**it, **info})})
+                        "key": _norm_name(it.get("kaptName", "")), "ll": geo.get(it.get("kaptCode")),
+                        **summarize({**it, **info})})
     return out
 
 
-def match(complexes: list[dict], kapt: list[dict]) -> dict[str, dict]:
+_SUFFIX = re.compile(r"(아파트|APT|apt)$")
+
+
+def _base_name(n: str) -> str:
+    return _SUFFIX.sub("", _norm_name(n))
+
+
+def _score(a: str, b: str) -> int:
+    """이름이 얼마나 비슷한지: 같음 3, 한쪽이 다른 쪽을 품음 2, 앞 두 글자 같음 1."""
+    a, b = _base_name(a), _base_name(b)
+    if not a or not b:
+        return 0
+    if a == b:
+        return 3
+    return 2 if (a in b or b in a) else 1 if a[:2] == b[:2] else 0
+
+
+def _dist(a, b) -> float:
+    import math
+    dy = (a[0] - b[0]) * 111_000
+    dx = (a[1] - b[1]) * 111_000 * math.cos(math.radians(a[0]))
+    return (dx * dx + dy * dy) ** 0.5
+
+
+def match(complexes: list[dict], kapt: list[dict], geo: dict | None = None, log=None) -> dict[str, dict]:
     """매매 단지(complex_id, gu, dong, jibun, name) → K-apt 정보.
-    같은 구·동에서 지번이 같으면(본번만 같아도) 그 단지, 여럿이면 이름이 더 비슷한 쪽. 지번으로 못 찾으면 이름으로."""
+    1) 같은 구·동에서 지번이 같으면(본번만 같아도) 그 단지, 여럿이면 이름이 더 비슷한 쪽
+    2) 지번으로 못 찾으면 같은 동에서 이름이 하나만 비슷한 단지
+    3) 그래도 못 찾으면 좌표(geo: 매매 단지 좌표, K-apt 주소 좌표)로 가까운 단지: 60m 안이거나, 150m 안에서 이름이 비슷하면"""
     by_dong: dict[tuple, list] = {}
     for k in kapt:
         by_dong.setdefault((k["gu"], k["dong"]), []).append(k)
-    out = {}
-
-    def score(a: str, b: str) -> int:
-        if not a or not b:
-            return 0
-        if a == b:
-            return 3
-        return 2 if (a in b or b in a) else 1 if a[:2] == b[:2] else 0
+    out, how = {}, {"지번": 0, "이름": 0, "좌표": 0}
+    strip = ("gu", "dong", "jibun", "key", "ll")
 
     for c in complexes:
         cands = by_dong.get((c["gu"], c["dong"]), [])
         if not cands:
             continue
-        jb, nm = str(c.get("jibun") or ""), _norm_name(c.get("name", ""))
+        jb, nm = str(c.get("jibun") or ""), c.get("name", "")
         hit = [k for k in cands if k["jibun"] and k["jibun"] == jb]
         if not hit and jb:
             main = jb.split("-")[0]
             hit = [k for k in cands if k["jibun"] and k["jibun"].split("-")[0] == main]
         if hit:
-            best = max(hit, key=lambda k: score(nm, k["key"]))
+            best = max(hit, key=lambda k: _score(nm, k["key"]))
+            how["지번"] += 1
         else:
-            named = [k for k in cands if score(nm, k["key"]) >= 2 and len(nm) >= 3]
+            named = [k for k in cands if _score(nm, k["key"]) >= 2 and len(_base_name(nm)) >= 2]
             if len(named) != 1:
                 continue
             best = named[0]
-        out[c["complex_id"]] = {k: v for k, v in best.items() if k not in ("gu", "dong", "jibun", "key")}
+            how["이름"] += 1
+        out[c["complex_id"]] = {k: v for k, v in best.items() if k not in strip}
+
+    if geo:
+        used = {v["code"] for v in out.values()}
+        left = [c for c in complexes if c["complex_id"] not in out and geo.get(c["complex_id"])]
+        for k in kapt:
+            if k["code"] in used or not k.get("ll"):
+                continue
+            near = []
+            for c in left:
+                if c["complex_id"] in out or (c["gu"] and k["gu"] and c["gu"] != k["gu"]):
+                    continue
+                d = _dist(k["ll"], geo[c["complex_id"]])
+                if d <= 150:
+                    near.append((-_score(c.get("name", ""), k["key"]), d, c))
+            for neg, d, c in sorted(near, key=lambda x: (x[0], x[1])):
+                if d <= 60 or -neg >= 1:
+                    out[c["complex_id"]] = {kk: v for kk, v in k.items() if kk not in strip}
+                    used.add(k["code"])
+                    how["좌표"] += 1
+                break
+
+    if log:
+        used = {v["code"] for v in out.values()}
+        miss = [k for k in kapt if k["code"] not in used]
+        log(f"단지 정보 잇기: 지번 {how['지번']}곳, 이름 {how['이름']}곳, 좌표 {how['좌표']}곳 / 못 이은 단지 정보 {len(miss)}곳")
+        for k in sorted(miss, key=lambda k: -(k.get("hh") or 0))[:15]:
+            cands = [c for c in complexes if c["gu"] == k["gu"] and c["dong"] == k["dong"]]
+            near = ", ".join(f"{c['name']}({c.get('jibun')})" for c in cands[:6]) or "같은 동에 실거래 단지 없음"
+            log(f"[못 이음] {k.get('name')} {k['dong']} {k['jibun']} {k.get('hh') or '-'}세대 ← 같은 동: {near}")
     return out

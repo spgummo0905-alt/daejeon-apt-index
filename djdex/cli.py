@@ -196,7 +196,7 @@ def cmd_build(cfg, args) -> None:
     kinfo = None
     if cfg.paths.kapt.exists():
         kl = kapt.load(cfg.paths.kapt, cfg.districts)
-        kinfo = kapt.match(_complex_list(trades), kl)
+        kinfo = kapt.match(_complex_list(trades), kl, geo, log=print)
         print(f"단지 정보(K-apt) {len(kl):,}곳 중 {len(kinfo):,}곳을 실거래 단지에 이음 "
               f"(실거래 단지 {trades['complex_id'].nunique():,}곳)")
     table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo)
@@ -209,6 +209,8 @@ def cmd_all(cfg, args) -> None:
     if os.environ.get("KAKAO_REST_KEY"):
         try:
             cmd_locate(cfg, args)
+            if cfg.paths.kapt.exists():   # 단지 정보(K-apt) 주소 → 좌표 (지번·이름으로 못 이을 때 씀)
+                kapt.locate(cfg.paths.kapt, cfg.districts, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), cfg.geo_region)
         except requests.RequestException as e:
             # 입지 수집이 실패해도 이미 받은 실거래 데이터로 사이트는 만듭니다.
             # (실패하면 Actions 캐시가 저장되지 않아 실거래 수집을 처음부터 다시 하게 됩니다.)
