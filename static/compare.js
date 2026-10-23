@@ -10,6 +10,8 @@
   const ROWS = [
     ["종합 지수", c => c.i, c => c.i == null ? "-" : c.i + "점", "high"],
     ["84㎡ 환산가", c => c.p, c => c.pt || "-", "low"],
+    ["84㎡ 환산 전세", c => c.j, c => c.jt || "-", null],
+    ["전세가율", c => c.jr, c => c.jr == null ? "-" : c.jr + "%", null],
     ["입지", c => c.st[0], c => c.st[0] ?? "-", "high"],
     ["성장성", c => c.st[1], c => c.st[1] ?? "-", "high"],
     ["상승세", c => c.st[2], c => c.st[2] ?? "-", "high"],

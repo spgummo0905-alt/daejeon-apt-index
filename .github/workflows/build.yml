@@ -13,6 +13,10 @@ on:
         description: "서울 실거래 이어 받기 (다 모이기 전, 배포 뒤에 실행)"
         type: boolean
         default: false
+      slow_collect:
+        description: "배포 뒤 공급면적·관리비·후기 이어 받기 (끄면 화면만 빨리 바꿈. 다른 실행이 수집 중일 때 겹치지 않게)"
+        type: boolean
+        default: true
 
 jobs:
   test:
@@ -190,7 +194,7 @@ jobs:
       # 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 캐시에 저장해 다음 배포부터 화면에 나옵니다. 실패해도 배포에는 영향이 없습니다.
       - name: 대전 공급면적·관리비·후기 이어 받기
         id: slow_dj
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) }}
         continue-on-error: true
         timeout-minutes: 45
         env:
@@ -216,7 +220,7 @@ jobs:
           key: djdex-bldg-${{ github.run_id }}-slow
       - name: 세종 공급면적·관리비·후기 이어 받기
         id: slow_sj
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) }}
         continue-on-error: true
         timeout-minutes: 45
         env:

@@ -13,6 +13,11 @@
   let D = null, M = null, T = null;   // 단지 자료, 시장 자료, 고른 평형
 
   // ---------- 숫자·날짜 ----------
+  // 월세 계약 [보증금, 월세] → '1억/120', '5,000/80' (만원)
+  function wol(w) {
+    const d = w[0] >= 10000 ? +(w[0] / 10000).toFixed(2) + "억" : w[0].toLocaleString();
+    return d + "/" + w[1].toLocaleString();
+  }
   function eok(v, axis) {
     if (v == null || isNaN(v)) return "-";
     if (v >= 10000) {
@@ -450,7 +455,7 @@
       real.hidden = false;
       const sale = T.est[lj];
       real.textContent = `전세 추정 ${eok(T.je[lj])}` + (sale ? ` · 갭 ${eok(sale - T.je[lj])} · 전세가율 ${Math.round(T.je[lj] / sale * 100)}%` : "") +
-        (lj < D.n - 6 ? ` (${ym(lj)} 기준)` : "");
+        (lj < D.n - 6 ? ` (${ym(lj)} 기준)` : "") + (T.wr ? ` · 월세 ${wol(T.wr)}` : "");
     } else if (state.mode === "real" && hasCpi()) {
       real.hidden = false;
       real.textContent = `물가를 빼면 ${eok(conv(T.est[li], li, i0))} (${ym(i0)} 돈 가치로)`;

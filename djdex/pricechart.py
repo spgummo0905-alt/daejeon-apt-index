@@ -89,6 +89,9 @@ def estimate(m: np.ndarray, logp: np.ndarray, n: int, trim: bool = True) -> tupl
     return est, sparse, sig
 
 
+WOLSE_RATE = 0.06   # 월세 계약을 줄 세울 때만 쓰는 보증금 → 월세 환산 비율 (연)
+
+
 def _int(x) -> int | None:
     return None if x is None or (isinstance(x, float) and math.isnan(x)) else int(round(x))
 
@@ -96,8 +99,9 @@ def _int(x) -> int | None:
 def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_direct: bool,
                     start_m: int | None = None, rents: list[dict] | None = None) -> dict | None:
     """단지 하나의 차트 자료. trades 는 거래 dict 목록(각각 'akey' 가 달린 상태), types 는 site._area_types 결과.
-    rents(전월세)가 있으면 평형마다 전세 추정 보증금(je)과 달별 전세 계약 수(rv: [[달, 신규, 갱신, 미표기]])도 넣습니다.
-    반환: {m0, n, types: [{k, py, su, a, n, est, lo, hi, sp, je?, rv?}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}.
+    rents(전월세)가 있으면 평형마다 전세 추정 보증금(je), 달별 전세 계약 수(rv: [[달, 신규, 갱신, 미표기]]),
+    최근 월세 대표 계약(wr: [보증금, 월세, 계약 수])도 넣습니다.
+    반환: {m0, n, types: [{k, py, su, a, n, est, lo, hi, sp, je?, rv?, wr?}], tr: [[달, 일, 평형 번호, 가격, 층, 표시]]}.
     su 는 공급면적(㎡, 모르면 None), py 는 공급 평형(모르면 어림)."""
     rows = [t for t in trades if t.get("akey") and not _nan(t.get("price")) and not _nan(t.get("area"))]
     if not rows:
@@ -129,7 +133,7 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
             "sp": [1 if v else 0 for v in sp],
         })
     if rents:
-        _add_jeonse(out_types, rents, m0, n, asof_m)
+        _add_rent(out_types, rents, m0, n, asof_m)
     tr_out = []
     for x in sorted(rows, key=lambda x: x["date"]):
         mo = month_no(x["date"])
@@ -143,21 +147,24 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
     return {"m0": m0, "n": n, "types": out_types, "tr": tr_out}
 
 
-def _add_jeonse(types: list[dict], rents: list[dict], m0: int, n: int, asof_m: int) -> None:
-    """전세(월세 없는 계약)를 대표 면적이 가장 가까운(3㎡ 안) 평형에 붙여 평형별 전세 추정 보증금을 구합니다.
-    갱신 계약은 인상 폭이 묶여(5% 상한) 시세보다 낮게 나오므로 시세 계산에서는 빼고 계약 수에만 셉니다."""
+def _add_rent(types: list[dict], rents: list[dict], m0: int, n: int, asof_m: int) -> None:
+    """전월세를 대표 면적이 가장 가까운(3㎡ 안) 평형에 붙입니다.
+    전세(월세 없는 계약)는 매매와 같은 방식으로 평형별 추정 보증금(je)을 구하고, 갱신 계약은 인상 폭이 묶여(5% 상한)
+    시세보다 낮게 나오므로 시세 계산에서는 빼고 계약 수(rv)에만 셉니다.
+    월세는 보증금과 월세 조합이 계약마다 달라 평균을 내지 않고, 최근 1년(적으면 2년) 신규 계약 가운데 값인 실제 계약 하나(wr)를 보여 줍니다."""
     areas = np.array([t["a"] for t in types])
-    picked: dict[int, list] = {}
+    jeonse: dict[int, list] = {}
+    wolse: dict[int, list] = {}
     for r in rents:
-        if r.get("monthly") or _nan(r.get("area")) or not r.get("deposit"):
+        if _nan(r.get("area")) or not r.get("deposit"):
             continue
         mo = month_no(r["date"])
         if mo < m0 or mo > asof_m:
             continue
         k = int(np.argmin(np.abs(areas - r["area"])))
         if abs(areas[k] - r["area"]) <= 3:
-            picked.setdefault(k, []).append((mo - m0, r))
-    for k, rows in picked.items():
+            (wolse if r.get("monthly") else jeonse).setdefault(k, []).append((mo - m0, r))
+    for k, rows in jeonse.items():
         t = types[k]
         use = [(m, r) for m, r in rows if r.get("contract") != "갱신"]
         low = [1 for _, r in use if _is_low(r)]
@@ -173,6 +180,37 @@ def _add_jeonse(types: list[dict], rents: list[dict], m0: int, n: int, asof_m: i
             c = vol.setdefault(m, [0, 0, 0])
             c[0 if r.get("contract") == "신규" else 1 if r.get("contract") == "갱신" else 2] += 1
         t["rv"] = [[m, *c] for m, c in sorted(vol.items())]
+    last = asof_m - m0
+    for k, rows in wolse.items():
+        for span in (12, 24):
+            use = [r for m, r in rows if m > last - span and r.get("contract") != "갱신"]
+            if use:
+                break
+        if use:
+            # 보증금을 월세로 바꿔(연 6%) 한 줄로 세운 뒤 가운데 계약. 비율은 줄 세우기에만 써서 보여 주는 값은 실제 계약 그대로
+            use.sort(key=lambda r: r["monthly"] + r["deposit"] * WOLSE_RATE / 12)
+            mid = use[(len(use) - 1) // 2]
+            types[k]["wr"] = [int(mid["deposit"]), int(mid["monthly"]), len(use)]
+
+
+def type_quotes(payload: dict | None, recent: int = 24) -> list[dict]:
+    """단지 페이지 '평형별 시세': 평형마다 지금 매매·전세 추정 시세와 최근 월세 대표 계약.
+    [{k, a, su, sale, je, ratio, wr}] (최근 recent 개월 안에 값이 있는 것만, 하나도 없는 평형은 뺌)."""
+    if not payload:
+        return []
+    n, out = payload["n"], []
+
+    def now(series):
+        li = max((i for i, v in enumerate(series or []) if v is not None), default=-1)
+        return series[li] if li >= 0 and li >= n - recent else None
+
+    for t in payload["types"]:
+        sale, je = now(t["est"]), now(t.get("je"))
+        if sale is None and je is None and not t.get("wr"):
+            continue
+        out.append({"k": t["k"], "a": t["a"], "su": t.get("su"), "sale": sale, "je": je,
+                    "ratio": round(je / sale * 100) if sale and je else None, "wr": t.get("wr")})
+    return out
 
 
 def type_prices(payload: dict | None, recent: int = 24) -> list[list]:

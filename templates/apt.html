@@ -65,6 +65,26 @@
 </div></section>
 
 <div class="apt-side">
+{% if c.quotes %}
+{% set has_rent = (c.quotes | selectattr("je") | list) or (c.quotes | selectattr("wr") | list) %}
+<section class="quotes" aria-labelledby="q-title">
+  <div class="q-head"><h2 id="q-title">평형별 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
+  <table class="qt">
+    <thead><tr><th scope="col">{{ "공급(전용)" if c.sup else "전용면적" }}</th><th scope="col">매매</th>{% if has_rent %}<th scope="col">전세</th><th scope="col">월세</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for q in c.quotes %}
+    <tr><th scope="row">{{ ar(c, q.a) }}</th>
+      <td><b>{{ q.sale | price if q.sale else "-" }}</b></td>
+      {% if has_rent %}<td>{% if q.je %}<b>{{ q.je | price }}</b>{% if q.ratio %}<small>전세가율 {{ q.ratio }}%</small>{% endif %}{% else %}-{% endif %}</td>
+      <td>{% if q.wr %}<b>{{ q.wr | wol }}</b><small>{% if q.wr[2] > 1 %}{{ q.wr[2] }}건 중 가운데{% else %}최근 계약{% endif %}</small>{% else %}-{% endif %}</td>{% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="q-note">매매·전세는 최근 거래로 구한 추정 시세예요.{% if has_rent %} 월세는 보증금/월세(만원)로, 최근 1년 새 계약 중 가운데 계약이에요.{% endif %}
+    <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
+</section>
+{% endif %}
 {% if summary %}
 <section class="summary" data-sum>
   <h2>한눈에 보기</h2>
@@ -302,16 +322,22 @@
     <p class="muted">계약일 순입니다. 해제된 거래{% if exclude_direct %}와 직거래{% endif %}는 흐리게 표시했고 지수·신고가 계산에서 뺐습니다.
     {% if c.sup %}면적은 공급면적(전용면적)이에요.{% else %}이 단지는 공급면적 정보가 없어 전용면적으로 보여 드려요.{% endif %}</p></div>
     <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div></div>
+  {% if jeonse or wolse %}
+  <div class="seg trade-kind" role="group" aria-label="거래 종류">
+    {% for k, label, rows_ in [("s", "매매", recent), ("j", "전세", jeonse), ("w", "월세", wolse)] if rows_ %}<button type="button" class="seg-btn{% if loop.first %} active{% endif %}" data-trade-kind="{{ k }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>{% endfor %}
+  </div>
+  {% endif %}
+  <p class="trade-note" data-rent-note hidden>전월세 신고 자료예요. 갱신은 살던 세입자가 계약을 늘린 거라(인상 폭 5% 상한) 흐리게 표시하고 시세에서 뺐어요.</p>
   {% if area_types | length > 1 %}
-  <div class="chips trade-area" role="group" aria-label="전용면적으로 거르기">
-    <button type="button" class="chip active" data-area="">전체 <span class="cnt">{{ recent | length }}</span></button>
-    {% for a in area_types %}<button type="button" class="chip" data-area="{{ a.key }}">{{ ar(c, a.a) }} <span class="cnt">{{ a.n }}</span></button>{% endfor %}
+  <div class="chips trade-area" role="group" aria-label="면적으로 거르기">
+    <button type="button" class="chip active" data-area="" data-n="{{ recent | length }},{{ jeonse | length }},{{ wolse | length }}">전체 <span class="cnt">{{ recent | length }}</span></button>
+    {% for a in area_types %}<button type="button" class="chip" data-area="{{ a.key }}" data-n="{{ a.ns | join(',') }}"{% if not a.ns[0] %} hidden{% endif %}>{{ ar(c, a.a) }} <span class="cnt">{{ a.ns[0] }}</span></button>{% endfor %}
   </div>
   {% endif %}
   <div class="table-wrap">
   <table class="trades" data-trades data-page="15">
-    <thead><tr><th>계약일</th><th>{{ "면적(전용)" if c.sup else "면적" }}</th><th>층</th><th>거래가</th><th>비고</th></tr></thead>
-    <tbody>
+    <thead><tr><th>계약일</th><th>{{ "면적(전용)" if c.sup else "면적" }}</th><th>층</th><th data-price-h>거래가</th><th>비고</th></tr></thead>
+    <tbody data-k="s">
     {% for t in recent %}
     <tr class="{{ 'struck' if t.cancelled }}{{ ' off' if exclude_direct and t.direct and not t.cancelled }}" data-a="{{ t.akey }}">
       <td><span class="yy">{{ t.date.strftime("%Y")[:2] }}</span>{{ t.date.strftime("%y.%m.%d") }}</td>
@@ -322,6 +348,19 @@
     </tr>
     {% endfor %}
     </tbody>
+    {% for k, rows_ in [("j", jeonse), ("w", wolse)] if rows_ %}
+    <tbody data-k="{{ k }}" hidden>
+    {% for t in rows_ %}
+    <tr class="{{ 'off' if t.contract == '갱신' }}" data-a="{{ t.akey }}">
+      <td><span class="yy">{{ t.date.strftime("%Y")[:2] }}</span>{{ t.date.strftime("%y.%m.%d") }}</td>
+      <td>{{ ar(c, t.area, 2) }}</td>
+      <td>{{ "-" if t.floor is nan else t.floor | int }}</td>
+      <td>{{ t.deposit | price if k == "j" else [t.deposit, t.monthly] | wol }}</td>
+      <td>{{ t.contract }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    {% endfor %}
   </table>
   </div>
   <button type="button" class="more-btn" data-trades-more hidden></button>
