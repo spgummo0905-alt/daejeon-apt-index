@@ -188,7 +188,26 @@
   {% endif %}
   {% if latlng %}
     {% if kakao_js_key %}
-    <div id="map" class="map" data-lat="{{ latlng[0] }}" data-lng="{{ latlng[1] }}" data-name="{{ c.name }}"></div>
+    <div class="lm" data-lm data-lat="{{ latlng[0] }}" data-lng="{{ latlng[1] }}" data-name="{{ c.name }}" data-stop="{{ transit.stop }}"
+         data-hubs="{{ lm_hubs }}" data-hub="{% if c.hub_name_raw is string and c.hub_min_raw is not nan %}{{ c.hub_name_raw }}까지 {{ c.hub_min_raw | int }}분 (도보·지하철){% endif %}">
+      <h3 class="sub lm-title">지도로 둘러보기</h3>
+      <div class="lm-tabs" data-lm-tabs role="group" aria-label="지도 주제"></div>
+      <div class="lm-frame">
+        <div class="lm-map" data-lm-map></div>
+        <div class="seg lm-type" role="group" aria-label="지도 종류">
+          <button type="button" class="seg-btn active" data-lm-type="map" aria-pressed="true">지도</button>
+          <button type="button" class="seg-btn" data-lm-type="sat" aria-pressed="false">위성</button>
+        </div>
+      </div>
+      <div class="lm-legend" data-lm-legend></div>
+      <div class="lm-facts" data-lm-facts></div>
+      <div class="lm-nav">
+        <button type="button" class="lm-prev" data-lm-prev hidden><span>이전</span><b></b></button>
+        <span class="lm-count" data-lm-count></span>
+        <button type="button" class="lm-next" data-lm-next><span>다음 지도</span><b></b></button>
+      </div>
+      <p class="lm-src">주변 시설: 카카오 장소 검색 (보는 시점 기준) · 거리: 단지 중심에서 직선거리</p>
+    </div>
     {% else %}
     <p><a class="btn" href="https://map.kakao.com/link/map/{{ c.name | urlencode }},{{ latlng[0] }},{{ latlng[1] }}" target="_blank" rel="noopener">카카오맵에서 위치 보기 ↗</a></p>
     {% endif %}
@@ -266,7 +285,7 @@
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 {% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>{% endif %}
 {% if latlng and kakao_js_key %}
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&autoload=false"></script>
-<script src="{{ root }}static/map.js?v={{ v }}"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=services&autoload=false"></script>
+<script src="{{ root }}static/aptmap.js?v={{ v }}"></script>
 {% endif %}
 {% endblock %}
