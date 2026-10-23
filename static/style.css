@@ -10,9 +10,10 @@
   --quad: rgba(42, 120, 214, 0.06);
   --banner: #fff4d6; --banner-text: #6b4e00;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
-  /* 시황 온도 (분기형: 빨강↔파랑, 가운데 회색). dataviz 검증기 --ordinal 통과 */
-  --h5: #d93f3e; --h4: #f2a09f; --h3: #e9e8e2; --h2: #86b6ef; --h1: #1c5cab;
-  --h5-ink: #ffffff; --h4-ink: #3b1110; --h3-ink: #3a3935; --h2-ink: #0d2a4f; --h1-ink: #ffffff;
+  /* 동네 온도: 빨강(뜨거움) → 주황 → 호박 → 크림, 차가운 동네는 회색.
+     빨강↔파랑으로 나누면 선거 지도처럼 보여 열기 색 하나로만 갑니다. 이웃 단계 OKLab ΔE ≥ 10 */
+  --h5: #d7352d; --h4: #f38a4a; --h3: #fcc069; --h2: #f7e7b7; --h1: #c2c1bd;
+  --h5-ink: #ffffff; --h4-ink: #2a1206; --h3-ink: #3b2404; --h2-ink: #4a3a0c; --h1-ink: #2b2a27;
   --h0: #f3f2ee; --land: #f1f0eb;
   /* 모션: 빠르게 반응하고 살짝 튕기며 멈춤 */
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -31,8 +32,8 @@
     --quad: rgba(57, 135, 229, 0.10);
     --banner: #3a3012; --banner-text: #f5d98a;
     --shadow: none;
-    --h5: #e66767; --h4: #b04a49; --h3: #3a3a37; --h2: #2c6fc0; --h1: #86b6ef;
-    --h5-ink: #2a0d0d; --h4-ink: #ffffff; --h3-ink: #e6e5e0; --h2-ink: #ffffff; --h1-ink: #0d2a4f;
+    --h5: #fa534a; --h4: #c56a31; --h3: #95642d; --h2: #674e3a; --h1: #41403d;
+    --h5-ink: #2a0d0d; --h4-ink: #1f0f04; --h3-ink: #ffffff; --h2-ink: #f5ecd9; --h1-ink: #e6e5e0;
     --h0: #232321; --land: #252523;
   }
 }
@@ -776,7 +777,7 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .hc-bar-label { color: var(--muted); } .hc-bar-val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .hc-track { height: 10px; border-radius: 999px; background: var(--chip); overflow: hidden; }
 .hc-fill { display: block; height: 100%; width: 0; border-radius: 999px; transition: width 620ms var(--ease-out); }
-.hc-fill.hot { background: var(--h5); } .hc-fill.cool { background: var(--h1); } .hc-fill.base { background: var(--axis); }
+.hc-fill.hot { background: var(--h5); } .hc-fill.cool { background: var(--ref); } .hc-fill.base { background: var(--axis); }
 .hc-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 14px 0; font-size: 13.5px; }
 .hc-facts dt { color: var(--muted); } .hc-facts dd { margin: 0; text-align: right; font-weight: 700; }
 .hc-list { width: 100%; justify-content: center; }
