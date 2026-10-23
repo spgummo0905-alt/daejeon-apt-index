@@ -127,8 +127,8 @@ def outside(trades: pd.DataFrame) -> dict:
                            "u": "https://blog.naver.com/", "s": "동네 기록", "at": "20260912"},
                           {"t": f"{name} 겨울 난방비와 관리비 이야기", "d": "지역난방이라 겨울 난방비가 생각보다 덜 나왔어요.",
                            "u": "https://blog.naver.com/", "s": "살림 일기", "at": "20260130"},
-                          {"t": f"{name} 사시는 분들 학원 차량 어디서 타나요?", "d": "아이 학원 셔틀이 정문 앞까지 오는지 궁금해요.",
-                           "u": "https://cafe.naver.com/", "s": "대전 맘카페", "at": ""}]
+                          {"t": f"{name} 임장 다녀왔어요 (학원가·초등학교 동선)", "d": "정문에서 초등학교까지 큰길 안 건너고 7분 정도예요.",
+                           "u": "https://blog.naver.com/", "s": "주말 임장", "at": "20260704"}]
         if e:
             out[cid] = e
     return out
