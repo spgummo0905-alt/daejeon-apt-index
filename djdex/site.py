@@ -286,11 +286,6 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                 mob={"width": 360, "max_height": 440}) if geo else "",
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
-    # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
-    # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다.
-    write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
-                    {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
-                     "url": cfg.site.get("base_url", "")})
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   transit=_transit(cfg), regions=cfg.site.get("regions", []),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
@@ -354,6 +349,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         tr_list = [] if tr is None else tr.to_dict("records")
         _mark_highs(tr_list, skip_direct=cfg.filters.get("exclude_direct", False))
         pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list), asof_m, exclude_direct)
+        c["tp"] = pricechart.type_prices(pc_data)
         if pc_data:
             (out_dir / "apt" / "d" / f"{c['slug']}.json").write_text(
                 _json.dumps(pc_data, separators=(",", ":")), encoding="utf-8")
@@ -391,6 +387,11 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                              leader_by_gu.get(c["gu"])),
             n_total=n_total, chips=_card_chips(c), gems=GEMS.get(c["grade"], 1), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
+    # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
+    # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다. 평형별 시세(tp)는 위 시세 차트 계산에서 옵니다.
+    write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
+                    {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
+                     "url": cfg.site.get("base_url", "")})
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in cfg.site.get("regions", [])])
@@ -823,6 +824,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "ed": _r(r.get("grp_edu")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
+            "tp": r.get("tp") or [],
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

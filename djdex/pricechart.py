@@ -149,6 +149,19 @@ def complex_payload(trades: list[dict], types: list[dict], asof_m: int, exclude_
     return {"m0": m0, "n": n, "types": out_types, "tr": tr_out}
 
 
+def type_prices(payload: dict | None, recent: int = 24) -> list[list]:
+    """평형별 지금 추정 시세 [[평, 만원, 전용㎡ 묶음], ...] (조건으로 찾기). 최근 recent 개월 안에 시세가 있는 평형만."""
+    if not payload:
+        return []
+    out = []
+    for t in payload["types"]:
+        est = t["est"]
+        li = max((i for i, v in enumerate(est) if v is not None), default=-1)
+        if li >= payload["n"] - recent and t.get("py"):
+            out.append([t["py"], est[li], t["k"]])
+    return out
+
+
 def _is_low(t: dict) -> bool:
     fl = t.get("floor")
     return not _nan(fl) and int(fl) <= LOW_FLOOR
