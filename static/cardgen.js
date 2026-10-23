@@ -245,11 +245,14 @@
   }
 
   // ---------- 공유 시트: 카카오톡, 링크 복사, 이미지 저장, 다른 앱 ----------
-  // 카카오톡·네이버 앱 같은 앱 안 브라우저는 내려받기(blob 주소)를 처리하지 못해 '지원하지 않는 형식'이 뜹니다.
-  // 카카오톡에서는 기본 브라우저로 이 페이지를 다시 열고(?card=1 이면 공유 창을 바로 띄움), 다른 앱은 안내만 합니다.
+  // 다른 창으로 넘기지 않고 그 자리에서 끝나게, 브라우저에 맞춰 저장 방법을 고릅니다.
+  //  · 일반 브라우저(안드로이드·PC): 바로 내려받기
+  //  · 아이폰, 파일 공유가 되는 앱 안 브라우저: 휴대폰 공유 창 → '이미지 저장'(사진 앱)
+  //  · 카카오톡·네이버 앱 같은 앱 안 브라우저: 내려받기(blob 주소)를 못 해서, 카드를 크게 띄워 길게 눌러 저장
+  //    (카카오 서버에 올린 https 주소로 띄우면 앱의 '이미지 저장' 메뉴가 잘 동작). 기본 브라우저로 열기는 마지막 수단으로만.
   const UA = navigator.userAgent || "";
   const KAKAO = /KAKAOTALK/i.test(UA);
-  const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
+  const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|BAND\/|KAKAOSTORY|TikTok|musical_ly|; wv\)/i.test(UA);
   const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); return u.toString(); };
   function externalUrl() {
     const u = new URL(pageUrl());
@@ -273,10 +276,6 @@
     return kakaoReady;
   }
 
-  async function copyLink(url) {
-    try { await navigator.clipboard.writeText(url); return true; }
-    catch (e) { window.prompt("이 링크를 복사하세요", url); return false; }
-  }
 
   function setupSheet(slug, opener) {
     const sheet = document.getElementById("share-sheet");
@@ -294,6 +293,9 @@
     const canShareFile = f => !!(f && navigator.canShare && navigator.canShare({ files: [f] }));
     // 아이폰은 파일로 내려받으면 사진 앱이 아니라 '파일'에 들어가서, 공유 창의 '이미지 저장'으로 보냅니다
     const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const ANDROID = /Android/i.test(navigator.userAgent);
+    const saveLabel = save && save.querySelector("span");
+    if (saveLabel) saveLabel.textContent = "만드는 중";
 
     function prepare() {
       if (!preparing) preparing = build();
@@ -337,19 +339,78 @@
         sheet.querySelector(".sheet-thumb-ph").hidden = true;
         sheet.querySelector("[data-sheet-info]").textContent = cv.width + "×" + cv.height + " 카드 이미지";
         save.removeAttribute("aria-disabled");
-        if (KAKAO) save.href = externalUrl();
-        else { save.href = image.url; save.download = image.file; }
+        saveLabel.textContent = "이미지 저장";
       } catch (e) {
-        sheet.querySelector("[data-sheet-info]").textContent = "카드 이미지를 만들지 못했습니다";
+        sheet.querySelector("[data-sheet-info]").textContent = "카드 이미지를 만들지 못했어요";
+        if (saveLabel) saveLabel.textContent = "이미지 저장";
       }
+    }
+    // 앱 안 브라우저에서 길게 눌러 저장할 원본 이미지를 카카오 서버에 올려 https 주소를 받습니다
+    let saveUp = null;
+    function uploadSave() {
+      if (!saveUp) saveUp = loadKakao(sheet.dataset.kakaoKey).then(async ok => {
+        if (!ok || !image || !Kakao.Share.uploadImage) return null;
+        const res = await Kakao.Share.uploadImage({ file: [cardFile()] });
+        return res && res.infos && res.infos.original ? res.infos.original.url : null;
+      }).catch(() => null);
+      return saveUp;
+    }
+    const toDataUrl = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => res(null); r.readAsDataURL(blob); });
+
+    // 카드 크게 보기 (길게 눌러 저장)
+    let viewer = null;
+    function showViewer() {
+      if (!viewer) {
+        const back = DJ.el("div", "viewer-back"), box = DJ.el("div", "viewer");
+        box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", "카드 이미지 저장");
+        const img = DJ.el("img"); img.alt = title + " 카드 이미지";
+        const sub = DJ.el("p", "viewer-sub");
+        const close = DJ.el("button", "btn", "닫기"); close.type = "button";
+        box.append(img, DJ.el("p", "viewer-hint", "이미지를 길게 눌러 저장하세요"), sub, close);
+        const hide = () => { back.classList.remove("on"); back.hidden = true; box.hidden = true; document.removeEventListener("keydown", escV); };
+        const escV = e => { if (e.key === "Escape") hide(); };
+        back.onclick = hide; close.onclick = hide;
+        document.body.append(back, box);
+        viewer = { back, box, img, sub, hide, escV };
+      }
+      const v = viewer;
+      v.sub.replaceChildren(document.createTextNode(IOS ? "'사진 앱에 저장'을 고르면 사진 앱에 들어가요."
+        : "'이미지 저장'을 고르면 휴대폰 갤러리에 들어가요."));
+      if (KAKAO) {   // 정말 안 될 때만 쓰는 마지막 방법
+        const a = DJ.el("a", "", "그래도 안 되면 기본 브라우저로 열기");
+        a.href = externalUrl();
+        v.sub.append(DJ.el("br"), a);
+      } else if (IN_APP) {
+        v.sub.append(DJ.el("br"), document.createTextNode("그래도 안 되면 오른쪽 위 메뉴의 '다른 브라우저로 열기'를 써 주세요."));
+      }
+      v.img.src = image.url;
+      toDataUrl(image.blob).then(d => { if (d && !v.img.src.startsWith("https:")) v.img.src = d; });
+      if (sheet.dataset.kakaoKey) uploadSave().then(u => { if (u) v.img.src = u; });
+      v.back.hidden = false; v.box.hidden = false;
+      requestAnimationFrame(() => v.back.classList.add("on"));
+      document.addEventListener("keydown", v.escV);
+      v.box.querySelector("button").focus();
+    }
+
+    // 이미지 저장: 브라우저에 맞춰 자동으로
+    function saveImage() {
+      const f = cardFile();
+      if ((IOS || IN_APP) && canShareFile(f)) {   // 휴대폰 공유 창 → '이미지 저장'
+        navigator.share({ files: [f] }).catch(e => { if (!e || e.name !== "AbortError") showViewer(); });
+        return;
+      }
+      if (IN_APP || IOS) { showViewer(); return; }
+      const a = document.createElement("a");
+      a.href = image.url; a.download = image.file; a.hidden = true;
+      document.body.append(a); a.click(); a.remove();
+      DJ.toast("카드 이미지를 저장했어요", ANDROID ? "갤러리의 '다운로드' 앨범에서 볼 수 있어요" : "다운로드 폴더에 들어갔어요");
     }
 
     function open() {
       last = document.activeElement;
       back.hidden = false; sheet.hidden = false;
       requestAnimationFrame(() => { back.classList.add("on"); sheet.classList.add("on"); });
-      say(KAKAO ? "카카오톡 안에서는 이미지를 바로 받을 수 없어, '이미지 저장'을 누르면 기본 브라우저로 이 페이지를 열어 드립니다."
-        : IN_APP ? "앱 안 브라우저에서는 저장이 안 될 수 있습니다. 오른쪽 위 메뉴의 '다른 브라우저로 열기'를 이용해 주세요." : "");
+      say(IN_APP && save && !navigator.share ? "'이미지 저장'을 누르면 카드를 크게 띄워 드려요. 길게 눌러 저장하면 돼요." : "");
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();
@@ -390,25 +451,19 @@
         } catch (e) { /* 아래 대체 방법으로 */ }
       }
       if (navigator.share) { shareWithImage(url); return; }
-      await copyLink(url);
-      DJ.toast("링크를 복사했습니다", "카카오톡 대화창에 붙여 넣어 보내세요");
+      if (await DJ.copy(url)) DJ.toast("링크를 복사했어요", "카카오톡 대화창에 붙여 넣어 보내세요");
+      else DJ.copyBox(url);
     });
-    sheet.querySelector('[data-act="link"]').addEventListener("click", async () => {
-      if (await copyLink(pageUrl())) DJ.toast("링크를 복사했습니다", "카카오톡이나 메신저에 붙여 넣어 보내세요");
-    });
+    sheet.querySelector('[data-act="link"]').addEventListener("click", () => DJ.copyLink(pageUrl()));
     // 다른 앱으로: 카드 이미지 파일과 글(링크 포함)을 함께. 이미지를 못 넘기는 브라우저는 글과 링크만
     function shareWithImage(url) {
       const f = cardFile();
       const data = canShareFile(f) ? { files: [f], title, text: title + "\n" + text + "\n" + url } : { title, text, url };
-      return navigator.share(data).catch(() => {});
+      return navigator.share(data).catch(e => { if (!e || e.name !== "AbortError") DJ.copyLink(url); });
     }
     if (save) save.addEventListener("click", e => {
-      if (!image) { e.preventDefault(); return; }
-      const f = cardFile();
-      if (!KAKAO && IOS && canShareFile(f)) {
-        e.preventDefault();
-        navigator.share({ files: [f] }).catch(() => {});
-      }
+      e.preventDefault();
+      if (image) saveImage();
     });
     more.addEventListener("click", () => shareWithImage(pageUrl()));
     opener.addEventListener("click", open);
