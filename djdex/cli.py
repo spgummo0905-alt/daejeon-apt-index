@@ -219,6 +219,7 @@ def cmd_all(cfg, args) -> None:
         macro = ecos.fetch(os.environ["ECOS_KEY"], cfg.collect["start_ym"])
         if macro:
             ecos.save(cfg.paths.macro, macro)
+            print("ECOS " + ", ".join(f"{k} {len(v)}개월(~{max(v)})" for k, v in macro.items()))
     cmd_build(cfg, args)
 
 
