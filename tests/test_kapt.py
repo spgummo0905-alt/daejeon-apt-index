@@ -138,3 +138,29 @@ def test_empty_kapt_info_is_not_matched_or_shown():
     m = kapt.match(cx, kl, log=lines.append)
     assert m["a"]["code"] == "F"                     # 세대수 등이 빈 'E' 대신
     assert "정보가 비어 있어 뺀 곳 1곳" in lines[0]
+
+
+def test_collect_retries_blank_info_right_away(tmp_path, monkeypatch):
+    import json
+    from djdex import kapt
+    root = tmp_path / "kapt"
+    (root / "info").mkdir(parents=True)
+    # 예전에 빈 응답만 받아 둔 단지(_at 만 있음)와 정보가 있는 단지
+    (root / "info" / "A1.json").write_text(json.dumps({"_at": "2099-01-01"}))
+    (root / "info" / "A2.json").write_text(json.dumps({"kaptCode": "A2", "kaptdaCnt": "500", "_at": "2099-01-01"}))
+    monkeypatch.setattr(kapt, "fetch_list", lambda key, sgg, s: [{"kaptCode": c} for c in ("A1", "A2", "A3")])
+    calls = []
+
+    def fake_get(s, url, params):
+        calls.append(params["kaptCode"])
+        if params["kaptCode"] == "A3":
+            return [], 0   # 빈 응답: 저장하지 않음
+        return [{"kaptCode": params["kaptCode"], "kaptdaCnt": "300"}], 1
+
+    monkeypatch.setattr(kapt, "_get", fake_get)
+    logs = []
+    kapt.collect("k", {"30110": "동구"}, root, log=logs.append)
+    assert sorted(set(calls)) == ["A1", "A3"]   # 정보가 있는 A2 는 다시 받지 않음
+    assert json.loads((root / "info" / "A1.json").read_text())["kaptdaCnt"] == "300"
+    assert not (root / "info" / "A3.json").exists()
+    assert "빈 응답 1곳은 다음 실행 때 다시" in logs[-1]
