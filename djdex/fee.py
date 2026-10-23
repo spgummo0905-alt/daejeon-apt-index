@@ -44,6 +44,8 @@ def _call(s: requests.Session, key: str, op: str, code: str, ym: str) -> dict:
     for attempt in range(4):
         try:
             r = s.get(BASE + op, params=params, timeout=(10, 30))
+            if r.status_code == 403:
+                raise Stop("403 Forbidden (활용신청 승인 전이거나 키가 아직 안 켜짐)")
             if r.status_code >= 400:
                 parse(r.text)
                 r.raise_for_status()

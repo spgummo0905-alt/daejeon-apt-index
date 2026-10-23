@@ -73,3 +73,19 @@ def test_call_stops_on_unregistered_key():
         bldg._call(_Sess(xml), "k", {}, 1)
     ok = json.dumps({"response": {"header": {"resultCode": "00"}, "body": {"items": {"item": {"area": "84.9"}}, "totalCount": 1}}})
     assert bldg._call(_Sess(ok), "k", {}, 1) == ([{"area": "84.9"}], 1)
+
+
+def test_call_stops_on_http_403_and_retries_empty(monkeypatch):
+    monkeypatch.setattr(bldg.time, "sleep", lambda *_: None)
+
+    class Seq:
+        def __init__(self, resps):
+            self.resps = resps
+
+        def get(self, *a, **k):
+            return self.resps.pop(0)
+
+    with pytest.raises(bldg.Stop):
+        bldg._call(Seq([_Resp("", 403)]), "k", {}, 1)
+    ok = json.dumps({"response": {"header": {"resultCode": "00"}, "body": {"items": {"item": [{"area": "1"}]}, "totalCount": 1}}})
+    assert bldg._call(Seq([_Resp(""), _Resp(""), _Resp(ok)]), "k", {}, 2) == ([{"area": "1"}], 1)   # 빈 응답은 다시
