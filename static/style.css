@@ -1046,6 +1046,27 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 .chip-more { border-style: dashed !important; color: var(--text-2); }
 
 
+/* 평형별 시세: 매매·전세·월세 (단지 페이지 오른쪽 맨 위) */
+.quotes { margin: 0 0 16px; padding: 16px 18px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+.q-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.q-head h2 { margin: 0; font-size: 16px; }
+.q-head span { font-size: 12px; color: var(--muted); }
+.qt { margin-top: 6px; }
+.qt th, .qt td { padding: 10px 4px; vertical-align: top; }
+.qt thead th { position: static; padding-top: 2px; padding-bottom: 6px; font-size: 12px; }
+.qt th:first-child { text-align: left; padding-left: 0; } .qt td:last-child, .qt th:last-child { padding-right: 0; }
+.qt tbody th { font-size: 13.5px; font-weight: 700; }
+.qt tbody tr:last-child th { border-bottom: none; }
+.qt tbody tr:hover td { background: none; }
+.qt b { display: block; font-size: 15.5px; font-weight: 800; letter-spacing: -0.01em; }
+.qt td small { display: block; margin-top: 1px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.qt .ar small { display: block; margin: 1px 0 0; font-size: 11.5px; font-weight: 600; opacity: 1; color: var(--muted); }
+.q-note { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.q-note a { font-weight: 700; color: var(--accent); white-space: nowrap; }
+@media (max-width: 380px) { .quotes { padding: 14px 14px 10px; } .qt b { font-size: 14.5px; } .qt td small { font-size: 10.5px; } }
+.trade-kind { margin: 0 0 10px; }
+.trade-note { margin: -2px 0 10px; font-size: 12.5px; color: var(--muted); }
+
 /* ===== 단지 페이지 메인 카드 (이미지로 저장하는 카드와 같은 모양) ===== */
 .apt-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
 .apt-hero > * { min-width: 0; }

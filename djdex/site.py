@@ -30,6 +30,15 @@ def fmt_price(manwon) -> str:
     return eok(manwon, 2)
 
 
+def fmt_wol(deposit, monthly) -> str:
+    """월세 계약을 '보증금/월세'(만원)로: '1억/120', '5,000/80', '1.5억/95' (부동산 앱에서 흔히 쓰는 꼴)."""
+    if _nan(deposit) or _nan(monthly):
+        return "-"
+    d = float(deposit)
+    dep = f"{d / 10000:.2f}".rstrip("0").rstrip(".") + "억" if d >= 10000 else f"{d:,.0f}"
+    return f"{dep}/{float(monthly):,.0f}"
+
+
 def fmt_pct(x, signed: bool = True) -> str:
     if _nan(x):
         return "-"
@@ -131,7 +140,7 @@ def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
     env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
-                       pyeong=pyeong)
+                       pyeong=pyeong, wol=lambda w: fmt_wol(*w[:2]) if w else "-")
     # 면적: ar(c, 전용㎡[, 소수 자리]) → 공급(전용) 표시. 공급면적은 c.sup ([[전용, 공급], ...])에서 찾습니다
     env.globals["ar"] = lambda c, ex, dec=0: area_html(ex, supply_of(c.get("sup"), ex), dec)
     env.tests["nan"] = _nan
@@ -404,6 +413,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         pc_data = pricechart.complex_payload(tr_list, _area_types(tr_list, c["sup"]), asof_m, exclude_direct,
                                              rents=None if rl is None else rl.to_dict("records"))
         c["tp"] = pricechart.type_prices(pc_data)
+        c["quotes"] = pricechart.type_quotes(pc_data)
+        c["je_ref"], c["je_ratio"] = _jeonse_ref(c["quotes"], ref)
         if pc_data and c["hh"]:
             pc_data["hh"] = c["hh"]   # 연도별 거래량 표의 회전율
         if pc_data:
@@ -435,8 +446,13 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                     for g in loc_groups]
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         shown = tr_list[:TRADE_ROWS]
+        jeonse, wolse = _rent_rows(rl)
+        area_types = _area_types(shown + jeonse + wolse, c["sup"])
+        for a in area_types:   # 매매·전세·월세 탭마다 면적 칩 옆 건수
+            a["ns"] = [sum(1 for t in rows_ if t["akey"] == a["key"]) for rows_ in (shown, jeonse, wolse)]
         html = tpl.render(
-            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), lm_hubs=lm_hubs, area_types=_area_types(shown, c["sup"]), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
+            c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
+            area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
@@ -486,6 +502,27 @@ def _group_score(table: pd.DataFrame, factors: list[dict]) -> pd.Series:
 
 
 TRADE_ROWS = 80  # 단지 페이지 거래 표에 싣는 최근 거래 수 (처음엔 15건, 나머지는 '더 보기')
+
+
+def _rent_rows(rents: pd.DataFrame | None, limit: int = TRADE_ROWS) -> tuple[list[dict], list[dict]]:
+    """단지 페이지 거래 표의 전세·월세 탭: 최근 계약부터 limit 건씩."""
+    if rents is None or rents.empty:
+        return [], []
+    df = rents.assign(date=pd.to_datetime(rents["date"])).sort_values("date", ascending=False)
+    df = df[df["area"].notna() & (df["deposit"] > 0)]
+    monthly = df["monthly"].fillna(0) > 0
+    rec = lambda d: [{**r, "contract": r.get("contract") if isinstance(r.get("contract"), str) else ""}
+                     for r in d.head(limit).to_dict("records")]
+    return rec(df[~monthly]), rec(df[monthly])
+
+
+def _jeonse_ref(quotes: list[dict], ref: float) -> tuple[float | None, float | None]:
+    """단지 비교용: 기준 면적(84㎡)에 가장 가까운 평형의 전세 추정 보증금을 기준 면적으로 환산한 값과 그 평형의 전세가율."""
+    qs = [q for q in quotes if q.get("je")]
+    if not qs:
+        return None, None
+    q = min(qs, key=lambda q: abs(q["a"] - ref))
+    return q["je"] / q["a"] * ref, q.get("ratio")
 
 
 def _area_types(trades: list[dict], sup=None) -> list[dict]:
@@ -904,6 +941,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
             "tp": r.get("tp") or [],
+            "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}

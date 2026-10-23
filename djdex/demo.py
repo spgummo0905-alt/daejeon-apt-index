@@ -94,7 +94,8 @@ def macro(start: str = "2006-01", end: str = "2026-08") -> dict:
 
 
 def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
-    """데모용 가짜 전세 계약: 같은 단지 매매가의 55~75%, 2011년부터, 2021년 6월부터 신규·갱신 표시."""
+    """데모용 가짜 전월세 계약: 전세는 같은 단지 매매가의 55~72%, 월세(열에 셋)는 보증금 8~30%에 다달이 50~180만,
+    2011년부터, 2021년 6월부터 신규·갱신 표시."""
     rnd = random.Random(seed)
     sale = trades[trades["kind"] == "매매"]
     out = []
@@ -104,9 +105,11 @@ def rents(trades: pd.DataFrame, seed: int = 11) -> pd.DataFrame:
             if d.year < 2011:
                 continue
             renew = d >= pd.Timestamp("2021-06-01") and rnd.random() < 0.35
+            wol = rnd.random() >= 0.7   # 월세는 보증금이 훨씬 적고 다달이 냄
             out.append({"complex_id": cid, "name": t["name"], "gu": t["gu"], "dong": t["dong"], "jibun": t["jibun"],
-                        "area": t["area"], "deposit": round(t["price"] * rnd.uniform(0.55, 0.72) * (0.95 if renew else 1)),
-                        "monthly": 0 if rnd.random() < 0.7 else rnd.randint(30, 120), "date": d.strftime("%Y-%m-%d"),
+                        "area": t["area"],
+                        "deposit": round(t["price"] * (rnd.uniform(0.08, 0.3) if wol else rnd.uniform(0.55, 0.72) * (0.95 if renew else 1)), -2),
+                        "monthly": rnd.randint(50, 180) if wol else 0, "date": d.strftime("%Y-%m-%d"),
                         "floor": t["floor"], "contract": ("갱신" if renew else "신규") if d >= pd.Timestamp("2021-06-01") else ""})
     return pd.DataFrame(out)
 

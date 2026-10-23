@@ -364,23 +364,51 @@
     });
     list.after(btn);
   }
-  // 단지 페이지 거래 표: 전용면적으로 거르고, 처음엔 몇 줄만 보여주다 '더 보기'
+  // 단지 페이지 거래 표: 매매·전세·월세를 고르고 면적으로 거르며, 처음엔 몇 줄만 보여주다 '더 보기'
   function tradeTable(table) {
-    const rows = Array.from(table.tBodies[0].rows), page = +table.dataset.page || 15;
-    const more = table.closest("section").querySelector("[data-trades-more]");
-    const chips = Array.from(table.closest("section").querySelectorAll(".trade-area .chip"));
-    let area = "", limit = page;
+    const sec = table.closest("section"), page = +table.dataset.page || 15;
+    const more = sec.querySelector("[data-trades-more]");
+    const chips = Array.from(sec.querySelectorAll(".trade-area .chip"));
+    const kinds = Array.from(sec.querySelectorAll("[data-trade-kind]"));
+    const head = table.querySelector("[data-price-h]");
+    const KIND = { s: [0, "거래가"], j: [1, "보증금"], w: [2, "보증금/월세"] };
+    let area = "", limit = page, kind = "s";
     const apply = () => {
       let n = 0;
-      rows.forEach(r => { const ok = !area || r.dataset.a === area; if (ok) n++; r.hidden = !ok || n > limit; });
+      Array.from(table.tBodies).forEach(tb => {
+        tb.hidden = tb.dataset.k !== kind;
+        if (tb.hidden) return;
+        Array.from(tb.rows).forEach(r => { const ok = !area || r.dataset.a === area; if (ok) n++; r.hidden = !ok || n > limit; });
+      });
       if (more) { more.hidden = n <= limit; more.textContent = Math.min(page * 2, n - limit) + "건 더 보기"; }
     };
+    const setKind = k => {
+      kind = k; limit = page;
+      kinds.forEach(b => { b.classList.toggle("active", b.dataset.tradeKind === k); b.setAttribute("aria-pressed", b.dataset.tradeKind === k ? "true" : "false"); });
+      if (head) head.textContent = KIND[k][1];
+      const note = sec.querySelector("[data-rent-note]");
+      if (note) note.hidden = k === "s";
+      // 면적 칩: 고른 종류의 건수로 바꾸고, 그 종류에 없는 면적은 숨김 (고른 면적이 없으면 전체로)
+      chips.forEach(b => {
+        const cnt = +(b.dataset.n || "").split(",")[KIND[k][0]] || 0;
+        b.querySelector(".cnt").textContent = cnt;
+        b.hidden = !!b.dataset.area && !cnt;
+        if (b.hidden && b.dataset.area === area) area = "";
+      });
+      chips.forEach(b => b.classList.toggle("active", b.dataset.area === area));
+      apply();
+    };
+    kinds.forEach(b => b.addEventListener("click", () => setKind(b.dataset.tradeKind)));
     chips.forEach(b => b.addEventListener("click", () => {
       area = b.dataset.area; limit = page;
       chips.forEach(x => x.classList.toggle("active", x === b));
       apply();
     }));
     if (more) more.addEventListener("click", () => { limit += page * 2; apply(); });
+    // '평형별 시세'의 '전세·월세 계약 보기': 그 탭을 열고 내려감
+    document.querySelectorAll("[data-trade-jump]").forEach(a => a.addEventListener("click", () => {
+      if (kinds.some(b => b.dataset.tradeKind === a.dataset.tradeJump)) setKind(a.dataset.tradeJump);
+    }));
     apply();
   }
   // 테마 모음: 구(동)로 거르고, 테마마다 12곳씩 보여주다 '더 보기'

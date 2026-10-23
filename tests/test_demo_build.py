@@ -9,6 +9,11 @@ def test_demo_builds_site(tmp_path):
     pages = list((out / "apt").glob("*.html"))
     assert len(pages) == 61
     assert (out / "methodology.html").exists() and (out / "static" / "style.css").exists()
+    # 단지 페이지: 평형별 매매·전세·월세와 거래 표의 전세·월세 탭
+    apts = [q.read_text(encoding="utf-8") for q in pages]
+    full = [a for a in apts if 'class="quotes"' in a and "전세가율" in a and 'data-trade-kind="w"' in a]
+    assert len(full) > len(pages) // 2
+    assert 'data-trade-kind="j"' in full[0] and '<tbody data-k="w" hidden>' in full[0]
 
 
 def test_build_handles_missing_build_year_and_floor(tmp_path):

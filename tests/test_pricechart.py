@@ -90,3 +90,25 @@ def test_jeonse_estimate_skips_renewals_and_monthly():
     assert all(29000 < v < 31000 for v in t["je"])          # 갱신(2억)·월세는 시세에서 빠짐, 59㎡는 다른 평형
     rv = {row[0]: row[1:] for row in t["rv"]}
     assert rv[2] == [1, 1, 0] and sum(sum(v) for v in rv.values()) == 7
+
+
+def test_wolse_representative_and_type_quotes():
+    tr = [_t(f"2024-{m:02d}-10", 50000) for m in range(1, 7)]
+    types = [{"key": "84", "n": 6, "py": 34}]
+    jeonse = [dict(date=f"2024-{m:02d}-05", area=84.5, deposit=30000, monthly=0, floor=8, contract="신규") for m in range(1, 7)]
+    wolse = [dict(date="2024-02-05", area=84.5, deposit=5000, monthly=150, floor=8, contract="신규"),
+             dict(date="2024-03-05", area=84.5, deposit=10000, monthly=100, floor=8, contract="신규"),
+             dict(date="2024-04-05", area=84.5, deposit=20000, monthly=60, floor=8, contract="신규"),
+             dict(date="2024-05-05", area=84.5, deposit=1000, monthly=40, floor=8, contract="갱신")]
+    p = pc.complex_payload(tr, types, pc.month_no("2024-06-30"), exclude_direct=True, rents=jeonse + wolse)
+    # 갱신은 빼고, 보증금을 월세로 바꿔 세운 가운데 계약 (5000/150 → 175, 10000/100 → 150, 20000/60 → 160)
+    assert p["types"][0]["wr"] == [20000, 60, 3]
+    q = pc.type_quotes(p)
+    assert len(q) == 1 and 49000 < q[0]["sale"] < 51000 and 29000 < q[0]["je"] < 31000
+    assert q[0]["ratio"] == round(q[0]["je"] / q[0]["sale"] * 100) and q[0]["wr"] == [20000, 60, 3]
+
+
+def test_fmt_wol():
+    from djdex.site import fmt_wol
+    assert fmt_wol(10000, 120) == "1억/120" and fmt_wol(5000, 80) == "5,000/80"
+    assert fmt_wol(15000, 95) == "1.5억/95" and fmt_wol(None, 10) == "-"
