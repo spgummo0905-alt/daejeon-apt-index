@@ -235,6 +235,68 @@
     return cv;
   }
 
+  // ---------- 카톡 메시지 썸네일 (3:4) ----------
+  // 카톡 피드는 가로:세로 3:4 까지 잘리지 않고 크게 보여서, 카드(5:7)를 등급 색 무대 위에 살짝 기울여 올리고
+  // 아래에 '눌러서 점수 보기' 단추를 그립니다 (받은 사람이 눌러 보고 싶게).
+  const TW = 900, TH = 1200;
+  const STAGE = {
+    S: ["#1c1405", "#4a3810", "#0d0a03", "rgba(255,214,120,.55)"], A: ["#151a22", "#34404f", "#0b0e13", "rgba(220,230,245,.45)"],
+    B: ["#0b1d38", "#1f4f8f", "#071326", "rgba(140,190,255,.45)"], C: ["#1b222c", "#3b4757", "#11161d", "rgba(190,200,215,.35)"],
+    D: ["#e9ecf0", "#ffffff", "#d7dce3", "rgba(255,255,255,.9)"],
+  };
+  function thumb(card, c) {
+    const g = STAGE[c.g] || STAGE.D, t = TIER[c.g] || TIER.D, rand = seeded(c.s + "thumb"), light = !STAGE[c.g] || c.g === "D";
+    const cv = document.createElement("canvas");
+    cv.width = TW; cv.height = TH;
+    const ctx = cv.getContext("2d");
+    // 무대: 위에서 비추는 빛
+    ctx.fillStyle = grad(ctx, 0, 0, 0, TH, [g[1], g[0], g[2]]); ctx.fillRect(0, 0, TW, TH);
+    const spot = ctx.createRadialGradient(TW / 2, TH * 0.36, 40, TW / 2, TH * 0.4, TW * 0.75);
+    spot.addColorStop(0, g[3]); spot.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = spot; ctx.fillRect(0, 0, TW, TH);
+    // 빛줄기
+    ctx.save(); ctx.globalCompositeOperation = light ? "source-over" : "screen"; ctx.globalAlpha = light ? 0.22 : 0.11;
+    for (let k = 0; k < 7; k++) {
+      const a = -Math.PI / 2 + (k - 3) * 0.22 + (rand() - 0.5) * 0.08;
+      ctx.fillStyle = grad(ctx, TW / 2, 0, TW / 2 + Math.cos(a) * TH, Math.sin(a) * -TH, ["rgba(255,255,255,.9)", "rgba(255,255,255,0)"]);
+      ctx.beginPath(); ctx.moveTo(TW / 2, TH * 0.42);
+      ctx.lineTo(TW / 2 + Math.cos(a - 0.05) * TH, TH * 0.42 + Math.sin(a - 0.05) * TH);
+      ctx.lineTo(TW / 2 + Math.cos(a + 0.05) * TH, TH * 0.42 + Math.sin(a + 0.05) * TH); ctx.fill();
+    }
+    ctx.restore();
+    // 반짝이
+    for (let k = 0; k < 60; k++) {
+      const px = rand() * TW, py = rand() * TH * 0.9, r = 0.8 + rand() * 2.4;
+      ctx.fillStyle = light ? `rgba(120,135,160,${0.15 + rand() * 0.25})` : `rgba(255,248,225,${0.25 + rand() * 0.55})`;
+      ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+    }
+    // 카드: 그림자 + 살짝 기울임 + 광택
+    const ch = 960, cw = ch * card.width / card.height, cx = TW / 2, cy = 46 + ch / 2;
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(-0.035);
+    ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 26;
+    rr(ctx, -cw / 2, -ch / 2, cw, ch, 40 * ch / H); ctx.fillStyle = "#000"; ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.drawImage(card, -cw / 2, -ch / 2, cw, ch);
+    ctx.save(); rr(ctx, -cw / 2, -ch / 2, cw, ch, 40 * ch / H); ctx.clip();
+    ctx.globalCompositeOperation = "screen";
+    ctx.fillStyle = grad(ctx, -cw / 2, -ch / 2, cw / 2, ch / 2, ["rgba(255,255,255,0)", "rgba(255,255,255,0)", "rgba(255,255,255,.22)", "rgba(255,255,255,0)", "rgba(255,255,255,0)"]);
+    ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+    ctx.restore();
+    ctx.restore();
+    // 눌러 보기 단추
+    const label = "눌러서 점수 보기  ›", by = TH - 132, bh = 88;
+    ctx.font = `800 40px ${FONT}`;
+    const bw = ctx.measureText(label).width + 96;
+    rr(ctx, (TW - bw) / 2, by, bw, bh, bh / 2);
+    ctx.fillStyle = c.g === "S" ? grad(ctx, 0, by, 0, by + bh, ["#fff1bf", "#e8c66c", "#b8912f"]) : light ? "#1d232c" : "rgba(255,255,255,.95)";
+    ctx.fill();
+    ctx.fillStyle = c.g === "S" ? "#2a1e05" : light ? "#ffffff" : "#111821";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, TW / 2, by + bh / 2 + 1);
+    return cv;
+  }
+
   // ---------- 메인 카드의 그림: 이미지로 저장하는 카드와 같은 그림 ----------
   function drawArt(cv, c) {
     const dpr = Math.min(2, window.devicePixelRatio || 1), w = 650, h = 330;
@@ -311,7 +373,7 @@
       }).catch(() => null);
       return kakaoUp;
     }
-    // 카카오톡 미리보기는 가로:세로 3:4 까지만 그대로 보여줘 (카드는 5:7) 양옆을 바탕색으로 채운 판을 올립니다
+    // 카카오톡 미리보기는 가로:세로 3:4 까지만 그대로 보여줘서 (카드는 5:7) 따로 그린 3:4 썸네일을 올립니다
     let kakaoBlobFile = null;
     function kakaoFile() { return kakaoBlobFile || cardFile(); }
 
@@ -325,17 +387,11 @@
         const cv = draw(c, data);
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
-        const pad = document.createElement("canvas");
-        pad.width = Math.round(cv.height * 3 / 4); pad.height = cv.height;
-        const pc = pad.getContext("2d");
-        const edge = cv.getContext("2d").getImageData(3, Math.round(cv.height / 2), 1, 1).data;  // 카드 가장자리 색으로 채움
-        pc.fillStyle = edge[3] > 200 ? `rgb(${edge[0]},${edge[1]},${edge[2]})` : "#f3f2ee";
-        pc.fillRect(0, 0, pad.width, pad.height);
-        pc.drawImage(cv, Math.round((pad.width - cv.width) / 2), 0);
-        const padBlob = await new Promise(res => pad.toBlob(res, "image/jpeg", 0.9));  // 올리기 빠르게 JPG로
-        if (padBlob) kakaoBlobFile = new File([padBlob], image.file.replace(/\.png$/, ".jpg"), { type: "image/jpeg" });
-        const thumb = sheet.querySelector("[data-sheet-thumb]");
-        thumb.src = image.url; thumb.hidden = false;
+        // 카톡 메시지용 3:4 썸네일 (카드를 무대 위에 올린 그림)
+        const tb = await new Promise(res => thumb(cv, c).toBlob(res, "image/jpeg", 0.9));
+        if (tb) kakaoBlobFile = new File([tb], image.file.replace(/\.png$/, "_카톡.jpg"), { type: "image/jpeg" });
+        const th = sheet.querySelector("[data-sheet-thumb]");
+        th.src = image.url; th.hidden = false;
         sheet.querySelector(".sheet-thumb-ph").hidden = true;
         sheet.querySelector("[data-sheet-info]").textContent = cv.width + "×" + cv.height + " 카드 이미지";
         save.removeAttribute("aria-disabled");
@@ -446,11 +502,9 @@
       DJ.copyLink(url, "카카오톡 대화창에 붙여 넣어 보내세요");
     });
     sheet.querySelector('[data-act="link"]').addEventListener("click", () => DJ.copyLink(pageUrl()));
-    // 다른 앱으로: 카드 이미지 파일과 글(링크 포함)을 함께. 이미지를 못 넘기는 브라우저는 글과 링크만
+    // 다른 앱으로: 링크로 보냅니다 (사진 파일로 보내면 받은 사람이 눌러도 페이지로 못 들어옴). 이미지는 '이미지 저장'으로
     function shareWithImage(url) {
-      const f = cardFile();
-      const data = canShareFile(f) ? { files: [f], title, text: title + "\n" + text + "\n" + url } : { title, text, url };
-      return navigator.share(data).catch(e => { if (!e || e.name !== "AbortError") DJ.copyLink(url); });
+      return navigator.share({ title, text, url }).catch(e => { if (!e || e.name !== "AbortError") DJ.copyLink(url); });
     }
     if (save) save.addEventListener("click", e => {
       e.preventDefault();
@@ -458,6 +512,7 @@
     });
     more.addEventListener("click", () => shareWithImage(pageUrl()));
     opener.addEventListener("click", open);
+    opener.addEventListener("pointerdown", () => { if (save && sheet.dataset.kakaoKey) uploadKakao(); }, { once: true });
     // 누르면 바로 되게: 카카오 SDK와 카드 이미지를 페이지가 한가할 때 미리 준비
     const idle = window.requestIdleCallback || (f => setTimeout(f, 1200));
     idle(() => { if (sheet.dataset.kakaoKey) loadKakao(sheet.dataset.kakaoKey); prepare(); });
@@ -473,6 +528,7 @@
   }
 
   DJ.drawCard = draw; // 테스트·다른 페이지에서 쓰도록
+  DJ.drawThumb = thumb;
 
   document.addEventListener("DOMContentLoaded", () => {
     const card = document.querySelector(".mc[data-apt]");
