@@ -341,6 +341,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     for r in rows:
         by_dong.setdefault((r["gu"], r["dong"]), []).append(r)
     tpl = env.get_template("apt.html")
+    # 입지 지도 '교육'에 그리는 주요 학원가 (설정에 좌표가 있는 지역만)
+    lm_hubs = _json.dumps([{"name": h["name"], "lat": h["lat"], "lng": h["lng"]} for h in cfg.hub.get("hubs", [])
+                           if "lat" in h and "lng" in h], ensure_ascii=False)
     for c in rows:
         cid = c["complex_id"]
         h = hist_by.get(cid)
@@ -380,7 +383,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         neighbors = [r for r in by_dong.get((c["gu"], c["dong"]), []) if r["complex_id"] != cid and not r["small"]][:6]
         shown = tr_list[:TRADE_ROWS]
         html = tpl.render(
-            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
+            c=c, charts=c_charts, recent=shown, has_pc=bool(pc_data), lm_hubs=lm_hubs, area_types=_area_types(shown), lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             summary=_summary(c, n_total, gu_med, factors, years, meta.get("real_returns"), cfg.region_name,
