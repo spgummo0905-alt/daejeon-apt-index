@@ -1,9 +1,11 @@
 """네이버 글 고르기 점검 (수동 실행, review-check 의 probe): 사이트의 실제 단지를 네이버 블로그 검색 API로 찾아
 지금 기준(djdex.reviews)으로 남는 글과, 예전 기준으론 남았는데 이제 빠지는 글의 제목을 로그로 남깁니다.
+RAW 줄에는 검색 결과(제목·요약 앞부분·블로그 이름)를 JSON 으로 남겨 기준을 손볼 때 그대로 다시 돌려 볼 수 있게 합니다.
 키는 출력하지 않습니다.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -16,7 +18,8 @@ from djdex.kapt import _base_name  # noqa: E402
 from djdex.molit import _norm_name  # noqa: E402
 
 BASE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
-REGIONS = {"대전": ("", 30), "세종": ("sejong/", 10), "서울": ("seoul/", 10)}
+REGIONS = {"대전": ("", 16), "세종": ("sejong/", 6), "서울": ("seoul/", 6)}
+RAW = 60   # 검색어마다 RAW 로 남기는 결과 수
 OLD = re.compile(r"급매|매물|매매가|전세가|월세|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|"
                  r"시공|인테리어|이사|입주청소|줄눈|탄성|도배|확장|견적|경매|공매")
 
@@ -43,8 +46,13 @@ def main() -> None:
             cx = {"name": c["n"], "dong": c.get("d", ""), "gu": c.get("gu", "")}
             q = " ".join(x for x in (cx["dong"], cx["name"]) if x)
             q = q if q.endswith("아파트") else q + " 아파트"
-            items = s.get(reviews.NAVER.format("blog"), params={"query": q + " 후기", "display": 100, "sort": "sim"},
-                          timeout=15).json().get("items", [])
+            items = reviews._search(s, "blog", q + " 후기")
+            more = reviews._search(s, "blog", q + " 살아보니")
+            for qq, its in (("후기", items), ("살아보니", more)):
+                for it in its[:RAW]:
+                    print("RAW\t" + json.dumps({"r": region, "c": cx, "q": qq, "t": reviews._clean(it.get("title")),
+                                                 "d": reviews._clean(it.get("description"))[:110],
+                                                 "b": reviews._clean(it.get("bloggername"))}, ensure_ascii=False))
             key = _base_name(cx["name"])
             old = []
             for it in items:
@@ -53,9 +61,9 @@ def main() -> None:
                     old.append(t)
             old = old[:5]
             seen: set = set()
-            new = reviews._posts(s, "blog", q + " 후기", cx, 5, region, seen)
+            new = reviews._pick(items, cx, 5, region, seen)
             if len(new) < 5:
-                new += reviews._posts(s, "blog", q + " 살아보니", cx, 5 - len(new), region, seen)
+                new += reviews._pick(more, cx, 5 - len(new), region, seen)
             have_old += bool(old)
             have_new += bool(new)
             newt = [p["t"] for p in new]
