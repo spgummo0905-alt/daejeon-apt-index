@@ -330,3 +330,22 @@ def test_home_3d_price_view(tmp_path):
     assert "function cliffs(" in js and "function clues(" in js and '"dj:kmap"' in js
     assert '"dj:kmap"' in (out / "static" / "kmap.js").read_text(encoding="utf-8")
     assert "<script src=\"https://unpkg.com" not in html   # 처음 화면에서는 받지 않음
+
+
+def test_hill_check_on_apt_page_and_data(tmp_path):
+    # 언덕 체크: 주변 고저차 구간, 역과 높이 비교, 역 → 단지 단면. 카드 메모·조건으로 찾기에도
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    pages = [p.read_text(encoding="utf-8") for p in (out / "apt").glob("*.html")]
+    with_hill = [h for h in pages if 'id="hill"' in h]
+    assert with_hill and len(with_hill) < len(pages)   # 자료가 없는 단지는 칸을 그리지 않음
+    assert any('class="hl-svg"' in h for h in with_hill) and any("hl-svg" not in h for h in with_hill)
+    assert all("위성 지형 자료" in h for h in with_hill)
+    assert {c for h in with_hill for c in ("평지에 가까워요", "완만한 비탈이 있어요", "언덕 지형이에요") if c in h} >= {"평지에 가까워요", "언덕 지형이에요"}
+    h = with_hill[0]
+    assert h.index('id="loc"') < h.index('id="hill"') < h.index('id="reviews"')
+    import json
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    assert any("hl" in c for c in data["complexes"]) and any("hl" not in c for c in data["complexes"])
+    assert '{ id: "flat"' in (out / "static" / "finder.js").read_text(encoding="utf-8")
+    assert '["언덕"' in (out / "static" / "app.js").read_text(encoding="utf-8")

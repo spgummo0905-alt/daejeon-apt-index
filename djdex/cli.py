@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, fee, kakao, kapt, location, metrics, molit, osm, reviews, school, site
+from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, osm, reviews, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -122,7 +122,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
-                     kinfo=None, supply=None, outside=None):
+                     kinfo=None, supply=None, outside=None, hill=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -184,7 +184,7 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
                    macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo,
-                   supply=supply, outside=outside)
+                   supply=supply, outside=outside, hill=hill)
     return table, meta, n
 
 
@@ -246,8 +246,11 @@ def cmd_build(cfg, args) -> None:
         print(f"공급면적(건축물대장) {len(supply):,}곳 중 {len(hit):,}곳을 실거래 단지에 이음 (실거래 단지 {len(ids):,}곳)"
               + (f", 전용률 중간 {ratios[len(ratios) // 2]:.3f} · 범위 {ratios[0]:.2f}~{ratios[-1]:.2f}" if ratios else ""))
     outside = reviews.load(cfg.paths.kapt / "reviews.json")
+    hill = elev.load(cfg.paths.elev)
+    if hill:
+        print(f"언덕(고저차) {len(hill):,}곳 (역 단면 {sum(1 for v in hill.values() if v.get('pf')):,}곳)")
     table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo, supply=supply,
-                                      outside=outside)
+                                      outside=outside, hill=hill)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
 
@@ -311,6 +314,19 @@ def cmd_feeprobe(cfg, args) -> None:
     fee.probe(key, pick)
 
 
+def cmd_elev(cfg, args) -> None:
+    """언덕(고저차): 새 단지만 지형 타일로 계산 (키 없이). 역 좌표는 카카오 키가 있을 때 찾습니다."""
+    if not cfg.paths.geo.exists():
+        print("단지 좌표(geo.json)가 없어 언덕 계산을 건너뜁니다")
+        return
+    geo = json.loads(cfg.paths.geo.read_text(encoding="utf-8"))
+    poi = json.loads(cfg.paths.poi.read_text(encoding="utf-8")) if cfg.paths.poi.exists() else {}
+    f = next((f for f in cfg.location_factors if f["key"] == "subway"), None)
+    stops = osm.load(cfg.paths.osm_stops) if f and f.get("osm_route") else None
+    key = os.environ.get("KAKAO_REST_KEY", "").strip()
+    elev.collect(geo, poi, cfg.paths.elev, client=kakao.Kakao(key) if key and not stops else None, stops=stops)
+
+
 def cmd_all(cfg, args) -> None:
     cmd_collect(cfg, args)
     if os.environ.get("KAKAO_REST_KEY"):
@@ -329,6 +345,10 @@ def cmd_all(cfg, args) -> None:
                 osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
             except (ValueError, OSError) as e:  # 정류장을 못 받아도 사이트는 만듭니다 (그 항목만 빠짐)
                 print(f"::warning::OSM 정류장 수집 실패: {e}")
+    try:
+        cmd_elev(cfg, args)
+    except Exception as e:   # 언덕 자료가 없어도 사이트는 만듭니다
+        print(f"::warning::언덕(고저차) 계산 실패, 이번에는 빼고 만듭니다: {e!r}")
     cmd_school(cfg, args)
     cmd_build(cfg, args)
 
@@ -355,7 +375,8 @@ def cmd_demo(cfg, args) -> None:
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
                                   rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades),
-                                  supply=demo_mod.supply(trades), outside=demo_mod.outside(trades))
+                                  supply=demo_mod.supply(trades), outside=demo_mod.outside(trades),
+                                  hill=demo_mod.hill(trades))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 
@@ -373,10 +394,12 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
     sub.add_parser("feeprobe", help="관리비 API 점검 (응답을 한 줄씩)")
     sub.add_parser("school", help="학교알리미 중학교 전출입과 물가·금리만 받기 (빠름)")
+    sub.add_parser("elev", help="언덕(고저차)만 계산 (지형 타일, 새 단지만)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
     args = p.parse_args(argv)
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
-     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe}[args.cmd](cfg, args)
+     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe,
+     "elev": cmd_elev}[args.cmd](cfg, args)
