@@ -164,5 +164,5 @@ def test_slow_puts_supply_area_last_with_time_limits(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "_outside_reviews", lambda cfg: order.append(("reviews", None)))
     monkeypatch.setattr(bldg, "collect", lambda *a, **k: order.append(("bldg", k.get("time_limit"))))
     cli.main(["--data", str(tmp_path), "slow"])
-    assert [n for n, _ in order] == ["kapt", "fee", "reviews", "bldg"]
+    assert [n for n, _ in order] == ["fee", "kapt", "reviews", "bldg"]   # 관리비를 단지 정보보다 먼저
     assert sum(t or 0 for _, t in order) < 45 * 60   # 단계별 상한 합이 워크플로 45분 제한 안

@@ -264,24 +264,26 @@ def _outside_reviews(cfg) -> None:
 
 
 def cmd_slow(cfg, args) -> None:
-    """오래 걸리는 수집: 단지 정보 나머지·관리비·카카오맵 장소·네이버 글·공급면적(건축물대장).
+    """오래 걸리는 수집: 관리비·단지 정보 나머지·카카오맵 장소·네이버 글·공급면적(건축물대장).
     배포가 끝난 뒤에 돌려 하루 한도 안에서 며칠에 걸쳐 이어 받고, 받은 것은 다음 배포부터 화면에 나옵니다.
-    한 가지가 시간을 다 쓰지 않게 단계마다 시간 상한을 두고, 오래 걸리는 공급면적은 맨 뒤에 둡니다."""
+    한 가지가 시간을 다 쓰지 않게 단계마다 시간 상한을 두고, 오래 걸리는 공급면적은 맨 뒤에 둡니다.
+    관리비를 단지 정보보다 먼저: 단지 정보 API 를 몰아서 부른 직후엔 포털이 관리비에 'HTTP 에러'를 줘서
+    (대전·서울은 매번 실패, 그 단계가 없던 세종만 받아졌음)."""
     if cfg.collect.get("max_calls_per_run") and not (cfg.paths.data / "READY").exists():
         return   # 실거래를 다 모으기 전인 지역(서울)
     key = _need("DATA_GO_KR_KEY")
-    if cfg.collect.get("collect_kapt"):
-        # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
-        try:
-            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=480)
-        except (molit.MolitError, requests.RequestException) as e:
-            print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
     if cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
         try:
             fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)),
                         time_limit=480)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
+    if cfg.collect.get("collect_kapt"):
+        # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
+        try:
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=480)
+        except (molit.MolitError, requests.RequestException) as e:
+            print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
     if os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
         _outside_reviews(cfg)
     if cfg.collect.get("collect_bldg"):
