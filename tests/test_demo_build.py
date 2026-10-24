@@ -213,3 +213,8 @@ def test_fee_shown_per_m2_and_quotes_below_price(tmp_path):
     assert fee and all("㎡당" in h and "공용관리비" in h for h in fee)
     html = next(h for h in pages if 'class="quotes"' in h)
     assert html.index('id="price"') < html.index('class="quotes"') < html.index("<h2>입지는 어떤가</h2>")   # 평형별 시세는 시세 아래
+
+
+def test_fee_rank_needs_enough_complexes_and_range():
+    from djdex import site
+    assert site.FEE_RANGE[1] <= 4000 and site.RANK_MIN >= 10
