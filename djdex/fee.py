@@ -100,9 +100,22 @@ def codes(kapt_root: Path, districts: dict[str, str]) -> list[str]:
     return out
 
 
+def _has_info(kapt_root: Path, c: str) -> bool:
+    """단지 정보(K-apt)를 받아 둔 단지인지. 관리비는 단지 정보(부과면적·실거래 단지 잇기)가 있어야 화면에 나옵니다."""
+    p = kapt_root / "info" / f"{c}.json"
+    if not p.exists():
+        return False
+    try:
+        got = json.loads(p.read_text(encoding="utf-8"))
+    except ValueError:
+        return False
+    return "_blank" not in got and any(k != "_at" for k in got)
+
+
 def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 2400, log=print,
             time_limit: float | None = None) -> None:
     """가장 최근 공개된 달 하나를 단지마다 받습니다 (17번씩). 이미 그 달을 받은 단지는 건너뜀.
+    단지 정보를 받아 둔 단지부터 받습니다 (서울은 단지 정보가 아직 일부라, 목록 순서대로 받으면 화면에 붙지 않는 단지만 받았음).
     time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다."""
     t0 = time.monotonic()
     cs = codes(kapt_root, districts)
@@ -152,7 +165,7 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
             f"마지막 응답: {sample[:240]!r})")
         return
     done = 0
-    for c in cs:
+    for c in sorted(cs, key=lambda c: not _has_info(kapt_root, c)):   # 단지 정보가 있는 단지 먼저 (같은 묶음 안에선 목록 순서)
         path = root / c / f"{ym}.json"
         if path.exists():
             continue
