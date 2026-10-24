@@ -75,6 +75,7 @@ def main() -> None:
             cards = s.get(url + "cards.html", timeout=30)
             out["카드첩 화면"] = cards.ok and all(k in cards.text for k in ('id="today"', 'id="badges"', 'id="album"'))
             out["메인에 오늘의 카드 없음"] = 'id="today"' not in html
+            out["메인 3D 시세"] = "data-m3d-seg" in html
             js = s.get(url + "static/cards.js", timeout=30)
             out["임장 후보 코드"] = js.ok and "pickToday" in js.text
             app = s.get(url + "static/app.js", timeout=30)

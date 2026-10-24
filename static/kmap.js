@@ -56,6 +56,9 @@
       const on = items.filter(function (x) { return ok(x.p); });
       clusterer.clear();
       clusterer.addMarkers(on.map(function (x) { return x.ov; }));
+      // 3D 시세(m3d.js)도 같은 거르기를 따르게: 걸렀을 때만 맞는 단지 코드 묶음, 아니면 null
+      DJ.kmapOn = on.length === items.length ? null : new Set(on.map(function (x) { return x.p.s; }));
+      document.dispatchEvent(new CustomEvent("dj:kmap", { detail: DJ.kmapOn }));
       count.textContent = on.length === items.length ? "단지 " + items.length.toLocaleString() + "곳" : "조건에 맞는 단지 " + on.length.toLocaleString() + "곳 / " + items.length.toLocaleString() + "곳";
       ctl.querySelectorAll("[data-km-show]").forEach(function (b) { const v = b.dataset.kmShow === st.show; b.classList.toggle("active", v); b.setAttribute("aria-pressed", v); });
       pbox.querySelectorAll("button").forEach(function (b) { const v = +b.dataset.band === st.band; b.classList.toggle("active", v); b.setAttribute("aria-pressed", v); });

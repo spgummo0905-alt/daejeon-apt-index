@@ -316,3 +316,17 @@ def test_search_by_dong_station_and_condition(tmp_path):
     import json
     data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
     assert all(c.get("sm", 1) == 1 for c in data["complexes"])
+
+
+def test_home_3d_price_view(tmp_path):
+    # 메인 지도의 '3D 시세': 누를 때만 3D 라이브러리를 받고, 가까운데 값이 크게 다른 곳(가격 절벽)을 보여줌
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    html = (out / "index.html").read_text(encoding="utf-8")
+    assert "data-m3d-seg" in html and 'id="m3d"' in html and "data-m3d-cliffs" in html and "static/m3d.js" in html
+    assert html.index('id="kmap"') < html.index('id="m3d"') < html.index("data-m3d-cliffs")
+    js = (out / "static" / "m3d.js").read_text(encoding="utf-8")
+    assert "unpkg.com/deck.gl@9.3.11/" in js and "basemaps.cartocdn.com" in js and "OpenStreetMap" in html
+    assert "function cliffs(" in js and "function clues(" in js and '"dj:kmap"' in js
+    assert '"dj:kmap"' in (out / "static" / "kmap.js").read_text(encoding="utf-8")
+    assert "<script src=\"https://unpkg.com" not in html   # 처음 화면에서는 받지 않음
