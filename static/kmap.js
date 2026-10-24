@@ -56,9 +56,6 @@
       const on = items.filter(function (x) { return ok(x.p); });
       clusterer.clear();
       clusterer.addMarkers(on.map(function (x) { return x.ov; }));
-      // 3D 시세(m3d.js)도 같은 거르기를 따르게: 걸렀을 때만 맞는 단지 코드 묶음, 아니면 null
-      DJ.kmapOn = on.length === items.length ? null : new Set(on.map(function (x) { return x.p.s; }));
-      document.dispatchEvent(new CustomEvent("dj:kmap", { detail: DJ.kmapOn }));
       count.textContent = on.length === items.length ? "단지 " + items.length.toLocaleString() + "곳" : "조건에 맞는 단지 " + on.length.toLocaleString() + "곳 / " + items.length.toLocaleString() + "곳";
       ctl.querySelectorAll("[data-km-show]").forEach(function (b) { const v = b.dataset.kmShow === st.show; b.classList.toggle("active", v); b.setAttribute("aria-pressed", v); });
       pbox.querySelectorAll("button").forEach(function (b) { const v = +b.dataset.band === st.band; b.classList.toggle("active", v); b.setAttribute("aria-pressed", v); });
@@ -136,6 +133,30 @@
     });
     clusterer.addMarkers(items.map(function (x) { return x.ov; }));
     filters(items, clusterer);
+
+    // '가까운데 값이 크게 다른 곳'(cliffs.js)에서 고른 두 단지: 금색 선으로 잇고 이름표를 달아 둘이 함께 보이게 맞춤
+    let pairMarks = [];
+    DJ.kmap = {
+      focusPair: function (a, b) {
+        pairMarks.forEach(function (m) { m.setMap(null); });
+        const pa = new kakao.maps.LatLng(a.la, a.ln), pb = new kakao.maps.LatLng(b.la, b.ln);
+        const line = new kakao.maps.Polyline({ path: [pa, pb], strokeWeight: 4, strokeColor: "#c9a24a", strokeOpacity: 0.95, strokeStyle: "solid" });
+        line.setMap(map);
+        pairMarks = [line].concat([[a, pa], [b, pb]].map(function (x) {
+          const tag = text("div", "kpair", x[0].n + " " + (x[0].pt || ""));
+          const ov = new kakao.maps.CustomOverlay({ position: x[1], content: tag, xAnchor: 0.5, yAnchor: 1, zIndex: 5 });
+          ov.setMap(map);
+          return ov;
+        }));
+        const bb = new kakao.maps.LatLngBounds();
+        bb.extend(pa); bb.extend(pb);
+        map.setBounds(bb, 90, 40, 40, 40);
+        if (map.getLevel() < 3) map.setLevel(3);
+        show(a);
+        wrap.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "center" });
+      },
+    };
+    document.dispatchEvent(new Event("dj:kmap-ready"));
 
     // 충분히 확대하면 값 옆에 단지 이름도 보여줍니다.
     const names = function () { wrap.classList.toggle("show-names", map.getLevel() <= 4); };

@@ -96,11 +96,6 @@
   <div class="panel-head">
     <h2>지도로 보는 {{ region }} 아파트</h2>
     <p class="muted">핀에는 84㎡ 가격이 보이고, 색은 등급, 빨간 테두리는 최근 신고가예요. 예산과 조건으로 걸러 임장 갈 단지를 골라 보세요.</p>
-    {# 지도 ↔ 3D 시세 (m3d.js 가 있을 때만 보임) #}
-    <div class="seg m3d-seg" role="group" aria-label="지도 보기 방식" data-m3d-seg hidden>
-      <button type="button" class="seg-btn active" data-view="2d" aria-pressed="true">지도</button>
-      <button type="button" class="seg-btn" data-view="3d" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-cube"/></svg>3D 시세</button>
-    </div>
   </div>
   <div class="kmap-wrap" id="kmap-wrap">
     {# 지도 위 거르기 (카카오맵이 뜰 때만 보임, kmap.js) #}
@@ -120,27 +115,15 @@
       <p class="km-count" data-km-count aria-live="polite"></p>
     </div>
     <div id="kmap"></div>
-    {# 3D 시세: 단지마다 84㎡ 가격만큼 솟은 기둥. 누를 때만 3D 라이브러리를 받아 옵니다 (m3d.js) #}
-    <div class="m3d" id="m3d" role="region" aria-label="3D 시세 지도: 기둥 높이는 84㎡ 가격, 색이 진할수록 비싼 가격대" hidden>
-      <div class="m3d-canvas" data-m3d-canvas></div>
-      <p class="m3d-load" data-m3d-load hidden></p>
-      <div class="m3d-tools">
-        <button type="button" class="m3d-btn" data-m3d-spin aria-pressed="false">돌려 보기</button>
-        <button type="button" class="m3d-btn" data-m3d-top>위에서·비스듬히</button>
-        <button type="button" class="m3d-btn" data-m3d-home>처음 위치</button>
-      </div>
-      <div class="m3d-card" data-m3d-card hidden></div>
-      <div class="m3d-legend" data-m3d-legend></div>
-      <div class="m3d-tip" data-m3d-tip hidden></div>
-      <p class="m3d-attr"><span class="m3d-hint">끌어서 옮기기 · 두 손가락(또는 오른쪽 버튼)으로 돌리기 · </span>© OpenStreetMap © CARTO</p>
-    </div>
     <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 여기에 요약이 나옵니다.</span></div>
     <div class="map-fallback">{{ charts.map | safe }}</div>
   </div>
-  <div class="m3d-cliffs" data-m3d-cliffs hidden>
+  {# 가까운데 값이 크게 다른 곳: 걸어서 10분 안인데 84㎡ 가격이 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
+  <div class="cliffs" data-cliffs hidden>
     <h3>가까운데 값이 크게 다른 곳</h3>
-    <p class="muted">걸어서 10분 안(600m)인데 84㎡ 가격이 1.4배 넘게 차이 나는 단지들이에요. 연식·역 거리·학군·언덕처럼 그 차이의 이유를 임장 때 직접 확인해 보세요.</p>
+    <p class="muted">걸어서 10분 안(600m)인데 84㎡ 가격이 1.4배 넘게 차이 나는 단지들이에요. 같은 동네인데 왜 값이 다른지, 연식·역까지 거리·학군·언덕을 임장 때 직접 확인해 보세요.</p>
     <ol></ol>
+    <button type="button" class="more-btn" data-cliffs-more hidden></button>
   </div>
   {{ grade_legend | safe }}
 </section>
@@ -411,7 +394,7 @@
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>
 <script src="static/kmap.js?v={{ v }}"></script>
 {% endif %}
-{% if charts.map or kakao_js_key %}<script src="static/m3d.js?v={{ v }}"></script>{% endif %}
+{% if charts.map or kakao_js_key %}<script src="static/cliffs.js?v={{ v }}"></script>{% endif %}
 <script src="static/home.js?v={{ v }}"></script>
 <script src="static/board.js?v={{ v }}"></script>
 {% endblock %}
