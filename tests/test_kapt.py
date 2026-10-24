@@ -351,3 +351,10 @@ def test_fee_collects_complexes_with_kapt_info_first(tmp_path, monkeypatch):
     fee.collect("k", root, {"11110": "종로구"}, budget=1 + 2 * len(fee.OPS), log=lines.append)
     got = sorted(p.parent.name for p in (root / "fee").glob("*/*.json"))
     assert got == ["K7", "K9"]
+
+
+def test_slow_cooldowns_leave_time_to_fetch():
+    # 배포 뒤 이어 받기: 쉬는 시간을 다 써도 받을 시간이 남고, 서울 이어 받기 단계(60분) 안에 들어감
+    from djdex import kapt
+    assert kapt.SLOW_TIME - sum(kapt.SLOW_COOLS) >= 300
+    assert kapt.SLOW_TIME + 480 + 900 < 60 * 60   # 관리비 8분 + 단지 정보 + 공급면적 15분
