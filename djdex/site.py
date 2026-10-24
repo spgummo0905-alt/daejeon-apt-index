@@ -147,7 +147,8 @@ def _env() -> Environment:
     return env
 
 
-FEE_RANGE = (300, 6000)   # 공용관리비 ㎡당 원: 이 밖은 잘못 이었거나 잘못 받은 값으로 보고 숨김
+FEE_RANGE = (300, 4000)   # 공용관리비 ㎡당 원: 이 밖은 잘못 이었거나(주상복합 부과면적 등) 잘못 받은 값으로 보고 숨김
+RANK_MIN = 20             # 지역에서 어디쯤인지는 값이 있는 단지가 이만큼은 돼야 (적으면 순위가 뒤집혀 보임)
 
 
 def fee_word(top) -> str:
@@ -276,7 +277,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         rows.append(d)
     # 세대수·세대당 주차·관리비(㎡당)가 지역에서 어디쯤인지 (정보가 있는 단지끼리). 관리비는 '상위' = 비싼 쪽
     for key in ("hh", "ppu", "fee_m2"):
-        top = _top_share(pd.Series({r["complex_id"]: r[key] for r in rows if not r["small"]}, dtype=float))
+        vals = pd.Series({r["complex_id"]: r[key] for r in rows if not r["small"]}, dtype=float)
+        top = _top_share(vals) if vals.notna().sum() >= RANK_MIN else pd.Series(dtype=float)
         for r in rows:
             r[key + "_top"] = top.get(r["complex_id"], float("nan"))
 
