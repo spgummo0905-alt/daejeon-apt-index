@@ -328,7 +328,7 @@
 <section class="panel rv" id="reviews">
   <div class="panel-head">
     <h2>살아본 사람들 이야기</h2>
-    <p class="muted">{% if ext.posts %}네이버 블로그에서 찾은 글이에요. 누르면 로그인 없이 원문이 바로 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기예요. 앱 설치나 로그인 없이 바로 열려요.{% endif %}</p>
+    <p class="muted">{% if ext.posts %}이 단지 이름과 사는 이야기(소음·주차·관리·학군 …)가 함께 나오는 네이버 블로그 글만 골랐어요. 누르면 로그인 없이 원문이 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기예요. 앱 설치나 로그인 없이 바로 열려요.{% endif %}</p>
   </div>
   {% if ext.posts %}
   <ul class="rv-posts">
@@ -351,7 +351,7 @@
     {% else %}<a class="rv-link" href="https://m.map.naver.com/search?query={{ q | urlencode }}" target="_blank" rel="noopener">
       <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>지도·리뷰</b><small>네이버 지도</small></span></a>{% endif %}
   </div>
-  <p class="rv-q muted">검색어 ‘{{ q }}’ · 모두 앱 설치나 로그인 없이 열려요. 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공 홍보 글은 뺐어요.{% endif %}</p>
+  <p class="rv-q muted">검색어 ‘{{ q }}’ · 모두 앱 설치나 로그인 없이 열려요. 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공·수리·가게 홍보 글은 뺐어요.{% endif %}</p>
 </section>
 
 <section class="panel">
