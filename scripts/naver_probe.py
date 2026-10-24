@@ -1,0 +1,83 @@
+"""네이버 글 고르기 점검 (수동 실행, review-check 의 probe): 사이트의 실제 단지를 네이버 블로그 검색 API로 찾아
+지금 기준(djdex.reviews)으로 남는 글과, 예전 기준으론 남았는데 이제 빠지는 글의 제목을 로그로 남깁니다.
+RAW 줄에는 검색 결과(제목·요약 앞부분·블로그 이름)를 JSON 으로 남겨 기준을 손볼 때 그대로 다시 돌려 볼 수 있게 합니다.
+키는 출력하지 않습니다.
+"""
+from __future__ import annotations
+
+import json
+import os
+import random
+import re
+import sys
+
+import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from djdex import reviews  # noqa: E402
+from djdex.kapt import _base_name  # noqa: E402
+from djdex.molit import _norm_name  # noqa: E402
+
+BASE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+REGIONS = {"대전": ("", 16), "세종": ("sejong/", 6), "서울": ("seoul/", 6)}
+RAW = 60   # 검색어마다 RAW 로 남기는 결과 수
+OLD = re.compile(r"급매|매물|매매가|전세가|월세|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|"
+                 r"시공|인테리어|이사|입주청소|줄눈|탄성|도배|확장|견적|경매|공매")
+
+
+def sample(rows: list[dict], n: int, seed: int) -> list[dict]:
+    """이름이 짧은(흔한) 단지 절반, 나머지는 아무 단지나. 실행마다(seed) 다른 단지를 봅니다."""
+    rng = random.Random(seed)
+    rows = [c for c in rows if c.get("n")]
+    short = [c for c in rows if len(_base_name(c["n"])) <= 3]
+    pick = rng.sample(short, min(len(short), n // 2))
+    rest = [c for c in rows if c not in pick]
+    return pick + rng.sample(rest, min(len(rest), n - len(pick)))
+
+
+def main() -> None:
+    nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
+    if not (nid and nsec):
+        sys.exit("NAVER_CLIENT_ID/SECRET 이 없어요")
+    s = requests.Session()
+    s.headers.update({"X-Naver-Client-Id": nid, "X-Naver-Client-Secret": nsec})
+    web = requests.Session()
+    for region, (path, n) in REGIONS.items():
+        rows = web.get(BASE + path + "complexes.json", timeout=30).json().get("complexes") or []
+        have_old = have_new = 0
+        for c in sample(rows, n, int(os.environ.get("PROBE_SEED") or 0)):
+            cx = {"name": c["n"], "dong": c.get("d", ""), "gu": c.get("gu", "")}
+            q = " ".join(x for x in (cx["dong"], cx["name"]) if x)
+            q = q if q.endswith("아파트") else q + " 아파트"
+            items = reviews._search(s, "blog", q + " 후기")
+            more = reviews._search(s, "blog", q + " 살아보니")
+            for qq, its in (("후기", items), ("살아보니", more)):
+                for it in its[:RAW]:
+                    print("RAW\t" + json.dumps({"r": region, "c": cx, "q": qq, "t": reviews._clean(it.get("title")),
+                                                 "d": reviews._clean(it.get("description"))[:110],
+                                                 "b": reviews._clean(it.get("bloggername"))}, ensure_ascii=False))
+            key = _base_name(cx["name"])
+            old = []
+            for it in items:
+                t, d = reviews._clean(it.get("title")), reviews._clean(it.get("description"))
+                if key and key[:4] in _norm_name(t + " " + d) and not OLD.search(t + " " + d):
+                    old.append(t)
+            old = old[:5]
+            seen: set = set()
+            new = reviews._pick(items, cx, 5, region, seen)
+            if len(new) < 5:
+                new += reviews._pick(more, cx, 5 - len(new), region, seen)
+            have_old += bool(old)
+            have_new += bool(new)
+            newt = [p["t"] for p in new]
+            print(f"\n[{region}] {cx['dong']} {cx['name']} · 검색 {len(items)}개 · 예전 {len(old)} → 지금 {len(new)}")
+            for t in newt:
+                print("   + " + t)
+            for t in old:
+                if t not in newt:
+                    print("   - " + t)
+        print(f"\n== [{region}] 글이 있는 단지: 예전 {have_old} → 지금 {have_new} (점검 {n}곳)\n")
+
+
+if __name__ == "__main__":
+    main()

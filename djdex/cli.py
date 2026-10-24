@@ -245,7 +245,8 @@ def cmd_build(cfg, args) -> None:
         ratios = sorted(e / s for v in hit for e, s in v)
         print(f"공급면적(건축물대장) {len(supply):,}곳 중 {len(hit):,}곳을 실거래 단지에 이음 (실거래 단지 {len(ids):,}곳)"
               + (f", 전용률 중간 {ratios[len(ratios) // 2]:.3f} · 범위 {ratios[0]:.2f}~{ratios[-1]:.2f}" if ratios else ""))
-    outside = reviews.load(cfg.paths.kapt / "reviews.json")
+    outside = reviews.load(cfg.paths.kapt / "reviews.json", region=cfg.region_name,
+                           complexes={c["complex_id"]: c for c in _complex_list(trades)})
     hill = elev.load(cfg.paths.elev)
     if hill:
         print(f"언덕(고저차) {len(hill):,}곳 (역 단면 {sum(1 for v in hill.values() if v.get('pf')):,}곳)")
@@ -266,7 +267,8 @@ def _outside_reviews(cfg) -> None:
         reviews.kakao_places(cx, geo, path, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), time_limit=900)
         nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
         if nid and nsec:
-            reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)))
+            reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)),
+                               region=cfg.region_name, time_limit=600)
     except Exception as e:   # 바깥 후기는 없어도 사이트는 만듭니다
         print(f"::warning::바깥 후기 잇기 실패, 검색 버튼만 둡니다: {e!r}")
 
