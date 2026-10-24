@@ -80,6 +80,13 @@ def main() -> None:
                 with ThreadPoolExecutor(8) as ex:
                     pages = [p for p in ex.map(lambda a: _get(s, url + "apt/" + a), apts) if p]
                 out["반영"] = {"열린 단지 페이지": f"{len(pages)} / {len(apts)}", **{k: sum(map(f, pages)) for k, f in FILLED.items()}}
+                # 관리비가 그럴듯한지: ㎡당 금액 분포와 예시 세 곳 (화면 문구 그대로)
+                fees = sorted(int(m.group(1).replace(",", "")) for h in pages
+                              for m in [re.search(r"<dt>관리비</dt><dd><small>㎡당</small> ([\d,]+)", h)] if m)
+                if fees:
+                    out["관리비 ㎡당"] = {"가장 낮음": fees[0], "중간": fees[len(fees) // 2], "가장 높음": fees[-1]}
+                    out["관리비 예시"] = [text(h, r"<h1[^>]*>(.*?)</h1>") + " · " + text(h, r"<dt>관리비</dt>(.*?)</div>")
+                                      for h in pages if "<dt>관리비</dt>" in h][:3]
         print(json.dumps(out, ensure_ascii=False))
 
 
