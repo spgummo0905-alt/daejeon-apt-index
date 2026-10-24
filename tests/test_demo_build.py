@@ -189,10 +189,10 @@ def test_intro_page_and_first_visit(tmp_path):
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
     assert 1 <= len(hot) <= 5 and all({"d", "j", "t", "h", "n3"} <= set(h) for h in hot)
     assert [h["t"] for h in hot] == sorted((h["t"] for h in hot), reverse=True)
-    assert 'localStorage.setItem("dj-intro","1")' in intro and 'class="it-skip"' in intro
-    # 첫 화면: 처음 온 사람만 인트로로 (로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
+    assert 'sessionStorage.setItem("dj-intro","1")' in intro and 'class="it-skip"' in intro
+    # 첫 화면: 들어올 때마다 인트로로 (같은 창에서 이미 봤거나 로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert 'location.replace("intro.html")' in index and "yeti" in index
+    assert 'location.replace("intro.html")' in index and "yeti" in index and 'sessionStorage.getItem("dj-intro")' in index
     assert '<a href="intro.html">서비스 소개</a>' in index
     assert 'location.replace' not in (out / "rank.html").read_text(encoding="utf-8")
 

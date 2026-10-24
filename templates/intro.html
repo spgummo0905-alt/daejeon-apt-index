@@ -3,8 +3,8 @@
 {% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가·입지·학군으로 평가해 S부터 D까지 등급 카드로 만들었어요. 우리 단지는 몇 등급일까요?{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
-{# 인트로를 한 번 보면 첫 화면이 다시 이리로 보내지 않습니다 #}
-<script>try{localStorage.setItem("dj-intro","1")}catch(e){}</script>
+{# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
+<script>try{sessionStorage.setItem("dj-intro","1");localStorage.removeItem("dj-intro")}catch(e){}</script>
 {% endblock %}
 {% block header_extra %}<a class="it-skip" href="index.html">건너뛰기 <span aria-hidden="true">→</span></a>{% endblock %}
 {% block body %}
