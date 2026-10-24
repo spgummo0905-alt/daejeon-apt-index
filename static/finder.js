@@ -522,6 +522,28 @@
     // 단지 정보(세대수·주차)가 없으면 그 조건은 빼요
     if (!ALL.some(c => c.hh)) for (const id of ["big", "mid", "park"]) MUST.splice(MUST.findIndex(m => m.id === id), 1);
     document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x.dataset.sort === S.sort); x.setAttribute("aria-pressed", x.dataset.sort === S.sort); });
+    const fromSearch = fromUrl();
     changed();
+    if (fromSearch) document.getElementById("results").scrollIntoView();
   });
+  // 검색창에서 '7억 이하 30평대'처럼 조건을 넣고 오면 (finder.html?budget=7&py=30#results) 그 조건으로 새로 시작합니다.
+  // 상황·대출 계산 값과 정렬은 그대로 두고, 주소의 조건은 한 번 읽은 뒤 지웁니다 (새로고침해도 고친 조건 유지).
+  function fromUrl() {
+    const qs = new URLSearchParams(location.search);
+    const list = k => (qs.get(k) || "").split(",").filter(Boolean);
+    if (!["budget", "py", "gu", "age", "stn", "sch", "must"].some(k => qs.has(k))) return false;
+    Object.assign(S, blank(), { sort: S.sort, here: S.here, status: S.status, af: S.af });
+    const at = [];
+    const b = +qs.get("budget");
+    if (b > 0) { S.budget = b; at.push("budget"); }
+    S.py = list("py").filter(id => PY.some(p => p.id === id)); if (S.py.length) at.push("py");
+    const gus = new Set(ALL.map(c => c.gu));
+    S.gus = list("gu").filter(g => gus.has(g)); if (S.gus.length) at.push("gu");
+    if (AGE.some(a => a.id && a.id === qs.get("age"))) { S.age = qs.get("age"); at.push("age"); }
+    S.stn = Math.max(0, +qs.get("stn") || 0); S.sch = Math.max(0, +qs.get("sch") || 0); if (S.stn || S.sch) at.push("near");
+    S.must = list("must").filter(id => MUST.some(m => m.id === id)); if (S.must.length) at.push("must");
+    S.step = Math.max(0, ...at.map(id => STEPS.findIndex(x => x.id === id)));
+    try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* 그대로 */ }
+    return true;
+  }
 })();

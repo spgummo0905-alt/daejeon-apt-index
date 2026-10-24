@@ -295,3 +295,24 @@ def test_imjang_course_on_my_page(tmp_path):
     assert "map.kakao.com/link/from/" in js and "map.kakao.com/link/to/" in js
     assert "function order()" in js and "MAX = 8" in js and '"visit:" + c.s' in js
     assert js.count('",\n') >= 8   # 현장 체크리스트 항목
+
+
+def test_search_by_dong_station_and_condition(tmp_path):
+    # 한 칸 검색: 단지·동·역 이름과 '7억 이하 30평대' 같은 조건. 위쪽 검색 버튼은 모든 화면에
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    for page in ("index.html", "rank.html", "my.html", "stations.html"):
+        html = (out / page).read_text(encoding="utf-8")
+        assert 'data-hs-open' in html and 'id="hs-pop"' in html, page
+    js = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.parseCond" in js and "DJ.condHref" in js and '"stations.html?st="' in js and '"index.html?area="' in js
+    assert "{ grouped: true }" in js   # 단지 페이지로 가는 검색창만 묶음 결과 (비교·임장 코스는 단지만)
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert "data-st-name=" in stations
+    table = (out / "static" / "table.js").read_text(encoding="utf-8")
+    assert 'qs.get("area")' in table and 'qs.get("dong")' in table
+    finder = (out / "static" / "finder.js").read_text(encoding="utf-8")
+    assert "function fromUrl()" in finder and '"budget", "py", "gu"' in finder
+    import json
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    assert all(c.get("sm", 1) == 1 for c in data["complexes"])
