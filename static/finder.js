@@ -310,10 +310,19 @@
     art();
     save();
   }
+  // 아직 아무것도 안 골랐으면 (상황은 남는 단지 수를 안 바꿈) '결과'라고 하지 않고 전체 단지 수만 보여 줘요
+  const narrowed = () => STEPS.some(st => st.id !== "status" && st.on());
   function changed() {
-    const n = count(S);
-    const d = box.querySelector("[data-sv-delta]");
-    if (lastN != null) {
+    const n = count(S), idle = !narrowed();
+    const d = box.querySelector("[data-sv-delta]"), go = box.querySelector("[data-sv-go]");
+    go.classList.toggle("idle", idle);
+    if (idle) go.removeAttribute("href"); else go.setAttribute("href", "#results");
+    box.querySelector("[data-sv-all]").hidden = !idle;
+    box.querySelector("[data-sv-unit]").textContent = idle ? "곳" : "곳 결과 보기";
+    d.textContent = "";
+    d.className = "sv-delta";
+    if (idle) d.textContent = "답할수록 줄어들어요";
+    else if (lastN != null) {
       d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄었어요" : "늘었어요"}`;
       d.className = "sv-delta " + (n < lastN ? "down" : n > lastN ? "up" : "");
     }
@@ -454,6 +463,17 @@
   let list = [], shown = 0;
   const gridBox = document.getElementById("finder-results"), more = document.getElementById("finder-more");
   function results() {
+    const idle = !narrowed();
+    document.querySelector("[data-sv-wait]").hidden = !idle;
+    document.querySelector("#results .seg").hidden = idle;
+    if (idle) {   // 조건을 고르기 전엔 단지를 늘어놓지 않아요
+      list = []; shown = 0;
+      document.querySelector("[data-sv-res-n]").textContent = "";
+      document.querySelector("[data-sv-tags]").replaceChildren();
+      gridBox.replaceChildren();
+      more.hidden = true;
+      return;
+    }
     list = ALL.filter(c => pass(c, S)).map(c => ({ c, f: fit(c, S) }));
     const priceOf = x => (x.f[0] || [0, x.c.p || Infinity])[1];
     list.sort((a, b) => S.sort === "p" ? priceOf(a) - priceOf(b) : (b.c.i || 0) - (a.c.i || 0));

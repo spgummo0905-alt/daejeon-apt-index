@@ -1559,6 +1559,11 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
   background: color-mix(in srgb, var(--s3) 9%, var(--surface)); color: var(--text); text-decoration: none; font-weight: 700; }
 .sv-count b { font-size: 26px; font-weight: 800; color: color-mix(in srgb, var(--s3) 75%, var(--text)); font-variant-numeric: tabular-nums; }
 .sv-count .ic { width: 16px; height: 16px; align-self: center; }
+.sv-count small { font-size: 13px; font-weight: 700; color: var(--text-2); }
+/* 아직 아무것도 안 골랐을 때: 결과가 아니라 전체 단지 수 */
+.sv-count.idle { border-color: var(--border); background: var(--bg); }
+.sv-count.idle b { color: var(--text); }
+.sv-count.idle .ic { display: none; }
 .sv-delta { margin: 6px 0 0; min-height: 18px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .sv-delta.down { color: color-mix(in srgb, var(--s3) 75%, var(--text)); } .sv-delta.up { color: var(--accent); }
 .sv-steps-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
@@ -1672,6 +1677,9 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
   .art-road { stroke: #1a1a18; }
   .art-b { fill: #2a2a27; stroke: rgba(255,255,255,.12); }
 }
+.sv-wait { margin: 12px 0 0; padding: 26px 22px; border: 1px dashed var(--axis); border-radius: 16px; text-align: center; color: var(--text-2); }
+.sv-wait p { margin: 0 0 12px; font-weight: 600; }
+.sv-wait .btn { margin: 0; }
 .sv-empty { grid-column: 1 / -1; padding: 22px; border: 1px dashed var(--axis); border-radius: 16px; text-align: center; color: var(--text-2); }
 .sv-empty p { margin: 0 0 10px; font-weight: 600; }
 .sv-relax { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }

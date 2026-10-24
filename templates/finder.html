@@ -16,7 +16,7 @@
       <p class="muted">고를 때마다 남는 단지 수가 바로 바뀌어요.</p>
     </div>
     <div class="sv-count-box">
-      <a class="sv-count" href="#results" data-sv-go><b data-sv-n>-</b><span>곳 결과 보기</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></a>
+      <a class="sv-count" href="#results" data-sv-go><small data-sv-all hidden>{{ region }} 전체</small><b data-sv-n>-</b><span data-sv-unit>곳 결과 보기</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></a>
       <p class="sv-delta" data-sv-delta aria-live="polite"></p>
     </div>
   </div>
@@ -47,6 +47,10 @@
       <button type="button" class="seg-btn active" data-sort="i" aria-pressed="true">지수 높은 순</button>
       <button type="button" class="seg-btn" data-sort="p" aria-pressed="false">가격 낮은 순</button>
     </div>
+  </div>
+  <div class="sv-wait" data-sv-wait hidden>
+    <p>아직 단지를 좁힐 조건이 없어요. 지역·예산·평형 중 하나만 골라도 여기에 맞는 단지가 나와요.</p>
+    <a class="btn" href="#survey">질문에 답하러 가기</a>
   </div>
   <div class="card-grid" id="finder-results"></div>
   <button type="button" class="more-btn" id="finder-more" hidden></button>
