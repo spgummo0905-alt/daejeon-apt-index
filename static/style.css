@@ -1195,9 +1195,10 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
 
 
 /* 평형별 시세: 매매·전세·월세 (단지 페이지 오른쪽 맨 위) */
-.quotes { margin: 0 0 16px; padding: 16px 18px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+/* 평형별 시세: 시세 패널 바로 아래, 다른 패널과 같은 간격·모양 */
+.quotes { margin: 16px 0 0; padding: 20px 20px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); scroll-margin-top: 56px; }
 .q-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.q-head h2 { margin: 0; font-size: 16px; }
+.q-head h2 { margin: 0; }
 .q-head span { font-size: 12px; color: var(--muted); }
 .qt { margin-top: 6px; }
 .qt th, .qt td { padding: 10px 4px; vertical-align: top; }

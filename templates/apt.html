@@ -65,26 +65,6 @@
 </div></section>
 
 <div class="apt-side">
-{% if c.quotes %}
-{% set has_rent = (c.quotes | selectattr("je") | list) or (c.quotes | selectattr("wr") | list) %}
-<section class="quotes" aria-labelledby="q-title">
-  <div class="q-head"><h2 id="q-title">평형별 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
-  <table class="qt">
-    <thead><tr><th scope="col">{{ "공급(전용)" if c.sup else "전용면적" }}</th><th scope="col">매매</th>{% if has_rent %}<th scope="col">전세</th><th scope="col">월세</th>{% endif %}</tr></thead>
-    <tbody>
-    {% for q in c.quotes %}
-    <tr><th scope="row">{{ ar(c, q.a) }}</th>
-      <td><b>{{ q.sale | price if q.sale else "-" }}</b></td>
-      {% if has_rent %}<td>{% if q.je %}<b>{{ q.je | price }}</b>{% if q.ratio %}<small>전세가율 {{ q.ratio }}%</small>{% endif %}{% else %}-{% endif %}</td>
-      <td>{% if q.wr %}<b>{{ q.wr | wol }}</b><small>{% if q.wr[2] > 1 %}{{ q.wr[2] }}건 중 가운데{% else %}최근 계약{% endif %}</small>{% else %}-{% endif %}</td>{% endif %}
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <p class="q-note">매매·전세는 최근 거래로 구한 추정 시세예요.{% if has_rent %} 월세는 보증금/월세(만원)로, 최근 1년 새 계약 중 가운데 계약이에요.{% endif %}
-    <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
-</section>
-{% endif %}
 {% if points or c.small %}
 <section class="points">
   <h2>한눈에 보기</h2>
@@ -147,13 +127,15 @@
 <section class="panel ki" id="info">
   <div class="panel-head">
     <h2>단지 정보</h2>
-    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 내용이에요.</p>
+    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 내용이에요.{% if c.fee_m2 %} 관리비는 경비·청소·승강기처럼 함께 쓰는 공용관리비만이에요 (난방·전기·수도처럼 집마다 쓰는 만큼 내는 사용료는 빠져 있어요).{% endif %}</p>
   </div>
   <dl class="ki-grid">
     {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
       <p>{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</p></div>{% endif %}
     {% if k.ppu %}<div class="ki-main"><dt>주차</dt><dd><small>세대당</small> {{ "%.1f" | format(k.ppu) }}<small>대</small></dd>
       <p>총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</p></div>{% endif %}
+    {% if c.fee_m2 %}<div class="ki-main"><dt>관리비</dt><dd><small>㎡당</small> {{ "{:,}".format(c.fee_m2) }}<small>원</small></dd>
+      <p>84㎡ 한 달 약 {{ (c.fee_m2 * 84) | man }}{% if c.fee_m2_top is not nan %} · {{ region }}에서 {{ c.fee_m2_top | fee_word }}{% endif %} · {{ c.fee_ym }} 공용관리비</p></div>{% endif %}
     {% if k.top %}<div><dt>층수</dt><dd>최고 {{ k.top }}층{% if k.base %}, 지하 {{ k.base }}층{% endif %}</dd></div>{% endif %}
     {% if k.use %}<div><dt>사용승인</dt><dd>{{ k.use }}</dd></div>{% endif %}
     {% if k.heat %}<div><dt>난방</dt><dd>{{ k.heat }}</dd></div>{% endif %}
@@ -221,6 +203,27 @@
   </div>
   <div class="pc-tables" data-pc-tables hidden></div>
 </section>
+
+{% if c.quotes %}
+{% set has_rent = (c.quotes | selectattr("je") | list) or (c.quotes | selectattr("wr") | list) %}
+<section class="quotes" aria-labelledby="q-title">
+  <div class="q-head"><h2 id="q-title">평형별 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
+  <table class="qt">
+    <thead><tr><th scope="col">{{ "공급(전용)" if c.sup else "전용면적" }}</th><th scope="col">매매</th>{% if has_rent %}<th scope="col">전세</th><th scope="col">월세</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for q in c.quotes %}
+    <tr><th scope="row">{{ ar(c, q.a) }}</th>
+      <td><b>{{ q.sale | price if q.sale else "-" }}</b></td>
+      {% if has_rent %}<td>{% if q.je %}<b>{{ q.je | price }}</b>{% if q.ratio %}<small>전세가율 {{ q.ratio }}%</small>{% endif %}{% else %}-{% endif %}</td>
+      <td>{% if q.wr %}<b>{{ q.wr | wol }}</b><small>{% if q.wr[2] > 1 %}{{ q.wr[2] }}건 중 가운데{% else %}최근 계약{% endif %}</small>{% else %}-{% endif %}</td>{% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="q-note">매매·전세는 최근 거래로 구한 추정 시세예요.{% if has_rent %} 월세는 보증금/월세(만원)로, 최근 1년 새 계약 중 가운데 계약이에요.{% endif %}
+    <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
+</section>
+{% endif %}
 
 <section class="panel">
   <div class="panel-head">

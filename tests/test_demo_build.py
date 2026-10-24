@@ -200,3 +200,16 @@ def test_intro_page_and_first_visit(tmp_path):
 def test_ieyo_follows_final_consonant():
     from djdex.site import _ieyo
     assert [_ieyo(w) for w in ["가정동", "종로1가", "조치원읍", "을지로2가", "연서면"]] == ["이에요", "예요", "이에요", "예요", "이에요"]
+
+
+def test_fee_shown_per_m2_and_quotes_below_price(tmp_path):
+    from djdex.site import fee_word, man
+    assert [fee_word(t) for t in (10, 50, 85)] == ["비싼 편 (상위 10%)", "중간쯤", "저렴한 편 (하위 15%)"]
+    assert man(113400) == "11.3만 원" and man(100000) == "10만 원"
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    pages = [p.read_text(encoding="utf-8") for p in (out / "apt").glob("*.html")]
+    fee = [h for h in pages if "<dt>관리비</dt>" in h]
+    assert fee and all("㎡당" in h and "공용관리비" in h for h in fee)
+    html = next(h for h in pages if 'class="quotes"' in h)
+    assert html.index('id="price"') < html.index('class="quotes"') < html.index("<h2>입지는 어떤가</h2>")   # 평형별 시세는 시세 아래
