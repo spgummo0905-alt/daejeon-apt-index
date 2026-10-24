@@ -163,4 +163,7 @@ def kinfo(trades: pd.DataFrame, seed: int = 12) -> dict:
                     "ppu": round((up + dn) / hh, 2), "heat": rnd.choice(["개별난방", "지역난방", "중앙난방"]),
                     "hall": rnd.choice(["계단식", "복도식", "혼합식"]), "builder": rnd.choice(["대한건설", "한빛종합건설", "우리주택"]),
                     "mgr": "위탁관리", "elev": dongs * 2, "evc": rnd.randint(0, 30), "cctv": rnd.randint(40, 400)}
+        if i % 7 != 6:   # 관리비(공용관리비): 부과면적 × ㎡당 900~2,200원 (일곱에 하나는 없음)
+            marea = hh * rnd.randint(60, 95)
+            out[cid].update(marea=marea, fee={"ym": "202608", "total": int(marea * rnd.uniform(900, 2200))})
     return out

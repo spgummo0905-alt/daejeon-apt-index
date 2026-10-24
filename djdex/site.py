@@ -140,11 +140,28 @@ def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
     env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
-                       pyeong=pyeong, wol=lambda w: fmt_wol(*w[:2]) if w else "-")
+                       pyeong=pyeong, man=man, fee_word=fee_word, wol=lambda w: fmt_wol(*w[:2]) if w else "-")
     # 면적: ar(c, 전용㎡[, 소수 자리]) → 공급(전용) 표시. 공급면적은 c.sup ([[전용, 공급], ...])에서 찾습니다
     env.globals["ar"] = lambda c, ex, dec=0: area_html(ex, supply_of(c.get("sup"), ex), dec)
     env.tests["nan"] = _nan
     return env
+
+
+FEE_RANGE = (300, 6000)   # 공용관리비 ㎡당 원: 이 밖은 잘못 이었거나 잘못 받은 값으로 보고 숨김
+
+
+def fee_word(top) -> str:
+    """관리비 '상위 x%'(비싼 쪽부터) → '비싼 편 (상위 12%)' · '중간쯤' · '저렴한 편 (하위 20%)'."""
+    if top is None or _nan(top):
+        return ""
+    if top <= 30:
+        return f"비싼 편 ({share(top)})"
+    return f"저렴한 편 ({share(top)})" if top >= 70 else "중간쯤"
+
+
+def man(won: float) -> str:
+    """원 → '11.3만 원'."""
+    return f"{won / 10000:.1f}".rstrip("0").rstrip(".") + "만 원"
 
 
 def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dict | None = None) -> list[dict]:
@@ -176,6 +193,11 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
         if park and not _nan(c.get("ppu_top")):
             park += f"({share(c['ppu_top'])})"
         out.append({"k": "규모", "v": f"{c['hh']:,}세대", "s": size + park, "bar": None})
+    if c.get("fee_m2"):
+        top = c.get("fee_m2_top")
+        rank = "" if _nan(top) else f" · {region}에서 {fee_word(top)}"
+        out.append({"k": "관리비", "v": f"㎡당 {c['fee_m2']:,}원", "s": f"84㎡ 한 달 약 {man(c['fee_m2'] * 84)}{rank}",
+                    "bar": None if _nan(top) else top / 100})
     return out
 
 
@@ -244,11 +266,16 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         if not any(d["ki"].get(k) for k in kapt.SHOWN):
             d["ki"] = {}   # K-apt 에 이었어도 세대수·주차 등이 비어 있으면 '단지 정보' 칸을 그리지 않음
         d["hh"], d["ppu"] = d["ki"].get("hh"), d["ki"].get("ppu")
+        # 관리비: 한 달 공용관리비 합계 ÷ 관리비 부과면적 = ㎡당 금액. 터무니없는 값(잘못 이은 단지 등)은 빼고 보여 줌
+        fe, marea = d["ki"].get("fee"), d["ki"].get("marea")
+        per = fe["total"] / marea if fe and marea else None
+        d["fee_m2"] = round(per) if per and FEE_RANGE[0] <= per <= FEE_RANGE[1] else None
+        d["fee_ym"] = f"{fe['ym'][:4]}.{fe['ym'][4:]}" if d["fee_m2"] else None
         d["sup"] = (supply or {}).get(cid) or []
         d["ext"] = (outside or {}).get(cid) or {}
         rows.append(d)
-    # 세대수·세대당 주차가 지역에서 어디쯤인지 (정보가 있는 단지끼리)
-    for key in ("hh", "ppu"):
+    # 세대수·세대당 주차·관리비(㎡당)가 지역에서 어디쯤인지 (정보가 있는 단지끼리). 관리비는 '상위' = 비싼 쪽
+    for key in ("hh", "ppu", "fee_m2"):
         top = _top_share(pd.Series({r["complex_id"]: r[key] for r in rows if not r["small"]}, dtype=float))
         for r in rows:
             r[key + "_top"] = top.get(r["complex_id"], float("nan"))

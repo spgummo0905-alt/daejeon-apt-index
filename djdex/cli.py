@@ -195,7 +195,8 @@ def _log_coverage(cfg, trades, supply, kinfo) -> None:
         return
     total = sum(c["n"] for c in cx) or 1
     for label, has in (("공급면적", lambda c: (supply or {}).get(c["complex_id"])),
-                       ("단지 정보", lambda c: (kinfo or {}).get(c["complex_id"]))):
+                       ("단지 정보", lambda c: (kinfo or {}).get(c["complex_id"])),
+                       ("관리비", lambda c: ((kinfo or {}).get(c["complex_id"]) or {}).get("fee"))):
         got = [c for c in cx if has(c)]
         print(f"[반영] {label}: 단지 {len(got):,} / {len(cx):,}곳 ({len(got) / len(cx):.0%}), "
               f"거래 기준 {sum(c['n'] for c in got) / total:.0%}")
@@ -232,6 +233,10 @@ def cmd_build(cfg, args) -> None:
             per = sorted(v["total"] / area[c] for c, v in fees.items() if area.get(c))
             print(f"관리비(공용관리비) {len(fees):,}곳" + (f", ㎡당 중간 {per[len(per) // 2]:,.0f}원 · "
                   f"아래 10% {per[len(per) // 10]:,.0f}원 · 위 10% {per[len(per) * 9 // 10]:,.0f}원" if per else ""))
+            for v in kinfo.values():   # 단지 정보에 관리비를 붙여 단지 페이지에서 ㎡당 금액으로 보여 줌
+                f = fees.get(v.get("code"))
+                if f:
+                    v["fee"] = {"ym": f["ym"], "total": f["total"]}
     supply = bldg.load(cfg.paths.bldg)
     _log_coverage(cfg, trades, supply, kinfo)
     if supply:
