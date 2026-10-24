@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
 import sys
 
@@ -24,12 +25,14 @@ OLD = re.compile(r"급매|매물|매매가|전세가|월세|중개|공인|부동
                  r"시공|인테리어|이사|입주청소|줄눈|탄성|도배|확장|견적|경매|공매")
 
 
-def sample(rows: list[dict], n: int) -> list[dict]:
-    """지수 높은 단지 절반, 이름이 짧은(흔한) 단지 절반."""
+def sample(rows: list[dict], n: int, seed: int) -> list[dict]:
+    """이름이 짧은(흔한) 단지 절반, 나머지는 아무 단지나. 실행마다(seed) 다른 단지를 봅니다."""
+    rng = random.Random(seed)
     rows = [c for c in rows if c.get("n")]
-    top = sorted(rows, key=lambda c: -(c.get("i") or 0))[: n // 2]
-    short = [c for c in rows if len(_base_name(c["n"])) <= 3 and c not in top][: n - len(top)]
-    return top + short
+    short = [c for c in rows if len(_base_name(c["n"])) <= 3]
+    pick = rng.sample(short, min(len(short), n // 2))
+    rest = [c for c in rows if c not in pick]
+    return pick + rng.sample(rest, min(len(rest), n - len(pick)))
 
 
 def main() -> None:
@@ -42,7 +45,7 @@ def main() -> None:
     for region, (path, n) in REGIONS.items():
         rows = web.get(BASE + path + "complexes.json", timeout=30).json().get("complexes") or []
         have_old = have_new = 0
-        for c in sample(rows, n):
+        for c in sample(rows, n, int(os.environ.get("PROBE_SEED") or 0)):
             cx = {"name": c["n"], "dong": c.get("d", ""), "gu": c.get("gu", "")}
             q = " ".join(x for x in (cx["dong"], cx["name"]) if x)
             q = q if q.endswith("아파트") else q + " 아파트"

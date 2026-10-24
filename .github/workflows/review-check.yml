@@ -24,6 +24,7 @@ jobs:
       - env:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          PROBE_SEED: ${{ github.run_number }}
         run: python scripts/naver_probe.py
 
   check:
