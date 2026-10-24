@@ -67,7 +67,8 @@ def test_naver_posts_keep_only_lived_stories():
         {"title": "누리아파트 거실 인테리어", "description": "월평동 누리아파트 32평", "link": "d"},
         {"title": "서울 누리아파트 살아보니", "description": "강서구 누리아파트 장단점", "link": "e"},
         {"title": "누리아파트 근처 맛집", "description": "월평동 누리아파트 앞", "link": "f"},
-        {"title": "누리아파트 5년 살아 보니", "description": "월평동이라 갑천 산책이 좋고 주차는 조금 빠듯", "link": "g", "bloggername": "갑천 산책"},
+        {"title": "월평동 누리아파트 5년 살아 보니", "description": "갑천 산책이 좋고 주차는 조금 빠듯", "link": "g", "bloggername": "갑천 산책"},
+        {"title": "누리아파트 3년 살아 보니", "description": "월평동이라 조용해요", "link": "k"},   # 짧은 이름은 제목에 동네도
         {"title": "월평동 누리아파트 임장 다녀왔어요", "description": "언덕이 조금 있고 초등학교가 가까워요", "link": "h", "bloggername": "주말 임장"},
         {"title": "누리아파트 이사 왔어요", "description": "월평동 첫 집, 층간소음은 아직 없어요", "link": "i", "bloggername": "갑천 산책"},
         {"title": "누리 마을 산책", "description": "누리 공원", "link": "j"},
@@ -90,6 +91,9 @@ def test_names_need_the_same_complex():
     assert reviews._names("둔산크로바 1632세대", cr) == reviews._names("크로바를 보면 둔산", cr) == 2
     assert reviews._names("크로바 아파트 임장", cr) == 0   # 동네 이름이 없으면 다른 지역 크로바일 수 있음
     assert reviews._names("(대전 서구 은하수점) 둔산", {"name": "은하수", "dong": "둔산동", "gu": "서구"}) == 0
+    ga = {"name": "가온마을 1단지 (2-1,힐스테이트)", "dong": "다정동", "gu": ""}
+    assert reviews._names("가온마을1단지 힐스테이트2차 분석｜다정초·중·고 학세권", ga) == 2   # 괄호 속 생활권 번호는 없어도
+    assert reviews._names("중계건영3차, 13억", {"name": "건영3", "dong": "중계동", "gu": "노원구"}) == 2
     mk = {"name": "목동신시가지10", "dong": "신정동", "gu": "양천구"}
     assert reviews._names("6년 전 임장한 목동 신시가지7단지 신정동", mk) == 0
     assert reviews._names("목동 신시가지 9단지 10단지 13단지 임장 신정동", mk) == 1
@@ -103,6 +107,15 @@ def test_keep_needs_this_complex_in_title_or_a_local_visit():
     assert not reviews._keep("둔산자이아이파크 실거주 후기 및 투자 가치", "공작한양 탄방동 바로 옆", c, "대전")
     assert reviews._keep("대전 탄방동 임장", "공작한양 한가람 둘러봄", c, "대전")
     assert not reviews._keep("대전 둔산동 목련아파트 205동 41평 편리한 동선", "", {"name": "목련", "dong": "둔산동"}, "대전")
+    assert not reviews._keep("대덕구 법동 삼호아파트 매매", "매물 정보 매물 [14198] 입주일협의", {"name": "삼호", "dong": "법동", "gu": "대덕구"}, "대전")
+    assert reviews._keep("30대 직장인 지인의 둔산동 한마루 아파트 매매계약 후기", "", {"name": "한마루아파트", "dong": "둔산동"}, "대전")
+    ex = {"name": "금강엑슬루타워", "dong": "석봉동", "gu": "대덕구"}
+    assert not reviews._keep("대전시 대덕구 석봉동 금강엑슬루타워 107동 43층 48평형 / 사건번호20", "법원경매정보", ex, "대전")
+    assert reviews._keep("법동삼호아파트 1층 20년거주", "20년이넘는시간동안 거주중", {"name": "삼호", "dong": "법동", "gu": "대덕구"}, "대전")
+    # 같은 동 이름이 다른 구에도 있음: 마포구 신정동 임장기는 양천구 신정동 단지 글이 아님
+    sj = {"name": "현대", "dong": "신정동", "gu": "양천구"}
+    assert not reviews._keep("마포구 광흥창역(신수동, 현석동, 신정동) 임장 2탄", "신정 현대", sj, "서울", frozenset({"양천구", "마포구"}))
+    assert reviews._keep("[양천구 임장] 신정동 구축 3단지 솔직 후기", "신정 현대 아파트", sj, "서울", frozenset({"양천구", "마포구"}))
 
 
 def test_naver_posts_refetch_after_rule_change(tmp_path, monkeypatch):

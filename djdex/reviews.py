@@ -37,10 +37,11 @@ PLACE_RETRY_DAYS = 60     # 카카오 장소를 못 찾은 단지는 두 달 뒤
 # 단지 이름을 길 안내로만 쓴 글('OO아파트 맞은편 …')
 NOT_REVIEW = re.compile(
     r"급매|매물|매매가|전세가|월세|시세|호가|실거래|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|경매|공매|"
+    r"매매(?!.*(?:후기|임장|발품|일기|기록|이야기))|(?:전세|매매)\s?\d|"
     r"모집|공고|설명회|공급|접수|당첨|무순위|줍줍|행위허가|"
     r"시공|인테리어|리모델링|청소|이사업체|포장이사|용달|사다리|크레인|줄눈|탄성|도배|장판|필름|샷시|새시|창호|중문|확장|견적|"
     r"교체|설치|수리|철거|누수|방수|하자|타일|변기|세면대|싱크|후드|보일러|에어컨|실외기|방충망|블라인드|커튼|도어락|열쇠|"
-    r"비디오폰|인터폰|전등|LED|led|전기|세탁기|단말기|막힘|뚫음|리폼|\d+\s?(?:PY|py|P)\b|"
+    r"비디오폰|인터폰|전등|LED|led|전기|세탁기|단말기|막힘|뚫음|리폼|매트|암막|시장|(?:출근|퇴근)길\s?인사|\d+\s?(?:PY|py|P)\b|"
     r"업체|출장|상담|문의|예약|할인|이벤트|쿠폰|판매|파는|구매|구입|최저가|배달|배송|내돈내산|오픈|신상|메뉴|매장|가맹점|"
     r"맞은편|건너편|근처|"
     r"약국|병원|의원|치과|한의원|학원|과외|공부방|교습소|학습지|독서실|수업|레슨|씽크빅|피아노|바이올린|"
@@ -49,19 +50,21 @@ NOT_REVIEW = re.compile(
     r"빵집|빵투어|빵지순례|베이커리|떡집|답례떡|꽃집|꽃다발|플라워|마트|슈퍼|상가|오피스텔|"
     r"주간보호|요양|복지센터|어린이집|유치원|축제|공연|연극|뮤지컬|영화관|CGV|휴대폰|성지|중고|명품|침대|소파|"
     r"짐보관|창고|스토리지|풀옵션|개소식|총회|케이크|복원|욕조|작업|공간|새롭게|변신|비포|애프터|홈스타일링|"
-    r"\d{3}동\s?\d+평|방문\s?후기|방문기|(?<![장단관시강약이제통발초정거지요만총평\d])점(?=[)\]\s,.!|]|$)")
+    r"\d{3}동\s?\d+평|\d+층\s?\d+평|사건번호|방문\s?후기|방문기|(?<![장단관시강약이제통발초정거지요만총평\d])점(?=[)\]\s,.!|]|$)")
 # 요약에만 있어도 홍보 글로 보는 낱말 (요약엔 '학원가 가까워요'처럼 사는 이야기에도 가게 이름이 나와서 더 좁게)
 AD_BODY = re.compile(r"급매|공인중개|중개사|체험단|협찬|원고료|제공받|견적|시공|업체|출장|상담|문의|예약|할인|판매|"
-                     r"(?:이번|오늘|작업|시공|공사)\s?현장|현장입니다|고객님|의뢰|재공급|입주자\s?모집|"
+                     r"(?:이번|오늘|작업|시공|공사)\s?현장|현장입니다|고객님|의뢰|재공급|입주자\s?모집|매물\s?(?:정보|번호)|\[\d{4,}\]|"
+                     r"부동산입니다|중개사입니다|저렴한\s?가격|경매|"
                      r"010[-\s]?[\d*]{3,4}|카톡\s?상담")
 # 사는 이야기 낱말: 하나는 있어야 남깁니다 (제목에 있으면 더 앞에)
-LIVED = re.compile(r"살아\s?보|살아\s?본|살면서|살고\s?있|사는\s?중|살았|살기|거주|입주(?!\s?청소)|이사\s?(?:왔|온|와서|오고|한\s?지)|"
+LIVED = re.compile(r"살아\s?보|살아\s?본|살아서|살면서|살고\s?있|사는\s?중|살았|살던|살기|거주|입주(?!\s?청소)|이사\s?(?:왔|온|와서|오고|한\s?지)|"
                    r"장단점|단점|솔직|후기|리뷰|임장|발품|단지\s?(?:분위기|구경|산책|둘러|분석|내)|층간\s?소음|소음|주차|"
                    r"관리비|관리\s?사무소|커뮤니티|놀이터|학군|초품아|통학|등교|등원|동네|출퇴근|산책|조망|채광|일조|경사|언덕|오르막|"
-                   r"아이\s?키우|육아|이웃")
+                   r"아이\s?키우|육아|이웃|입지|생활권|학세권|장점|분석")
 # 제목에 단지 이름이 없을 때: 이 동네 이름과 함께 이런 낱말이 제목에 있어야 (동네 임장기·거주기)
-TOPIC = re.compile(r"임장|발품|실거주|거주|살아\s?보|살아\s?본|살면서|살기|입주|이사\s?(?:왔|온|후기)|장단점|"
-                   r"아파트\s?(?:분석|비교|후기|탐방|투어|단지)|단지\s?(?:분석|탐방|둘러)|동네\s?(?:분석|탐방)")
+# ('단지 분석'·'아파트 비교'는 다른 단지 하나를 다룬 글일 때가 많아 넣지 않음)
+TOPIC = re.compile(r"임장|발품|실거주|거주|살아\s?보|살아\s?본|살아서|살면서|살던|살기|입주|이사\s?(?:왔|온|후기)|장단점|"
+                   r"(?:아파트|단지|동네)\s?(?:탐방|투어|둘러)|동네\s?분석")
 # 다른 지역 이야기 (이 지역 이름 없이 이 이름만 제목에 나오면 뺌)
 REGIONS = ("서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남",
            "경북", "경남", "제주", "수원", "성남", "분당", "용인", "고양", "일산", "평촌", "안양", "청주", "천안", "전주", "익산",
@@ -115,13 +118,14 @@ def kakao_places(complexes: list[dict], geo: dict, path: Path, client, log=print
 
 def _stems(*places: str) -> list[str]:
     """'둔산1동' → '둔산', '유성구' → '유성', '조치원읍 교리' → '조치원'
-    (글에는 '둔산 크로바'처럼 동·구를 빼고 쓰는 일이 많음). 한 글자('서구' → '서')는 흔해서 뺍니다."""
+    (글에는 '둔산 크로바'처럼 동·구를 빼고 쓰는 일이 많음). 떼면 한 글자가 되는 '목동'·'서구'는 그대로 둡니다."""
     out = []
     for place in places:
         for w in (place or "").split():
-            w = re.sub(r"\d*(동|가|구|읍|면|리)$", "", w)
-            if len(w) >= 2:
-                out.append(w)
+            x = re.sub(r"\d*(동|가|구|읍|면|리)$", "", w)
+            x = x if len(x) >= 2 else w
+            if len(x) >= 2:
+                out.append(x)
     return out
 
 
@@ -144,7 +148,7 @@ def _alone(text: str, base: str, stems: list[str]) -> bool:
         before, after = t[:m.start()].rstrip(), t[m.end():]
         left = m.start() == 0 or not re.match(r"[가-힣A-Za-z]", t[m.start() - 1]) or any(before.endswith(x) for x in stems)
         right = (not after or not re.match(r"[가-힣A-Za-z]", after[0])
-                 or re.match(r"(?:아파트|APT|apt|A\b|마을|타운|단지|[은는이가을를의에와과도로랑])", after))
+                 or re.match(r"(?:아파트|APT|apt|A\b|마을|타운|단지|차|[은는이가을를의에와과도로랑])", after))
         if left and right:
             return True
     return False
@@ -152,32 +156,41 @@ def _alone(text: str, base: str, stems: list[str]) -> bool:
 
 def _names(text: str, c: dict, region: str = "", ctx: str = "") -> int:
     """text 에 이 단지 이름이 나오는 정도: 이름 그대로 2, 앞 네 글자 1, 안 나오면 0.
-    - 이름이 다섯 글자 이하(누리·한빛·e편한세상 …)거나 앞 네 글자만 맞으면 흔한 이름이라 동·구 이름도 함께(text 나 ctx 에) 나와야 하고,
-      다섯 글자 이하 이름은 다른 이름 속에 묻히지 않고 따로 나와야 (_alone)
-    - 앞 네 글자만 맞을 때 이름에 단지·차 번호가 있으면 그 번호도 나와야 ('목동신시가지10' 에 '신시가지7단지' 글은 다른 단지)"""
+    이름 괄호 속 생활권·블록 번호('가온마을 1단지 (2-1,힐스테이트)')는 없어도 됩니다.
+    - 이름이 다섯 글자 이하(크로바·한양·e편한세상 …)거나 앞 네 글자만 맞으면 흔한 이름이라 동·구 이름도 함께(text 나 ctx 에)
+      나와야 하고, 세 글자 이하면 동 이름이 text 에 바로 나와야 합니다. 다섯 글자 이하 이름은 다른 이름 속에 묻히면 안 됨 (_alone)
+    - 앞 네 글자만 맞을 때 단지·차 번호가 다르면 다른 단지 ('목동신시가지10' 에 '신시가지7단지' 글은 다른 단지)"""
     base = _base_name(c["name"])
+    short = _base_name(re.sub(r"[(（].*?[)）]", "", c["name"]))
     if not base:
         return 0
     flat = _norm_name(text)
-    near = _norm_name(text + " " + ctx)
     stems = _stems(c.get("dong", ""), c.get("gu", ""))
-    local = any(x in near for x in stems)
-    if base in flat:
-        if len(base) >= 6:
-            return 2
-        return 2 if local and _alone(text, base, stems) else 0
-    if len(base) < 4 or base[:4] not in flat or not local:
+    here = any(x in flat for x in _stems(c.get("dong", "")))
+    local = any(x in flat or x in _norm_name(ctx) for x in stems)
+    for b in {base, short} - {""}:
+        if b in flat:
+            if len(b) >= 6:
+                return 2
+            if (here if len(b) <= 3 else local) and _alone(text, b, stems):
+                return 2
+    key = short or base
+    if len(key) < 4 or key[:4] not in flat or not local:
         return 0
-    nums = re.findall(r"\d+", base)
+    nums = re.findall(r"(\d+)(?:단지|차)", key) or re.findall(r"\d+$", key)
     return 1 if all(re.search(rf"(?<!\d){n}(?:단지|차|블럭|BL)", flat) for n in nums) else 0
 
 
-def _keep(title: str, desc: str, c: dict, region: str = "") -> int:
+def _keep(title: str, desc: str, c: dict, region: str = "", gus: frozenset = frozenset()) -> int:
     """이 단지에 살아 본(둘러본) 이야기면 점수, 아니면 0.
-    제목에 단지 이름이 있거나, 제목이 이 동네 임장기·거주기('둔산동 임장', '탄방 실거주 …')이고 요약에 단지 이름이 있어야 합니다.
-    단지 이름을 글 끝에 키워드로 붙인 가게·업체 글, 옆 동네 단지 글을 거르려고요."""
+    제목에 단지 이름이 있거나, 제목이 이 동네 임장·거주기('둔산동 임장', '탄방 실거주 …')이고 요약에 단지 이름이 있어야 합니다.
+    단지 이름을 글 끝에 키워드로 붙인 가게·업체 글, 옆 동네 단지 글을 거르려고요.
+    gus: 이 지역의 구 이름들. 제목에 다른 구만 나오면 다른 동네 (마포구 신정동 ≠ 양천구 신정동)."""
     story = _story(title, desc, region)
     if not story:
+        return 0
+    gu = c.get("gu", "")
+    if gu and any(g != gu and len(g) >= 2 and g in title for g in gus) and gu not in title:
         return 0
     if _names(title, c, region, desc):
         return story + 4
@@ -187,13 +200,14 @@ def _keep(title: str, desc: str, c: dict, region: str = "") -> int:
     return 0
 
 
-def _pick(items: list[dict], c: dict, n: int, region: str = "", seen: set | None = None) -> list[dict]:
+def _pick(items: list[dict], c: dict, n: int, region: str = "", seen: set | None = None,
+          gus: frozenset = frozenset()) -> list[dict]:
     """검색 결과에서 이 단지 이야기만 점수 높은 순으로 n개 (한 블로그에 한 글)."""
     seen = set() if seen is None else seen
     picks = []
     for k, it in enumerate(items):
         title, desc = _clean(it.get("title")), _clean(it.get("description"))
-        score = _keep(title, desc, c, region)
+        score = _keep(title, desc, c, region, gus)
         if not score:
             continue
         who = _clean(it.get("bloggername") or it.get("cafename") or "")
@@ -214,9 +228,9 @@ def _search(s: requests.Session, kind: str, query: str) -> list[dict]:
 
 
 def _posts(s: requests.Session, kind: str, query: str, c: dict, n: int = 3, region: str = "",
-           seen: set | None = None) -> list[dict]:
+           seen: set | None = None, gus: frozenset = frozenset()) -> list[dict]:
     """검색 결과 100개 중 이 단지에 사는(둘러본) 이야기만 n개."""
-    return _pick(_search(s, kind, query), c, n, region, seen)
+    return _pick(_search(s, kind, query), c, n, region, seen, gus)
 
 
 def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, budget: int = 4000,
@@ -230,6 +244,7 @@ def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, 
     old = (date.today() - timedelta(days=REFRESH_DAYS)).isoformat()
     used = done = 0
     t0 = time.monotonic()
+    gus = frozenset(c.get("gu", "") for c in complexes) - {""}
     for c in complexes:
         cid = c["complex_id"]
         cur = data.get(cid, {})
@@ -244,10 +259,10 @@ def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, 
         q = q if q.endswith("아파트") else q + " 아파트"
         seen: set = set()
         try:
-            blog = _posts(s, "blog", q + " 후기", c, POSTS, region, seen)
+            blog = _posts(s, "blog", q + " 후기", c, POSTS, region, seen, gus)
             used += 1
             if len(blog) < POSTS:
-                blog += _posts(s, "blog", q + " 살아보니", c, POSTS - len(blog), region, seen)
+                blog += _posts(s, "blog", q + " 살아보니", c, POSTS - len(blog), region, seen, gus)
                 used += 1
         except requests.RequestException as e:
             log(f"::warning::[네이버 글] 받기 실패, 여기까지: {e}")
@@ -266,12 +281,13 @@ def load(path: Path, region: str = "", complexes: dict | None = None) -> dict:
     예전 방법으로 받아 둔 글도 지금 기준으로 다시 걸러, 다시 받기 전에도 홍보 글은 안 보이게
     (complexes 로 단지 이름·동을 주면 _keep, 없으면 글 내용만 _story)."""
     out = {}
+    gus = frozenset(c.get("gu", "") for c in (complexes or {}).values()) - {""}
     for k, v in _load(path).items():
         e = {}
         if v.get("kp"):
             e["kp"] = v["kp"]
         c = (complexes or {}).get(k)
-        ok = (lambda t, d: _keep(t, d, c, region)) if c else (lambda t, d: _story(t, d, region))
+        ok = (lambda t, d: _keep(t, d, c, region, gus)) if c else (lambda t, d: _story(t, d, region))
         posts = [p for p in v.get("posts") or [] if "cafe.naver.com" not in p.get("u", "")
                  and ok(p.get("t", ""), p.get("d", ""))][:POSTS]
         if posts:
