@@ -251,3 +251,30 @@ def test_empty_list_does_not_overwrite_saved_list(tmp_path, monkeypatch):
     kapt.collect("k", {"30110": "동구"}, root, log=logs.append)
     assert json.loads((root / "list" / "30110.json").read_text()) == saved
     assert any("받아 둔 목록 사용" in x for x in logs) and "목록 2곳" in logs[-1]
+
+
+def test_fee_month_probe_skips_portal_errors_then_gives_up(tmp_path, monkeypatch):
+    import json
+    from djdex import fee
+    from djdex.molit import MolitError
+    root = tmp_path / "kapt"
+    (root / "list").mkdir(parents=True)
+    (root / "list" / "30110.json").write_text(json.dumps([{"kaptCode": f"K{i}"} for i in range(30)]), encoding="utf-8")
+    month = fee._months_back(2)
+    calls = []
+
+    def fake(s, key, op, code, ym):   # 앞 두 단지는 포털 오류, 셋째 단지에서 값이 옴
+        calls.append(code)
+        if code in ("K0", "K2"):
+            raise MolitError("포털 오류: HTTP 에러 (04)")
+        return {"pay": "100"}
+    monkeypatch.setattr(fee, "_call", fake)
+    monkeypatch.setattr(fee.time, "sleep", lambda *_: None)
+    lines = []
+    fee.collect("k", root, {"30110": "동구"}, budget=60, log=lines.append)
+    assert f"관리비(공용관리비) {month}" in lines[-1]   # 오류 난 단지를 건너뛰고 달을 찾음
+
+    monkeypatch.setattr(fee, "_call", lambda *a: (_ for _ in ()).throw(MolitError("포털 오류: HTTP 에러 (04)")))
+    lines.clear()
+    fee.collect("k", root, {"30110": "동구"}, budget=60, log=lines.append)
+    assert "포털 오류가 연달아" in lines[-1] and "HTTP 에러 (04)" in lines[-1]

@@ -113,13 +113,22 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
     # 최근 공개 달 찾기: 두 달 전부터 다섯 달 전까지, 목록에서 고르게 뽑은 몇 단지의 인건비로.
     # 한 단지만 보면 그 단지가 공개를 안 했거나 인건비가 비어 있을 때 달을 못 찾습니다 (대전에서 그랬음)
     probe = cs[:: max(1, len(cs) // PROBE)][:PROBE]
-    ym = None
+    ym, errs, last_err = None, 0, ""
     try:
         for back in range(2, 6):
             for c in probe:
                 for op in PROBE_OPS:
                     used += 1
-                    if _filled(_call(s, key, op, c, _months_back(back))):
+                    try:
+                        got = _call(s, key, op, c, _months_back(back))
+                    except MolitError as e:   # 포털 오류(HTTP 에러 등)는 세고 다음 단지로. 여섯 번 연달아면 그만
+                        errs, last_err = errs + 1, str(e)
+                        if errs >= 6:
+                            log(f"::warning::[관리비] 포털 오류가 연달아 와서 이번에는 건너뜁니다: {last_err}")
+                            return
+                        continue
+                    errs = 0
+                    if _filled(got):
                         ym = _months_back(back)
                         break
                 if ym:
@@ -189,3 +198,30 @@ def log_fields(kapt_root: Path, log=print) -> None:
     for op, it in got.items():
         keys = sorted(it)
         log(f"[관리비 항목] {op}: 더함 {[k for k in keys if not NOT_MONEY.search(k)]} · 뺌 {[k for k in keys if NOT_MONEY.search(k)]}")
+
+
+def probe(key: str, codes: list[str], log=print, months=(2, 3, 4)) -> None:
+    """원인 찾기용 (수동 실행): 몇 단지의 인건비를 최근 몇 달 × JSON/XML 로 불러 무엇이 오는지 한 줄씩 남깁니다."""
+    s = requests.Session()
+    for c in codes:
+        for back in months:
+            ym = _months_back(back)
+            for fmt in ("json", "xml"):
+                params = {"serviceKey": key, "kaptCode": c, "searchDate": ym}
+                if fmt == "json":
+                    params["_type"] = "json"
+                try:
+                    r = s.get(BASE + OPS[0], params=params, timeout=(10, 30))
+                except requests.RequestException as e:
+                    log(f"{c} {ym} {fmt}: 연결 실패 {e.__class__.__name__}")
+                    continue
+                try:
+                    items, _ = parse(r.text)
+                    got = f"정상 {len(items)}건 " + ("값 있음" if items and _filled(items[0]) else "값 없음")
+                except MolitError as e:
+                    got = f"오류 {e}"
+                snippet = re.sub(r"\s+", " ", r.text)[:150]
+                if key:
+                    snippet = snippet.replace(key, "***")
+                log(f"{c} {ym} {fmt}: HTTP {r.status_code} · {got} · {snippet!r}")
+                time.sleep(0.2)
