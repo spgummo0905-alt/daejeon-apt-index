@@ -95,9 +95,25 @@
 <section id="map" class="panel">
   <div class="panel-head">
     <h2>지도로 보는 {{ region }} 아파트</h2>
-    <p class="muted">점 색은 등급, 빨간 테두리는 최근 신고가예요. 확대하면 단지 이름과 점수가 보여요.</p>
+    <p class="muted">핀에는 84㎡ 가격이 보이고, 색은 등급, 빨간 테두리는 최근 신고가예요. 예산과 조건으로 걸러 임장 갈 단지를 골라 보세요.</p>
   </div>
   <div class="kmap-wrap" id="kmap-wrap">
+    {# 지도 위 거르기 (카카오맵이 뜰 때만 보임, kmap.js) #}
+    <div class="kmap-ctl" id="kmap-ctl" hidden>
+      <div class="seg km-show" role="group" aria-label="핀에 보일 값">
+        <button type="button" class="seg-btn active" data-km-show="p" aria-pressed="true">84㎡ 가격</button>
+        <button type="button" class="seg-btn" data-km-show="i" aria-pressed="false">지수</button>
+        <button type="button" class="seg-btn" data-km-show="j" aria-pressed="false">전세가율</button>
+      </div>
+      <div class="km-chips" role="group" aria-label="가격대 (84㎡)" data-km-price></div>
+      <div class="km-chips" role="group" aria-label="조건">
+        <button type="button" class="chip" data-km-flag="new" aria-pressed="false">신축 10년</button>
+        <button type="button" class="chip" data-km-flag="big" aria-pressed="false">500세대 이상</button>
+        <button type="button" class="chip" data-km-flag="stn" aria-pressed="false">역 500m</button>
+        <button type="button" class="chip" data-km-flag="hi" aria-pressed="false">최근 신고가</button>
+      </div>
+      <p class="km-count" data-km-count aria-live="polite"></p>
+    </div>
     <div id="kmap"></div>
     <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 여기에 요약이 나옵니다.</span></div>
     <div class="map-fallback">{{ charts.map | safe }}</div>
