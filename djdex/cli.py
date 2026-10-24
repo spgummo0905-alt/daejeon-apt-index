@@ -292,6 +292,18 @@ def cmd_slow(cfg, args) -> None:
             print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
 
 
+def cmd_feeprobe(cfg, args) -> None:
+    """관리비 API 점검 (수동): 단지 네 곳 × 최근 석 달 × JSON/XML 응답을 한 줄씩. 받아 둔 목록이 없으면 첫 구 목록을 받아 씀."""
+    key = _need("DATA_GO_KR_KEY")
+    cs = fee.codes(cfg.paths.kapt, cfg.districts)
+    if not cs:
+        first = next(iter(cfg.districts))
+        cs = [it["kaptCode"] for it in kapt.fetch_list(key, first) if it.get("kaptCode")]
+    pick = cs[:: max(1, len(cs) // 4)][:4]
+    print(f"[관리비 점검] {cfg.region_name}: 목록 {len(cs):,}곳 중 {', '.join(pick)}")
+    fee.probe(key, pick)
+
+
 def cmd_all(cfg, args) -> None:
     cmd_collect(cfg, args)
     if os.environ.get("KAKAO_REST_KEY"):
@@ -352,6 +364,7 @@ def main(argv: list[str] | None = None) -> None:
         s.add_argument("--out", help="사이트 출력 폴더")
     sub.add_parser("locate")
     sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    sub.add_parser("feeprobe", help="관리비 API 점검 (응답을 한 줄씩)")
     sub.add_parser("school", help="학교알리미 중학교 전출입과 물가·금리만 받기 (빠름)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
@@ -359,4 +372,4 @@ def main(argv: list[str] | None = None) -> None:
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
-     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school}[args.cmd](cfg, args)
+     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe}[args.cmd](cfg, args)
