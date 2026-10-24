@@ -254,6 +254,12 @@
     let vmax = 1;
     for (let q = q0; q <= q1; q++) vmax = Math.max(vmax, (qa[q] || 0) + (gapMode ? 0 : (qb[q] || 0)));
     const vg = s("g", { class: "pc-vol" }, svg);
+    // 분기 막대는 그래프 칸 안으로 자름: 보는 기간이 분기 중간에서 시작·끝나면 막대가 축 바깥(왼쪽 눈금·오른쪽 여백)으로 나가서
+    const xl = x(i0), xr = x(i1);
+    const bar = (cx, w, yy, h, cls) => {
+      const l = Math.max(xl, cx - w / 2), r = Math.min(xr, cx + w / 2);
+      if (r - l > 0.5 && h > 0) s("rect", { x: l, y: yy, width: r - l, height: h, class: cls }, vg);
+    };
     if (gapMode) {
       // 위 = 이 평형 매매, 아래 = 전세 계약(신규·갱신·미표기). 눈금은 따로
       const rq = {};
@@ -272,12 +278,12 @@
       const qw = Math.max(1.5, (x(i0 + 3) - x(i0)) - 2);
       for (let q = q0; q <= q1; q++) {
         const cx = x(q * 3 + 1 - D.m0), a = qa[q] || 0, h = a / vmax * upH;
-        if (a) s("rect", { x: cx - qw / 2, y: mid - 2 - h, width: qw, height: h, class: "pc-va" }, vg);
+        if (a) bar(cx, qw, mid - 2 - h, h, "pc-va");
         let yy = mid + 1;
         (rq[q] || [0, 0, 0]).forEach((v, k) => {
           if (!v) return;
           const hh = v / rmax * dnH;
-          s("rect", { x: cx - qw / 2, y: yy, width: qw, height: hh, class: "pc-rn" + k }, vg);
+          bar(cx, qw, yy, hh, "pc-rn" + k);
           yy += hh;
         });
       }
@@ -292,8 +298,8 @@
       const cx = x(q * 3 + 1 - D.m0), a = qa[q] || 0, b = qb[q] || 0;
       const ha = a / vmax * volH, hb = b / vmax * volH;
       const cls = q === q1 && partial ? " part" : "";
-      if (b) s("rect", { x: cx - qw / 2, y: vTop + volH - ha - hb, width: qw, height: hb, class: "pc-vb" + cls }, vg);
-      if (a) s("rect", { x: cx - qw / 2, y: vTop + volH - ha, width: qw, height: ha, class: (market ? "pc-vm" : "pc-va") + cls }, vg);
+      if (b) bar(cx, qw, vTop + volH - ha - hb, hb, "pc-vb" + cls);
+      if (a) bar(cx, qw, vTop + volH - ha, ha, (market ? "pc-vm" : "pc-va") + cls);
     }
     }
     // 금리 (시장 흐름, 자료가 있을 때)
