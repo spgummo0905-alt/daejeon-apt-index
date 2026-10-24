@@ -122,6 +122,35 @@ def test_keep_needs_this_complex_in_title_or_a_local_visit():
     assert reviews._keep("[양천구 임장] 신정동 구축 3단지 솔직 후기", "신정 현대 아파트", sj, "서울", frozenset({"양천구", "마포구"}))
 
 
+def test_store_and_agent_posts_that_name_the_complex():
+    """이 단지 이름과 '입주민'이 나와도 가게 홍보·업체 블로그 글은 뺌 (실제로 화면에 걸렸던 글)."""
+    c = {"name": "e편한세상 대전에코포레", "dong": "용운동", "gu": "동구"}
+    item = {"title": "대전 동구 용운동e편한세상,동구 신흥동 SK뷰아파트 입주민 여러분 ....",
+            "description": "추천드립니다 ✓동구 용운동 e편한세상에코포레 입주민 ✓ 입주... 하이마트 판암점 방문 안내 "
+                           "위치 : 대전 동구 옥천로87 롯데하이마트 판암점 042)271-2580 신흥역 4번",
+            "link": "x", "bloggername": "가전 파는 오빠"}
+    assert reviews._pick([item], c, 5, "대전") == []
+    assert not reviews._keep(item["title"], "", c, "대전")             # 제목만으로도 ('여러분')
+    assert reviews.AD_BODY.search("문의 042)271-2580") and reviews.AD_BODY.search("010-1234-5678")
+    # 블로그 이름: 중개사무소·이삿짐센터는 업체, 개인 투자 블로그의 임장기는 남김
+    for who in ("부동산 문의 1533-8170", "나성일진부동산", "다정yes공인중개사사무소", "명품만복이사 1551-2435", "대전 디자인미래 인테리어"):
+        assert reviews.SELLER.search(who), who
+    for who in ("맹맹구리의 부동산", "[출근은 덤] 부동산ㅣ주식ㅣ재테크", "주말 임장", "이사 온 새댁"):
+        assert not reviews.SELLER.search(who), who
+    ok = {"title": "대전 둔산지구 13구역 임장후기 (둔산동 크로바 아파트)", "description": "대장아파트를 구경하고 왔다",
+          "link": "y", "bloggername": "맹맹구리의 부동산"}
+    assert reviews._pick([ok], {"name": "크로바", "dong": "둔산동", "gu": "서구"}, 5, "대전")
+
+
+def test_load_drops_seller_posts_saved_before(tmp_path):
+    p = tmp_path / "reviews.json"
+    p.write_text(json.dumps({"A": {"posts": [
+        {"t": "월평동 누리아파트 단지 내 이사 후기", "u": "u1", "s": "명품만복이사 1551-2435"},
+        {"t": "월평동 누리아파트 5년 살아 보니", "u": "u2", "s": "갑천 산책"}]}}, ensure_ascii=False))
+    got = reviews.load(p, "대전", {"A": {"name": "누리", "dong": "월평동", "gu": "서구"}})
+    assert [x["u"] for x in got["A"]["posts"]] == ["u2"]
+
+
 def test_naver_posts_refetch_after_rule_change(tmp_path, monkeypatch):
     """글 고르는 방법이 바뀌면(NV_VERSION) 일주일이 안 지났어도 다시 받고, 모자라면 '살아보니'로 한 번 더 찾음."""
     path = tmp_path / "reviews.json"

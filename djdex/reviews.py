@@ -9,6 +9,7 @@
     짧거나 흔한 이름은 동·구 이름도 함께, 다른 이름 속에 묻히면 안 되고, 단지 번호가 다르면 다른 단지)
   · 사는 이야기 낱말(살아 보니·거주·입주·층간소음·주차·관리비·학군·임장 …)이 있어야 (_story)
   · 매물·분양·광고·공고, 시공·수리·청소 업체, 가게·상품·수업 홍보, 다른 지역 이야기는 뺌
+    ('입주민 여러분'처럼 독자를 부르는 제목, 요약의 전화번호·방문 안내, 업체·중개사무소 블로그 이름도)
   한 블로그에서는 한 글만. 키가 없으면 건너뜁니다.
   카페 글은 대부분 로그인·카페 가입을 해야 열려서 받지 않습니다 (예전에 받아 둔 카페 글도 화면에 쓰지 않음).
 
@@ -50,12 +51,19 @@ NOT_REVIEW = re.compile(
     r"빵집|빵투어|빵지순례|베이커리|떡집|답례떡|꽃집|꽃다발|플라워|마트|슈퍼|상가|오피스텔|"
     r"주간보호|요양|복지센터|어린이집|유치원|축제|공연|연극|뮤지컬|영화관|CGV|휴대폰|성지|중고|명품|침대|소파|가죽|리클라이너|"
     r"짐보관|창고|스토리지|풀옵션|개소식|총회|케이크|복원|욕조|작업|공간|새롭게|변신|비포|애프터|홈스타일링|"
+    r"여러분|가전|혼수|"
     r"\d{3}동\s?\d+평|\d+층\s?\d+평|사건번호|방문\s?후기|방문기|(?<![장단관시강약이제통발초정거지요만총평\d])점(?=[)\]\s,.!|]|$)")
 # 요약에만 있어도 홍보 글로 보는 낱말 (요약엔 '학원가 가까워요'처럼 사는 이야기에도 가게 이름이 나와서 더 좁게)
 AD_BODY = re.compile(r"급매|공인중개|중개사|체험단|협찬|원고료|제공받|견적|시공|업체|출장|상담|문의|예약|할인|판매|"
                      r"(?:이번|오늘|작업|시공|공사)\s?현장|현장입니다|고객님|의뢰|재공급|입주자\s?모집|매물\s?(?:정보|번호)|\[\d{4,}\]|"
                      r"부동산입니다|중개사입니다|저렴한\s?가격|경매|"
-                     r"010[-\s]?[\d*]{3,4}|카톡\s?상담")
+                     r"0\d{1,2}\)?[-\s.]?[\d*]{3,4}[-\s.][\d*]{4}|카톡\s?상담|방문\s?안내|오시는\s?길|영업\s?시간|"
+                     r"추천\s?드립니다|추천해\s?드려요")
+# 블로그 이름이 가게·업체로 보이면 ('가전 파는 오빠', 'OO인테리어', 'OO부동산') 사는 이야기가 아님
+# ('OO의 부동산'·'부동산ㅣ주식ㅣ재테크' 같은 개인 투자 블로그는 임장기라서 남기고, 'OO부동산'·'부동산 문의'는 중개사무소)
+SELLER = re.compile(r"가전|파는|판매|(?<!의 )(?<!의)부동산(?=\s|$|[|/·,])|공인|중개|분양|인테리어|시공|설비|열쇠|청소|"
+                    r"이사(?!\s?(?:온|왔|간))|업체|디자인|건축|창호|샷시|새시|도배|마트|센터|학원|클리닝|하우징|상담|직영|공식|"
+                    r"\d{3,4}-\d{4}")
 # 사는 이야기 낱말: 하나는 있어야 남깁니다 (제목에 있으면 더 앞에)
 LIVED = re.compile(r"살아\s?보|살아\s?본|살아서|살면서|살고\s?있|사는\s?중|살았|살던|살기|거주|입주(?!\s?청소)|이사\s?(?:왔|온|와서|오고|한\s?지)|"
                    r"장단점|단점|솔직|후기|리뷰|임장|발품|단지\s?(?:분위기|구경|산책|둘러|분석|내)|층간\s?소음|소음|주차|"
@@ -208,10 +216,10 @@ def _pick(items: list[dict], c: dict, n: int, region: str = "", seen: set | None
     picks = []
     for k, it in enumerate(items):
         title, desc = _clean(it.get("title")), _clean(it.get("description"))
-        score = _keep(title, desc, c, region, gus)
+        who = _clean(it.get("bloggername") or it.get("cafename") or "")
+        score = 0 if SELLER.search(who) else _keep(title, desc, c, region, gus)
         if not score:
             continue
-        who = _clean(it.get("bloggername") or it.get("cafename") or "")
         link = it.get("link", "")
         if link in seen or (who and who in seen):
             continue
@@ -290,7 +298,7 @@ def load(path: Path, region: str = "", complexes: dict | None = None) -> dict:
         c = (complexes or {}).get(k)
         ok = (lambda t, d: _keep(t, d, c, region, gus)) if c else (lambda t, d: _story(t, d, region))
         posts = [p for p in v.get("posts") or [] if "cafe.naver.com" not in p.get("u", "")
-                 and ok(p.get("t", ""), p.get("d", ""))][:POSTS]
+                 and not SELLER.search(p.get("s", "")) and ok(p.get("t", ""), p.get("d", ""))][:POSTS]
         if posts:
             e["posts"] = posts
         if e:
