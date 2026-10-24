@@ -30,6 +30,7 @@ BLANK_STOP = 20        # 기본·상세가 모두 빈 응답이 이만큼 연달
 BLANK_RETRY_DAYS = 3   # 빈 응답만 온 단지는 표시해 두고 사흘 뒤 다시 (같은 단지들이 매번 맨 앞에서 '연달아 빈 응답'으로 막지 않게)
 BLANK_WAITS = (3, 10, None)   # 빈 응답이면 3초, 10초 쉬었다 다시 (세 번째도 비면 빈 응답으로)
 PAUSE = 0.3            # 단지 사이 쉬는 시간 (빨리 부르면 빈 응답이 옴)
+SLOW_COOLS = (60, 180)  # 배포 뒤 이어 받기: 포털 오류가 세 번 연달아 오면 이만큼 쉬었다가 다음 단지부터 다시
 SHOWN = ("hh", "dongs", "ppu", "top", "use", "heat", "hall", "elev", "evc", "builder", "mgr")   # 화면에 쓰는 항목
 
 
@@ -106,9 +107,11 @@ def fetch_list(key: str, sgg: str, session=None, rows: int = 1000) -> list[dict]
 
 
 def collect(key: str, districts: dict[str, str], root: Path, budget: int | None = None, log=print,
-            time_limit: float = 600) -> None:
+            time_limit: float = 600, cools: tuple[int, ...] = ()) -> None:
     """단지 목록(시군구별)은 매번, 단지별 기본·상세 정보는 없거나 오래된 것만 받습니다.
-    배포 전 단계에서 돌므로 time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다."""
+    배포 전 단계에서 돌므로 time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 받습니다.
+    cools: 포털 오류가 세 번 연달아 올 때 멈추는 대신 쉴 초 (차례로 한 번씩, 다 쓰면 멈춤).
+    다른 API(관리비·실거래)를 몰아서 부른 직후엔 포털이 'HTTP 에러'를 잠깐 줘서, 서울은 매번 한 곳만 받고 멈췄음"""
     s = requests.Session()
     (root / "list").mkdir(parents=True, exist_ok=True)
     (root / "info").mkdir(parents=True, exist_ok=True)
@@ -145,6 +148,7 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
                 todo.append((1, c))
     todo.sort()  # 처음 받는 단지 먼저
     used, fails, done, blank, blank_run = 0, 0, 0, 0, 0
+    cools = list(cools)
     t0 = time.monotonic()
     for _, c in todo:
         if (budget is not None and used + 2 > budget) or time.monotonic() - t0 > time_limit:
@@ -162,7 +166,12 @@ def collect(key: str, districts: dict[str, str], root: Path, budget: int | None 
         except (requests.RequestException, MolitError) as e:
             fails += 1
             log(f"::warning::단지 정보 {c} 받기 실패: {e}")
-            if fails >= 3:
+            if fails >= 3 and cools and not portal_down():
+                wait = cools.pop(0)
+                log(f"::notice::단지 정보 포털 오류가 연달아 와서 {wait}초 쉬었다가 다음 단지부터 다시")
+                time.sleep(wait)
+                fails = 0
+            elif fails >= 3:
                 log("::warning::여러 번 연달아 실패해 단지 정보는 여기까지 받습니다")
                 break
             continue
