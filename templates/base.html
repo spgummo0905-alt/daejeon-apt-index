@@ -86,16 +86,27 @@
     </div>
   </div>
   {% endif %}
-  <nav class="top-nav">
-    <a href="{{ root }}index.html#map">지도</a>
-    <a href="{{ root }}rank.html">랭킹</a>
-    <a href="{{ root }}themes.html">테마</a>
-    <a href="{{ root }}stations.html">{{ transit.tab }}</a>
-    <a href="{{ root }}compare.html">단지 비교</a>
-    <a href="{{ root }}finder.html">조건으로 찾기</a>
-    <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span></a>
-    <a href="{{ root }}cards.html">카드첩</a>
-  </nav>
+  <div class="hd-end">
+    <nav class="top-nav">
+      <a href="{{ root }}index.html#map">지도</a>
+      <a href="{{ root }}rank.html">랭킹</a>
+      <a href="{{ root }}themes.html">테마</a>
+      <a href="{{ root }}stations.html">{{ transit.tab }}</a>
+      <a href="{{ root }}compare.html">단지 비교</a>
+      <a href="{{ root }}finder.html">조건으로 찾기</a>
+      <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span></a>
+      <a href="{{ root }}cards.html">카드첩</a>
+    </nav>
+    <button type="button" class="hs-btn" data-hs-open aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pop" aria-label="검색: 단지·동·역 이름이나 가격 조건" title="검색 ( / )">
+      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
+    <div class="hs-pop" id="hs-pop" role="dialog" aria-label="검색" hidden>
+      <div class="hs-head">
+        <div class="hero-search hs-box"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+          <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search"></div>
+        <button type="button" class="link-btn hs-close" data-hs-close>닫기</button>
+      </div>
+    </div>
+  </div>
   {% block header_extra %}{% endblock %}
 </header>
 <main>

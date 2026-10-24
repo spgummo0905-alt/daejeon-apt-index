@@ -197,59 +197,290 @@
   };
 
   // ---------- 검색 자동완성 ----------
-  // input 옆에 결과 목록을 띄우고, 고르면 onPick(단지) 를 부릅니다.
-  DJ.search = function (input, onPick) {
-    const list = el("ul", "ac-list");
+  // 단지 이름뿐 아니라 동·역 이름, '7억 이하 30평대' 같은 조건까지 한 칸에서 찾습니다.
+  // 조건은 '조건으로 찾기'로, 동은 메인 단지 목록으로, 역은 역세권 화면의 그 역으로 바로 보냅니다.
+  // 빈칸을 누르면 최근 찾은 것·최근 본 단지와 찾는 예시를 보여줍니다.
+  const PY_IDS = [["u20", 0, 20], ["20", 20, 30], ["30", 30, 40], ["40", 40, 50], ["50", 50, 1e9]];
+  const pyId = py => PY_IDS.find(([, lo, hi]) => py >= lo && py < hi)[0];
+  const WORDS = [   // 조건 낱말 → 조건으로 찾기 값
+    [/준신축/, { age: "semi" }, "준신축까지"], [/신축/, { age: "new" }, "신축"],
+    [/역세권|역\s*근처|역\s*가까운/, { stn: 500 }, "역 500m 안"], [/초품아/, { sch: 300 }, "초등학교 300m 안"],
+    [/대단지/, { must: "big" }, "대단지"], [/학원가/, { must: "academy" }, "학원가"],
+    [/신고가/, { must: "high" }, "최근 신고가"], [/주차/, { must: "park" }, "주차 넉넉"],
+  ];
+  // '7억 이하 30평대', '6억5천', '84㎡', '국평', '신축 역세권' → {budget, py, age, stn, sch, must, label, rest}
+  DJ.parseCond = function (q) {
+    let s = " " + String(q) + " ";
+    const out = { py: [], must: [], label: [] };
+    s = s.replace(/(\d+(?:\.\d+)?)\s*억\s*(?:(\d)\s*천)?(\s*대)?\s*(이하|아래|까지|미만|이내|안쪽|안|이상|넘[는게은]?|초과|부터)?/,
+      (m, a, b, dae, dir) => {
+        if (dir && /이상|넘|초과|부터/.test(dir)) return m;   // 최소 가격은 조건으로 찾기에 없어서 그대로 둡니다
+        let v = +a + (b ? +b / 10 : 0);
+        if (dae) v = Math.floor(v) + 1;   // '7억대' → 8억 이하
+        if (v > 0 && v < 200) { out.budget = +v.toFixed(1); out.label.push(`${out.budget}억 이하`); }
+        return " ";
+      });
+    s = s.replace(/국평|국민\s*평형/, () => { out.py.push("30"); out.label.push("30평대"); return " "; });
+    s = s.replace(/(\d{2,3})\s*평\s*(?:대|형)?(\s*이상)?/g, (m, a, up) => {
+      const id = pyId(+a);
+      const ids = up ? PY_IDS.filter(([, lo]) => lo >= PY_IDS.find(p => p[0] === id)[1]).map(p => p[0]) : [id];
+      ids.forEach(x => { if (!out.py.includes(x)) out.py.push(x); });
+      out.label.push(up ? `${a}평 이상` : (id === "u20" ? "20평 미만" : id === "50" ? "50평 이상" : `${id}평대`));
+      return " ";
+    });
+    // 전용면적(㎡) → 공급 평 어림 (전용 × 1.33 ÷ 3.3058). 59㎡ → 20평대, 84㎡ → 30평대
+    s = s.replace(/(\d{2,3})\s*(?:㎡|m2|m²|제곱미터|제곱)(?:\s*형)?/gi, (m, a) => {
+      const id = pyId(+a * 1.33 / 3.3058);
+      if (!out.py.includes(id)) out.py.push(id);
+      out.label.push(`${a}㎡`);
+      return " ";
+    });
+    WORDS.forEach(([re, v, label]) => {
+      if (!re.test(s)) return;
+      s = s.replace(re, " ");
+      if (v.must) out.must.push(v.must); else Object.assign(out, v);
+      out.label.push(label);
+    });
+    out.rest = s.replace(/\s+/g, " ").trim();
+    return out.label.length ? out : null;
+  };
+  // 조건으로 찾기 주소. 남은 글자가 구 이름이면 지역 조건으로
+  DJ.condHref = function (cond, gu) {
+    const p = new URLSearchParams();
+    if (cond.budget) p.set("budget", cond.budget);
+    if (cond.py.length) p.set("py", cond.py.join(","));
+    if (cond.age) p.set("age", cond.age);
+    if (cond.stn) p.set("stn", cond.stn);
+    if (cond.sch) p.set("sch", cond.sch);
+    if (cond.must.length) p.set("must", cond.must.join(","));
+    if (gu) p.set("gu", gu);
+    return ROOT + "finder.html?" + p.toString() + "#results";
+  };
+  // 조건에 맞는 단지 수 (조건으로 찾기와 같은 셈: 평형별 추정 시세 tp)
+  function condCount(cs, cond, gu) {
+    const NOW = new Date().getFullYear();
+    const pyOk = py => !cond.py.length || cond.py.includes(pyId(py));
+    return cs.filter(c => {
+      if (gu && c.gu !== gu) return false;
+      if (cond.budget || cond.py.length) {
+        const tp = c.tp && c.tp.length ? c.tp : (c.p ? [[34, c.p]] : []);
+        if (!tp.some(([py, pr]) => pyOk(py) && (!cond.budget || pr <= cond.budget * 10000))) return false;
+      }
+      if (cond.age && !(c.y && c.y >= NOW - (cond.age === "new" ? 5 : 15))) return false;
+      if (cond.stn && !(c.f.subway != null && c.f.subway <= cond.stn)) return false;
+      if (cond.sch && !(c.f.elementary != null && c.f.elementary <= cond.sch)) return false;
+      for (const m of cond.must) {
+        if (m === "big" && !(c.hh >= 1000)) return false;
+        if (m === "high" && !c.h) return false;
+        if (m === "park" && !(c.pk >= 1.2)) return false;
+        if (m === "academy" && !(c.hm != null && c.hm <= 20)) return false;
+      }
+      return true;
+    }).length;
+  }
+  const STN_R = 700;   // 역세권 화면과 같은 거리
+  // 지역 안의 동·구·역 목록 (한 번만 셉니다)
+  function places(d) {
+    if (d._places) return d._places;
+    const dong = new Map(), gu = new Map(), stn = new Map(), all = new Set();
+    d.complexes.forEach(c => {
+      all.add(c.gu);
+      if (c.sm) return;   // 소규모(빌라형)는 메인 목록·역세권 화면처럼 세지 않음
+      const k = c.gu + "|" + c.d;
+      dong.set(k, (dong.get(k) || 0) + 1);
+      if (c.gu !== c.d) gu.set(c.gu, (gu.get(c.gu) || 0) + 1);
+      if (c.stn && c.f.subway != null && c.f.subway <= STN_R) stn.set(c.stn, (stn.get(c.stn) || 0) + 1);
+    });
+    d._places = {
+      dong: [...dong].map(([k, n]) => { const [g, dn] = k.split("|"); return { gu: g, d: dn, n }; }),
+      gu: [...gu].map(([g, n]) => ({ gu: g, n })),
+      stn: [...stn].map(([s, n]) => ({ s, n })),
+      guAll: [...all],   // 조건으로 찾기의 지역 값 (구, 구가 없는 곳은 동)
+    };
+    return d._places;
+  }
+  // 최근 찾은 것 (이 기기에만, 지역마다 따로)
+  const HIST = "searches";
+  const absUrl = u => { const a = new URL(u, location.href); return a.pathname + a.search + a.hash; };
+  function remember(row, region) {
+    if (!row.href) return;
+    const u = absUrl(row.href);
+    const h = load(HIST, []).filter(x => x.u !== u);
+    h.unshift({ k: row.kind, t: row.label, s: row.sub, u, g: row.g || "", r: region });
+    save(HIST, h.slice(0, 12));
+  }
+
+  DJ.search = function (input, onPick, opts) {
+    opts = opts || {};
+    const wide = !!opts.grouped;   // false: 단지만 (비교·임장 코스에 더하기)
+    const list = el("ul", "ac-list" + (opts.inline ? " ac-inline" : ""));
+    list.id = "ac-" + Math.random().toString(36).slice(2, 8);
     list.setAttribute("role", "listbox");
     list.hidden = true;
     input.setAttribute("autocomplete", "off");
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-controls", list.id);
+    input.setAttribute("aria-expanded", "false");
     input.parentElement.classList.add("ac-wrap");
     input.after(list);
-    let items = [], active = -1;
+    let rows = [], active = -1, region = "";
+    const norm = s => String(s || "").replace(/\s/g, "").toLowerCase();
 
-    function render(q) {
-      DJ.data().then(d => {
-        q = q.trim().replace(/\s/g, "");
-        list.replaceChildren();
-        if (!q) { list.hidden = true; return; }
-        const norm = s => s.replace(/\s/g, "");
-        items = d.complexes.filter(c => norm(c.n).includes(q) || norm(c.d).includes(q) || norm(c.gu).includes(q))
-          .sort((a, b) => (norm(b.n).startsWith(q) - norm(a.n).startsWith(q)) || ((b.i || 0) - (a.i || 0)))
-          .slice(0, 8);
-        active = -1;
-        items.forEach((c, k) => {
-          const li = el("li", "ac-item");
-          li.setAttribute("role", "option");
-          li.append(el("span", "grade g-" + c.g, c.g), el("span", "ac-name", c.n),
-                    el("span", "ac-sub", DJ.place(c) + (c.i != null ? " · " + c.i + "점" : "")));
-          li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
-          list.append(li);
+    function show(on) { list.hidden = !on; input.setAttribute("aria-expanded", on ? "true" : "false"); }
+    function group(title, extra) {
+      const li = el("li", "ac-group");
+      li.setAttribute("role", "presentation");
+      li.append(el("span", "", title));
+      if (extra) li.append(extra);
+      list.append(li);
+    }
+    function item(row) {
+      const k = rows.push(row) - 1;
+      const li = el("li", "ac-item ac-" + row.kind);
+      li.id = list.id + "-" + k;
+      li.setAttribute("role", "option");
+      const ICON = { dong: "pin", gu: "map", stn: "train", cond: "filter" };
+      if (row.g) li.append(el("span", "grade g-" + row.g, row.g));
+      else li.append(DJ.icon(ICON[row.kind] || "search"));
+      li.firstChild.classList.add("ac-ic");
+      li.append(el("span", "ac-name", row.label), el("span", "ac-sub", row.sub || ""));
+      if (row.go) li.append(el("span", "ac-go", row.go));
+      li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
+      list.append(li);
+    }
+    function aptRow(c) {
+      return { kind: "apt", label: c.n, g: c.g, c, href: DJ.href(c),
+               sub: [DJ.place(c), c.pt ? "84㎡ " + c.pt : "", c.i != null ? c.i + "점" : ""].filter(Boolean).join(" · ") };
+    }
+
+    function empty(d) {
+      const here = new URL(ROOT || "./", location.href).pathname;
+      if (wide) {
+        const h = load(HIST, []).filter(x => x.r === region).slice(0, 5);
+        if (h.length) {
+          const clr = el("button", "link-btn", "지우기");
+          clr.type = "button";
+          clr.addEventListener("mousedown", e => {
+            e.preventDefault();
+            save(HIST, load(HIST, []).filter(x => x.r !== region));
+            render("");
+          });
+          group("최근 찾은 것", clr);
+          h.forEach(x => item({ kind: x.k, label: x.t, sub: x.s, g: x.g, href: x.u }));
+        }
+      }
+      // 최근 본 단지 (이 지역 것만)
+      const seen = new Set(rows.map(r => r.href && absUrl(r.href)));
+      const rec = DJ.recent().map(r => d.bySlug[r.s]).filter(c => c && !seen.has(absUrl(DJ.href(c))))
+        .slice(0, wide ? Math.max(2, 5 - rows.length) : 6);
+      if (rec.length) { group("최근 본 단지"); rec.forEach(c => item(aptRow(c))); }
+      if (wide) {
+        // 이 지역에 맞춘 찾는 예시: 단지가 가장 많은 역·동, 중간 가격대 예산
+        const P = places(d);
+        const ex = [];
+        const st = P.stn.slice().sort((a, b) => b.n - a.n)[0];
+        if (st) ex.push(st.s);
+        const ps = d.complexes.map(c => c.p).filter(Boolean).sort((a, b) => a - b);
+        if (ps.length) ex.push(`${Math.max(1, Math.round(ps[Math.floor(ps.length / 2)] / 10000))}억 이하 30평대`);
+        const dn = P.dong.filter(x => x.d !== x.gu || P.gu.length === 0).sort((a, b) => b.n - a.n)[0];
+        if (dn) ex.push(dn.d);
+        ex.push("신축 역세권");
+        const li = el("li", "ac-try");
+        li.setAttribute("role", "presentation");
+        li.append(el("span", "ac-try-h", "이렇게 찾아보세요"));
+        ex.forEach(t => {
+          const b = el("button", "chip sm", t);
+          b.type = "button";
+          b.tabIndex = -1;
+          b.addEventListener("mousedown", e => { e.preventDefault(); input.value = t; render(t); });
+          li.append(b);
         });
-        if (!items.length) list.append(el("li", "ac-empty", "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
-        list.hidden = false;
+        list.append(li);
+      }
+      show(list.children.length > 0);
+    }
+
+    function render(raw) {
+      DJ.data().then(d => {
+        region = d.region || "";
+        list.replaceChildren();
+        rows = []; active = -1;
+        input.removeAttribute("aria-activedescendant");
+        const text = String(raw || "").trim();
+        if (!text) { if (opts.recent !== false) empty(d); else show(false); return; }
+        const cond = wide ? DJ.parseCond(text) : null;
+        const q = norm(cond ? cond.rest : text);
+        const P = wide ? places(d) : null;
+        if (cond) {
+          const gu = q && P.guAll.find(g => norm(g) === q || norm(g).replace(/[구군시동읍면]$/, "") === q);
+          const n = condCount(d.complexes, cond, gu);
+          group("조건으로 찾기");
+          item({ kind: "cond", label: (gu ? gu + " · " : "") + cond.label.join(" · "),
+                 sub: n ? `맞는 단지 ${n.toLocaleString()}곳 · 조건을 더 고를 수 있어요` : "맞는 단지가 없어요 · 조건을 바꿔 볼 수 있어요",
+                 go: "조건으로 찾기", href: DJ.condHref(cond, gu) });
+          if (gu || !q) { show(true); return; }
+        }
+        if (wide && q) {
+          const starts = (s, x) => norm(s).startsWith(x) || norm(s).replace(/(동|가|읍|면|역)$/, "") === x;
+          const areas = [
+            ...P.gu.filter(g => starts(g.gu, q)).map(g => ({ kind: "gu", label: g.gu, sub: `단지 ${g.n.toLocaleString()}곳 · 목록에서 보기`,
+              href: ROOT + "index.html?area=" + encodeURIComponent(g.gu) + "#list", n: g.n })),
+            ...P.dong.filter(x => starts(x.d, q)).map(x => ({ kind: "dong", label: x.d,
+              sub: (x.gu !== x.d ? x.gu + " · " : "") + `단지 ${x.n.toLocaleString()}곳 · 목록에서 보기`,
+              href: ROOT + "index.html?area=" + encodeURIComponent(x.gu) + (x.gu !== x.d ? "&dong=" + encodeURIComponent(x.d) : "") + "#list", n: x.n })),
+          ].sort((a, b) => (norm(b.label) === q) - (norm(a.label) === q) || b.n - a.n).slice(0, 3);
+          if (areas.length) { group("동네"); areas.forEach(item); }
+          const sts = P.stn.filter(x => starts(x.s, q) || norm(x.s).includes(q) && q.length >= 2)
+            .sort((a, b) => b.n - a.n).slice(0, 3);
+          if (sts.length) {
+            group("역");
+            sts.forEach(x => item({ kind: "stn", label: x.s, sub: `${STN_R}m 안 단지 ${x.n.toLocaleString()}곳`,
+              href: ROOT + "stations.html?st=" + encodeURIComponent(x.s) }));
+          }
+        }
+        const apts = d.complexes.filter(c => norm(c.n).includes(q) || norm(c.d).includes(q) || norm(c.gu).includes(q))
+          .sort((a, b) => (norm(b.n).startsWith(q) - norm(a.n).startsWith(q)) || (norm(b.n).includes(q) - norm(a.n).includes(q)) || ((b.i || 0) - (a.i || 0)))
+          .slice(0, wide && rows.length ? 6 : 8);
+        if (apts.length) { if (wide && rows.length) group("단지"); apts.forEach(c => item(aptRow(c))); }
+        if (!rows.length) {
+          list.append(el("li", "ac-empty", wide
+            ? "찾는 것이 없어요. 단지·동·역 이름이나 '7억 이하 30평대'처럼 조건으로도 찾을 수 있어요."
+            : "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
+        }
+        show(true);
       });
     }
     function pick(k) {
-      const c = items[k];
-      if (!c) return;
-      list.hidden = true;
-      input.value = c.n;
-      onPick(c);
+      const r = rows[k];
+      if (!r) return;
+      show(false);
+      if (wide) remember(r, region);
+      if (r.c) { input.value = r.c.n; onPick(r.c); return; }
+      if (r.href) location.href = r.href;
+    }
+    function mark(k) {
+      const lis = list.querySelectorAll(".ac-item");
+      active = k;
+      lis.forEach((li, i) => li.classList.toggle("active", i === k));
+      if (lis[k]) { input.setAttribute("aria-activedescendant", lis[k].id); lis[k].scrollIntoView({ block: "nearest" }); }
     }
     input.addEventListener("input", () => render(input.value));
-    input.addEventListener("focus", () => input.value && render(input.value));
-    input.addEventListener("blur", () => setTimeout(() => { list.hidden = true; }, 150));
+    input.addEventListener("focus", () => render(input.value));
+    input.addEventListener("blur", () => setTimeout(() => show(false), 150));
     input.addEventListener("keydown", e => {
-      const lis = list.querySelectorAll(".ac-item");
+      const n = list.querySelectorAll(".ac-item").length;
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
-        active = (active + (e.key === "ArrowDown" ? 1 : -1) + lis.length) % Math.max(1, lis.length);
-        lis.forEach((li, k) => li.classList.toggle("active", k === active));
+        if (list.hidden) { render(input.value); return; }
+        if (n) mark((active + (e.key === "ArrowDown" ? 1 : -1) + n) % n);
       } else if (e.key === "Enter") {
         e.preventDefault();
-        pick(active >= 0 ? active : 0);
-      } else if (e.key === "Escape") { list.hidden = true; }
+        if (rows.length && input.value.trim() || active >= 0) pick(active >= 0 ? active : 0);
+      } else if (e.key === "Escape") { show(false); }
     });
+    DJ.data().then(d => { region = d.region || ""; });
+    return { render, list };
   };
 
   // ---------- 게임 카드 ----------
@@ -506,7 +737,7 @@
     document.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", () =>
       DJ.share(document.title, b.dataset.share || "", b.dataset.url || location.href)));
     // 검색창: 고르면 단지 페이지로 이동
-    document.querySelectorAll("[data-search-go]").forEach(inp => DJ.search(inp, c => { location.href = DJ.href(c); }));
+    document.querySelectorAll("[data-search-go]").forEach(inp => DJ.search(inp, c => { location.href = DJ.href(c); }, { grouped: true }));
   });
 
   // ---------- 모션: 화면에 들어올 때 펼치기, 숫자 올라가기 ----------
@@ -672,6 +903,53 @@
         Array.from(ol.children).sort((a, c) => +a.dataset[k] - +c.dataset[k]).forEach(li => ol.appendChild(li));
       });
     }));
+  }
+  // 검색에서 역을 고르고 오면 (stations.html?st=둔산역) 그 역을 펼쳐서 보여줍니다
+  function stationFocus() {
+    const name = new URLSearchParams(location.search).get("st");
+    if (!name) return;
+    const box = Array.from(document.querySelectorAll("details.station")).find(x => x.dataset.stName === name);
+    if (!box) return;
+    box.open = true;
+    box.classList.add("hit");
+    requestAnimationFrame(() => box.scrollIntoView({ block: "start", behavior: DJ.calm ? "auto" : "smooth" }));
+    setTimeout(() => box.classList.remove("hit"), 2400);
+  }
+  // 위쪽 검색 버튼: 어느 화면에서든 단지·동·역·조건을 찾는 창. '/' 키로도 열립니다.
+  // 휴대폰은 위에서 내려오는 창(키보드가 아래를 가려서), 넓은 화면은 가운데 위쪽 창.
+  function headerSearch() {
+    const pop = document.getElementById("hs-pop"), btn = document.querySelector("[data-hs-open]");
+    if (!pop || !btn) return;
+    const q = pop.querySelector("input");
+    let back = null;
+    function open() {
+      if (!pop.hidden) return;
+      pop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      back = el("div", "sheet-back hs-back");
+      back.addEventListener("click", close);
+      document.body.append(back);
+      requestAnimationFrame(() => { pop.classList.add("on"); back.classList.add("on"); });
+      q.focus({ preventScroll: true });
+    }
+    function close() {
+      if (pop.hidden) return;
+      pop.classList.remove("on");
+      btn.setAttribute("aria-expanded", "false");
+      if (back) { back.remove(); back = null; }
+      setTimeout(() => { if (!pop.classList.contains("on")) pop.hidden = true; }, 200);
+      btn.focus({ preventScroll: true });
+    }
+    btn.addEventListener("click", e => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    pop.querySelector("[data-hs-close]").addEventListener("click", close);
+    pop.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+    document.addEventListener("keydown", e => {
+      const t = e.target;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      open();
+    });
   }
   // 붙어 다니는 바로가기: 지금 보고 있는 칸을 표시하고, 휴대폰에선 그 버튼이 보이게 옆으로 밀어 줌
   function scrollSpy(nav) {
@@ -895,6 +1173,8 @@
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();
     stationSort();
+    stationFocus();
+    headerSearch();
     document.querySelectorAll("table[data-trades]").forEach(tradeTable);
     DJ.onView(document.querySelectorAll("[data-reveal]"), e => e.classList.add("in"));
     DJ.onView(document.querySelectorAll("[data-count]"), e => DJ.countUp(e));

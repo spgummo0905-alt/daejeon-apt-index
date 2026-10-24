@@ -13,9 +13,11 @@ import requests
 BASE = sys.argv[1] if len(sys.argv) > 1 else "https://spgummo0905-alt.github.io/daejeon-apt-index/"
 REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/"}
 # 단지 페이지에 있어야 하는 화면 요소 (한눈에 보기 타일, 관련 점수 줄, 평형별 시세)
-MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"'}
+MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"',
+         "바로가기 탭": 'apt-jump', "층별 시세": "data-floors"}
 # 모든 화면에 있어야 하는 요소 (지역 고르기 버튼, 최근 본 단지 버튼)
-COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "메뉴에 카드첩": 'href="cards.html"'}
+COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "메뉴에 카드첩": 'href="cards.html"', "위쪽 검색 버튼": "data-hs-open",
+          "지도 가격 거르기": 'id="kmap-ctl"'}
 # 수집 자료가 단지 페이지에 반영된 수 (전체 단지 페이지를 열어 셉니다)
 FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
           "공급면적": lambda h: "공급면적 정보가 없어" not in h,
@@ -75,6 +77,12 @@ def main() -> None:
             out["메인에 오늘의 카드 없음"] = 'id="today"' not in html
             js = s.get(url + "static/cards.js", timeout=30)
             out["임장 후보 코드"] = js.ok and "pickToday" in js.text
+            app = s.get(url + "static/app.js", timeout=30)
+            out["동·역·조건 검색 코드"] = app.ok and "DJ.parseCond" in app.text
+            st = s.get(url + "stations.html", timeout=30)
+            out["역 검색 연결"] = st.ok and "data-st-name=" in st.text
+            my = s.get(url + "my.html", timeout=30)
+            out["임장 코스"] = my.ok and 'id="course"' in my.text
             intro = s.get(url + "intro.html", timeout=30)
             out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else "",
                            "뜨거운 동네 넘기기": "data-hot-json" in intro.text}

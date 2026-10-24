@@ -995,6 +995,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
+            **({"sm": 1} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

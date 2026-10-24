@@ -47,6 +47,14 @@
     if (search) { search.value = dong && dong !== area ? dong : ""; search.dispatchEvent(new Event("input")); }
     document.getElementById("list").scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth" });
   };
+  // 검색에서 동·구를 고르고 오면 (index.html?area=서구&dong=둔산동#list) 그 동네로 걸러서 보여줍니다
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("area") || qs.get("dong")) {
+    const v = qs.get("dong") || "";
+    setArea(qs.get("area") || "");
+    if (search && v) { search.value = v; q = v.toLowerCase(); reset(); }
+    requestAnimationFrame(() => document.getElementById("list").scrollIntoView());
+  }
   document.querySelectorAll("#table-type .chip").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll("#table-type .chip").forEach(b => b.classList.toggle("active", b === btn));
     type = btn.dataset.type;
