@@ -94,6 +94,38 @@
     save("recent", r.slice(0, 30));
   };
 
+  // ---------- 카드첩: 열어 본 단지 카드를 모읍니다 (이 브라우저에만) ----------
+  // {단지: 처음 모은 날}. 지역은 단지 코드 앞 두 자리(시도: 30 대전, 36 세종, 11 서울)로 나눠 셉니다.
+  // 카드첩을 처음 여는 기기는 그동안 본 단지(최근 본·관심 단지)로 채워 둡니다.
+  DJ.today = function () {
+    const t = new Date();
+    return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+  };
+  DJ.sido = s => String(s).slice(0, 2);
+  DJ.album = function () {
+    let a = load("album", null);
+    if (!a || typeof a !== "object" || Array.isArray(a)) {
+      a = {};
+      DJ.recent().forEach(r => { if (r && r.s) a[r.s] = DJ.today(); });
+      DJ.favs().forEach(s => { if (!a[s]) a[s] = DJ.today(); });
+      save("album", a);
+    }
+    return a;
+  };
+  // 새로 모은 카드면 그 지역에서 몇 장째인지, 이미 있던 카드면 0
+  DJ.collect = function (s) {
+    const a = DJ.album();
+    if (a[s]) return 0;
+    a[s] = DJ.today();
+    save("album", a);
+    return Object.keys(a).filter(k => DJ.sido(k) === DJ.sido(s)).length;
+  };
+  // 이 지역 단지 목록 중 모은 카드 수
+  DJ.albumCount = function (complexes) {
+    const a = DJ.album();
+    return complexes.reduce((n, c) => n + (a[c.s] ? 1 : 0), 0);
+  };
+
   // ---------- 복사·공유 ----------
   // 누른 그 순간(동기)에 숨긴 글상자로 복사합니다. 앱 안 브라우저·아이폰에서도 되는 방법이라 먼저 쓰고,
   // 안 되면 클립보드 API. 둘 다 안 되면 false
@@ -260,6 +292,25 @@
     return card;
   };
 
+  // 작은 카드 (오늘의 카드·카드첩): 등급과 지수, 이름, 위치, 84㎡ 가격. S·A 는 금박·백금박 카드
+  DJ.miniCard = function (c) {
+    const a = el("a", "mcard g-" + c.g);
+    a.href = DJ.href(c);
+    const top = el("span", "mcard-top");
+    top.append(el("span", "grade g-" + c.g, c.g), el("span", "mcard-score", c.i == null ? "-" : String(c.i)));
+    const foot = el("span", "mcard-foot", c.pt ? "84㎡ " + c.pt : "가격 정보 없음");
+    const facts = [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : ""].filter(Boolean).join(" · ");
+    a.append(top);
+    if (facts) a.append(el("span", "mcard-facts", facts));
+    a.append(el("strong", "mcard-name", c.n), el("span", "mcard-where", DJ.place(c)), foot);
+    if (c.h) a.append(el("span", "mcard-high", "신고가"));
+    a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g}등급 ${c.i == null ? "" : c.i + "점"}`);
+    return a;
+  };
+
+  // 카드첩 알림은 이만큼 모였을 때만 (단지를 열 때마다 뜨면 번거로워서)
+  const ALBUM_MARKS = [1, 10, 30, 50, 100, 200, 300, 500, 1000, 2000];
+
   // ---------- 페이지 공통 동작 ----------
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
@@ -271,6 +322,10 @@
     if (apt) {
       const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade, n: apt.dataset.name, i: apt.dataset.score,
         p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
+      // 카드첩에 모으기 (최근 본 목록에 넣기 전에: 처음 쓰는 기기에서 이 단지가 '첫 카드'로 세어지게)
+      const got = DJ.collect(c.s);
+      if (got && ALBUM_MARKS.includes(got))
+        DJ.toast(got === 1 ? "첫 카드를 카드첩에 모았어요" : `카드첩에 ${got}번째 카드를 모았어요`, "‘관심 단지’ 화면의 카드첩에서 모아 볼 수 있어요");
       DJ.addRecent(c);
       const fav = document.querySelector("[data-fav]");
       if (fav) {
