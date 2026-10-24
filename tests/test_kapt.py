@@ -275,6 +275,9 @@ def test_fee_month_probe_skips_portal_errors_then_gives_up(tmp_path, monkeypatch
     assert f"관리비(공용관리비) {month}" in lines[-1]   # 오류 난 단지를 건너뛰고 달을 찾음
 
     monkeypatch.setattr(fee, "_call", lambda *a: (_ for _ in ()).throw(MolitError("포털 오류: HTTP 에러 (04)")))
+    waits = []
+    monkeypatch.setattr(fee.time, "sleep", waits.append)
     lines.clear()
     fee.collect("k", root, {"30110": "동구"}, budget=60, log=lines.append)
-    assert "포털 오류가 연달아" in lines[-1] and "HTTP 에러 (04)" in lines[-1]
+    assert waits == [fee.COOL] and "쉬었다가 다시" in lines[0]   # 한 번 쉬었다가 다시 해 보고
+    assert "포털 오류가 연달아 와서 이번에는 건너뜁니다" in lines[-1] and "HTTP 에러 (04)" in lines[-1]

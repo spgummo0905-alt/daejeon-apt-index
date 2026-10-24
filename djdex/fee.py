@@ -30,6 +30,7 @@ OPS = ["getHsmpLaborCostInfoV3", "getHsmpOfcrkCostInfoV3", "getHsmpTaxdueInfoV3"
        "getHsmpSafetyCheckUpCostInfoV3", "getHsmpDisasterPreventionCostInfoV3", "getHsmpConsignManageFeeInfoV3"]
 PROBE = 12   # 공개 달을 찾을 때 볼 단지 수
 PROBE_OPS = ("getHsmpLaborCostInfoV3", "getHsmpCleaningCostInfoV3")   # 인건비가 비어 있는 단지도 있어 청소비도 함께 봄
+COOL = 90   # 포털 오류가 연달아 오면 쉬는 초
 LAST = {"text": ""}   # 마지막 응답 앞부분 (공개 달을 못 찾았을 때 무엇이 왔는지 로그로)
 # 금액이 아닌 항목 (단지 코드·이름·날짜 등)
 NOT_MONEY = re.compile(r"(code|name|nm|date|ym|cd)$|^kapt|^search", re.I)
@@ -113,7 +114,7 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
     # 최근 공개 달 찾기: 두 달 전부터 다섯 달 전까지, 목록에서 고르게 뽑은 몇 단지의 인건비로.
     # 한 단지만 보면 그 단지가 공개를 안 했거나 인건비가 비어 있을 때 달을 못 찾습니다 (대전에서 그랬음)
     probe = cs[:: max(1, len(cs) // PROBE)][:PROBE]
-    ym, errs, last_err = None, 0, ""
+    ym, errs, last_err, cooled = None, 0, "", False
     try:
         for back in range(2, 6):
             for c in probe:
@@ -121,11 +122,16 @@ def collect(key: str, kapt_root: Path, districts: dict[str, str], budget: int = 
                     used += 1
                     try:
                         got = _call(s, key, op, c, _months_back(back))
-                    except MolitError as e:   # 포털 오류(HTTP 에러 등)는 세고 다음 단지로. 여섯 번 연달아면 그만
+                    except MolitError as e:   # 포털 오류(HTTP 에러 등)는 세고 다음 단지로
                         errs, last_err = errs + 1, str(e)
-                        if errs >= 6:
+                        if errs >= 6 and cooled:
                             log(f"::warning::[관리비] 포털 오류가 연달아 와서 이번에는 건너뜁니다: {last_err}")
                             return
+                        if errs >= 6:
+                            # 같은 기관 API(단지 정보 등)를 몰아서 부른 직후엔 포털이 잠깐 'HTTP 에러'를 줌: 쉬었다 한 번 더
+                            log(f"::notice::[관리비] 포털 오류가 연달아 와서 {COOL}초 쉬었다가 다시: {last_err}")
+                            time.sleep(COOL)
+                            errs, cooled = 0, True
                         continue
                     errs = 0
                     if _filled(got):
