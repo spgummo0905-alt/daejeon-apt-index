@@ -318,19 +318,17 @@ def test_search_by_dong_station_and_condition(tmp_path):
     assert all(c.get("sm", 1) == 1 for c in data["complexes"])
 
 
-def test_home_3d_price_view(tmp_path):
-    # 메인 지도의 '3D 시세': 누를 때만 3D 라이브러리를 받고, 가까운데 값이 크게 다른 곳(가격 절벽)을 보여줌
+def test_home_price_gap_pairs(tmp_path):
+    # 메인 지도 아래 '가까운데 값이 크게 다른 곳' (3D 시세는 뺐음): 600m 안 1.4배 넘는 두 단지, 차이 단서, 지도에서 잇기
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     html = (out / "index.html").read_text(encoding="utf-8")
-    assert "data-m3d-seg" in html and 'id="m3d"' in html and "data-m3d-cliffs" in html and "static/m3d.js" in html
-    assert html.index('id="kmap"') < html.index('id="m3d"') < html.index("data-m3d-cliffs")
-    js = (out / "static" / "m3d.js").read_text(encoding="utf-8")
-    assert "unpkg.com/deck.gl@9.3.11/" in js and "basemaps.cartocdn.com" in js and "OpenStreetMap" in html
-    assert "function cliffs(" in js and "function clues(" in js and '"dj:kmap"' in js
-    assert '"dj:kmap"' in (out / "static" / "kmap.js").read_text(encoding="utf-8")
-    assert "<script src=\"https://unpkg.com" not in html   # 처음 화면에서는 받지 않음
-
+    assert "data-cliffs" in html and "static/cliffs.js" in html and "가까운데 값이 크게 다른 곳" in html
+    assert html.index('id="kmap"') < html.index("data-cliffs")
+    assert "m3d" not in html and "deck.gl" not in html and not (out / "static" / "m3d.js").exists()
+    js = (out / "static" / "cliffs.js").read_text(encoding="utf-8")
+    assert "function cliffs(" in js and "function clues(" in js and "DJ.kmap.focusPair" in js
+    assert "focusPair" in (out / "static" / "kmap.js").read_text(encoding="utf-8")
 
 def test_hill_check_on_apt_page_and_data(tmp_path):
     # 언덕 체크: 주변 고저차 구간, 역과 높이 비교, 역 → 단지 단면. 카드 메모·조건으로 찾기에도

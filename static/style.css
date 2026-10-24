@@ -2373,64 +2373,27 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
   body.print-course .cs-stop { break-inside: avoid; }
 }
 
-/* ===== 3D 시세 (메인 지도, m3d.js) ===== */
-.m3d-seg .seg-btn { display: inline-flex; align-items: center; gap: 5px; }
-.m3d-seg .ic { width: 15px; height: 15px; }
-.kmap-wrap.m3d-on #kmap, .kmap-wrap.m3d-on .kmap-card, .kmap-wrap.m3d-on .map-fallback { display: none; }
-.m3d { position: relative; height: 560px; border-radius: 12px; border: 1px solid var(--border); overflow: hidden;
-  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--bg)); }
-.m3d-canvas { position: absolute; inset: 0; }
-.m3d-canvas canvas { touch-action: none; }
-.m3d-load { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--text-2); font-size: 14px; }
-.m3d-tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
-.m3d-btn { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); font: inherit; font-size: 12.5px; font-weight: 700;
-  color: var(--text); cursor: pointer; background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.m3d-btn:hover { border-color: var(--text-2); }
-.m3d-btn.active { background: var(--navy); color: var(--on-navy); border-color: var(--navy); }
-.m3d-legend { position: absolute; left: 10px; bottom: 30px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 12px; }
-.m3d-legend > b { display: block; margin-bottom: 6px; font-size: 12.5px; }
-.m3d-lg-row { display: flex; flex-wrap: wrap; gap: 4px 10px; max-width: 260px; }
-.m3d-lg-i { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.m3d-lg-i i { width: 12px; height: 12px; border-radius: 3px; }
-.m3d-tip { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 2px; max-width: 220px; padding: 8px 10px; border-radius: 10px; pointer-events: none;
-  background: rgba(13, 20, 32, .92); color: #fff; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
-.m3d-tip b { font-size: 13px; }
-.m3d-tip span { color: rgba(255,255,255,.78); }
-.m3d-card { position: absolute; top: 10px; left: 10px; z-index: 1; display: flex; align-items: center; gap: 12px; max-width: min(440px, calc(100% - 20px));
-  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 10px 28px rgba(8,12,20,.18); }
-.m3d-card > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.m3d-card .m3d-card-n { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.m3d-card .muted { font-size: 12.5px; }
-.m3d-card .btn { flex: none; }
-.m3d-attr { position: absolute; right: 8px; bottom: 6px; margin: 0; padding: 2px 6px; border-radius: 6px; font-size: 10.5px; color: var(--text-2);
-  background: color-mix(in srgb, var(--surface) 80%, transparent); }
-.m3d-cliffs { margin-top: 14px; }
-.m3d-cliffs h3 { margin: 0 0 4px; font-size: 17px; }
-.m3d-cliffs > p { margin: 0 0 10px; font-size: 13.5px; }
-.m3d-cliffs ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-.m3d-cliff { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); }
-.m3d-cl-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-size: 14px; }
-.m3d-cl-h a { font-weight: 700; color: var(--text); }
-.m3d-cl-p { font-variant-numeric: tabular-nums; color: var(--accent); }
-.m3d-cl-vs { color: var(--muted); }
-.m3d-cl-m { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
-.m3d-cl-act { display: flex; gap: 6px; margin-top: auto; }
-.m3d-cl-act .chip { cursor: pointer; text-decoration: none; }
-@media (max-width: 720px) {
-  .m3d { height: 480px; }
-  .m3d-tools { flex-direction: column; align-items: flex-end; }
-  .m3d-btn { height: 30px; padding: 0 10px; font-size: 12px; }
-  .m3d-legend { left: 8px; right: 8px; bottom: 26px; padding: 7px 10px; display: flex; align-items: center; gap: 8px; }
-  .m3d-legend > b { margin: 0; font-size: 11.5px; white-space: nowrap; }
-  .m3d-lg-row { max-width: none; gap: 3px 8px; font-size: 11px; }
-  .m3d-lg-i i { width: 10px; height: 10px; }
-  .m3d-hint { display: none; }
-  .m3d-card { top: auto; bottom: 28px; left: 8px; right: 8px; max-width: none; }
-  .m3d-card:not([hidden]) ~ .m3d-legend { display: none; }
-  .m3d-cliffs ol { grid-template-columns: 1fr; }
-}
-@media print { .m3d, .m3d-seg { display: none !important; } }
+/* ===== 가까운데 값이 크게 다른 곳 (메인 지도 아래, cliffs.js) ===== */
+.cliffs { margin-top: 16px; }
+.cliffs h3 { margin: 0 0 4px; font-size: 17px; }
+.cliffs > p { margin: 0 0 10px; font-size: 13.5px; }
+.cliffs ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.cliff { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); }
+.cliff.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.cl-pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: baseline; margin: 0; }
+.cl-pair dt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.cl-pair dt a { font-weight: 700; color: var(--text); }
+.cl-pair dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cl-pair .hi { color: var(--pos); } .cl-pair .lo { color: var(--neg); }
+.cl-gap { margin: 0; font-size: 13px; font-weight: 700; }
+.cl-why { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+.cl-act { display: flex; gap: 6px; margin-top: auto; }
+.cl-act .chip { cursor: pointer; text-decoration: none; font-size: 12.5px; }
+.cliffs .more-btn { margin-top: 10px; }
+@media (max-width: 720px) { .cliffs ol { grid-template-columns: 1fr; } }
+/* 카카오 지도 위 두 단지 이름표 */
+.kpair { padding: 4px 9px; border-radius: 999px; background: var(--surface); border: 2px solid var(--gold); color: var(--text); font-size: 12.5px; font-weight: 800;
+  white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.18); transform: translateY(-34px); }
 
 /* ===== 언덕 체크 (단지 페이지 입지) ===== */
 .hill { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
