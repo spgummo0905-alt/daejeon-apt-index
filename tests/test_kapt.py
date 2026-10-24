@@ -331,3 +331,23 @@ def test_collect_stops_after_cooldowns_run_out(tmp_path, monkeypatch):
     kapt.collect("k", {"11110": "종로구"}, tmp_path / "kapt", log=logs.append, cools=(60, 180))
     assert waits == [60, 180]
     assert sum("받기 실패" in m for m in logs) == 9 and any("여기까지 받습니다" in m for m in logs)
+
+
+def test_fee_collects_complexes_with_kapt_info_first(tmp_path, monkeypatch):
+    # 서울: 관리비를 목록 순서대로 받았더니 단지 정보가 없는(화면에 붙지 않는) 단지만 받아, 받은 261곳 중 3곳만 화면에 나왔음
+    import json
+    from djdex import fee
+    root = tmp_path / "kapt"
+    (root / "list").mkdir(parents=True)
+    (root / "info").mkdir(parents=True)
+    (root / "list" / "11110.json").write_text(json.dumps([{"kaptCode": f"K{i}"} for i in range(10)]), encoding="utf-8")
+    (root / "info" / "K7.json").write_text(json.dumps({"kaptCode": "K7", "kaptdaCnt": "500", "_at": "2026-10-01"}))
+    (root / "info" / "K9.json").write_text(json.dumps({"kaptCode": "K9", "kaptdaCnt": "300", "_at": "2026-10-01"}))
+    (root / "info" / "K1.json").write_text(json.dumps({"_blank": "2026-10-01"}))   # 빈 응답 표시는 정보 없음
+    monkeypatch.setattr(fee, "_call", lambda s, key, op, code, ym: {"pay": "100"})
+    monkeypatch.setattr(fee.time, "sleep", lambda *_: None)
+    lines = []
+    # 공개 달 찾기 1번 + 단지 둘(17번씩) 만큼만 부를 수 있을 때
+    fee.collect("k", root, {"11110": "종로구"}, budget=1 + 2 * len(fee.OPS), log=lines.append)
+    got = sorted(p.parent.name for p in (root / "fee").glob("*/*.json"))
+    assert got == ["K7", "K9"]
