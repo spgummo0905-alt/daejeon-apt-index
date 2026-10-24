@@ -281,3 +281,53 @@ def test_fee_month_probe_skips_portal_errors_then_gives_up(tmp_path, monkeypatch
     fee.collect("k", root, {"30110": "동구"}, budget=60, log=lines.append)
     assert waits == [fee.COOL] and "쉬었다가 다시" in lines[0]   # 한 번 쉬었다가 다시 해 보고
     assert "포털 오류가 연달아 와서 이번에는 건너뜁니다" in lines[-1] and "HTTP 에러 (04)" in lines[-1]
+
+
+def test_collect_cools_down_on_portal_errors_instead_of_stopping(tmp_path, monkeypatch):
+    # 서울: 관리비를 몰아서 받은 직후 단지 정보가 'HTTP 에러 (04)'로 세 번 연달아 실패 → 매번 한 곳만 받고 멈췄음
+    import json
+    from djdex import kapt
+    from djdex.molit import MolitError
+    root = tmp_path / "kapt"
+    codes = [f"A{i}" for i in range(1, 9)]
+    monkeypatch.setattr(kapt, "fetch_list", lambda key, sgg, s: [{"kaptCode": c} for c in codes])
+    rested = {"done": False}
+
+    def fake_get(s, url, params):
+        if not rested["done"]:
+            raise MolitError("포털 오류: HTTP 에러 (04)")
+        return [{"kaptCode": params["kaptCode"], "kaptdaCnt": "300"}], 1
+
+    def fake_sleep(sec):
+        if sec >= 60:
+            rested["done"] = True   # 쉬고 나면 다시 받아짐
+
+    monkeypatch.setattr(kapt, "_get", fake_get)
+    monkeypatch.setattr(kapt.time, "sleep", fake_sleep)
+    logs = []
+    kapt.collect("k", {"11110": "종로구"}, root, log=logs.append, cools=(60, 180))
+    assert any("60초 쉬었다가" in m for m in logs)
+    assert "이번에 5곳 받음" in logs[-1]   # 처음 세 곳은 실패(다음 실행 때), 쉬고 난 뒤 나머지 다섯 곳
+    assert not (root / "info" / "A1.json").exists() and json.loads((root / "info" / "A8.json").read_text())["kaptdaCnt"] == "300"
+    # 배포 전 단계(쉬지 않음)는 예전처럼 세 번 연달아 실패하면 멈춤
+    rested["done"] = False
+    logs.clear()
+    kapt.collect("k", {"11110": "종로구"}, tmp_path / "k2", log=logs.append)
+    assert any("여기까지 받습니다" in m for m in logs) and "이번에 0곳 받음" in logs[-1]
+
+
+def test_collect_stops_after_cooldowns_run_out(tmp_path, monkeypatch):
+    from djdex import kapt
+    from djdex.molit import MolitError
+    monkeypatch.setattr(kapt, "fetch_list", lambda key, sgg, s: [{"kaptCode": f"A{i}"} for i in range(20)])
+
+    def fake_get(s, url, params):
+        raise MolitError("포털 오류: HTTP 에러 (04)")
+
+    waits = []
+    monkeypatch.setattr(kapt, "_get", fake_get)
+    monkeypatch.setattr(kapt.time, "sleep", waits.append)
+    logs = []
+    kapt.collect("k", {"11110": "종로구"}, tmp_path / "kapt", log=logs.append, cools=(60, 180))
+    assert waits == [60, 180]
+    assert sum("받기 실패" in m for m in logs) == 9 and any("여기까지 받습니다" in m for m in logs)

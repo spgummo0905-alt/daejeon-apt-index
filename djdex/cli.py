@@ -286,7 +286,7 @@ def cmd_slow(cfg, args) -> None:
     if cfg.collect.get("collect_kapt"):
         # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
         try:
-            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=480)
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=480, cools=kapt.SLOW_COOLS)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
     if os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
