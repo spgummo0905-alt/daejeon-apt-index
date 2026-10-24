@@ -866,7 +866,7 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
 
 
 THEME_ROWS = 400  # 구별로 걸러도 끝까지 볼 수 있게 넉넉히 (화면엔 12곳씩, 나머지는 숨겨 둠)
-APP_PAGES = ["compare", "finder", "my"]
+APP_PAGES = ["compare", "finder", "my", "cards"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 
 

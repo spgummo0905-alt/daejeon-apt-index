@@ -292,8 +292,32 @@
     return card;
   };
 
-  // 작은 카드 (오늘의 카드·카드첩): 등급과 지수, 이름, 위치, 84㎡ 가격. S·A 는 금박·백금박 카드
+  // 선 아이콘 (base.html 의 symbol)
+  DJ.icon = function (id) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg"), use = document.createElementNS(NS, "use");
+    svg.setAttribute("class", "ic"); svg.setAttribute("aria-hidden", "true");
+    use.setAttribute("href", "#i-" + id);
+    svg.append(use);
+    return svg;
+  };
+  // 임장 메모: 현장에 가기 전 이 단지에서 확인할 것. 카드 뒷면에 세 줄까지 (역 → 시세 흐름 → 전세가율 → 학원가 → 주차 → 연식 순)
+  DJ.memo = function (c) {
+    const out = [], f = c.f || {};
+    if (c.stn && f.subway != null) out.push(["역", `${c.stn} 직선 ${f.subway < 1000 ? Math.round(f.subway) + "m" : (f.subway / 1000).toFixed(1) + "km"}`]);
+    if (c.h) out.push(["시세", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
+    else if (c.dd != null && c.dd <= -5) out.push(["시세", `고점 대비 ${Math.round(c.dd)}%`]);
+    if (c.jr) out.push(["전세가율", c.jr + "%"]);
+    if (c.hn && c.hm != null) out.push(["학원가", `${c.hn} ${c.hm}분`]);
+    if (c.pk) out.push(["주차", `세대당 ${c.pk}대`]);
+    const age = c.y ? new Date().getFullYear() - c.y : null;
+    if (age != null && age >= 30) out.push(["연식", `${age}년 차 · 재건축 연한`]);
+    return out.slice(0, 3);
+  };
+  // 작은 카드 (오늘의 카드·카드첩): 앞면은 등급과 지수, 이름, 위치, 84㎡ 가격 (누르면 단지 페이지).
+  // 오른쪽 아래 버튼으로 뒤집으면 '임장 메모'. S·A 는 금박·백금박 카드
   DJ.miniCard = function (c) {
+    const wrap = el("div", "mcw g-" + c.g);
     const a = el("a", "mcard g-" + c.g);
     a.href = DJ.href(c);
     const top = el("span", "mcard-top");
@@ -305,7 +329,130 @@
     a.append(el("strong", "mcard-name", c.n), el("span", "mcard-where", DJ.place(c)), foot);
     if (c.h) a.append(el("span", "mcard-high", "신고가"));
     a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g}등급 ${c.i == null ? "" : c.i + "점"}`);
-    return a;
+    wrap.append(a);
+    wrap.link = a;
+    const lines = DJ.memo(c);
+    if (!lines.length) return wrap;
+    const memo = el("div", "mcard mcard-memo g-" + c.g);
+    memo.hidden = true;
+    memo.append(el("b", "mm-title", "임장 메모"), el("span", "mm-name", c.n));
+    const dl = el("dl", "mm-list");
+    lines.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v)));
+    const go = el("a", "mm-go", "단지 자세히 →");
+    go.href = DJ.href(c);
+    memo.append(dl, go);
+    const turn = el("button", "mcard-turn");
+    turn.type = "button";
+    turn.append(DJ.icon("book"));
+    const label = on => { turn.setAttribute("aria-pressed", on ? "true" : "false"); turn.setAttribute("aria-label", on ? `${c.n} 카드 앞면 보기` : `${c.n} 임장 메모 보기`); turn.title = on ? "카드 앞면" : "임장 메모"; };
+    label(false);
+    turn.addEventListener("click", () => {
+      const toMemo = memo.hidden;
+      const swap = () => { memo.hidden = !toMemo; a.hidden = toMemo; label(toMemo); };
+      if (DJ.calm) { swap(); return; }
+      wrap.classList.add("turning");   // 90도까지 돌아가면 면을 바꾸고 마저 돌아옴
+      setTimeout(() => { swap(); wrap.classList.remove("turning"); wrap.classList.add("turned"); setTimeout(() => wrap.classList.remove("turned"), 220); }, 150);
+    });
+    wrap.append(memo, turn);
+    return wrap;
+  };
+
+  // ---------- 임장 배지 ----------
+  // 모으는 재미가 있되, 배지마다 '임장에 왜 필요한지'가 있습니다. 배지를 모으다 보면 임장 체크리스트를 한 번씩 해 보게 됩니다.
+  // seen: 단지 페이지에서 본 단지 {단지: [등급, 구, 동, 신고가 1/0]}, acts: 해 본 일 {이름: 횟수}, days: 오늘의 카드를 연 날, badges: 받은 배지 {id: 날}
+  DJ.seen = function () {
+    let m = load("seen", null);
+    if (!m || typeof m !== "object") {   // 처음: 그동안 본 단지(최근 본)로 채움
+      m = {};
+      DJ.recent().forEach(r => { if (r && r.s) m[r.s] = [r.g || "", r.gu || "", "", 0]; });
+      save("seen", m);
+    }
+    return m;
+  };
+  DJ.note = function (s, g, gu, dong, high) {
+    const m = DJ.seen();
+    if (!m[s] || !m[s][2]) { m[s] = [g || "", gu || "", dong || "", high ? 1 : 0]; save("seen", m); }
+  };
+  DJ.act = function (name) {
+    const a = load("acts", {});
+    a[name] = (a[name] || 0) + 1;
+    save("acts", a);
+    DJ.checkBadges();
+  };
+  DJ.markDay = function () {
+    const days = load("days", []);
+    if (!days.includes(DJ.today())) { days.push(DJ.today()); save("days", days.slice(-60)); }
+  };
+  const seenList = st => Object.entries(st.seen);
+  const most = arr => { const m = {}; arr.forEach(k => { m[k] = (m[k] || 0) + 1; }); return Math.max(0, ...Object.values(m)); };
+  DJ.BADGES = [
+    { id: "first", group: "둘러보기", icon: "home", name: "첫 단지", goal: 1, n: st => seenList(st).length,
+      how: "단지 페이지를 하나 열어 봐요.", why: "한 곳을 숫자와 지도로 제대로 보고 나면, 현장에서 무엇을 확인할지가 정해져요.",
+      tip: "현장에서 볼 것이 정해져요", go: ["랭킹에서 고르기", "rank.html"] },
+    { id: "dong", group: "둘러보기", icon: "map", name: "동네 한 바퀴", goal: 3,
+      n: st => most(seenList(st).filter(([, v]) => v[2]).map(([s, v]) => DJ.sido(s) + v[1] + v[2])),
+      how: "같은 동의 단지 세 곳을 열어 봐요.", why: "임장은 한 단지가 아니라 동네 안에서 견줘 보는 일이에요. 옆 단지와 값 차이가 보여야 적정가가 보여요.",
+      tip: "옆 단지와 견줘야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
+    { id: "ten", group: "둘러보기", icon: "walk", name: "발품 10곳", goal: 10, n: st => seenList(st).length,
+      how: "단지 열 곳을 열어 봐요.", why: "많이 볼수록 '이 동네에서 이 값이면 싸다·비싸다'를 가늠하는 눈이 생겨요.",
+      tip: "많이 볼수록 시세 감이 생겨요", go: ["랭킹에서 고르기", "rank.html"] },
+    { id: "gus", group: "둘러보기", icon: "pin", name: "세 동네 시세", goal: 3,
+      n: st => new Set(seenList(st).filter(([, v]) => v[1]).map(([s, v]) => DJ.sido(s) + v[1])).size,
+      how: "서로 다른 구(세종은 동) 세 곳의 단지를 열어 봐요.", why: "다른 지역 시세를 알아야 내 후보 지역이 어디쯤인지, 같은 돈으로 어디까지 갈 수 있는지 보여요.",
+      tip: "내 후보 지역의 위치가 보여요", go: ["지역별 요약 보기", "index.html#world"] },
+    { id: "top", group: "둘러보기", icon: "rank", name: "상급지 기준", goal: 3, n: st => seenList(st).filter(([, v]) => v[0] === "S").length,
+      how: "S등급 단지 세 곳을 열어 봐요.", why: "지역 최상위 단지를 알아야 다른 단지가 그보다 무엇이 모자라고 얼마나 싼지 가늠할 기준이 생겨요.",
+      tip: "다른 단지를 잴 기준이 생겨요", go: ["랭킹 보기", "rank.html"] },
+    { id: "trade", group: "따져보기", icon: "receipt", name: "실거래 확인", goal: 1, n: st => st.acts.trade || 0,
+      how: "단지 페이지에서 실거래 표나 가격 그래프의 기간·보기 방식을 바꿔 봐요.", why: "호가가 아니라 실제로 계약된 값이 판단의 출발점이에요. 언제, 몇 층이, 얼마에 팔렸는지가 협상 근거가 돼요.",
+      tip: "실제 계약된 값이 협상 근거예요" },
+    { id: "jeonse", group: "따져보기", icon: "coin", name: "전세가율 체크", goal: 1, n: st => st.acts.jeonse || 0,
+      how: "실거래 표의 전세 탭이나 그래프의 '전세·갭'을 열어 봐요.", why: "전세가율은 매매가를 받쳐 주는 힘이에요. 너무 낮으면 하락에 약하고, 높으면 필요한 자기 돈(갭)이 작아요.",
+      tip: "매매가를 받쳐 주는 힘을 봐요" },
+    { id: "loc", group: "따져보기", icon: "train", name: "입지 동선", goal: 1, n: st => st.acts.loc || 0,
+      how: "단지 페이지의 '입지는 어떤가' 지도를 마지막 단계까지 넘겨 봐요.", why: "역까지 걸어 보고, 학교 가는 길과 마트·병원을 확인하는 게 현장 임장의 기본 동선이에요. 지도로 먼저 동선을 짜 두면 하루에 더 많이 봐요.",
+      tip: "현장 동선을 미리 짤 수 있어요" },
+    { id: "cmp", group: "따져보기", icon: "compare", name: "나란히 비교", goal: 1, n: st => st.acts.cmp || 0,
+      how: "단지 비교에서 두 곳 이상을 견줘 봐요.", why: "후보를 나란히 놓아야 값 차이의 이유(연식·입지·세대수)가 보여요.",
+      tip: "값 차이의 이유가 보여요", go: ["단지 비교", "compare.html"] },
+    { id: "hot", group: "따져보기", icon: "fire", name: "시장 흐름", goal: 3, n: st => seenList(st).filter(([, v]) => v[3]).length,
+      how: "최근 신고가가 난 단지 세 곳을 열어 봐요.", why: "신고가가 나오는 곳은 지금 수요가 몰리는 곳이에요. 현장 분위기와 매물 상황을 먼저 확인할 곳이에요.",
+      tip: "수요가 몰리는 곳을 먼저 봐요", go: ["동네 온도 보기", "index.html#heat"] },
+    { id: "find", group: "정리하기", icon: "filter", name: "내 조건 정리", goal: 1, n: st => st.acts.find || 0,
+      how: "조건으로 찾기에서 예산이나 생활 조건을 골라 봐요.", why: "예산과 출퇴근·학군 조건을 먼저 정해야 임장 갈 지역이 좁혀져요.",
+      tip: "임장 갈 지역이 좁혀져요", go: ["조건으로 찾기", "finder.html"] },
+    { id: "fav", group: "정리하기", icon: "star", name: "임장 후보 3곳", goal: 3, n: st => st.favs.length,
+      how: "관심 단지를 세 곳 저장해 봐요.", why: "후보를 추려 두면 가까운 단지끼리 묶어 하루 동선으로 돌 수 있어요.",
+      tip: "하루 동선으로 묶어 돌 수 있어요" },
+    { id: "days", group: "정리하기", icon: "calendar", name: "꾸준한 시세 확인", goal: 5, n: st => st.days.length,
+      how: "서로 다른 날 다섯 번, 카드첩의 오늘의 임장 후보를 열어 봐요.", why: "시세는 한 번이 아니라 꾸준히 봐야 흐름이 보여요. 자주 볼수록 급매도 알아봐요.",
+      tip: "꾸준히 봐야 흐름이 보여요", go: ["오늘의 임장 후보", "cards.html#today"] },
+    { id: "dongall", group: "정리하기", icon: "flag", name: "동네 완주", goal: 1,
+      n: st => {   // 세 곳 이상인 동의 단지 카드를 모두 모음 (단지 자료가 있을 때만 셈)
+        if (!st.data) return null;
+        const g = {};
+        st.data.complexes.forEach(c => { const k = c.gu + "|" + c.d; (g[k] || (g[k] = [])).push(c.s); });
+        return Object.values(g).filter(v => v.length >= 3 && v.every(s => st.album[s])).length;
+      },
+      how: "단지가 세 곳 이상인 동 하나의 카드를 모두 모아 봐요.", why: "한 동네를 빠짐없이 보면 그 동네 시세표가 머릿속에 그려지고, 매물이 나왔을 때 바로 싼지 비싼지 알아봐요.",
+      tip: "동네 시세표가 머릿속에 그려져요", go: ["카드첩 보기", "cards.html#album"] },
+  ];
+  DJ.badgeState = data => ({ seen: DJ.seen(), favs: DJ.favs(), acts: load("acts", {}), days: load("days", []), album: DJ.album(), data });
+  DJ.earned = () => load("badges", {});
+  // 새로 받은 배지가 있으면 저장하고 알림. 여러 개면 한 번에 묶어서
+  DJ.checkBadges = function (data) {
+    const st = DJ.badgeState(data), got = DJ.earned(), fresh = [];
+    DJ.BADGES.forEach(b => {
+      if (got[b.id]) return;
+      const n = b.n(st);
+      if (n != null && n >= b.goal) { got[b.id] = DJ.today(); fresh.push(b); }
+    });
+    if (!fresh.length) return fresh;
+    save("badges", got);
+    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 볼 수 있어요");
+    else DJ.toast(`임장 배지 ${fresh.length}개를 받았어요`, fresh.map(b => b.name).join(", "));
+    document.dispatchEvent(new Event("dj:badges"));
+    return fresh;
   };
 
   // 카드첩 알림은 이만큼 모였을 때만 (단지를 열 때마다 뜨면 번거로워서)
@@ -315,7 +462,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
     document.querySelectorAll(".tabbar a").forEach(a => {
-      if (a.dataset.tab === page || (page === "index" && a.dataset.tab === "map" && location.hash === "#map")) a.classList.add("on");
+      if (a.dataset.tab === page || (page === "cards" && a.dataset.tab === "my") ||
+          (page === "index" && a.dataset.tab === "map" && location.hash === "#map")) a.classList.add("on");
     });
     // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼
     const apt = document.querySelector("[data-apt]");
@@ -324,9 +472,11 @@
         p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
       // 카드첩에 모으기 (최근 본 목록에 넣기 전에: 처음 쓰는 기기에서 이 단지가 '첫 카드'로 세어지게)
       const got = DJ.collect(c.s);
-      if (got && ALBUM_MARKS.includes(got))
-        DJ.toast(got === 1 ? "첫 카드를 카드첩에 모았어요" : `카드첩에 ${got}번째 카드를 모았어요`, "‘관심 단지’ 화면의 카드첩에서 모아 볼 수 있어요");
       DJ.addRecent(c);
+      DJ.note(c.s, c.g, c.gu, apt.dataset.dong, apt.dataset.high === "1");
+      // 배지 알림이 뜨면 카드 알림은 생략 (두 개가 한꺼번에 뜨지 않게)
+      if (!DJ.checkBadges().length && got && ALBUM_MARKS.includes(got))
+        DJ.toast(got === 1 ? "첫 카드를 카드첩에 모았어요" : `카드첩에 ${got}번째 카드를 모았어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 위)에서 모아 볼 수 있어요");
       const fav = document.querySelector("[data-fav]");
       if (fav) {
         const label = fav.querySelector("span"); // 아이콘만 있는 버튼이면 글자 대신 aria-label 로 상태를 알립니다
@@ -342,10 +492,17 @@
           const on = DJ.toggleFav(c.s);
           paint(on);
           if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
-          if (on) DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다");
+          if (on) { DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다"); DJ.checkBadges(); }
         });
       }
     }
+    // 임장 배지: 실거래 표·가격 그래프를 넘겨 보면 '실거래 확인', 전세 쪽을 열면 '전세가율 체크'
+    document.addEventListener("click", e => {
+      const t = e.target.closest && e.target.closest("[data-pc-mode], [data-pc-years], [data-trade-kind]");
+      if (!t) return;
+      DJ.act("trade");
+      if (t.dataset.pcMode === "gap" || t.dataset.tradeKind === "j") DJ.act("jeonse");
+    });
     document.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", () =>
       DJ.share(document.title, b.dataset.share || "", b.dataset.url || location.href)));
     // 검색창: 고르면 단지 페이지로 이동

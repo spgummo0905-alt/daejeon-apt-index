@@ -51,6 +51,7 @@
   });
 
   function render(d) {
+    if (picked.length >= 2 && DJ.act) DJ.act("cmp");   // 임장 배지 '나란히 비교'
     const box = document.getElementById("picked");
     box.replaceChildren();
     picked.forEach(s => {

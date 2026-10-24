@@ -15,7 +15,7 @@ REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/"}
 # 단지 페이지에 있어야 하는 화면 요소 (한눈에 보기 타일, 관련 점수 줄, 평형별 시세)
 MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"'}
 # 모든 화면에 있어야 하는 요소 (지역 고르기 버튼, 최근 본 단지 버튼)
-COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "오늘의 카드": 'id="today"'}
+COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "메뉴에 카드첩": 'href="cards.html"'}
 # 수집 자료가 단지 페이지에 반영된 수 (전체 단지 페이지를 열어 셉니다)
 FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
           "공급면적": lambda h: "공급면적 정보가 없어" not in h,
@@ -70,10 +70,11 @@ def main() -> None:
             apts = re.findall(r"<loc>[^<]*/apt/([^<]*)</loc>", sm.text) if sm.ok else []
             out["단지 페이지"] = len(apts)
             out |= {k: v in html for k, v in COMMON.items()}
-            my = s.get(url + "my.html", timeout=30)
-            out["카드첩"] = my.ok and 'id="album"' in my.text and "내 카드첩" in my.text
-            js = s.get(url + "static/home.js", timeout=30)
-            out["오늘의 카드 코드"] = js.ok and "todayCards" in js.text
+            cards = s.get(url + "cards.html", timeout=30)
+            out["카드첩 화면"] = cards.ok and all(k in cards.text for k in ('id="today"', 'id="badges"', 'id="album"'))
+            out["메인에 오늘의 카드 없음"] = 'id="today"' not in html
+            js = s.get(url + "static/cards.js", timeout=30)
+            out["임장 후보 코드"] = js.ok and "pickToday" in js.text
             intro = s.get(url + "intro.html", timeout=30)
             out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else "",
                            "뜨거운 동네 넘기기": "data-hot-json" in intro.text}

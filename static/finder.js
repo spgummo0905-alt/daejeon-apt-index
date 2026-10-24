@@ -135,7 +135,7 @@
     if (sub) b.append(el("span", "", sub));
     if (n != null) b.append(el("em", "", n.toLocaleString() + "곳"));
     if (n === 0 && !on) b.classList.add("zero");
-    b.addEventListener("click", () => { onClick(); changed(); });
+    b.addEventListener("click", () => { onClick(); changed(); if (DJ.act) DJ.act("find"); });   // 임장 배지 '내 조건 정리'
     return b;
   }
   const grid = (cls, ...kids) => { const g = el("div", "sv-opts " + (cls || "")); g.append(...kids); return g; };

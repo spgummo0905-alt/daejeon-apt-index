@@ -14,7 +14,7 @@
 
 {% set fresh = recent[:5] %}{# 메인 카드 펼침 목록 #}
 <div class="apt-hero">
-<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}"><div class="mc-in">
+<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}" data-high="{{ 1 if c.new_high_recent else 0 }}"><div class="mc-in">
   <div class="mc-top">
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
