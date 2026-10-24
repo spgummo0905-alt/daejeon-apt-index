@@ -53,7 +53,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "favicon.svg").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 7  # 단지 비교, 조건으로 찾기, 관심 단지, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 8  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -220,21 +220,35 @@ def test_fee_rank_needs_enough_complexes_and_range():
     assert site.FEE_RANGE[1] <= 4000 and site.RANK_MIN >= 10
 
 
-def test_today_cards_and_album(tmp_path):
-    # 수집 요소: 메인의 '오늘의 카드' 세 장(연 카드는 카드첩으로), 관심 단지 화면의 '내 카드첩'
+def test_cards_page_today_badges_album(tmp_path):
+    # 수집 요소는 메인이 아니라 따로 '카드첩' 화면에: 오늘의 임장 후보 세 장, 임장 배지, 내 카드첩
+    import re
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert 'id="today"' in index and "data-today-row" in index and "data-album-count" in index
-    assert index.index('id="today"') < index.index('id="my-strip"')   # 이번 달 숫자 바로 아래
+    assert 'id="today"' not in index and "cards.html" in index   # 메인엔 없고 메뉴에만
+    cards = (out / "cards.html").read_text(encoding="utf-8")
+    for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 임장 후보", "임장 배지", "내 카드첩", "static/cards.js"):
+        assert sec in cards, sec
+    assert cards.index('id="today"') < cards.index('id="badges"') < cards.index('id="album"')
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'id="album"' in my and "내 카드첩" in my and "data-album-areas" in my and "구별로 모은 카드" in my
-    assert my.index('id="album"') < my.index('id="favs"')
+    assert 'id="album"' not in my and 'class="to-cards" href="cards.html"' in my   # 관심 단지 화면은 카드첩으로 가는 카드만
+    assert my.index('class="to-cards"') < my.index('id="favs"')
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
-    assert "DJ.collect = function" in app and "DJ.miniCard = function" in app
+    assert "DJ.collect = function" in app and "DJ.miniCard = function" in app and "DJ.memo = function" in app
     assert app.index("DJ.collect(c.s)") < app.index("DJ.addRecent(c)")   # 처음 쓰는 기기에서 '첫 카드'로 세어지게
-    home = (out / "static" / "home.js").read_text(encoding="utf-8")
-    assert "todayCards" in home and '"today-" + DJ.sido' in home   # 지역마다 따로 정함
-    # 단지 자료(complexes.json)의 단지 코드 앞 두 자리로 지역을 나눔 (대전 30)
-    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
-    assert all(len(c["s"]) > 2 for c in data["complexes"])
+    # 배지마다 '어떻게 받나요'와 '임장에 왜 필요할까요'가 있어야 함 (재미만 있는 배지는 두지 않음)
+    block = app[app.index("DJ.BADGES = ["):app.index("DJ.badgeState")]
+    ids = re.findall(r'\{ id: "(\w+)"', block)
+    assert len(ids) == len(set(ids)) == 14
+    assert block.count("how: ") == block.count("why: ") == block.count("tip: ") == 14
+    cjs = (out / "static" / "cards.js").read_text(encoding="utf-8")
+    assert "pickToday" in cjs and '"picks-" + DJ.sido' in cjs   # 지역마다 따로 정함
+    for k in ("비교 후보", "흐름 확인", "가성비 후보"):
+        assert k in cjs
+    # 실거래·전세·입지 지도·비교·조건 찾기에서 한 일을 배지로 셈
+    assert 'DJ.act("trade")' in app and 'DJ.act("jeonse")' in app
+    assert 'DJ.act("loc")' in (out / "static" / "aptmap.js").read_text(encoding="utf-8")
+    assert 'DJ.act("cmp")' in (out / "static" / "compare.js").read_text(encoding="utf-8")
+    assert 'DJ.act("find")' in (out / "static" / "finder.js").read_text(encoding="utf-8")
+    assert 'data-high="' in (next((out / "apt").glob("*.html"))).read_text(encoding="utf-8")

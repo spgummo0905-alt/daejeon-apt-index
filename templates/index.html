@@ -72,18 +72,6 @@
   {% endif %}
 </section>
 
-{# 오늘의 카드: 하루 한 번 뒤집어 보는 카드 세 장. 연 카드는 카드첩(관심 단지 화면)에 모입니다 (home.js) #}
-<section class="panel today" id="today" aria-labelledby="today-title">
-  <div class="today-text">
-    <p class="eyebrow">오늘의 카드</p>
-    <h2 id="today-title">오늘 열어 볼 카드 세 장</h2>
-    <p class="muted">아직 안 본 단지 위주로 하루에 세 장씩 나와요. 연 카드는 카드첩에 모입니다.</p>
-    <p class="today-count"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>카드첩 <b data-album-count>…</b></p>
-    <p class="today-done" data-today-done hidden>오늘 카드를 다 열었어요. 내일 새 카드 세 장이 나와요. <a href="my.html#album">카드첩 보기 →</a></p>
-  </div>
-  <div class="today-row" data-today-row aria-live="polite"></div>
-</section>
-
 <section class="panel my-strip" id="my-strip" hidden>
   <div class="panel-head row-between"><h2>관심 단지</h2><a href="my.html">전체 보기 →</a></div>
   <div class="strip" id="my-strip-list"></div>

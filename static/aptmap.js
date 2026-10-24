@@ -96,6 +96,7 @@
   function go(i) {
     cur = i;
     const st = STEPS[i];
+    if (i === STEPS.length - 1 && window.DJ && DJ.act) DJ.act("loc");   // 임장 배지 '입지 동선': 마지막 단계까지 봄
     root.querySelectorAll(".lm-tab").forEach((b, k) => { b.classList.toggle("on", k === i); b.setAttribute("aria-pressed", k === i); });
     // 몇 번째 지도인지: 점으로 (지금 것은 길게)
     const count = root.querySelector("[data-lm-count]");
