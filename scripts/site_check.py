@@ -24,7 +24,9 @@ FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
           "카카오맵 장소": lambda h: "place.map.kakao.com/" in h,
           "네이버 글": lambda h: 'class="rv-posts"' in h,
           "관리비": lambda h: "<dt>관리비</dt>" in h,
-          "후기가 입지 아래": lambda h: 0 < h.find("입지는 어떤가") < h.find('id="reviews"')}
+          "후기가 입지 아래": lambda h: 0 < h.find("입지는 어떤가") < h.find('id="reviews"'),
+          "언덕 체크": lambda h: 'id="hill"' in h,
+          "언덕 역 단면": lambda h: 'class="hl-svg"' in h}
 
 
 def text(html: str, pat: str) -> str:
