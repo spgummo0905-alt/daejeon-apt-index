@@ -269,3 +269,16 @@ def test_apt_jump_tabs_and_floor_section(tmp_path):
     assert "static/floors.js" in page and 'data-src="d/' in page
     js = (out / "static" / "floors.js").read_text(encoding="utf-8")
     assert "임장 팁" in js and "YEARS = 5" in js
+
+
+def test_home_map_price_filters(tmp_path, monkeypatch):
+    # 메인 지도: 핀 값(84㎡ 가격·지수·전세가율)과 가격대·조건 거르기 (카카오맵이 뜰 때만 보임)
+    monkeypatch.setenv("KAKAO_JS_KEY", "test-key")
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'id="kmap-ctl" hidden' in index and 'data-km-show="p"' in index and "data-km-price" in index
+    for f in ("new", "big", "stn", "hi"):
+        assert f'data-km-flag="{f}"' in index
+    js = (out / "static" / "kmap.js").read_text(encoding="utf-8")
+    assert "function filters(items, clusterer)" in js and 'DJ.load("kmap"' in js

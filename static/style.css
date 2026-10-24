@@ -2264,3 +2264,14 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 @media (prefers-reduced-motion: reduce) {
   [data-fl-tower] .fl-row { opacity: 1; transform: none; transition: none; }
 }
+
+/* ---------- 메인 지도: 핀 값 바꾸기와 거르기 (예산·조건으로 임장 갈 단지 고르기) ---------- */
+.kmap-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 10px; }
+.km-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.km-chips .chip { padding: 5px 11px; font-size: 13px; }
+.km-count { width: 100%; margin: 0; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  .km-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .km-chips::-webkit-scrollbar { display: none; }
+  .km-chips .chip { flex: none; }
+}
