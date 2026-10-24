@@ -313,6 +313,8 @@ def test_search_by_dong_station_and_condition(tmp_path):
     assert 'qs.get("area")' in table and 'qs.get("dong")' in table
     finder = (out / "static" / "finder.js").read_text(encoding="utf-8")
     assert "function fromUrl()" in finder and '"budget", "py", "gu"' in finder
+    # 아무 조건도 안 고른 처음에는 '결과'가 아니라 전체 단지 수와 안내만
+    assert "const narrowed = ()" in finder and "data-sv-wait" in (out / "finder.html").read_text(encoding="utf-8")
     import json
     data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
     assert all(c.get("sm", 1) == 1 for c in data["complexes"])
