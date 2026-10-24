@@ -98,6 +98,9 @@ def test_names_need_the_same_complex():
     assert reviews._names("6년 전 임장한 목동 신시가지7단지 신정동", mk) == 0
     assert reviews._names("목동 신시가지 9단지 10단지 13단지 임장 신정동", mk) == 1
     assert reviews._names("힐스테이트e편한세상문정 21평", {"name": "e-편한세상", "dong": "역삼동", "gu": "강남구"}) == 0
+    ep = {"name": "은평뉴타운 제각말 푸르지오(5-4단지)", "dong": "진관동", "gu": "은평구"}
+    assert reviews._names("[은평뉴타운]이동네는 아파트 주소가 이상해 진관동", ep) == 0   # 동네 이름으로 시작하는 긴 이름
+    assert reviews._names("진관동 은평뉴타운 제각말 푸르지오 살아보니", ep) == 2
 
 
 def test_keep_needs_this_complex_in_title_or_a_local_visit():
@@ -108,6 +111,7 @@ def test_keep_needs_this_complex_in_title_or_a_local_visit():
     assert reviews._keep("대전 탄방동 임장", "공작한양 한가람 둘러봄", c, "대전")
     assert not reviews._keep("대전 둔산동 목련아파트 205동 41평 편리한 동선", "", {"name": "목련", "dong": "둔산동"}, "대전")
     assert not reviews._keep("대덕구 법동 삼호아파트 매매", "매물 정보 매물 [14198] 입주일협의", {"name": "삼호", "dong": "법동", "gu": "대덕구"}, "대전")
+    assert not reviews._keep("세종시 도담동 도램마을3단지아파트 전세 있어여~!", "도담동 살기 좋아요", {"name": "도램마을3단지", "dong": "도담동"}, "세종")
     assert reviews._keep("30대 직장인 지인의 둔산동 한마루 아파트 매매계약 후기", "", {"name": "한마루아파트", "dong": "둔산동"}, "대전")
     ex = {"name": "금강엑슬루타워", "dong": "석봉동", "gu": "대덕구"}
     assert not reviews._keep("대전시 대덕구 석봉동 금강엑슬루타워 107동 43층 48평형 / 사건번호20", "법원경매정보", ex, "대전")
