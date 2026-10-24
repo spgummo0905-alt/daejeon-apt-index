@@ -167,3 +167,22 @@ def kinfo(trades: pd.DataFrame, seed: int = 12) -> dict:
             marea = hh * rnd.randint(60, 95)
             out[cid].update(marea=marea, fee={"ym": "202608", "total": int(marea * rnd.uniform(900, 2200))})
     return out
+
+
+def hill(trades: pd.DataFrame, seed: int = 14) -> dict:
+    """데모용 가짜 언덕 자료 (elev.json 모양). 다섯에 하나는 역 단면 없이, 열에 하나는 비워 둠."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, cid in enumerate(sorted(trades["complex_id"].unique())):
+        if i % 10 == 9:
+            continue
+        e = rnd.uniform(20, 120)
+        rf = rnd.choice([6, 11, 16, 24, 31, 42, 58]) + rnd.uniform(0, 4)
+        out[cid] = {"e": round(e, 1), "rf": round(rf, 1)}
+        if i % 5 != 4:
+            st = rnd.uniform(-8, 28)
+            base = e - st
+            pf = [base + (e - base) * k / 8 + rnd.uniform(-3, 3) * (0 < k < 8) for k in range(9)]
+            pf[0], pf[8] = base, e
+            out[cid].update(st=round(st, 1), pf=[round(v, 1) for v in pf])
+    return out

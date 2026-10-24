@@ -52,6 +52,11 @@ class Paths:
         return self.data / "school"
 
     @property
+    def elev(self) -> Path:
+        """언덕(고저차): 지형 타일로 계산한 단지·역 높이 (elev.py 가 씀)"""
+        return self.data / "elev.json"
+
+    @property
     def osm_stops(self) -> Path:
         return self.data / "osm_stops.json"
 

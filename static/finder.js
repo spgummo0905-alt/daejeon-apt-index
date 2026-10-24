@@ -45,6 +45,8 @@
     { id: "big", label: "대단지", sub: "1,000세대 이상", test: c => c.hh != null && c.hh >= 1000 },
     { id: "mid", label: "500세대 이상", sub: "중간 규모 이상 단지", test: c => c.hh != null && c.hh >= 500 },
     { id: "park", label: "주차 넉넉", sub: "세대당 1.2대 이상", test: c => c.pk != null && c.pk >= 1.2 },
+    { id: "flat", label: "평지에 가까운 곳", sub: "주변 고저차 22m 미만 · 역보다 10m 넘게 높지 않음 (위성 지형 어림)",
+      test: c => !!c.hl && c.hl[0] != null && c.hl[0] < 22 && !(c.hl[1] != null && c.hl[1] > 10) },
   ];
 
   // 규제지역 집값 구간별 주택담보대출 최대 한도 [[집값 상한, 최대 대출], ...] (만원). 없으면 LTV·DSR 만.
@@ -521,6 +523,7 @@
     if (!ALL.some(c => c.f.mart !== undefined)) MUST.splice(MUST.findIndex(m => m.id === "mart"), 1);
     // 단지 정보(세대수·주차)가 없으면 그 조건은 빼요
     if (!ALL.some(c => c.hh)) for (const id of ["big", "mid", "park"]) MUST.splice(MUST.findIndex(m => m.id === id), 1);
+    if (!ALL.some(c => c.hl)) MUST.splice(MUST.findIndex(m => m.id === "flat"), 1);   // 언덕 자료가 없는 지역
     document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x.dataset.sort === S.sort); x.setAttribute("aria-pressed", x.dataset.sort === S.sort); });
     const fromSearch = fromUrl();
     changed();

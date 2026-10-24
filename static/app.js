@@ -536,6 +536,10 @@
   DJ.memo = function (c) {
     const out = [], f = c.f || {};
     if (c.stn && f.subway != null) out.push(["역", `${c.stn} 직선 ${f.subway < 1000 ? Math.round(f.subway) + "m" : (f.subway / 1000).toFixed(1) + "km"}`]);
+    // 언덕(위성 지형 어림): 역보다 꽤 높거나 주변이 비탈이면 걸어 볼 것
+    const hl = c.hl || [];
+    if (hl[1] != null && hl[1] >= 12) out.push(["언덕", `역보다 약 ${Math.round(hl[1])}m 높아요`]);
+    else if (hl[0] != null && hl[0] >= 35) out.push(["언덕", `주변 고저차 약 ${Math.round(hl[0])}m`]);
     if (c.h) out.push(["시세", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
     else if (c.dd != null && c.dd <= -5) out.push(["시세", `고점 대비 ${Math.round(c.dd)}%`]);
     if (c.jr) out.push(["전세가율", c.jr + "%"]);

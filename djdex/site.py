@@ -205,9 +205,11 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
-          kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None) -> int:
+          kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None,
+          hill: dict | None = None) -> int:
     """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다.
-    outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load)."""
+    outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load).
+    hill: 단지별 언덕 자료 {e, rf, st, pf} (elev.load)."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -274,6 +276,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["fee_ym"] = f"{fe['ym'][:4]}.{fe['ym'][4:]}" if d["fee_m2"] else None
         d["sup"] = (supply or {}).get(cid) or []
         d["ext"] = (outside or {}).get(cid) or {}
+        d["hill"] = (hill or {}).get(cid) or {}
         rows.append(d)
     # 세대수·세대당 주차·관리비(㎡당)가 지역에서 어디쯤인지 (정보가 있는 단지끼리). 관리비는 '상위' = 비싼 쪽
     for key in ("hh", "ppu", "fee_m2"):
@@ -281,6 +284,11 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         top = _top_share(vals) if vals.notna().sum() >= RANK_MIN else pd.Series(dtype=float)
         for r in rows:
             r[key + "_top"] = top.get(r["complex_id"], float("nan"))
+    # 주변 고저차가 지역에서 어디쯤인지 ('상위' = 더 비탈진 쪽)
+    vals = pd.Series({r["complex_id"]: r["hill"].get("rf") for r in rows if not r["small"]}, dtype=float)
+    top = _top_share(vals) if vals.notna().sum() >= RANK_MIN else pd.Series(dtype=float)
+    for r in rows:
+        r["hill_top"] = top.get(r["complex_id"], float("nan"))
 
     # 구별 통계
     gus = list(cfg.districts.values())
@@ -475,7 +483,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             latlng=geo.get(cid),
             kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
             points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
-            n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1), **common)
+            n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1),
+            hill=hill_view(c), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)
     tot = sum(r.get("n_trades") or 0 for r in rows) or 1
@@ -896,6 +905,84 @@ def _card_badges(c: dict) -> list[dict]:
     return out
 
 
+# 언덕: 주변 300m 고저차(m) 구간. 지형 타일에 건물 높이가 섞여 평지 고층 단지도 20m 남짓 나올 수 있어 넉넉히 잡음
+HILL_BANDS = [(22, "flat", "평지에 가까워요"), (35, "slope", "완만한 비탈이 있어요"), (float("inf"), "hill", "언덕 지형이에요")]
+FLOOR_M = 2.9   # 아파트 한 층 높이 어림
+HILL_STATION_M = 1500   # 역이 이보다 멀면 역과 높이 비교·단면은 빼요
+
+
+def hill_view(c: dict) -> dict | None:
+    """단지 페이지 '언덕 체크' 칸에 쓸 값. 자료가 없으면 None."""
+    h = c.get("hill") or {}
+    if h.get("rf") is None:
+        return None
+    rf = h["rf"]
+    cls, label = next((k, t) for lim, k, t in HILL_BANDS if rf < lim)
+    out = {"cls": cls, "label": label, "rf": round(rf), "top": c.get("hill_top")}
+    st, pf = h.get("st"), h.get("pf")
+    name = station_name(c.get("subway_name_raw"))
+    dist = c.get("subway_raw")
+    if dist is None or _nan(dist) or dist > HILL_STATION_M:   # 역이 멀면 걸어서 비교할 길이 아님
+        st = pf = None
+    if st is not None and st >= 15 and cls == "flat":
+        out["cls"], out["label"] = "slope", "역 쪽으로 오르막이 있어요"
+    if st is not None and name:
+        out["name"] = name
+        if abs(st) < 4:
+            last = name[-1]
+            batchim = "가" <= last <= "힣" and (ord(last) - 0xAC00) % 28 != 0
+            out["st"] = f"{name}{'과' if batchim else '와'} 땅 높이가 비슷해요"
+        elif st > 0:
+            out["st"] = f"{name}보다 약 {st:.0f}m 높아요 · 오르막 (아파트 약 {max(1, round(st / FLOOR_M))}층 높이)"
+        else:
+            out["st"] = f"{name}보다 약 {-st:.0f}m 낮아요 · 내리막"
+        out["st_v"] = st
+    if pf and name and dist is not None and not _nan(dist):
+        climb = sum(max(0.0, b - a) for a, b in zip(pf, pf[1:]))
+        over = max(pf) - max(pf[0], pf[-1])
+        out["climb"] = round(climb) if climb >= 8 else None
+        out["over"] = round(over) if over >= 10 else None
+        out["svg"] = hill_svg(pf, float(dist), name)
+        out["dist"] = f"{dist:.0f}m" if dist < 1000 else f"{dist / 1000:.1f}km"
+    return out
+
+
+def hill_svg(pf: list[float], dist: float, name: str) -> Markup:
+    """역 → 단지 직선 단면 (땅 높이). 잡음이 산처럼 보이지 않게 세로 범위는 최소 20m."""
+    W, H, L, R, T, B = 560, 170, 44, 16, 14, 30
+    lo, hi = min(pf), max(pf)
+    span = max(20.0, hi - lo)
+    mid = (lo + hi) / 2
+    y0, y1 = mid - span / 2 - 2, mid + span / 2 + 2
+    X = lambda k: L + (W - L - R) * k / (len(pf) - 1)
+    Y = lambda v: T + (H - T - B) * (1 - (v - y0) / (y1 - y0))
+    pts = [(X(k), Y(v)) for k, v in enumerate(pf)]
+    line = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area = f"M{pts[0][0]:.1f},{H - B} L" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + f" L{pts[-1][0]:.1f},{H - B} Z"
+    step = 10 if span <= 40 else 20 if span <= 100 else 50
+    grid = []
+    v = math.ceil(y0 / step) * step
+    while v <= y1:
+        y = Y(v)
+        grid.append(f'<line class="hl-grid" x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}"/>'
+                    f'<text class="hl-ax" x="{L - 6}" y="{y + 4:.1f}" text-anchor="end">{v:.0f}m</text>')
+        v += step
+    marks = []
+    for k, (x, y) in enumerate(pts):
+        d = round(dist * k / (len(pf) - 1))
+        marks.append(f'<circle class="hl-hit" cx="{x:.1f}" cy="{y:.1f}" r="10"><title>{d}m 지점 · 해발 약 {pf[k]:.0f}m</title></circle>')
+    end = lambda x, y, cls: f'<circle class="hl-pt {cls}" cx="{x:.1f}" cy="{y:.1f}" r="5"/>'
+    svg = (f'<svg class="hl-svg" viewBox="0 0 {W} {H}" role="img" aria-label="{escape(name)}에서 단지까지 직선 단면: '
+           f'해발 {pf[0]:.0f}m에서 {pf[-1]:.0f}m, 직선 {dist:.0f}m">'
+           + "".join(grid)
+           + f'<path class="hl-area" d="{area}"/><polyline class="hl-line" points="{line}"/>'
+           + end(*pts[0], "st") + end(*pts[-1], "apt")
+           + f'<text class="hl-lb" x="{pts[0][0]:.1f}" y="{H - 10}" text-anchor="start">{escape(name)}</text>'
+           + f'<text class="hl-lb" x="{pts[-1][0]:.1f}" y="{H - 10}" text-anchor="end">이 단지</text>'
+           + "".join(marks) + "</svg>")
+    return Markup(svg)
+
+
 def station_name(raw) -> str | None:
     """카카오 장소 이름 '정부청사역 대전1호선' → '정부청사역'."""
     if raw is None or (isinstance(raw, float) and raw != raw) or not str(raw).strip():
@@ -996,6 +1083,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
             **({"sm": 1} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
+            **({"hl": [_r(r["hill"].get("rf")), _r(r["hill"].get("st"))]} if (r.get("hill") or {}).get("rf") is not None else {}),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
