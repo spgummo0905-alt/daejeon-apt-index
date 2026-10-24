@@ -4,9 +4,11 @@
 - 카카오 로컬(키워드 검색, KAKAO_REST_KEY): 단지 좌표 근처 '아파트' 분류 장소를 찾아 카카오맵 장소 주소로 바로 잇습니다.
   별점·후기는 카카오맵에서 봅니다.
 - 네이버 검색 API(블로그, NAVER_CLIENT_ID/NAVER_CLIENT_SECRET): 단지 이름으로 찾은 글의 제목·요약·링크.
-  '살아 본 이야기'만 남깁니다 (_story): 단지 이름이 나오고(이름이 짧거나 흔하면 동·구·지역 이름도 함께),
-  사는 이야기 낱말(살아 보니·거주·입주·층간소음·주차·관리비·학군·임장 …)이 있어야 하고,
-  매물·분양·광고, 시공·수리·청소 업체, 가게·상품 홍보 글과 다른 지역 이야기는 뺍니다.
+  이 단지에 살아 본(둘러본) 이야기만 남깁니다 (_keep):
+  · 제목에 단지 이름이 있거나, 제목이 이 동네 임장·거주기('탄방동 임장')이고 요약에 단지 이름이 있어야 (_names:
+    짧거나 흔한 이름은 동·구 이름도 함께, 다른 이름 속에 묻히면 안 되고, 단지 번호가 다르면 다른 단지)
+  · 사는 이야기 낱말(살아 보니·거주·입주·층간소음·주차·관리비·학군·임장 …)이 있어야 (_story)
+  · 매물·분양·광고·공고, 시공·수리·청소 업체, 가게·상품·수업 홍보, 다른 지역 이야기는 뺌
   한 블로그에서는 한 글만. 키가 없으면 건너뜁니다.
   카페 글은 대부분 로그인·카페 가입을 해야 열려서 받지 않습니다 (예전에 받아 둔 카페 글도 화면에 쓰지 않음).
 
@@ -35,7 +37,7 @@ PLACE_RETRY_DAYS = 60     # 카카오 장소를 못 찾은 단지는 두 달 뒤
 # 단지 이름을 길 안내로만 쓴 글('OO아파트 맞은편 …')
 NOT_REVIEW = re.compile(
     r"급매|매물|매매가|전세가|월세|시세|호가|실거래|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|경매|공매|"
-    r"모집|공고|설명회|"
+    r"모집|공고|설명회|공급|접수|당첨|무순위|줍줍|행위허가|"
     r"시공|인테리어|리모델링|청소|이사업체|포장이사|용달|사다리|크레인|줄눈|탄성|도배|장판|필름|샷시|새시|창호|중문|확장|견적|"
     r"교체|설치|수리|철거|누수|방수|하자|타일|변기|세면대|싱크|후드|보일러|에어컨|실외기|방충망|블라인드|커튼|도어락|열쇠|"
     r"비디오폰|인터폰|전등|LED|led|전기|세탁기|단말기|막힘|뚫음|리폼|\d+\s?(?:PY|py|P)\b|"
@@ -45,10 +47,13 @@ NOT_REVIEW = re.compile(
     r"미용실|헤어|네일|속눈썹|피어싱|피부|에스테틱|마사지|필라테스|요가|헬스|애견|펫|"
     r"맛집|카페|커피|라떼|식당|분식|김밥|떡볶이|칼국수|짬뽕|해장국|횟집|통닭|치킨|순대|돈까스|돈가츠|삼겹살|이자카야|"
     r"빵집|빵투어|빵지순례|베이커리|떡집|답례떡|꽃집|꽃다발|플라워|마트|슈퍼|상가|오피스텔|"
-    r"주간보호|요양|복지센터|어린이집|유치원|축제|공연|연극|뮤지컬|영화관|CGV|휴대폰|성지|중고|명품|침대|소파")
+    r"주간보호|요양|복지센터|어린이집|유치원|축제|공연|연극|뮤지컬|영화관|CGV|휴대폰|성지|중고|명품|침대|소파|"
+    r"짐보관|창고|스토리지|풀옵션|개소식|총회|케이크|복원|욕조|작업|공간|새롭게|변신|비포|애프터|홈스타일링|"
+    r"\d{3}동\s?\d+평|방문\s?후기|방문기|(?<![장단관시강약이제통발초정거지요만총평\d])점(?=[)\]\s,.!|]|$)")
 # 요약에만 있어도 홍보 글로 보는 낱말 (요약엔 '학원가 가까워요'처럼 사는 이야기에도 가게 이름이 나와서 더 좁게)
-AD_BODY = re.compile(r"급매|매물|중개|공인중개|분양|체험단|협찬|원고료|제공받|견적|시공|업체|출장|상담|문의|예약|할인|판매|"
-                     r"010[-\s]?\d{3,4}|카톡\s?상담")
+AD_BODY = re.compile(r"급매|공인중개|중개사|체험단|협찬|원고료|제공받|견적|시공|업체|출장|상담|문의|예약|할인|판매|"
+                     r"(?:이번|오늘|작업|시공|공사)\s?현장|현장입니다|고객님|의뢰|재공급|입주자\s?모집|"
+                     r"010[-\s]?[\d*]{3,4}|카톡\s?상담")
 # 사는 이야기 낱말: 하나는 있어야 남깁니다 (제목에 있으면 더 앞에)
 LIVED = re.compile(r"살아\s?보|살아\s?본|살면서|살고\s?있|사는\s?중|살았|살기|거주|입주(?!\s?청소)|이사\s?(?:왔|온|와서|오고|한\s?지)|"
                    r"장단점|단점|솔직|후기|리뷰|임장|발품|단지\s?(?:분위기|구경|산책|둘러|분석|내)|층간\s?소음|소음|주차|"
@@ -108,9 +113,16 @@ def kakao_places(complexes: list[dict], geo: dict, path: Path, client, log=print
     log(f"카카오맵 장소: 이번에 {tried:,}곳 찾아 {found:,}곳 이음, 이어 둔 단지 {have:,}곳")
 
 
-def _stem(place: str) -> str:
-    """'둔산1동' → '둔산', '유성구' → '유성' (글에는 '둔산 크로바'처럼 동·구를 빼고 쓰는 일이 많음)."""
-    return re.sub(r"\d*(동|가|구|읍|면|리)$", "", place or "")
+def _stems(*places: str) -> list[str]:
+    """'둔산1동' → '둔산', '유성구' → '유성', '조치원읍 교리' → '조치원'
+    (글에는 '둔산 크로바'처럼 동·구를 빼고 쓰는 일이 많음). 한 글자('서구' → '서')는 흔해서 뺍니다."""
+    out = []
+    for place in places:
+        for w in (place or "").split():
+            w = re.sub(r"\d*(동|가|구|읍|면|리)$", "", w)
+            if len(w) >= 2:
+                out.append(w)
+    return out
 
 
 def _story(title: str, desc: str, region: str = "") -> int:
@@ -124,18 +136,40 @@ def _story(title: str, desc: str, region: str = "") -> int:
     return 2 * t + d if t or d else 0
 
 
+def _alone(text: str, base: str, stems: list[str]) -> bool:
+    """짧은 이름이 다른 이름 속에 묻히지 않고 따로 나오는지: '송파 한양1차', '둔산크로바', '누리아파트', '크로바를' 은 되고
+    '감일한양수자인', '방이한양3차', '은하수점' 은 안 됨 (앞은 띄어쓰기·기호나 이 동네 이름, 뒤는 기호·숫자·아파트·조사)."""
+    t = re.sub(r"[()（）·.,\-\[\]|/]", " ", text)
+    for m in re.finditer(re.escape(base), t):
+        before, after = t[:m.start()].rstrip(), t[m.end():]
+        left = m.start() == 0 or not re.match(r"[가-힣A-Za-z]", t[m.start() - 1]) or any(before.endswith(x) for x in stems)
+        right = (not after or not re.match(r"[가-힣A-Za-z]", after[0])
+                 or re.match(r"(?:아파트|APT|apt|A\b|마을|타운|단지|[은는이가을를의에와과도로랑])", after))
+        if left and right:
+            return True
+    return False
+
+
 def _names(text: str, c: dict, region: str = "", ctx: str = "") -> int:
     """text 에 이 단지 이름이 나오는 정도: 이름 그대로 2, 앞 네 글자 1, 안 나오면 0.
-    이름이 세 글자 이하(누리·한빛·현대 …)거나 앞 네 글자만 맞으면 동·구·지역 이름도 함께(text 나 ctx 에) 나와야 합니다."""
+    - 이름이 다섯 글자 이하(누리·한빛·e편한세상 …)거나 앞 네 글자만 맞으면 흔한 이름이라 동·구 이름도 함께(text 나 ctx 에) 나와야 하고,
+      다섯 글자 이하 이름은 다른 이름 속에 묻히지 않고 따로 나와야 (_alone)
+    - 앞 네 글자만 맞을 때 이름에 단지·차 번호가 있으면 그 번호도 나와야 ('목동신시가지10' 에 '신시가지7단지' 글은 다른 단지)"""
     base = _base_name(c["name"])
     if not base:
         return 0
     flat = _norm_name(text)
     near = _norm_name(text + " " + ctx)
-    local = any(x and len(x) >= 2 and x in near for x in (_stem(c.get("dong", "")), _stem(c.get("gu", "")), region))
+    stems = _stems(c.get("dong", ""), c.get("gu", ""))
+    local = any(x in near for x in stems)
     if base in flat:
-        return 2 if len(base) >= 4 or local else 0
-    return 1 if len(base) >= 4 and base[:4] in flat and local else 0
+        if len(base) >= 6:
+            return 2
+        return 2 if local and _alone(text, base, stems) else 0
+    if len(base) < 4 or base[:4] not in flat or not local:
+        return 0
+    nums = re.findall(r"\d+", base)
+    return 1 if all(re.search(rf"(?<!\d){n}(?:단지|차|블럭|BL)", flat) for n in nums) else 0
 
 
 def _keep(title: str, desc: str, c: dict, region: str = "") -> int:
@@ -147,8 +181,8 @@ def _keep(title: str, desc: str, c: dict, region: str = "") -> int:
         return 0
     if _names(title, c, region, desc):
         return story + 4
-    dong = _stem(c.get("dong", ""))
-    if len(dong) >= 2 and dong in _norm_name(title) and TOPIC.search(title) and _names(title + " " + desc, c, region):
+    flat = _norm_name(title)
+    if any(x in flat for x in _stems(c.get("dong", ""))) and TOPIC.search(title) and _names(title + " " + desc, c, region):
         return story + 1
     return 0
 
@@ -186,20 +220,25 @@ def _posts(s: requests.Session, kind: str, query: str, c: dict, n: int = 3, regi
 
 
 def naver_posts(complexes: list[dict], path: Path, client_id: str, secret: str, budget: int = 4000,
-                log=print, region: str = "") -> None:
+                log=print, region: str = "", time_limit: float | None = None) -> None:
     """단지마다 사는 이야기 블로그 글 5개 (거래가 많은 단지부터, 일주일마다 새로). 로그인 없이 열리는 블로그 글만.
-    '후기'로 찾아 모자라면 '살아보니'로 한 번 더 찾습니다 (단지마다 많아야 두 번)."""
+    '후기'로 찾아 모자라면 '살아보니'로 한 번 더 찾습니다 (단지마다 많아야 두 번).
+    time_limit 초가 지나면 멈추고 나머지는 다음 실행 때 (단지가 많은 서울)."""
     data = _load(path)
     s = requests.Session()
     s.headers.update({"X-Naver-Client-Id": client_id, "X-Naver-Client-Secret": secret})
     old = (date.today() - timedelta(days=REFRESH_DAYS)).isoformat()
     used = done = 0
+    t0 = time.monotonic()
     for c in complexes:
         cid = c["complex_id"]
         cur = data.get(cid, {})
         if cur.get("nv_at", "") >= old and cur.get("nv_v") == NV_VERSION:
             continue
         if used + 2 > budget:
+            break
+        if time_limit and time.monotonic() - t0 > time_limit:
+            log("::notice::[네이버 글] 시간이 다 돼 나머지는 다음 실행 때 받습니다")
             break
         q = " ".join(x for x in (c.get("dong"), c["name"]) if x)
         q = q if q.endswith("아파트") else q + " 아파트"

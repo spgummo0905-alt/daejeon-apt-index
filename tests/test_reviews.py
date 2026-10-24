@@ -80,6 +80,31 @@ def test_naver_posts_keep_only_lived_stories():
     assert reviews._story("트리풀시티 9단지", "단지 사진") == 0   # 사는 이야기 낱말이 없음
 
 
+def test_names_need_the_same_complex():
+    """흔한 이름은 동·구가 함께, 다른 이름 속에 묻히면 안 되고, 단지 번호가 다르면 다른 단지 (실제로 걸렸던 글들)."""
+    hy = {"name": "한양아파트", "dong": "송파동", "gu": "송파구"}
+    assert reviews._names("아파트 임장 투어 서울 송파구 송파동 송파한양1차", hy) == 2
+    assert reviews._names("하남 감이동 감일한양수자인을 소개합니다 송파", hy) == 0
+    assert reviews._names("송파 방이한양3차 재건축", hy) == 0
+    cr = {"name": "크로바", "dong": "둔산동", "gu": "서구"}
+    assert reviews._names("둔산크로바 1632세대", cr) == reviews._names("크로바를 보면 둔산", cr) == 2
+    assert reviews._names("크로바 아파트 임장", cr) == 0   # 동네 이름이 없으면 다른 지역 크로바일 수 있음
+    assert reviews._names("(대전 서구 은하수점) 둔산", {"name": "은하수", "dong": "둔산동", "gu": "서구"}) == 0
+    mk = {"name": "목동신시가지10", "dong": "신정동", "gu": "양천구"}
+    assert reviews._names("6년 전 임장한 목동 신시가지7단지 신정동", mk) == 0
+    assert reviews._names("목동 신시가지 9단지 10단지 13단지 임장 신정동", mk) == 1
+    assert reviews._names("힐스테이트e편한세상문정 21평", {"name": "e-편한세상", "dong": "역삼동", "gu": "강남구"}) == 0
+
+
+def test_keep_needs_this_complex_in_title_or_a_local_visit():
+    c = {"name": "공작한양", "dong": "탄방동", "gu": "서구"}
+    assert reviews._keep("대전 탄방동 아파트: 한가람, 공작한양 임장 후기", "학군 탄방초", c, "대전")
+    # 제목에 이 단지가 없으면 이 동네(탄방) 임장·거주기여야: 옆 동네 단지 글은 요약에 이름이 나와도 뺌
+    assert not reviews._keep("둔산자이아이파크 실거주 후기 및 투자 가치", "공작한양 탄방동 바로 옆", c, "대전")
+    assert reviews._keep("대전 탄방동 임장", "공작한양 한가람 둘러봄", c, "대전")
+    assert not reviews._keep("대전 둔산동 목련아파트 205동 41평 편리한 동선", "", {"name": "목련", "dong": "둔산동"}, "대전")
+
+
 def test_naver_posts_refetch_after_rule_change(tmp_path, monkeypatch):
     """글 고르는 방법이 바뀌면(NV_VERSION) 일주일이 안 지났어도 다시 받고, 모자라면 '살아보니'로 한 번 더 찾음."""
     path = tmp_path / "reviews.json"

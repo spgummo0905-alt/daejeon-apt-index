@@ -268,7 +268,7 @@ def _outside_reviews(cfg) -> None:
         nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
         if nid and nsec:
             reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)),
-                               region=cfg.region_name)
+                               region=cfg.region_name, time_limit=600)
     except Exception as e:   # 바깥 후기는 없어도 사이트는 만듭니다
         print(f"::warning::바깥 후기 잇기 실패, 검색 버튼만 둡니다: {e!r}")
 
