@@ -282,3 +282,16 @@ def test_home_map_price_filters(tmp_path, monkeypatch):
         assert f'data-km-flag="{f}"' in index
     js = (out / "static" / "kmap.js").read_text(encoding="utf-8")
     assert "function filters(items, clusterer)" in js and 'DJ.load("kmap"' in js
+
+
+def test_imjang_course_on_my_page(tmp_path):
+    # 관심 단지 화면의 임장 코스: 가장 짧은 방문 순서, 구간 거리·시간과 카카오맵 길찾기, 현장 체크리스트·메모
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert 'id="course"' in my and "data-cs-add" in my and 'data-cs-mode="walk"' in my and "static/course.js" in my
+    assert my.index('id="favs"') < my.index('id="course"') < my.index('id="recent"')
+    js = (out / "static" / "course.js").read_text(encoding="utf-8")
+    assert "map.kakao.com/link/from/" in js and "map.kakao.com/link/to/" in js
+    assert "function order()" in js and "MAX = 8" in js and '"visit:" + c.s' in js
+    assert js.count('",\n') >= 8   # 현장 체크리스트 항목
