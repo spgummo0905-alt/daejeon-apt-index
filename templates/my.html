@@ -1,11 +1,23 @@
 {% extends "base.html" %}
-{% block title %}관심 단지 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}저장한 관심 단지와 최근 본 단지를 모아 봅니다.{% endblock %}
+{% block title %}관심 단지 · 카드첩 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}저장한 관심 단지와 그동안 모은 단지 카드, 최근 본 단지를 모아 봅니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">관심 단지</p>
-  <h1>저장한 단지와<br>최근 본 단지</h1>
-  <p class="lead">관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+  <h1>관심 단지와<br>내 카드첩</h1>
+  <p class="lead">관심 단지와 모은 카드, 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+</section>
+{# 카드첩: 단지 페이지를 열거나 오늘의 카드를 뒤집으면 모이는 카드 (my.js) #}
+<section class="panel album" id="album" aria-labelledby="album-title">
+  <div class="panel-head row-between"><h2 id="album-title">내 카드첩</h2><span class="album-count" data-album-total></span></div>
+  <div class="album-bar" aria-hidden="true"><span data-album-bar></span></div>
+  <ul class="album-grades" data-album-grades aria-label="등급별로 모은 카드"></ul>
+  <p class="muted album-empty" data-album-empty hidden>아직 모은 카드가 없어요. 단지 페이지를 열거나 <a href="index.html#today">메인의 오늘의 카드</a>를 뒤집으면 여기에 모여요.</p>
+  <div class="album-cards" data-album-cards></div>
+  <button type="button" class="btn ghost album-more" data-album-more hidden></button>
+  <h3 class="album-sub">{{ unit }}별로 모은 카드</h3>
+  <ul class="album-areas" data-album-areas></ul>
+  <p class="album-next" data-album-next hidden></p>
 </section>
 <section class="panel">
   <div class="panel-head row-between"><h2>관심 단지</h2><a class="btn" id="fav-battle" hidden><svg class="ic"><use href="#i-compare"/></svg><span>관심 단지끼리 비교</span></a></div>

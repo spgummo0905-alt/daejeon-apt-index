@@ -218,3 +218,23 @@ def test_fee_shown_per_m2_and_quotes_below_price(tmp_path):
 def test_fee_rank_needs_enough_complexes_and_range():
     from djdex import site
     assert site.FEE_RANGE[1] <= 4000 and site.RANK_MIN >= 10
+
+
+def test_today_cards_and_album(tmp_path):
+    # 수집 요소: 메인의 '오늘의 카드' 세 장(연 카드는 카드첩으로), 관심 단지 화면의 '내 카드첩'
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'id="today"' in index and "data-today-row" in index and "data-album-count" in index
+    assert index.index('id="today"') < index.index('id="my-strip"')   # 이번 달 숫자 바로 아래
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert 'id="album"' in my and "내 카드첩" in my and "data-album-areas" in my and "구별로 모은 카드" in my
+    assert my.index('id="album"') < my.index('id="favs"')
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.collect = function" in app and "DJ.miniCard = function" in app
+    assert app.index("DJ.collect(c.s)") < app.index("DJ.addRecent(c)")   # 처음 쓰는 기기에서 '첫 카드'로 세어지게
+    home = (out / "static" / "home.js").read_text(encoding="utf-8")
+    assert "todayCards" in home and '"today-" + DJ.sido' in home   # 지역마다 따로 정함
+    # 단지 자료(complexes.json)의 단지 코드 앞 두 자리로 지역을 나눔 (대전 30)
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    assert all(len(c["s"]) > 2 for c in data["complexes"])

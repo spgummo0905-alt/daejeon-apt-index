@@ -1236,15 +1236,15 @@ h1 { letter-spacing: -0.03em; font-weight: 800; }
   position: relative; padding: 7px; border-radius: 28px;
   background: linear-gradient(135deg, var(--f1), var(--f2) 30%, var(--f3) 60%, var(--f4) 80%, var(--f2));
   box-shadow: 0 22px 50px rgba(10,20,40,.28); }
-.mc.g-S { --f1: #fff3c4; --f2: #d9b55a; --f3: #8a6a12; --f4: #f5dd92; --in1: #0e1b2f; --in2: #1a3354; --in3: #0b1525;
+.mc.g-S, .mcard.g-S { --f1: #fff3c4; --f2: #d9b55a; --f3: #8a6a12; --f4: #f5dd92; --in1: #0e1b2f; --in2: #1a3354; --in3: #0b1525;
   --ink: #f6f0e1; --sub: rgba(246,240,225,.68); --b1: #a37b22; --b2: #e8c66c; --b3: #fff1bf; }
-.mc.g-A { --f1: #ffffff; --f2: #c9d0db; --f3: #6b7480; --f4: #f2f4f7; --in1: #1b2028; --in2: #2c333e; --in3: #171b22;
+.mc.g-A, .mcard.g-A { --f1: #ffffff; --f2: #c9d0db; --f3: #6b7480; --f4: #f2f4f7; --in1: #1b2028; --in2: #2c333e; --in3: #171b22;
   --ink: #eef1f6; --sub: rgba(238,241,246,.68); --b1: #6b7480; --b2: #c9d0db; --b3: #ffffff; }
-.mc.g-B { --f1: #cfe2fb; --f2: #2f6fb8; --f3: #174a85; --f4: #9ec5f4; --in1: #0f2a4d; --in2: #1b4a80; --in3: #0e2442;
+.mc.g-B, .mcard.g-B { --f1: #cfe2fb; --f2: #2f6fb8; --f3: #174a85; --f4: #9ec5f4; --in1: #0f2a4d; --in2: #1b4a80; --in3: #0e2442;
   --ink: #f2f7ff; --sub: rgba(242,247,255,.68); --b1: #2a78d6; --b2: #6da7ec; --b3: #cde2fb; --em-ink: #ffffff; }
-.mc.g-C { --f1: #e5e9ef; --f2: #6d7a8c; --f3: #465263; --f4: #b6c0cd; --in1: #26303c; --in2: #3b4757; --in3: #222a35;
+.mc.g-C, .mcard.g-C { --f1: #e5e9ef; --f2: #6d7a8c; --f3: #465263; --f4: #b6c0cd; --in1: #26303c; --in2: #3b4757; --in3: #222a35;
   --ink: #f1f3f6; --sub: rgba(241,243,246,.68); --b1: #6d7a8c; --b2: #9aa6b6; --b3: #d5dbe3; --em-ink: #ffffff; }
-.mc.g-S, .mc.g-A, .mc.g-B, .mc.g-C { --track: rgba(255,255,255,.12); --glass: rgba(255,255,255,.08); --line: rgba(255,255,255,.14); }
+.mc.g-S, .mc.g-A, .mc.g-B, .mc.g-C, .mcard.g-S, .mcard.g-A, .mcard.g-B, .mcard.g-C { --track: rgba(255,255,255,.12); --glass: rgba(255,255,255,.08); --line: rgba(255,255,255,.14); }
 .mc-in { position: relative; overflow: hidden; border-radius: 22px; padding: 16px 16px 12px; color: var(--ink);
   background: linear-gradient(160deg, var(--in1), var(--in2) 55%, var(--in3)); }
 .mc.g-S .mc-in::before, .mc.g-A .mc-in::before { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .45;
@@ -2019,4 +2019,123 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 @media (prefers-reduced-motion: reduce) {
   .it-card, .it-scroll span { animation: none; }
   .js body[data-page="intro"] [data-reveal], .js body[data-page="intro"] .it-bar[data-reveal] .seg { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- 작은 카드 (오늘의 카드·카드첩): 메인 카드와 같은 등급별 금박·백금박 ---------- */
+.mcard { --f1: #f4f5f7; --f2: #b9c0ca; --f3: #8a929e; --f4: #e3e6ea; --in1: #f4f5f7; --in2: #e6e9ee; --in3: #f7f8fa;
+  --ink: #1d232c; --sub: rgba(29,35,44,.66); --line: rgba(0,0,0,.1);
+  position: relative; isolation: isolate; display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0;
+  padding: 11px 12px 10px; border: 3px solid transparent; border-radius: 16px; color: var(--ink); overflow: hidden;
+  background: linear-gradient(160deg, var(--in1), var(--in2) 55%, var(--in3)) padding-box,
+              linear-gradient(135deg, var(--f1), var(--f2) 30%, var(--f3) 60%, var(--f4) 80%, var(--f2)) border-box;
+  box-shadow: 0 8px 22px rgba(10,20,40,.16); transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast); }
+.mcard:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(10,20,40,.24); }
+.mcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.mcard.g-S::before, .mcard.g-A::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; mix-blend-mode: screen; opacity: .5;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,230,160,.28) 45%, rgba(160,210,255,.22) 52%, transparent 66%);
+  background-size: 250% 250%; animation: mc-shine 7s ease-in-out infinite; }
+.mcard-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.mcard-top .grade { min-width: 26px; height: 26px; font-size: 14px; }
+.mcard-score { font-size: 26px; line-height: 1; font-weight: 900; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.mcard.g-S .mcard-score { background: linear-gradient(180deg, #fff3c4, #d4af52 60%, #a37b22); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mcard.g-A .mcard-score { background: linear-gradient(180deg, #ffffff, #c9d0db 60%, #8b95a7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mcard-name { margin-top: auto; font-size: 15px; line-height: 1.3; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mcard-where { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcard-foot { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--sub);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcard-facts { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+/* 신고가: 위 테두리에 걸린 작은 띠 (이름이 두 줄이어도 겹치지 않게) */
+.mcard-high { position: absolute; top: 0; left: 50%; transform: translateX(-50%); padding: 1px 8px 2px; border-radius: 0 0 8px 8px;
+  font-size: 11px; font-weight: 800; line-height: 1.4; white-space: nowrap; background: #d4af52; color: #1a1406; }
+
+/* ---------- 오늘의 카드: 뒷면(남색 금테) → 눌러서 뒤집기 ---------- */
+.today { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px 28px; align-items: center; }
+.today h2 { margin: 2px 0 6px; }
+.today-text > .muted { margin: 0; }
+.today-count { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 14px; color: var(--text-2); }
+.today-count .ic { color: var(--gold); }
+.today-count b { color: var(--text); font-variant-numeric: tabular-nums; }
+.today-done { margin: 8px 0 0; font-size: 14px; color: var(--text-2); }
+.today-row { display: grid; grid-template-columns: repeat(3, 164px); gap: 14px; perspective: 1200px; }
+.tc { position: relative; aspect-ratio: 5 / 7; }
+.tc-in { position: absolute; inset: 0; transform-style: preserve-3d; }
+.tc.flip .tc-in { transition: transform .85s var(--ease-out); }
+.tc.open .tc-in { transform: rotateY(180deg); }
+.tc-back, .tc-front { position: absolute; inset: 0; border-radius: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.tc-front { display: flex; transform: rotateY(180deg); }
+.tc-back { display: grid; place-content: center; justify-items: center; gap: 12px; padding: 0; border: 0; cursor: pointer; overflow: hidden;
+  font: inherit; color: #e8c66c;
+  background: radial-gradient(circle at 50% 40%, rgba(232,198,108,.20), transparent 58%),
+              repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 6px, transparent 6px 12px),
+              linear-gradient(160deg, #1a3354, #0b1525);
+  box-shadow: inset 0 0 0 1.5px rgba(232,198,108,.6), inset 0 0 0 7px #0f203a, inset 0 0 0 8px rgba(232,198,108,.28), 0 10px 26px rgba(10,20,40,.28);
+  transition: transform var(--t-fast) var(--ease-out); }
+.tc-back::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,236,180,.22) 48%, transparent 60%); background-size: 260% 100%;
+  animation: tc-glint 4.5s ease-in-out infinite; }
+@keyframes tc-glint { 0%, 55% { background-position: 120% 0; } 85%, 100% { background-position: -20% 0; } }
+.tc:not(.open) .tc-back:hover { transform: translateY(-4px); }
+.tc-back:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.tc-mark { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: flex-end; justify-content: center; gap: 4px; padding-bottom: 14px;
+  background: radial-gradient(circle at 30% 30%, #fff3c4, #d9b55a 55%, #8a6a12); box-shadow: 0 0 0 4px rgba(232,198,108,.18), 0 6px 14px rgba(0,0,0,.35); }
+.tc-mark i { display: block; width: 5px; border-radius: 1.5px; background: #1a1406; }
+.tc-mark i:nth-child(1) { height: 9px; } .tc-mark i:nth-child(2) { height: 15px; } .tc-mark i:nth-child(3) { height: 21px; }
+.tc-hint { font-size: 12.5px; font-weight: 700; color: rgba(246,240,225,.82); }
+.tc-tag { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+  padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: var(--surface); color: var(--text-2);
+  box-shadow: 0 0 0 1px var(--border), 0 4px 10px rgba(0,0,0,.08); }
+.tc-tag.new { background: var(--navy); color: var(--on-navy); box-shadow: 0 4px 12px rgba(10,20,40,.25); }
+/* S·A 를 열면 금빛이 한 번 번지고 지나감 */
+.tc.shine .tc-front { animation: tc-glow 1.8s .45s ease-out both; }
+.tc.shine .mcard::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,240,190,.75) 48%, transparent 64%); background-size: 260% 100%;
+  animation: tc-sweep 1.3s .55s ease-out both; }
+@keyframes tc-glow { 0% { box-shadow: 0 0 0 0 rgba(232,198,108,0); } 35% { box-shadow: 0 0 0 6px rgba(232,198,108,.45), 0 0 46px 10px rgba(232,198,108,.45); }
+  100% { box-shadow: 0 0 0 0 rgba(232,198,108,0), 0 0 0 0 rgba(232,198,108,0); } }
+@keyframes tc-sweep { from { background-position: 120% 0; } to { background-position: -30% 0; } }
+@media (max-width: 760px) {
+  .today { grid-template-columns: 1fr; }
+  .today-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 8px; }
+  .tc .mcard { padding: 9px 9px 8px; border-width: 2.5px; }
+  .tc .mcard-score { font-size: 21px; }
+  .tc .mcard-top .grade { min-width: 22px; height: 22px; font-size: 12px; }
+  .tc .mcard-name { font-size: 13px; }
+  .tc .mcard-where, .tc .mcard-foot { font-size: 11px; }
+  .tc .mcard-high { font-size: 10px; padding: 0 6px 1px; }
+  .tc .mcard-facts { display: none; }
+  .tc-mark { width: 40px; height: 40px; gap: 3px; padding-bottom: 11px; }
+  .tc-mark i { width: 4px; }
+  .tc-mark i:nth-child(1) { height: 7px; } .tc-mark i:nth-child(2) { height: 12px; } .tc-mark i:nth-child(3) { height: 17px; }
+  .tc-hint { font-size: 11.5px; }
+  .tc-tag { font-size: 10.5px; padding: 1px 8px; }
+}
+
+/* ---------- 카드첩 ---------- */
+.album-count { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+.album-bar { display: block; height: 8px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.album-bar > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a37b22, #e8c66c, #f5dd92);
+  transition: width .9s var(--ease-out); }
+.album-bar.sm { height: 6px; }
+.album-grades { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 14px 0 0; }
+.album-grades li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: var(--chip);
+  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.album-grades li.full { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.album-empty { margin: 16px 0 0; }
+.album-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; margin-top: 16px; }
+.album-cards:empty { display: none; }
+.album-cards .mcard { aspect-ratio: 5 / 7; height: auto; }
+.album-more { display: block; margin: 14px auto 0; }
+.album-sub { margin: 26px 0 8px; font-size: 16px; }
+.album-areas { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2px 28px; padding: 0; margin: 0; }
+.album-areas li { display: grid; grid-template-columns: 6em minmax(0, 1fr) 4.2em; align-items: center; gap: 4px 10px; padding: 6px 0; font-size: 14px; }
+.album-areas .aa-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.album-areas .aa-n { text-align: right; color: var(--text-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.album-areas .aa-note { grid-column: 2 / -1; margin-top: -2px; font-size: 12px; font-weight: 700; color: var(--banner-text); }
+.album-areas li.full .album-bar > span { background: linear-gradient(90deg, #13795b, #3fd49b); }
+.album-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 22px 0 0; padding: 14px 16px;
+  border-radius: 14px; font-weight: 700; color: #f6f0e1; background: linear-gradient(135deg, #1a3354, #0b1525); }
+.album-next .btn { margin: 0; border: 0; color: #1a1406; font-weight: 800; background: linear-gradient(135deg, #fff1bf, #d9b55a 55%, #b8912f); }
+@media (prefers-reduced-motion: reduce) {
+  .mcard, .mcard::before, .tc-back, .tc-back::after, .tc-in, .tc-front, .mcard::after, .album-bar > span { animation: none !important; transition: none !important; }
 }
