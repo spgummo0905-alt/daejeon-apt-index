@@ -252,3 +252,20 @@ def test_cards_page_today_badges_album(tmp_path):
     assert 'DJ.act("cmp")' in (out / "static" / "compare.js").read_text(encoding="utf-8")
     assert 'DJ.act("find")' in (out / "static" / "finder.js").read_text(encoding="utf-8")
     assert 'data-high="' in (next((out / "apt").glob("*.html"))).read_text(encoding="utf-8")
+
+
+def test_apt_jump_tabs_and_floor_section(tmp_path):
+    # 단지 페이지: 바로가기 탭(스크롤 따라 붙음)과 층별 시세(입체 건물, floors.js)
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = next(p for p in (out / "apt").glob("*.html") if 'data-floors' in p.read_text(encoding="utf-8")).read_text(encoding="utf-8")
+    nav = page[page.index('<nav class="jump apt-jump"'):page.index("</nav>", page.index('<nav class="jump apt-jump"'))]
+    for href in ("#price", "#floors", "#loc", "#reviews", "#trades"):
+        assert f'href="{href}"' in nav, href
+    for sec in ('id="price"', 'id="floors"', 'id="loc"', 'id="reviews"', 'id="trades"'):
+        assert sec in page, sec
+    # 순서: 시세 → 평형별 → 층별 → 입지
+    assert page.index('id="price"') < page.index('id="floors"') < page.index('id="loc"')
+    assert "static/floors.js" in page and 'data-src="d/' in page
+    js = (out / "static" / "floors.js").read_text(encoding="utf-8")
+    assert "임장 팁" in js and "YEARS = 5" in js

@@ -123,6 +123,17 @@
 </section>
 </div>
 
+{# 바로가기: 현장에서 휴대폰으로 필요한 칸만 바로 (스크롤 따라 붙고 지금 보는 칸을 표시, app.js scrollSpy) #}
+<nav class="jump apt-jump" data-spy aria-label="이 단지 바로가기">
+  {% if c.ki %}<a href="#info">단지 정보</a>{% endif %}
+  <a href="#price">시세</a>
+  {% if c.quotes %}<a href="#quotes">평형별</a>{% endif %}
+  {% if has_pc %}<a href="#floors" data-floors-link hidden>층별</a>{% endif %}
+  <a href="#loc">입지</a>
+  <a href="#reviews">후기</a>
+  <a href="#trades">거래</a>
+</nav>
+
 {% if c.ki %}{% set k = c.ki %}
 <section class="panel ki" id="info">
   <div class="panel-head">
@@ -206,7 +217,7 @@
 
 {% if c.quotes %}
 {% set has_rent = (c.quotes | selectattr("je") | list) or (c.quotes | selectattr("wr") | list) %}
-<section class="quotes" aria-labelledby="q-title">
+<section class="quotes" id="quotes" aria-labelledby="q-title">
   <div class="q-head"><h2 id="q-title">평형별 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
   <table class="qt">
     <thead><tr><th scope="col">{{ "공급(전용)" if c.sup else "전용면적" }}</th><th scope="col">매매</th>{% if has_rent %}<th scope="col">전세</th><th scope="col">월세</th>{% endif %}</tr></thead>
@@ -225,7 +236,22 @@
 </section>
 {% endif %}
 
-<section class="panel">
+{% if has_pc %}
+{# 층별 시세: 최근 5년 매매를 그달 같은 평형 추정 시세와 견줘 층마다 비싸게·싸게 팔렸는지 (floors.js, 거래가 적으면 숨김) #}
+<section class="panel floors" id="floors" data-floors data-src="d/{{ c.slug }}.json" data-top="{{ c.ki.top if c.ki and c.ki.top else '' }}" hidden>
+  <div class="panel-head">
+    <h2>층별 시세</h2>
+    <p class="muted">최근 5년 매매를 그달 같은 평형의 추정 시세와 견줘, 층마다 시세보다 비싸게 또는 싸게 팔렸는지 봤어요.</p>
+  </div>
+  <div class="fl-wrap">
+    <figure class="fl-fig"><div data-fl-tower></div><figcaption class="fl-legend" data-fl-legend></figcaption></figure>
+    <div class="fl-side" data-fl-side></div>
+  </div>
+  <details class="fl-more"><summary>층별 표로 보기</summary><div data-fl-table></div></details>
+</section>
+{% endif %}
+
+<section class="panel" id="loc">
   <div class="panel-head">
     <h2>입지는 어떤가</h2>
     <p class="muted">{% for g in loc_sets %}{{ g.label }}{{ "·" if not loop.last }}{% endfor %} 점수(0~100)와 {{ region }} 안 순위예요. 그래프는 넓을수록 좋아요.</p>
@@ -401,7 +427,8 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
-{% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>{% endif %}
+{% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>
+<script src="{{ root }}static/floors.js?v={{ v }}" defer></script>{% endif %}
 {% if latlng and kakao_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=services&autoload=false"></script>
 <script src="{{ root }}static/aptmap.js?v={{ v }}"></script>
