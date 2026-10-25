@@ -411,6 +411,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     if common["account"]:
         (out_dir / "privacy.html").write_text(
             env.get_template("privacy.html").render(root="", page_path="privacy.html", **common), encoding="utf-8")
+        # 가족과 함께 보기 (공유 링크로 들어오는 보기 전용 화면, 검색에는 넣지 않음)
+        (out_dir / "share.html").write_text(
+            env.get_template("share.html").render(root="", page_path="share.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
     import json as _json

@@ -52,7 +52,7 @@
       let keys = [];
       try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
       const notes = keys.map(k => ({ c: d.bySlug[k.slice(12)], v: DJ.visit(k.slice(12)) }))
-        .filter(({ c, v }) => c && (v.d || v.m || v.q.length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
+        .filter(({ c, v }) => c && (v.d || v.m || v.q.length || (v.p || []).length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
         .sort((a, b) => (b.v.d || "").localeCompare(a.v.d || "") || a.c.n.localeCompare(b.c.n));
       const ul = nbx.querySelector("[data-notes-list]");
       notes.forEach(({ c, v }) => {
@@ -68,8 +68,14 @@
           const pct = ref ? Math.round((won / ref - 1) * 100) : null;
           meta.append(el("span", "", `들은 호가 ${p ? p + "평 " : ""}${eok(won)}${pct == null ? "" : ` (시세 ${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${Math.abs(pct)}%)`}${v.q.length > 1 ? ` 외 ${v.q.length - 1}건` : ""}`));
         }
+        if ((v.p || []).length) meta.append(el("span", "", `사진 ${v.p.length}장`));
         a.append(top, meta);
         if (v.m) a.append(el("span", "nt-memo", v.m.length > 70 ? v.m.slice(0, 70) + "…" : v.m));
+        if ((v.p || []).length && DJ.photoUrl) {   // 현장 사진 앞 3장
+          const strip = el("span", "nt-photos");
+          v.p.slice(0, 3).forEach(([path]) => { const img = el("img"); img.src = DJ.photoUrl(path); img.alt = ""; img.loading = "lazy"; strip.append(img); });
+          a.append(strip);
+        }
         const li = el("li", "");
         li.append(a);
         ul.append(li);

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}함께 보는 임장 기록 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}가족이 보여 주는 관심 단지와 임장 노트예요.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+{# 가족과 함께 보기: 관심 화면에서 만든 링크(share.html?t=…)로 들어와 보기 전용으로 (share.js). 로그인 없이 #}
+<section class="page-hero">
+  <p class="eyebrow">함께 보는 임장 기록</p>
+  <h1 data-sh-title>임장 기록을 불러오는 중…</h1>
+  <p class="lead" data-sh-lead>가족이 보여 주는 관심 단지와 임장 노트예요. 보기 전용이에요.</p>
+</section>
+<div data-sh-body data-regions='{{ regions | tojson }}' data-region="{{ region }}"></div>
+{% endblock %}
+{% block scripts %}<script src="static/share.js?v={{ v }}"></script>{% endblock %}

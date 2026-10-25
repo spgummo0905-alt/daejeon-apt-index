@@ -54,7 +54,7 @@
   }
 
   function build(c) {
-    body.replaceChildren(where(c), checks(c), quotes(c), memo());
+    body.replaceChildren(...[where(c), checks(c), quotes(c), photos(), memo()].filter(Boolean));
     if (DJ.paintSync) DJ.paintSync();
   }
 
@@ -171,7 +171,75 @@
     return s;
   }
 
-  // 4. 메모와 '다녀왔어요'
+  // 4. 현장 사진: 주차장·동 간격·언덕처럼 말로 남기기 어려운 것을 사진으로 (로그인하면 계정에, 1280px 로 줄이고 위치 정보 없이)
+  // v.p = [[경로, 찍은 날]] (12장까지). 저장소가 없는 사이트면 칸을 만들지 않음
+  const MAXP = 12;
+  async function shrink(file) {
+    const src = await createImageBitmap(file).catch(() => null) || await new Promise((ok, no) => {
+      const img = new Image(); img.onload = () => ok(img); img.onerror = no; img.src = URL.createObjectURL(file);
+    });
+    const k = Math.min(1, 1280 / Math.max(src.width, src.height));
+    const cv = el("canvas"); cv.width = Math.round(src.width * k); cv.height = Math.round(src.height * k);
+    cv.getContext("2d").drawImage(src, 0, 0, cv.width, cv.height);
+    return new Promise(ok => cv.toBlob(ok, "image/jpeg", 0.8));
+  }
+  function photos() {
+    if (!DJ.sb) return null;
+    const s = section("현장 사진", null);
+    if (!(DJ.sync && DJ.sync.user)) {
+      s.append(el("p", "fm-sub", "카카오로 로그인하면 주차장·동 간격·언덕 같은 현장 사진을 이 단지 노트에 남길 수 있어요."));
+      const go = el("a", "btn", "로그인하러 가기 ›");
+      go.href = (window.DJ_ROOT || "") + "my.html#account";
+      s.append(go);
+      return s;
+    }
+    s.append(el("p", "fm-sub", "말로 남기기 어려운 걸 찍어 두세요. 위치 정보 없이 줄여서 계정에 저장하고, 공유 링크를 받은 가족도 볼 수 있어요."));
+    const grid = el("div", "fm-photos");
+    const pick = el("label", "fm-ph-add");
+    const inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true;
+    pick.append(el("span", "", "＋"), el("small", "", "사진"), inp);
+    const draw = () => {
+      grid.replaceChildren();
+      (v.p || []).forEach(([path], i) => {
+        const fig = el("figure", "fm-ph");
+        const a = el("a"); a.href = DJ.photoUrl(path); a.target = "_blank"; a.rel = "noopener";
+        const img = el("img"); img.src = DJ.photoUrl(path); img.alt = `${name} 현장 사진 ${i + 1}`; img.loading = "lazy";
+        a.append(img);
+        const del = el("button", "fm-ph-del", "×"); del.type = "button"; del.setAttribute("aria-label", "이 사진 지우기");
+        del.addEventListener("click", () => {
+          if (!confirm("이 사진을 지울까요?")) return;
+          v.p.splice(i, 1); keep(); draw();
+          DJ.photoDel([path]).catch(() => {});
+        });
+        fig.append(a, del);
+        grid.append(fig);
+      });
+      if ((v.p || []).length < MAXP) grid.append(pick);
+    };
+    inp.addEventListener("change", async () => {
+      const files = Array.from(inp.files || []).slice(0, MAXP - (v.p || []).length);
+      inp.value = "";
+      for (const f of files) {
+        const wait = el("figure", "fm-ph wait", "올리는 중…");
+        grid.insertBefore(wait, pick);
+        try {
+          const path = await DJ.photoPut(slug, await shrink(f));
+          v = DJ.visit(slug);   // 그사이 바뀐 기록 위에
+          v.p = (v.p || []).concat([[path, DJ.today()]]).slice(0, MAXP);
+          keep();
+        } catch (e) {
+          DJ.toast("사진을 올리지 못했어요", e.status === 413 ? "사진이 너무 커요." : "잠시 뒤 다시 해 주세요.");
+        }
+        wait.remove();
+        draw();
+      }
+    });
+    draw();
+    s.append(grid);
+    return s;
+  }
+
+  // 5. 메모와 '다녀왔어요'
   function memo() {
     const s = section("메모", null);
     const t = el("textarea", "fm-memo");
