@@ -30,6 +30,9 @@ regions = [
 # 카카오 로그인으로 기록 이어 보기 (Supabase). 저장소 주소와 공개용 키는 GitHub Secrets 의
 # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY 에 넣고, 표·함수는 scripts/supabase_setup.sql 로 만듭니다.
 # 아래는 개인정보처리방침(privacy.html)에 적는 값. 책임자와 연락처가 비어 있으면 로그인을 넣지 않습니다.
+# Supabase 의 로그인 연결 이름. 기본 카카오 연결은 이메일을 꼭 요청해(비즈 앱만 가능) 쓰지 않고,
+# '맞춤 연결(Custom OIDC)'로 카카오를 닉네임·프로필 사진만 요청하게 만들어 씁니다.
+provider = "custom:kakao"
 owner = ""            # 개인정보 보호책임자 (이름 또는 운영자명)
 email = ""            # 문의·열람·삭제 요청을 받을 이메일
 storage = "일본(도쿄)"  # Supabase 서버 위치 (프로젝트를 만들 때 고른 곳)
