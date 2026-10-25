@@ -6,7 +6,6 @@
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
 <script>try{sessionStorage.setItem("dj-intro","1");localStorage.removeItem("dj-intro")}catch(e){}</script>
 {% endblock %}
-{% block header_extra %}<a class="it-skip" href="index.html">건너뛰기 <span aria-hidden="true">→</span></a>{% endblock %}
 {% block body %}
 {% set top = hero_cards[0] if hero_cards else none %}
 {% set s = grade_dist | selectattr("g", "equalto", "S") | first %}
