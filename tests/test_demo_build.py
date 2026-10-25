@@ -400,8 +400,13 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     # 카카오 로그인(기록 이어 보기): 저장소 주소·공개 키와 처리방침 책임자·연락처가 모두 있을 때만 넣음
     from djdex import config
     out = tmp_path / "site"
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])   # 저장소 주소가 없음
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "sync.js" not in my and 'id="account"' not in my and not (out / "privacy.html").exists()
     monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co/rest/v1/")   # Data API 화면 주소를 넣어도 주소만 씀
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {"owner": "", "email": ""}))
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])   # 책임자·연락처가 비어 있음
     my = (out / "my.html").read_text(encoding="utf-8")
     assert "sync.js" not in my and 'id="account"' not in my and not (out / "privacy.html").exists()
