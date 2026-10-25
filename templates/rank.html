@@ -37,7 +37,7 @@
       <li style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
         <span class="rl-no">{{ loop.index + 3 }}</span>
         <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
-        <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{{ it | place }} · {{ it.sub }}</span></span>
+        <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{% for part in ((it | place) ~ " · " ~ it.sub).split(" · ") %}<span class="nw">{{ part }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span></span>
         <span class="rl-val t-{{ it.tone or 'flat' }}">{{ it.value }}</span>
       </a></li>
       {% endfor %}

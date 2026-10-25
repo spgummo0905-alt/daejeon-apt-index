@@ -69,6 +69,8 @@
       "aria-label": `${top}층 건물의 층별 시세. 색이 파랄수록 시세보다 싸게, 주황일수록 비싸게 팔렸어요.` });
     s("ellipse", { cx: L + (W + Dx) / 2, cy: base + 6, rx: (W + Dx) / 1.6, ry: 8, class: "fl-shadow" }, svg);
     const g = s("g", { class: "fl-floors" }, svg);
+    // 옆 숫자는 시세와 2% 넘게 다른 층만, 글자끼리 겹치지 않게 (층이 많으면 한 칸이 글자보다 낮음)
+    let lastY = -1e9;
     floors.forEach((fl, i) => {
       const y = base - fl.f * h, cls = fl.v == null ? "fl-none" : "fl-t" + tone(fl.v);
       const row = s("g", { class: "fl-row " + cls, style: `--i:${i}` }, g);
@@ -81,9 +83,11 @@
         const lb = s("text", { x: L - 6, y: y + h / 2 + 4, class: "fl-lab", "text-anchor": "end" }, svg);
         lb.textContent = fl.f + "층";
       }
-      if (fl.v != null && fl.n >= 2 && h >= 9) {
-        const v = s("text", { x: L + W + Dx + 6, y: y - Dy / 2 + h / 2 + 4, class: "fl-val" }, svg);
+      const vy = y - Dy / 2 + h / 2 + 4;
+      if (fl.v != null && fl.n >= 2 && h >= 9 && Math.abs(fl.v) > 0.02 && Math.abs(vy - lastY) >= 13) {
+        const v = s("text", { x: L + W + Dx + 6, y: vy, class: "fl-val" }, svg);
         v.textContent = pct(fl.v);
+        lastY = vy;
       }
     });
     s("polygon", { points: `${L},${y0} ${L + W},${y0} ${L + W + Dx},${y0 - Dy} ${L + Dx},${y0 - Dy}`, class: "fl-roof" }, svg);
