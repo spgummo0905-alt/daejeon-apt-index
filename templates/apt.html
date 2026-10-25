@@ -14,7 +14,7 @@
 
 {% set fresh = recent[:5] %}{# 메인 카드 펼침 목록 #}
 <div class="apt-hero">
-<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}" data-high="{{ 1 if c.new_high_recent else 0 }}"><div class="mc-in">
+<section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}" data-high="{{ 1 if c.new_high_recent else 0 }}" data-tc="{{ c.n_trades or 0 }}" data-ld="{{ c.last_date.strftime('%Y.%m.%d') if c.last_date is not none and c.last_date == c.last_date else '' }}" data-lp="{{ c.last_price | eok(2) if c.last_price is not none and c.last_price == c.last_price else '' }}" data-lr="{{ c.last_area | round | int if c.last_area is not none and c.last_area == c.last_area else '' }}" data-p="{{ c.price_ref | int if c.price_ref is not nan else '' }}"><div class="mc-in">
   <div class="mc-top">
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
@@ -47,6 +47,8 @@
     <p class="mc-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고해 최근 거래는 늦게 올라올 수 있습니다. 평은 전용면적으로 어림한 평형입니다.</p>
   </div>
   {% endif %}
+  {# 관심 단지면 지난번 확인한 뒤 새 거래·시세 변화 (app.js 의 DJ.news) #}
+  <a class="mc-news" href="#trades" data-watch-news hidden><b>지난번 확인 뒤</b><span data-watch-text></span></a>
   <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
   <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
   {% for key, label, desc in stats %}{% set v = c[key] %}

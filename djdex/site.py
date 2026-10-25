@@ -1079,6 +1079,8 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "ed": _r(r.get("grp_edu")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
+            "lr": _r(r.get("last_area")),
+            "tc": int(r.get("n_trades") or 0) if not _nan(r.get("n_trades")) else 0,   # 관심 단지 새 소식: 지난번 확인 뒤 새 거래 수
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),

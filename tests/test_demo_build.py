@@ -349,3 +349,18 @@ def test_hill_check_on_apt_page_and_data(tmp_path):
     assert any("hl" in c for c in data["complexes"]) and any("hl" not in c for c in data["complexes"])
     assert '{ id: "flat"' in (out / "static" / "finder.js").read_text(encoding="utf-8")
     assert '["언덕"' in (out / "static" / "app.js").read_text(encoding="utf-8")
+
+
+def test_watchlist_news(tmp_path):
+    """관심 단지 새 소식: 단지마다 거래 수·최근 거래 면적을 싣고, 단지·관심·메인 화면이 지난번 확인한 때와 견줌."""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    traded = [c for c in data["complexes"] if c.get("ld")]
+    assert traded and all(isinstance(c["tc"], int) and c["tc"] > 0 and c["lr"] for c in traded)
+    page = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert 'data-tc="' in page and "data-watch-news" in page
+    assert "data-news-list" in (out / "my.html").read_text(encoding="utf-8")
+    assert "data-strip-news" in (out / "index.html").read_text(encoding="utf-8")
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.watchSync = function" in app and "DJ.news = function" in app
