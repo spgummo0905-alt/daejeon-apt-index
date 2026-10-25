@@ -8,17 +8,6 @@
   const VISIT = 30;       // 단지 하나 둘러보는 데 드는 분
   const SPEED = { walk: { kmh: 4.5, detour: 1.3, label: "걸어서" }, car: { kmh: 25, detour: 1.4, label: "차로" } };
   // 현장 체크리스트: 지도·숫자로는 알 수 없고 가 봐야 아는 것
-  const CHECK = [
-    "역·버스 정류장까지 실제로 걸어 보기 (몇 분 걸리는지)",
-    "언덕·계단 (단지 안과 역 가는 길)",
-    "단지 관리 상태 (외벽·조경·주차장·엘리베이터)",
-    "밤 주차 여유 (퇴근 뒤 자리가 있는지)",
-    "소음 (큰길·철도·학교·상가)",
-    "동 간 거리와 향 (앞 동에 가려 해가 드는지)",
-    "아이 학교 가는 길 (횡단보도·안전)",
-    "상가·마트·병원·학원 (걸어서 닿는지)",
-    "부동산에 들러 매물·호가·분위기 묻기",
-  ];
   let D = null;
   const state = Object.assign({ mode: "walk", list: null }, DJ.load("course", {}));
 
@@ -130,29 +119,34 @@
     a.href = href; a.target = "_blank"; a.rel = "noopener";
     return a;
   }
-  // 현장 체크리스트와 메모: 단지마다 저장 (다른 코스에서도 같은 단지면 이어서)
+  // 현장 체크리스트와 메모: 단지마다 저장 (현장 모드·다른 코스에서도 같은 단지면 이어서).
+  // 이 단지 자료로 짚은 항목(언덕·주차·관리비 …)을 먼저, 그다음 기본 항목
   function checklist(c) {
-    const key = "visit:" + c.s;
-    const v = Object.assign({ c: [], m: "" }, DJ.load(key, {}));
+    const v = DJ.visit(c.s), items = DJ.visitItems(c, document.body.dataset.region);
     const det = el("details", "cs-check");
     const sum = el("summary", "");
     const cnt = el("span", "cs-cnt");
-    const paint = () => { const n = CHECK.filter((_, i) => v.c[i]).length; cnt.textContent = `${n}/${CHECK.length}`; cnt.classList.toggle("done", n === CHECK.length); };
+    const paint = () => { const [n, all] = DJ.visitDone(v, items); cnt.textContent = `${n}/${all}`; cnt.classList.toggle("done", n === all); };
     sum.append(document.createTextNode("현장 체크리스트 "), cnt);
+    if (v.d) sum.append(el("span", "cs-been", v.d.slice(5).replace("-", ".") + " 다녀옴"));
     const ul = el("ul", "");
-    CHECK.forEach((txt, i) => {
-      const lab = el("label", "");
-      const cb = el("input"); cb.type = "checkbox"; cb.checked = !!v.c[i];
-      cb.addEventListener("change", () => { v.c[i] = cb.checked; DJ.save(key, v); paint(); });
-      lab.append(cb, document.createTextNode(" " + txt));
+    const row = (txt, why, on, set) => {
+      const lab = el("label", why ? "cs-mine" : "");
+      const cb = el("input"); cb.type = "checkbox"; cb.checked = on;
+      cb.addEventListener("change", () => { set(cb.checked); DJ.saveVisit(c.s, v); paint(); });
+      const t = el("span", "", txt);
+      if (why) t.append(el("small", "", why));
+      lab.append(cb, t);
       const li = el("li", ""); li.append(lab); ul.append(li);
-    });
+    };
+    items.forEach(([id, txt, why]) => row(txt, why, !!v.x[id], on => { v.x[id] = on; }));
+    DJ.CHECK.forEach((txt, i) => row(txt, "", !!v.c[i], on => { v.c[i] = on; }));
     const memo = el("textarea", "cs-memo");
     memo.rows = 2;
     memo.placeholder = "메모 (매물 호가, 동·층, 분위기 등)";
     memo.setAttribute("aria-label", c.n + " 메모");
     memo.value = v.m || "";
-    memo.addEventListener("input", () => { v.m = memo.value; DJ.save(key, v); });
+    memo.addEventListener("input", () => { v.m = memo.value; DJ.saveVisit(c.s, v); });
     det.append(sum, ul, memo);
     paint();
     return det;
