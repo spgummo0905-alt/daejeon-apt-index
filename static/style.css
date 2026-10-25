@@ -1905,8 +1905,6 @@ body[data-page="intro"] main { max-width: none; padding: 0; }
 body[data-page="intro"] .top-nav, body[data-page="intro"] .tabbar { display: none; }
 body[data-page="intro"] header.site { position: relative; z-index: 3; }
 body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom: 32px; }
-.it-skip { margin-left: auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); font-size: 14px; font-weight: 700; }
-.it-skip:hover { color: var(--text); text-decoration: none; border-color: var(--text-2); }
 .it-wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; position: relative; }
 .it-hero, .it-sec { position: relative; overflow: hidden; }
 .it-sec { padding: 104px 0; border-top: 1px solid rgba(255,255,255,.06); }
