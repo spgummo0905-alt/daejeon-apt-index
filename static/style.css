@@ -2628,4 +2628,15 @@ body[data-page="intro"] .acct-btn { display: none; }
 .policy ul { padding-left: 20px; margin: 6px 0; }
 .policy table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
 .policy th, .policy td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--border); color: var(--text-2); }
-.policy th { color: var(--text); white-space: nowrap; width: 28%; }
+.policy th { color: var(--text); width: 28%; }
+.policy th, .policy td { white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+.policy a { overflow-wrap: anywhere; }
+/* 휴대폰: 표를 '제목 / 내용' 두 줄로 쌓아 옆으로 넘치지 않게 */
+@media (max-width: 719px) {
+  .policy { padding: 18px 16px; }
+  .policy table, .policy tbody, .policy tr, .policy th, .policy td { display: block; width: auto; }
+  .policy tr { padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .policy th, .policy td { padding: 0; border: 0; }
+  .policy th { margin-bottom: 4px; font-size: 13.5px; }
+  .policy p, .policy li, .policy td { font-size: 14.5px; }
+}
