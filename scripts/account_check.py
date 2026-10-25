@@ -12,7 +12,8 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 
-URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+_u = urlparse(os.environ.get("SUPABASE_URL", "").strip())
+URL = f"{_u.scheme}://{_u.netloc}" if _u.netloc else ""   # 끝에 /rest/v1 같은 경로가 붙어 있어도 주소만
 KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
 SITE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
 
@@ -41,6 +42,8 @@ def main(argv: list[str]) -> int:
 
     host = urlparse(URL).hostname or ""
     print(f"저장소 주소: https://{host.split('.')[0][:4]}….{'.'.join(host.split('.')[1:])}")
+    if _u.path.strip("/"):
+        print(f"  (Secrets 의 주소 끝 경로 /{_u.path.strip('/')} 는 떼고 씁니다)")
     st = requests.get(f"{URL}/auth/v1/settings", headers=h, timeout=30)
     if st.ok:
         ext = st.json().get("external", {})

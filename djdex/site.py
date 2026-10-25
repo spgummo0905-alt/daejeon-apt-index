@@ -8,6 +8,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -206,7 +207,9 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
 def _account(cfg) -> dict | None:
     """카카오 로그인·기록 이어 보기 (Supabase). 주소와 공개용 키는 GitHub Secrets(환경 변수)에서,
     개인정보처리방침의 책임자·연락처는 설정 [account] 에서. 하나라도 없으면 로그인을 넣지 않습니다."""
-    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    # 주소는 'https://○○○○.supabase.co' 까지만 씀 (Data API 화면에서 복사하면 끝에 /rest/v1 이 붙어 옴)
+    u = urlparse(os.environ.get("SUPABASE_URL", "").strip())
+    url = f"{u.scheme}://{u.netloc}" if u.netloc else ""
     key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
     acc = cfg.account
     if not (url.startswith("https://") and key and acc.get("owner") and acc.get("email")):
