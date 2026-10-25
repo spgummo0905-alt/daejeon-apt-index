@@ -45,6 +45,38 @@
       left();
     }
 
+    // 임장 노트: 현장 모드·임장 코스에서 남긴 기록이 있는 단지 (다녀온 날 최근 순)
+    const nbx = document.querySelector("[data-notes]");
+    if (nbx) {
+      const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
+      let keys = [];
+      try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
+      const notes = keys.map(k => ({ c: d.bySlug[k.slice(12)], v: DJ.visit(k.slice(12)) }))
+        .filter(({ c, v }) => c && (v.d || v.m || v.q.length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
+        .sort((a, b) => (b.v.d || "").localeCompare(a.v.d || "") || a.c.n.localeCompare(b.c.n));
+      const ul = nbx.querySelector("[data-notes-list]");
+      notes.forEach(({ c, v }) => {
+        const items = DJ.visitItems(c, document.body.dataset.region), [n, all] = DJ.visitDone(v, items);
+        const a = el("a", "nt-item");
+        a.href = DJ.href(c) + "#field";
+        const top = el("span", "nt-top");
+        top.append(el("span", "grade g-" + c.g, c.g), el("b", "nt-name", c.n), el("span", "nt-when" + (v.d ? " been" : ""), v.d ? v.d.slice(5).replace("-", ".") + " 다녀옴" : "아직 안 감"));
+        const meta = el("span", "nt-meta");
+        meta.append(el("span", "", `체크 ${n}/${all}`));
+        if (v.q.length) {
+          const [p, , won] = v.q[0], ref = ((c.tp || []).find(t => String(t[0]) === String(p)) || [])[1];
+          const pct = ref ? Math.round((won / ref - 1) * 100) : null;
+          meta.append(el("span", "", `들은 호가 ${p ? p + "평 " : ""}${eok(won)}${pct == null ? "" : ` (시세 ${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${Math.abs(pct)}%)`}${v.q.length > 1 ? ` 외 ${v.q.length - 1}건` : ""}`));
+        }
+        a.append(top, meta);
+        if (v.m) a.append(el("span", "nt-memo", v.m.length > 70 ? v.m.slice(0, 70) + "…" : v.m));
+        const li = el("li", "");
+        li.append(a);
+        ul.append(li);
+      });
+      nbx.hidden = !notes.length;
+    }
+
     const favBox = document.getElementById("favs");
     if (!favs.length) favBox.append(el("p", "muted", "아직 저장한 단지가 없습니다. 단지 페이지 오른쪽 위의 ☆를 누르면 여기에 모입니다."));
     favs.forEach(c => favBox.append(DJ.card(c, d.stats)));

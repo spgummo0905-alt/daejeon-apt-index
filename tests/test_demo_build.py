@@ -293,8 +293,9 @@ def test_imjang_course_on_my_page(tmp_path):
     assert my.index('id="favs"') < my.index('id="course"') < my.index('id="recent"')
     js = (out / "static" / "course.js").read_text(encoding="utf-8")
     assert "map.kakao.com/link/from/" in js and "map.kakao.com/link/to/" in js
-    assert "function order()" in js and "MAX = 8" in js and '"visit:" + c.s' in js
-    assert js.count('",\n') >= 8   # 현장 체크리스트 항목
+    assert "function order()" in js and "MAX = 8" in js and "DJ.visit(c.s)" in js
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.CHECK = [" in app and app.count('",\n') >= 8 and "DJ.visitItems(c" in js   # 현장 체크리스트 (현장 모드와 같이 씀)
 
 
 def test_search_by_dong_station_and_condition(tmp_path):
@@ -364,3 +365,20 @@ def test_watchlist_news(tmp_path):
     assert "data-strip-news" in (out / "index.html").read_text(encoding="utf-8")
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.watchSync = function" in app and "DJ.news = function" in app
+
+
+def test_field_mode_and_notes(tmp_path):
+    """현장 모드: 단지 페이지 바로가기 줄의 버튼과 시트, 이 단지 자료로 짚는 체크리스트·호가·메모, 관심 화면의 임장 노트."""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert 'class="jump-field" data-field' in page and 'id="field-sheet"' in page and "static/field.js" in page
+    assert page.index("jump-field") < page.index('href="#price"')   # 바로가기 줄 맨 앞
+    js = (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert "getCurrentPosition" in js and "map.kakao.com/link/to/" in js and "시세보다" in js and "DJ.visitItems(c" in js
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert all(k in app for k in ('"hill-st"', '"park"', '"fee"', '"old"', '"high"'))
+    data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
+    assert any("pq" in c for c in data["complexes"])
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "data-notes-list" in my and my.index('id="course"') < my.index('id="notes"') < my.index('id="recent"')

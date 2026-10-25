@@ -146,6 +146,43 @@
     save("recent", r.slice(0, 30));
   };
 
+  // ---------- 임장 기록: 현장 체크리스트·호가·메모 (현장 모드와 임장 코스가 함께 씀, 이 브라우저에만) ----------
+  // visit:<단지> = {c: [기본 항목 체크], x: {이 단지 항목 id: true}, m: 메모, q: [[평, 층, 호가(만원), 적은 날]], d: 다녀온 날}
+  DJ.CHECK = [
+    "역·버스 정류장까지 실제로 걸어 보기 (몇 분 걸리는지)",
+    "언덕·계단 (단지 안과 역 가는 길)",
+    "단지 관리 상태 (외벽·조경·주차장·엘리베이터)",
+    "밤 주차 여유 (퇴근 뒤 자리가 있는지)",
+    "소음 (큰길·철도·학교·상가)",
+    "동 간 거리와 향 (앞 동에 가려 해가 드는지)",
+    "아이 학교 가는 길 (횡단보도·안전)",
+    "상가·마트·병원·학원 (걸어서 닿는지)",
+    "부동산에 들러 매물·호가·분위기 묻기",
+  ];
+  DJ.visit = s => Object.assign({ c: [], x: {}, m: "", q: [] }, load("visit:" + s, {}));
+  DJ.saveVisit = (s, v) => save("visit:" + s, v);
+  // 이 단지 자료로 짚는 현장 확인 거리 [id, 할 일, 왜]: 숫자로 본 약점을 현장에서 직접 확인하게
+  DJ.visitItems = function (c, region) {
+    const out = [], f = c.f || {}, hl = c.hl || [];
+    const m = v => v < 1000 ? Math.round(v) + "m" : (v / 1000).toFixed(1) + "km";
+    const rank = top => top <= 50 ? `${region || ""} 상위 ${Math.max(1, Math.round(top))}%` : `${region || ""} 하위 ${Math.max(1, Math.round(100 - top))}%`;
+    if (hl[1] != null && hl[1] >= 12) out.push(["hill-st", `${c.stn || "역"}에서 걸어 올라와 보기`, `역보다 약 ${Math.round(hl[1])}m 높아요`]);
+    else if (hl[0] != null && hl[0] >= 35) out.push(["hill", "단지 안 경사·계단 걸어 보기", `주변 고저차 약 ${Math.round(hl[0])}m`]);
+    if ("subway" in f && (f.subway == null || f.subway > 800))
+      out.push(["bus", "버스 정류장과 배차 간격 확인", f.subway == null ? "걸어갈 만한 거리에 역이 없어요" : `${c.stn || "역"}까지 직선 ${m(f.subway)}`]);
+    if (f.elementary != null && f.elementary > 500) out.push(["school", "초등학교까지 아이 걸음으로 걸어 보기", `직선 ${m(f.elementary)}`]);
+    if (c.pk != null && (c.pk < 1 || (c.pq != null && c.pq >= 70))) out.push(["park", "밤 9시 넘어 주차장 빈자리 보기", `세대당 ${c.pk}대${c.pq != null ? " · " + rank(c.pq).trim() : ""}`]);
+    const age = c.y ? new Date().getFullYear() - c.y : null;
+    if (age != null && age >= 25) out.push(["old", "외벽 균열·배관·엘리베이터 상태 보기", `${age}년 차 · 재건축·리모델링 이야기도 부동산에 묻기`]);
+    if (c.fm && c.fq != null && c.fq <= 30) out.push(["fee", "관리사무소에 관리비가 높은 이유 묻기", `㎡당 ${c.fm.toLocaleString()}원 · ${rank(c.fq).trim()}`]);
+    if (c.jr != null && c.jr >= 70) out.push(["jeonse", "전세 매물과 호가도 함께 묻기", `전세가율 ${c.jr}% · 매매와 전세 차이가 작아요`]);
+    if (c.h) out.push(["high", "지금 호가가 신고가보다 높은지 묻기", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
+    else if (c.dd != null && c.dd <= -10) out.push(["dip", "급매·가격을 낮춘 매물이 있는지 묻기", `고점보다 ${Math.abs(Math.round(c.dd))}% 낮아요`]);
+    return out;
+  };
+  // 체크한 수 / 전체 (이 단지 항목 + 기본 항목)
+  DJ.visitDone = (v, items) => [items.filter(([id]) => v.x[id]).length + DJ.CHECK.filter((_, i) => v.c[i]).length, items.length + DJ.CHECK.length];
+
   // ---------- 카드첩: 열어 본 단지 카드를 모읍니다 (이 브라우저에만) ----------
   // {단지: 처음 모은 날}. 지역은 단지 코드 앞 두 자리(시도: 30 대전, 36 세종, 11 서울)로 나눠 셉니다.
   // 카드첩을 처음 여는 기기는 그동안 본 단지(최근 본·관심 단지)로 채워 둡니다.
@@ -1028,7 +1065,9 @@
     if (!pairs.length || !("IntersectionObserver" in window)) return;
     const mark = a => {
       links.forEach(x => x.classList.toggle("on", x === a));
-      if (a && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: a.offsetLeft - 16, behavior: DJ.calm ? "auto" : "smooth" });
+      // 맨 앞에 붙어 있는 버튼(현장 모드)이 있으면 그 너비만큼 비켜서 보이게
+      const pin = nav.querySelector(".jump-field"), off = pin ? pin.offsetWidth + 24 : 16;
+      if (a && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: a.offsetLeft - off, behavior: DJ.calm ? "auto" : "smooth" });
     };
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) mark(pairs.find(p => p[1] === e.target)[0]);

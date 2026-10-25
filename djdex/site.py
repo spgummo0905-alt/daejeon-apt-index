@@ -1081,6 +1081,9 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
             "lr": _r(r.get("last_area")),
             "tc": int(r.get("n_trades") or 0) if not _nan(r.get("n_trades")) else 0,   # 관심 단지 새 소식: 지난번 확인 뒤 새 거래 수
+            # 현장 모드 체크리스트: 관리비(㎡당, 비싼 쪽부터 상위 %)·주차(많은 쪽부터 상위 %)
+            **({"fm": r["fee_m2"], "fq": _r(r.get("fee_m2_top"))} if r.get("fee_m2") else {}),
+            **({"pq": _r(r.get("ppu_top"))} if r.get("ppu") and not _nan(r.get("ppu_top")) else {}),
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),

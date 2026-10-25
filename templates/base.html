@@ -29,7 +29,7 @@
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
 {% block head_extra %}{% endblock %}
 </head>
-<body data-unit="{{ unit }}" data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">
+<body data-unit="{{ unit }}" data-region="{{ region }}" data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">
 {% if demo %}
 <div class="demo-banner">데모 화면입니다. 아래 숫자는 무작위로 만든 가짜 데이터이며 실제 단지와 무관합니다.</div>
 {% endif %}
