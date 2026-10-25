@@ -107,6 +107,8 @@ jobs:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -161,6 +163,8 @@ jobs:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -182,6 +186,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
         run: |
@@ -195,6 +201,14 @@ jobs:
           path: site
       - id: deploy
         uses: actions/deploy-pages@v4
+      # 카카오 로그인 저장소(Supabase 무료)는 7일 동안 아무 요청이 없으면 잠듭니다. 배포 때마다 한 번 깨워 둡니다.
+      - name: 기록 보관함 깨우기
+        if: always()
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: python scripts/account_check.py --ping
       # 서울 이어 받기: 매일 예약 실행 때 (또는 수동 실행에서 고르면) 배포가 끝난 뒤 하루 호출 한도 안에서 받습니다.
       # 실거래를 다 모으기 전에는 매매와 그 단지의 입지(카카오)를, 다 모은 뒤에는 최근 거래 새로 받기·전월세·단지 정보·
       # 새 단지 입지·학교·물가를 받아 두고 다음 배포 때 화면에 냅니다. 실패해도 배포에는 영향이 없습니다.

@@ -1,0 +1,20 @@
+name: account-check
+
+# 카카오 로그인 저장소(Supabase) 점검 (수동 실행): 카카오 로그인이 켜졌는지, 로그인 요청이 묻는 동의항목,
+# 기록 표·함수가 만들어졌는지 로그에 남깁니다. 키는 찍지 않습니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests && python scripts/account_check.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}

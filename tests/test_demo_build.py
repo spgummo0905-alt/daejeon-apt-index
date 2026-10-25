@@ -394,3 +394,36 @@ def test_same_budget_alternatives(tmp_path):
     js = (out / "static" / "alts.js").read_text(encoding="utf-8")
     assert "<= 0.1" in js and "x.k <= 3" in js and "x.k <= 5" in js and "DJ.addToCourse([slug, c.s])" in js and "compare.html?s=" in js
     assert "DJ.addToCourse = function" in (out / "static" / "app.js").read_text(encoding="utf-8")
+
+
+def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
+    # 카카오 로그인(기록 이어 보기): 저장소 주소·공개 키와 처리방침 책임자·연락처가 모두 있을 때만 넣음
+    from djdex import config
+    out = tmp_path / "site"
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])   # 책임자·연락처가 비어 있음
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "sync.js" not in my and 'id="account"' not in my and not (out / "privacy.html").exists()
+
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert 'window.DJ_SB = {"key": "sb_publishable_test", "url": "https://demo.supabase.co"}' in my
+    assert my.index("static/app.js") < my.index("static/sync.js") < my.index("static/my.js")
+    assert 'id="account"' in my and "data-login" in my and "data-delete" in my and "data-logout-wipe" in my
+    assert my.index('id="account"') < my.index('id="favs"')
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert "data-acct" in index and 'href="privacy.html"><b>개인정보처리방침</b>' in index
+    assert "(skip|code|error)" in index   # 카카오에서 돌아올 때 인트로로 보내지 않음
+    privacy = (out / "privacy.html").read_text(encoding="utf-8")
+    for s in ("Supabase, Inc.", "일본(도쿄)", "help@example.com", "운영자", "2026-10-26", "만 14세 미만", "118"):
+        assert s in privacy
+    js = (out / "static" / "sync.js").read_text(encoding="utf-8")
+    assert "grant_type=pkce" in js and "code_challenge_method=s256" in js and "/rest/v1/rpc/sync_put" in js
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"]' in app and 'localStorage.setItem("djdex-t"' in app
+    sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
+    assert "enable row level security" in sql and "security definer" in sql and "where public.user_kv.t < excluded.t" in sql
+    assert "revoke all on public.user_kv from anon, authenticated" in sql

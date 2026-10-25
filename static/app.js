@@ -9,8 +9,19 @@
     try { const v = localStorage.getItem("djdex:" + key); return v ? JSON.parse(v) : fallback; }
     catch (e) { return fallback; }
   }
+  // 고친 시각도 함께 적어 둡니다 (djdex-t). 카카오로 로그인하면 sync.js 가 이걸 보고 기기끼리 새 것을 남깁니다.
+  // 기기마다 따로인 것(지도 위치·카드 순서·새 소식 수)은 적지 않습니다.
+  DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"];
   function save(key, value) {
-    try { localStorage.setItem("djdex:" + key, JSON.stringify(value)); } catch (e) { /* 저장 불가: 무시 */ }
+    try {
+      localStorage.setItem("djdex:" + key, JSON.stringify(value));
+      if (!DJ.LOCAL_ONLY.includes(key)) {
+        const t = JSON.parse(localStorage.getItem("djdex-t") || "{}");
+        t[key] = Date.now();
+        localStorage.setItem("djdex-t", JSON.stringify(t));
+        if (DJ.onSave) DJ.onSave(key);
+      }
+    } catch (e) { /* 저장 불가: 무시 */ }
   }
   DJ.load = load; DJ.save = save;
 

@@ -5,8 +5,38 @@
 <section class="page-hero">
   <p class="eyebrow">관심 단지</p>
   <h1>저장한 단지와<br>최근 본 단지</h1>
-  <p class="lead">관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+  <p class="lead">{% if account %}관심 단지와 임장 기록은 이 기기에 저장되고, 카카오로 로그인하면 다른 기기에서도 이어 볼 수 있어요.{% else %}관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
 </section>
+{% if account %}
+{# 카카오 로그인: 현장에서 휴대폰으로 적은 호가·메모를 집 PC에서 이어 정리하게 (sync.js) #}
+<section class="acct" id="account" data-account aria-labelledby="acct-title">
+  <div class="acct-out" data-acct-out>
+    <div class="acct-copy">
+      <h2 id="acct-title">임장 기록, 어느 기기에서든 이어 보기</h2>
+      <p>현장에서 휴대폰으로 적은 호가·메모·체크를 집에서 PC로 이어 정리하세요. 관심 단지·임장 노트·코스가 카카오 계정에 저장돼요.</p>
+    </div>
+    <button type="button" class="kakao-btn" data-login>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
+      <span>카카오 로그인</span></button>
+    <p class="acct-fine">닉네임과 프로필 사진만 받아요 · 로그인하지 않아도 모든 기능을 쓸 수 있어요 · <a href="privacy.html">개인정보처리방침</a></p>
+  </div>
+  <div class="acct-in" data-acct-in hidden>
+    <span class="acct-av" data-acct-av aria-hidden="true"></span>
+    <div class="acct-copy"><b data-acct-name></b><span class="acct-state" data-acct-state></span></div>
+    <div class="acct-actions">
+      <button type="button" class="btn ghost sm" data-logout>로그아웃</button>
+      <details class="acct-more">
+        <summary>계정 관리</summary>
+        <div class="acct-menu">
+          <button type="button" class="link-btn" data-logout-wipe>로그아웃하고 이 기기 기록 지우기</button>
+          <button type="button" class="link-btn danger" data-delete>계정과 저장된 기록 삭제</button>
+          <a href="privacy.html">개인정보처리방침</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+{% endif %}
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
 <a class="to-cards" href="cards.html"><span class="tc-ico"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
   <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>본 단지 카드와 임장 체크를 모아 봐요</span></span><span class="tc-go" aria-hidden="true">→</span></a>
