@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
 import re
 import shutil
 from datetime import datetime
@@ -202,6 +203,17 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
+def _account(cfg) -> dict | None:
+    """카카오 로그인·기록 이어 보기 (Supabase). 주소와 공개용 키는 GitHub Secrets(환경 변수)에서,
+    개인정보처리방침의 책임자·연락처는 설정 [account] 에서. 하나라도 없으면 로그인을 넣지 않습니다."""
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    acc = cfg.account
+    if not (url.startswith("https://") and key and acc.get("owner") and acc.get("email")):
+        return None
+    return dict(acc, url=url, key=key)
+
+
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
@@ -369,6 +381,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
                   exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=loc_groups,
+                  account=_account(cfg),
                   loc_weight=sum(f["weight"] for g in loc_groups for f in g["factors"]) or 1)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
@@ -392,6 +405,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
+    if common["account"]:
+        (out_dir / "privacy.html").write_text(
+            env.get_template("privacy.html").render(root="", page_path="privacy.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
     import json as _json

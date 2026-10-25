@@ -3,7 +3,7 @@
 {% block head_extra %}
 {# 사이트에 들어올 때마다(새 창·새 탭·주소 입력·바깥 링크) 인트로부터. 같은 창에서 인트로를 이미 봤거나,
    사이트 안에서 넘어왔거나, 검색 로봇이면 그대로 (인트로 ↔ 첫 화면이 계속 오가지 않게 이 창에서만 기억) #}
-<script>try{var r=document.referrer;if(!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent)&&!(r&&new URL(r).origin===location.origin)&&!/[?&]skip/.test(location.search))location.replace("intro.html")}catch(e){}</script>
+<script>try{var r=document.referrer;if(!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent)&&!(r&&new URL(r).origin===location.origin)&&!/[?&](skip|code|error)/.test(location.search))location.replace("intro.html")}catch(e){}</script>
 {% endblock %}
 {% block body %}
 <section class="hero hero-main">

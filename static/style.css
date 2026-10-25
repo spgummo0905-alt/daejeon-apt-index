@@ -2564,3 +2564,68 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 .alt-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 2px; }
 .alt-acts .chip { margin: 0; cursor: pointer; }
 .alt-acts .chip:disabled { cursor: default; opacity: .75; }
+
+/* 카카오 로그인: 위쪽 계정 버튼 (로그인하면 프로필 사진) */
+.acct-btn { position: relative; display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--chip); color: var(--text); transition: border-color var(--t-fast); }
+.acct-btn:hover { border-color: var(--text-2); text-decoration: none; }
+.acct-btn .ic { width: 18px; height: 18px; }
+.acct-btn .ic[hidden] { display: none; }
+.acct-face { display: grid; place-items: center; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
+.acct-face img { width: 100%; height: 100%; object-fit: cover; }
+.acct-ini { display: grid; place-items: center; width: 100%; height: 100%; font-size: 14px; font-weight: 800; color: #3c1e1e; background: #fee500; }
+.acct-btn.on::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%;
+  background: #1fa463; border: 2px solid var(--surface); }
+.acct-btn.on.err::after { background: #d97706; }
+body[data-page="intro"] .acct-btn { display: none; }
+@media (max-width: 719px) { .acct-btn { width: 36px; height: 36px; } }
+
+/* 관심 화면 계정 칸 */
+.acct { margin: 0 0 16px; padding: 18px 20px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); scroll-margin-top: 80px; }
+.acct-out { display: grid; grid-template-columns: 1fr auto; gap: 6px 20px; align-items: center; }
+.acct-out .acct-copy h2 { margin: 0 0 4px; font-size: 18px; letter-spacing: -0.01em; }
+.acct-out .acct-copy p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.55; max-width: 560px; }
+.acct-fine { grid-column: 1 / -1; margin: 6px 0 0; color: var(--muted); font-size: 12.5px; }
+.acct-fine a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+/* 카카오 로그인 버튼 (카카오 디자인 가이드: 노란 바탕 #FEE500, 검은 말풍선, 글자 85% 검정) */
+.kakao-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px;
+  border: 0; border-radius: 12px; background: #fee500; color: rgba(0, 0, 0, .85); font: inherit; font-size: 15px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: filter var(--t-fast), transform var(--t-fast); }
+.kakao-btn svg { width: 20px; height: 20px; fill: #000; }
+.kakao-btn:hover { filter: brightness(.97); }
+.kakao-btn:active { transform: scale(.98); }
+.kakao-btn:disabled { opacity: .6; cursor: progress; }
+.acct-in { display: flex; align-items: center; gap: 14px; }
+.acct-av { width: 44px; height: 44px; flex: none; border-radius: 50%; overflow: hidden; background: var(--chip); }
+.acct-av img { width: 100%; height: 100%; object-fit: cover; }
+.acct-in .acct-copy { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.acct-in .acct-copy b { font-size: 16px; }
+.acct-state { color: var(--muted); font-size: 13px; }
+.acct-state::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #1fa463; vertical-align: 1px; }
+.acct-state.bad::before { background: #d97706; }
+.acct-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.acct-actions .btn { margin-top: 0; }
+.acct-more { position: relative; }
+.acct-more summary { list-style: none; cursor: pointer; padding: 8px 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.acct-more summary::-webkit-details-marker { display: none; }
+.acct-more summary:hover { color: var(--text); }
+.acct-menu { position: absolute; z-index: 20; right: 0; top: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  min-width: 240px; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(8,12,20,.14); }
+.acct-menu .link-btn, .acct-menu a { padding: 8px 0; font-size: 14px; color: var(--text); font-weight: 600; }
+.acct-menu .danger { color: #c2410c; }
+@media (max-width: 719px) {
+  .acct { padding: 16px; }
+  .acct-out { grid-template-columns: 1fr; }
+  .kakao-btn { width: 100%; margin-top: 8px; }
+  .acct-in { flex-wrap: wrap; }
+  .acct-actions { margin-left: 58px; width: calc(100% - 58px); }
+}
+
+/* 개인정보처리방침 */
+.policy { max-width: 760px; }
+.policy h2 { margin: 28px 0 8px; font-size: 18px; }
+.policy p, .policy li { color: var(--text-2); line-height: 1.7; font-size: 15px; }
+.policy ul { padding-left: 20px; margin: 6px 0; }
+.policy table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+.policy th, .policy td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+.policy th { color: var(--text); white-space: nowrap; width: 28%; }

@@ -104,6 +104,11 @@ class Config:
         return site
 
     @property
+    def account(self) -> dict:
+        """카카오 로그인·기록 이어 보기 [account] (지역 설정은 대전 것을 물려받음)."""
+        return dict(self.raw.get("account", {}))
+
+    @property
     def collect(self) -> dict:
         return self.raw["collect"]
 

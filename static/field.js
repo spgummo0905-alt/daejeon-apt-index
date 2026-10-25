@@ -55,6 +55,7 @@
 
   function build(c) {
     body.replaceChildren(where(c), checks(c), quotes(c), memo());
+    if (DJ.paintSync) DJ.paintSync();
   }
 
   // 1. 어디쯤: 역에서 단지까지(자료), 내 위치에서 단지까지(누르면), 길찾기
@@ -187,7 +188,9 @@
     };
     been.addEventListener("click", () => { if (v.d) delete v.d; else v.d = DJ.today(); keep(); paint(); });
     paint();
-    s.append(t, been, el("p", "fm-note", "기록은 이 기기의 브라우저에만 남아요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요."));
+    const note = el("p", "fm-note", "기록은 이 기기의 브라우저에만 남아요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요.");
+    note.dataset.syncNote = "";   // 카카오로 로그인했으면 sync.js 가 '계정에 저장돼요'로 바꿈
+    s.append(t, been, note);
     return s;
   }
 
