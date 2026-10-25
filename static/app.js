@@ -69,15 +69,15 @@
   DJ.el = el;
 
   // ---------- 알림 ----------
-  DJ.toast = function (title, body) {
+  DJ.toast = function (title, body, ms) {   // ms: 오래 보여 줄 때 (실패 이유처럼 읽어야 하는 알림)
     const zone = document.getElementById("toast-zone");
     if (!zone) return;
     const t = el("div", "toast");
     t.append(el("strong", "", title));
     if (body) t.append(el("span", "", body));
     zone.append(t);
-    setTimeout(() => t.classList.add("out"), 3200);
-    setTimeout(() => t.remove(), 3800);
+    setTimeout(() => t.classList.add("out"), ms || 3200);
+    setTimeout(() => t.remove(), (ms || 3200) + 600);
   };
 
   DJ.unlock = function () {}; // 예전 페이지 호환용 (업적 기능은 없앴습니다)
