@@ -341,13 +341,16 @@
     const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.replace(/^#/, ""));
     const err = [q.get("error"), h.get("error"), q.get("error_description"), h.get("error_description")].filter(Boolean).join(" ");
     const code = q.get("code"), pk = ls.get(PKCE, null);
-    if (pk && (code || err)) {
+    // 실패하면 카카오·Supabase 가 알려 준 이유를 함께 보여 줌 (원인을 캡처해 알려 줄 수 있게)
+    const why = msg => `잠시 뒤 다시 해 주세요. (이유: ${String(msg || "알 수 없음").slice(0, 140)})`;
+    if (err || (pk && code)) {
       ls.del(PKCE);
       ["code", "error", "error_code", "error_description", "state"].forEach(k => q.delete(k));
-      history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + (err ? "" : pk.hash || location.hash));
+      history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + (err || !pk ? "" : pk.hash || location.hash));
       if (err) {
         const no = /access_denied|denied|cancel/i.test(err);   // 카카오 동의 화면에서 취소
-        DJ.toast(no ? "로그인을 취소했어요" : "로그인하지 못했어요", no ? "언제든 다시 로그인할 수 있어요." : "잠시 뒤 다시 해 주세요.");
+        if (no) DJ.toast("로그인을 취소했어요", "언제든 다시 로그인할 수 있어요.");
+        else DJ.toast("로그인하지 못했어요", why(err), 12000);
         return;
       }
       try {
@@ -358,7 +361,7 @@
         if (changed) applied([], a.user.name);
         else welcome(a.user.name);
       } catch (e) {
-        if (!S.user) DJ.toast("로그인하지 못했어요", "잠시 뒤 다시 해 주세요.");
+        if (!S.user) DJ.toast("로그인하지 못했어요", why(e.message), 12000);
         else setState("error");
       }
       return;
