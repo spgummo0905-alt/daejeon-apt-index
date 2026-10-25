@@ -325,6 +325,12 @@
   {% endif %}
 </section>
 
+{# 같은 값, 가까운 다른 선택지 (alts.js): 84㎡ ±10%·3km 안 단지 세 곳과 다른 점, 임장 코스에 더하기 #}
+<section class="panel alts" id="alts" data-alts="{{ c.slug }}" hidden>
+  <div class="panel-head"><h2>같은 값으로 가까이에 있는 단지</h2><p class="muted" data-alts-sub></p></div>
+  <ol class="alt-list" data-alts-list></ol>
+</section>
+
 {# 살아본 사람들 이야기: 숫자로 안 보이는 소음·이웃·관리 이야기는 바깥 후기로.
    카카오맵 장소(별점·후기)와 네이버 블로그·카페 최근 글은 공식 API로 찾은 것만, 원문으로 잇습니다 #}
 {% set q = ((c.dong ~ " ") if c.dong else "") ~ c.name ~ ("" if c.name.endswith("아파트") else " 아파트") %}
@@ -455,6 +461,7 @@
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 <script src="{{ root }}static/field.js?v={{ v }}" defer></script>
+<script src="{{ root }}static/alts.js?v={{ v }}" defer></script>
 {% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>
 <script src="{{ root }}static/floors.js?v={{ v }}" defer></script>{% endif %}
 {% if latlng and kakao_js_key %}

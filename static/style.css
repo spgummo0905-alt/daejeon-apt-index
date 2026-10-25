@@ -2546,3 +2546,23 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 .nt-when.been { background: color-mix(in srgb, var(--s3) 15%, var(--surface)); color: var(--text); }
 .nt-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .nt-memo { font-size: 13.5px; color: var(--text-2); white-space: pre-line; }
+
+/* 단지 페이지: 같은 값으로 가까이에 있는 단지 (alts.js) */
+.alt-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.alt { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); }
+.alt-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; color: var(--text); }
+.alt-head:hover { text-decoration: none; }
+.alt-head:hover b { text-decoration: underline; }
+.alt-name { display: flex; align-items: flex-start; gap: 7px; min-width: 0; font-size: 15.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.alt-name .grade { flex: none; margin-top: 1px; }
+.alt-price { flex: none; display: grid; justify-items: end; line-height: 1.2; }
+.alt-price b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.alt-price small { font-size: 12px; font-weight: 700; color: var(--muted); }
+.alt-where { margin: 0; font-size: 13px; color: var(--text-2); }
+.alt-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.alt-tag { padding: 3px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+.alt-tag.good { color: color-mix(in srgb, var(--s3) 70%, var(--text)); border-color: color-mix(in srgb, var(--s3) 45%, var(--border)); }
+.alt-tag.bad { color: var(--muted); }
+.alt-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 2px; }
+.alt-acts .chip { margin: 0; cursor: pointer; }
+.alt-acts .chip:disabled { cursor: default; opacity: .75; }

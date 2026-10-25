@@ -180,6 +180,19 @@
     else if (c.dd != null && c.dd <= -10) out.push(["dip", "급매·가격을 낮춘 매물이 있는지 묻기", `고점보다 ${Math.abs(Math.round(c.dd))}% 낮아요`]);
     return out;
   };
+  // 임장 코스에 단지 더하기 (관심 화면 임장 코스와 같은 목록, 8곳까지). 더한 수를 돌려줌, 꽉 차면 -1
+  DJ.addToCourse = function (slugs) {
+    const st = load("course", {});
+    if (!Array.isArray(st.list)) st.list = DJ.favs().slice(0, 8);
+    let n = 0;
+    for (const x of slugs) {
+      if (st.list.includes(x)) continue;
+      if (st.list.length >= 8) { save("course", st); return n || -1; }
+      st.list.push(x); n++;
+    }
+    save("course", st);
+    return n;
+  };
   // 체크한 수 / 전체 (이 단지 항목 + 기본 항목)
   DJ.visitDone = (v, items) => [items.filter(([id]) => v.x[id]).length + DJ.CHECK.filter((_, i) => v.c[i]).length, items.length + DJ.CHECK.length];
 

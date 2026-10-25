@@ -382,3 +382,15 @@ def test_field_mode_and_notes(tmp_path):
     assert any("pq" in c for c in data["complexes"])
     my = (out / "my.html").read_text(encoding="utf-8")
     assert "data-notes-list" in my and my.index('id="course"') < my.index('id="notes"') < my.index('id="recent"')
+
+
+def test_same_budget_alternatives(tmp_path):
+    """같은 값으로 가까이에 있는 단지: 84㎡ ±10%·3km(모자라면 5km) 안 세 곳, 다른 점, 임장 코스에 더하기·나란히 비교."""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert "data-alts=" in page and "static/alts.js" in page
+    assert page.index('id="loc"') < page.index('id="alts"') < page.index('id="reviews"')
+    js = (out / "static" / "alts.js").read_text(encoding="utf-8")
+    assert "<= 0.1" in js and "x.k <= 3" in js and "x.k <= 5" in js and "DJ.addToCourse([slug, c.s])" in js and "compare.html?s=" in js
+    assert "DJ.addToCourse = function" in (out / "static" / "app.js").read_text(encoding="utf-8")
