@@ -19,16 +19,31 @@ jobs:
           DB_PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           if [ -z "$DB_URL" ]; then echo "Secrets 에 SUPABASE_DB_URL 이 없습니다."; exit 1; fi
-          # 주소 안의 [YOUR-PASSWORD] 자리에 따로 넣은 비밀번호를 채움 (특수문자는 주소에 맞게 바꿔서)
-          if [ -n "$DB_PW" ]; then
-            DB_URL=$(python3 -c 'import os, urllib.parse as u; print(os.environ["DB_URL"].replace("[YOUR-PASSWORD]", u.quote(os.environ["DB_PW"], safe="")))')
-          fi
+          # 따로 넣은 비밀번호가 있으면 주소 안의 비밀번호 자리를 늘 그것으로 바꿈 ([YOUR-PASSWORD] 든 예전 비밀번호든,
+          # 특수문자는 주소에 맞게). 비밀은 찍지 않고 주소 모양만 로그에 남김
+          DB_URL=$(python3 - <<'PY'
+          import os, re, urllib.parse as u
+          url, pw = os.environ["DB_URL"].strip(), os.environ.get("DB_PW", "").strip()
+          m = re.match(r"^(postgres(?:ql)?://)([^:@/]+)(?::([^@]*))?@(.+)$", url)
+          if m and pw:
+              url = f"{m.group(1)}{m.group(2)}:{u.quote(pw, safe='')}@{m.group(4)}"
+          if m:
+              user, rest = m.group(2), m.group(4)
+              import sys
+              print(f"주소 모양: 사용자 {user.split('.')[0]}{'.' + user.split('.')[1][:4] + '…' if '.' in user else ' (프로젝트 표시 없음)'} · "
+                    f"서버 {rest.split('/')[0]} · 주소 안 비밀번호 {'자리표시' if (m.group(3) or '') == '[YOUR-PASSWORD]' else ('있음' if m.group(3) else '없음')} · "
+                    f"따로 넣은 비밀번호 {'있음 (' + str(len(pw)) + '자)' if pw else '없음'}", file=sys.stderr)
+          print(url)
+          PY
+          )
           case "$DB_URL" in
             *YOUR-PASSWORD*) echo "주소의 [YOUR-PASSWORD] 를 비밀번호로 바꾸거나, Secrets 에 SUPABASE_DB_PASSWORD 를 따로 넣어 주세요."; exit 1;;
             *pooler.supabase.com*) ;;
             *) echo "주의: Session pooler 주소가 아니면 GitHub 에서 연결되지 않을 수 있습니다 (직접 연결은 IPv6 전용).";;
           esac
           command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+          # 비밀번호를 막 바꾼 뒤면 풀러에 반영되기까지 조금 걸려 세 번까지 다시 시도
+          for i in 1 2 3; do psql "$DB_URL" -At -c "select 1" >/dev/null && break; [ "$i" = 3 ] && exit 2; echo "접속 다시 시도 ($i)"; sleep 30; done
           psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f scripts/supabase_setup.sql
           psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c "notify pgrst, 'reload schema';"
           psql "$DB_URL" -At -c "select '만든 것: ' || string_agg(name, ', ') from (select 'user_kv 표' as name from pg_tables where schemaname = 'public' and tablename = 'user_kv' union all select p.proname || ' 함수' from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in ('sync_put', 'delete_me', 'ping')) x;"
