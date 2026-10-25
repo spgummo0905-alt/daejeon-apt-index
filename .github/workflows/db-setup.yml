@@ -1,7 +1,8 @@
 name: db-setup
 
 # 기록 보관함(Supabase) 만들기 (수동 실행): scripts/supabase_setup.sql 을 데이터베이스에 실행하고 점검합니다.
-# Secrets 의 SUPABASE_DB_URL(Connect → Session pooler 의 URI, 비밀번호를 넣은 것)이 필요합니다.
+# Secrets 의 SUPABASE_DB_URL(Connect → Session pooler 의 URI)이 필요합니다. 주소의 [YOUR-PASSWORD] 를 그대로 두었으면
+# SUPABASE_DB_PASSWORD 에 데이터베이스 비밀번호를 따로 넣으면 채워서 씁니다.
 # 여러 번 실행해도 됩니다. 다 만들고 나면 SUPABASE_DB_URL 은 지워도 사이트에는 영향이 없습니다.
 on:
   workflow_dispatch:
@@ -15,10 +16,15 @@ jobs:
       - name: SQL 실행
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DB_PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           if [ -z "$DB_URL" ]; then echo "Secrets 에 SUPABASE_DB_URL 이 없습니다."; exit 1; fi
+          # 주소 안의 [YOUR-PASSWORD] 자리에 따로 넣은 비밀번호를 채움 (특수문자는 주소에 맞게 바꿔서)
+          if [ -n "$DB_PW" ]; then
+            DB_URL=$(python3 -c 'import os, urllib.parse as u; print(os.environ["DB_URL"].replace("[YOUR-PASSWORD]", u.quote(os.environ["DB_PW"], safe="")))')
+          fi
           case "$DB_URL" in
-            *YOUR-PASSWORD*) echo "주소 안의 [YOUR-PASSWORD] 를 실제 데이터베이스 비밀번호로 바꿔 넣어 주세요."; exit 1;;
+            *YOUR-PASSWORD*) echo "주소의 [YOUR-PASSWORD] 를 비밀번호로 바꾸거나, Secrets 에 SUPABASE_DB_PASSWORD 를 따로 넣어 주세요."; exit 1;;
             *pooler.supabase.com*) ;;
             *) echo "주의: Session pooler 주소가 아니면 GitHub 에서 연결되지 않을 수 있습니다 (직접 연결은 IPv6 전용).";;
           esac
