@@ -195,6 +195,7 @@
   // 받아 온 기록이 화면에 바로 보이게: 기록을 모아 보여 주는 화면은 한 번 새로 엽니다
   function applied(changed, hello) {
     if (hello) ss.set("djdex-hello", hello);
+    if (DJ.applyPrefs && (changed.includes("prefs") || changed.includes("*"))) DJ.applyPrefs();   // 다른 기기의 면적 단위 등
     const page = document.body.dataset.page;
     const last = +ss.get("djdex-reload") || 0;
     if ((hello || ["my", "cards"].includes(page)) && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게

@@ -27,6 +27,8 @@
     draw();
   });
   sec.querySelectorAll("[data-cs-mode]").forEach(b => b.addEventListener("click", () => { state.mode = b.dataset.csMode; draw(); }));
+  // 내 설정에서 이동 방법을 바꾸면 코스에도 (prefs.js)
+  document.addEventListener("dj:mode", e => { state.mode = e.detail; if (D) draw(); });
   sec.querySelector("[data-cs-print]").addEventListener("click", () => {
     sec.querySelectorAll(".cs-check").forEach(x => { x.open = true; });   // 체크리스트까지 펼쳐서 인쇄
     document.body.classList.add("print-course");

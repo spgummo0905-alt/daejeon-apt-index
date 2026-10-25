@@ -422,7 +422,7 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert my.index('id="account"') < my.index('id="favs"')
     index = (out / "index.html").read_text(encoding="utf-8")
     assert "data-acct" in index and 'href="privacy.html"><b>개인정보처리방침</b>' in index
-    assert "(skip|code|error)" in index   # 카카오에서 돌아올 때 인트로로 보내지 않음
+    assert "(skip|code|error|stay)" in index   # 카카오에서 돌아올 때 인트로로 보내지 않음
     privacy = (out / "privacy.html").read_text(encoding="utf-8")
     for s in ("Supabase, Inc.", "일본(도쿄)", "help@example.com", "운영자", "2026-10-26", "만 14세 미만", "118"):
         assert s in privacy
@@ -434,3 +434,21 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
     assert "enable row level security" in sql and "security definer" in sql and "where public.user_kv.t < excluded.t" in sql
     assert "revoke all on public.user_kv from anon, authenticated" in sql
+
+
+def test_my_settings_and_note_export(tmp_path):
+    # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    my = (out / "my.html").read_text(encoding="utf-8")
+    for s in ('id="prefs"', 'data-pf="mode"', 'data-pf="dp"', "data-pf-checks", "data-pf-backup", "data-pf-restore",
+              'data-area-unit="py"', "data-nt-csv", "data-nt-print", "static/prefs.js"):
+        assert s in my, s
+    assert my.index('id="prefs"') < my.index('id="favs"')
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.prefs = () =>" in app and "const dp = DJ.prefs().dp" in app and '"my:" + DJ.hash(t)' in app
+    js = (out / "static" / "prefs.js").read_text(encoding="utf-8")
+    assert '"\\uFEFF"' in js and "imjang-notes-" in js and 'dispatchEvent(new CustomEvent("dj:mode"' in js
+    assert 'addEventListener("dj:mode"' in (out / "static" / "course.js").read_text(encoding="utf-8")
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'localStorage.getItem("djdex:prefs")' in index   # 처음 볼 지역
