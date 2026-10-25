@@ -452,3 +452,31 @@ def test_my_settings_and_note_export(tmp_path):
     assert 'addEventListener("dj:mode"' in (out / "static" / "course.js").read_text(encoding="utf-8")
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'localStorage.getItem("djdex:prefs")' in index   # 처음 볼 지역
+
+
+def test_family_share_and_field_photos(tmp_path, monkeypatch):
+    # 가족과 함께 보기(공유 링크, share.html)와 현장 사진: 로그인을 켰을 때만, 처리방침에도
+    from djdex import config
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26", "provider": "custom:kakao"}))
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    share = (out / "share.html").read_text(encoding="utf-8")
+    assert '<meta name="robots" content="noindex">' in share and "static/share.js" in share and "data-sh-body" in share
+    assert "share.html" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "data-share hidden" in my and "data-share-actions" in my
+    js = (out / "static" / "share.js").read_text(encoding="utf-8")
+    assert "/rest/v1/rpc/shared_view" in js and "DJ.photoUrl" in js
+    sync = (out / "static" / "sync.js").read_text(encoding="utf-8")
+    assert "DJ.photoPut = async function" in sync and "/storage/v1/object/photos/" in sync and "allPhotos()" in sync
+    field = (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert "function photos()" in field and "1280 / Math.max" in field and 'toBlob(ok, "image/jpeg", 0.8)' in field
+    privacy = (out / "privacy.html").read_text(encoding="utf-8")
+    assert "현장 사진" in privacy and "함께 보기" in privacy and "위치 정보" in privacy
+    sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
+    for s in ("create table if not exists public.shares", "function public.shared_view(t text)", "'photos', 'photos', true, 1048576",
+              "photos insert own", "public.photo_quota_ok()", "grant execute on function public.shared_view(text) to anon"):
+        assert s in sql, s

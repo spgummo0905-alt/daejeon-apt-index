@@ -71,6 +71,28 @@
     }
     return refreshing;
   }
+  // 공유 링크·현장 사진에서 같이 씀 (prefs.js, field.js, share.js)
+  DJ.sb = { call, token };
+  DJ.photoUrl = path => API + "/storage/v1/object/public/photos/" + String(path).split("/").map(encodeURIComponent).join("/");
+  // 현장 사진 올리기·지우기 (본인 폴더 <id>/<단지>/ 에만, Storage 규칙이 막음)
+  DJ.photoPut = async function (slug, blob) {
+    const at = await token();
+    if (!at || !S.user) throw new Error("로그인이 필요해요");
+    const path = `${S.user.id}/${slug}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const r = await fetch(API + "/storage/v1/object/photos/" + path, { method: "POST", body: blob,
+      headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "image/jpeg", "x-upsert": "false" } });
+    if (!r.ok) { const e = new Error((await r.text()).slice(0, 120) || "HTTP " + r.status); e.status = r.status; throw e; }
+    return path;
+  };
+  DJ.photoDel = async function (paths) {
+    const at = await token();
+    if (!at || !paths.length) return;
+    await fetch(API + "/storage/v1/object/photos", { method: "DELETE", body: JSON.stringify({ prefixes: paths }),
+      headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "application/json" } });
+  };
+  // 이 계정의 모든 현장 사진 경로 (임장 노트 기록에서)
+  const allPhotos = () => localKeys().filter(k => k.startsWith("visit:")).flatMap(k => ((getLocal(k) || {}).p || []).map(x => x[0]));
+
   function forget() {
     ls.del(AUTH); ls.del(META);
     S.user = null; S.state = "";
@@ -236,6 +258,9 @@
   DJ.deleteAccount = async function () {
     if (!confirm("카카오 로그인 연결과 계정에 저장된 기록을 모두 지울까요?\n이 기기에 남은 기록은 지우지 않아요.")) return;
     try {
+      try { await pull(); } catch (e) { /* 받지 못해도 이 기기 기록으로 */ }
+      const ph = allPhotos();
+      for (let i = 0; i < ph.length; i += 100) await DJ.photoDel(ph.slice(i, i + 100));   // 사진부터 지움
       await call("/rest/v1/rpc/delete_me", { method: "POST", body: {} }, await token());
       forget();
       DJ.toast("계정을 지웠어요", "계정에 저장된 기록도 모두 지웠어요. 이 기기 기록은 그대로예요.");
@@ -262,6 +287,7 @@
     return S.at ? `카카오 계정에 저장돼요 · 마지막 저장 ${when(S.at)}` : "카카오 계정에 저장돼요";
   }
   function setState(s) { S.state = s; paint(); }
+  let lastUid;
   function paint() {
     const u = S.user;
     document.querySelectorAll("[data-acct]").forEach(b => {
@@ -285,6 +311,8 @@
         st.classList.toggle("bad", S.state === "error");
       }
     }
+    const uid = u ? u.id : null;
+    if (uid !== lastUid) { lastUid = uid; document.dispatchEvent(new CustomEvent("dj:auth", { detail: u })); }   // 로그인·로그아웃 때 한 번
     document.querySelectorAll("[data-sync-note]").forEach(p => {
       p.textContent = u ? "기록은 카카오 계정에 저장돼 다른 기기에서도 이어 볼 수 있어요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요."
         : "기록은 이 기기의 브라우저에 남아요. 관심 화면에서 카카오로 로그인하면 다른 기기에서도 이어 볼 수 있어요.";

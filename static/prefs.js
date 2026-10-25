@@ -116,7 +116,7 @@
     let keys = [];
     try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
     return keys.map(k => ({ c: d.bySlug[k.slice(12)], v: DJ.visit(k.slice(12)) }))
-      .filter(({ c, v }) => c && (v.d || v.m || v.q.length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
+      .filter(({ c, v }) => c && (v.d || v.m || v.q.length || (v.p || []).length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
       .sort((a, b) => (b.v.d || "").localeCompare(a.v.d || "") || a.c.n.localeCompare(b.c.n))
       .map(r => Object.assign(r, { items: DJ.visitItems(r.c, document.body.dataset.region) }));
   }
@@ -125,11 +125,12 @@
 
   notes.querySelector("[data-nt-csv]").addEventListener("click", () => DJ.data().then(d => {
     const esc = x => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`;
-    const head = ["단지", "지역", "다녀온 날", "체크", "확인한 항목", "들은 호가", "메모", "단지 페이지"];
+    const head = ["단지", "지역", "다녀온 날", "체크", "확인한 항목", "들은 호가", "메모", "사진", "단지 페이지"];
     const lines = rows(d).map(({ c, v, items }) => {
       const [n, all] = DJ.visitDone(v, items);
       const done = items.filter(([id]) => v.x[id]).map(([, t]) => t).concat(DJ.CHECK.filter((_, i) => v.c[i]));
-      return [c.n, DJ.place(c), day(v.d), `${n}/${all}`, done.join(" / "), v.q.map(quoteText).join(" / "), v.m || "", base + "apt/" + c.s + ".html"].map(esc).join(",");
+      return [c.n, DJ.place(c), day(v.d), `${n}/${all}`, done.join(" / "), v.q.map(quoteText).join(" / "), v.m || "",
+        (v.p || []).length ? `${v.p.length}장` : "", base + "apt/" + c.s + ".html"].map(esc).join(",");
     });
     // 엑셀이 한글을 바로 읽게 BOM 을 앞에
     download(`imjang-notes-${stamp()}.csv`, "\uFEFF" + [head.map(esc).join(","), ...lines].join("\r\n"), "text/csv;charset=utf-8");
@@ -149,11 +150,75 @@
       art.append(ul);
       if (v.q.length) art.append(el("p", "", "들은 호가: " + v.q.map(quoteText).join(", ")));
       if (v.m) art.append(el("p", "nt-p-memo", "메모: " + v.m));
+      if ((v.p || []).length && DJ.photoUrl) {   // 현장 사진도 작게
+        const ph = el("div", "nt-p-photos");
+        v.p.slice(0, 6).forEach(([path]) => { const img = el("img"); img.src = DJ.photoUrl(path); img.alt = ""; ph.append(img); });
+        art.append(ph);
+      }
       sheet.append(art);
     });
     document.body.append(sheet);
     document.body.classList.add("print-notes");
+    return Promise.race([Promise.all([...sheet.querySelectorAll("img")].map(i => i.decode().catch(() => {}))),
+      new Promise(ok => setTimeout(ok, 3000))]).then(() => sheet);   // 사진이 뜬 뒤 인쇄
+  }).then(sheet => {
     window.print();
     setTimeout(() => { document.body.classList.remove("print-notes"); sheet.remove(); }, 800);
   }));
+})();
+
+// ---------- 가족과 함께 보기: 공유 링크 만들기·보내기·끊기 (로그인했을 때만) ----------
+(function () {
+  const box = document.querySelector("[data-share]");
+  if (!box || !DJ.sb) return;
+  const { el } = DJ;
+  const acts = box.querySelector("[data-share-actions]");
+  let tok = null, uid = null;
+  const rpc = async name => DJ.sb.call("/rest/v1/rpc/" + name, { method: "POST", body: {} }, await DJ.sb.token());
+  const link = () => location.origin + location.pathname.replace(/[^/]*$/, "") + "share.html?t=" + tok;
+  const busy = b => { b.disabled = true; return () => { b.disabled = false; }; };
+  function render() {
+    acts.replaceChildren();
+    if (!tok) {
+      const mk = el("button", "btn primary", "링크 만들기");
+      mk.type = "button";
+      mk.addEventListener("click", () => {
+        const done = busy(mk);
+        rpc("share_create").then(t => { tok = t; render(); DJ.toast("함께 보기 링크를 만들었어요", "'링크 보내기'로 가족에게 보내 주세요."); })
+          .catch(() => { done(); DJ.toast("링크를 만들지 못했어요", "잠시 뒤 다시 해 주세요."); });
+      });
+      acts.append(mk);
+      return;
+    }
+    const url = el("input", "acct-share-url");
+    url.readOnly = true; url.value = link(); url.setAttribute("aria-label", "함께 보기 링크");
+    url.addEventListener("focus", () => url.select());
+    const send = el("button", "btn primary", "링크 보내기");
+    send.type = "button";
+    send.addEventListener("click", () => {
+      const text = "우리 집 임장 기록이에요. 관심 단지와 현장 메모를 같이 봐 주세요.";
+      if (navigator.share) navigator.share({ title: "임장 기록 함께 보기", text, url: link() }).catch(() => {});
+      else DJ.copyLink(link(), "카카오톡이나 문자로 가족에게 보내 주세요");
+    });
+    const cut = el("button", "btn ghost", "링크 끊기");
+    cut.type = "button";
+    cut.addEventListener("click", () => {
+      if (!confirm("이 링크를 끊을까요? 링크를 받은 사람은 더 이상 볼 수 없어요.")) return;
+      const done = busy(cut);
+      rpc("share_revoke").then(() => { tok = null; render(); DJ.toast("링크를 끊었어요", "필요하면 새 링크를 만들 수 있어요."); })
+        .catch(() => { done(); DJ.toast("끊지 못했어요", "잠시 뒤 다시 해 주세요."); });
+    });
+    acts.append(url, send, cut);
+  }
+  function check() {
+    const u = DJ.sync && DJ.sync.user;
+    box.hidden = !u;
+    if (!u) { uid = null; tok = null; return; }
+    if (uid === u.id) return;
+    uid = u.id;
+    acts.replaceChildren(el("span", "muted", "불러오는 중…"));
+    rpc("share_get").then(t => { tok = t || null; render(); }).catch(() => { tok = null; render(); });
+  }
+  document.addEventListener("dj:auth", check);
+  check();
 })();

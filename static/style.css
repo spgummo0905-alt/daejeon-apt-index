@@ -2695,3 +2695,48 @@ body[data-page="intro"] .acct-btn { display: none; }
   .nt-p p { margin: 4px 0; font-size: 13px; }
   .nt-p-memo { white-space: pre-wrap; }
 }
+
+/* 가족과 함께 보기 (관심 화면 계정 칸 아래) */
+.acct-share { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.acct-share[hidden] { display: none; }
+.acct-share-copy { display: flex; flex-direction: column; gap: 3px; }
+.acct-share-copy b { font-size: 15px; }
+.acct-share-copy span { color: var(--text-2); font-size: 13.5px; line-height: 1.55; }
+.acct-share-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.acct-share-actions .btn { margin-top: 0; }
+.acct-share-url { flex: 1 1 240px; min-width: 0; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--chip); color: var(--text-2); font: inherit; font-size: 13px; }
+
+/* 현장 모드 사진 */
+.fm-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-top: 8px; }
+.fm-ph { position: relative; margin: 0; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: var(--chip); }
+.fm-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fm-ph.wait { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.fm-ph-del { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.fm-ph-add { aspect-ratio: 1; border-radius: 12px; border: 1.5px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-2); cursor: pointer; }
+.fm-ph-add span { font-size: 22px; line-height: 1; }
+.fm-ph-add small { font-size: 12px; }
+.nt-photos { display: flex; gap: 6px; margin-top: 8px; }
+.nt-photos img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+@media print { .nt-p-photos { display: flex; gap: 6px; flex-wrap: wrap; } .nt-p-photos img { width: 120px; height: 90px; object-fit: cover; } }
+
+/* 함께 보는 임장 기록 (share.html) */
+.sh-sec { margin-bottom: 16px; }
+.sh-sec h2 { margin: 0 0 10px; font-size: 18px; }
+.sh-note { padding: 14px 0; border-top: 1px solid var(--border); }
+.sh-note:first-of-type { border-top: 0; padding-top: 4px; }
+.sh-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); }
+.sh-head:hover { text-decoration: none; }
+.sh-head b { font-size: 16px; }
+.sh-head .muted { font-size: 13px; }
+.sh-done { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sh-done li { padding: 4px 10px; border-radius: 999px; background: var(--chip); font-size: 13px; color: var(--text-2); }
+.sh-q, .sh-memo { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--text-2); }
+.sh-memo { white-space: pre-wrap; padding: 10px 12px; border-radius: 12px; background: var(--chip); }
+.sh-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 10px; }
+.sh-photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; }
+.sh-course { margin: 0; padding-left: 22px; line-height: 2; }
+.sh-favs { list-style: none; margin: 0; padding: 0; }
+.sh-favs a { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--border); color: var(--text); }
+.sh-favs li:first-child a { border-top: 0; }
+.sh-favs a:hover { text-decoration: none; }
+.sh-away { margin: 0 0 16px; }
