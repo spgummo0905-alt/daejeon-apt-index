@@ -12,6 +12,14 @@
   <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>본 단지 카드와 임장 체크를 모아 봐요</span></span><span class="tc-go" aria-hidden="true">→</span></a>
 <section class="panel">
   <div class="panel-head row-between"><h2>관심 단지</h2><a class="btn" id="fav-battle" hidden><svg class="ic"><use href="#i-compare"/></svg><span>관심 단지끼리 비교</span></a></div>
+  {# 새 소식: 지난번 확인한 뒤 새 거래·시세 변화가 있는 관심 단지 (app.js 의 DJ.watchSync) #}
+  <div class="wn" id="news" data-news hidden>
+    <div class="wn-head">
+      <p><b>새 소식 <span data-news-n></span>곳</b><span class="muted">지난번 확인한 뒤 새 거래가 있거나 시세가 바뀐 관심 단지예요.</span></p>
+      <button type="button" class="btn ghost sm" data-news-done>모두 확인했어요</button>
+    </div>
+    <ul class="wn-list" data-news-list></ul>
+  </div>
   <div class="card-grid" id="favs"></div>
 </section>
 {# 임장 코스: 관심 단지를 가까운 순서로 묶어 하루 동선, 구간마다 카카오맵 길찾기, 단지마다 현장 체크리스트 (course.js) #}

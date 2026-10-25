@@ -10,6 +10,41 @@
     const favs = DJ.favs().map(s => d.bySlug[s]).filter(Boolean);
     const recent = DJ.recent().map(r => d.bySlug[r.s]).filter(Boolean);
 
+    // 새 소식: 지난번 확인한 뒤 새 거래·시세 변화. 누르면 그 단지 거래 목록으로, '확인'하면 지금 상태를 기준으로
+    const news = DJ.watchSync(d.bySlug), nbox = document.querySelector("[data-news]");
+    if (nbox && news.length) {
+      const list = nbox.querySelector("[data-news-list]"), cnt = nbox.querySelector("[data-news-n]");
+      const left = () => {
+        const k = list.children.length;
+        cnt.textContent = k;
+        DJ.save("watchN", k);
+        DJ.paintFavCount();
+        nbox.hidden = !k;
+      };
+      news.forEach(({ c, n }) => {
+        const li = el("li", "wn-item");
+        const a = el("a", "wn-link");
+        a.href = DJ.href(c) + "#trades";
+        const tags = el("span", "wn-tags");
+        DJ.newsText(n).forEach(t => tags.append(el("span", "wn-tag", t)));
+        if (n.high) tags.append(el("span", "wn-tag hot", "신고가"));
+        a.append(el("span", "grade g-" + c.g, c.g),
+          el("span", "wn-name", c.n), el("span", "wn-where muted", DJ.place(c) + " · " + n.since.slice(5).replace("-", ".") + " 확인 뒤"), tags);
+        const ok = el("button", "wn-ok", "확인");
+        ok.type = "button";
+        ok.setAttribute("aria-label", c.n + " 소식 확인");
+        ok.addEventListener("click", () => { DJ.watchSeen(c); li.remove(); left(); });
+        li.append(a, ok);
+        list.append(li);
+      });
+      nbox.querySelector("[data-news-done]").addEventListener("click", () => {
+        news.forEach(({ c }) => DJ.watchSeen(c));
+        list.replaceChildren();
+        left();
+      });
+      left();
+    }
+
     const favBox = document.getElementById("favs");
     if (!favs.length) favBox.append(el("p", "muted", "아직 저장한 단지가 없습니다. 단지 페이지 오른쪽 위의 ☆를 누르면 여기에 모입니다."));
     favs.forEach(c => favBox.append(DJ.card(c, d.stats)));

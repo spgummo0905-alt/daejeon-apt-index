@@ -9,12 +9,17 @@
       if (!list.length) return;
       const b = document.getElementById(box);
       b.textContent = "";
+      // 관심 단지 줄: 지난번 확인한 뒤 새 거래·시세 변화가 있는 단지는 빨간 점, 제목 옆에 '새 소식 N곳'
+      const news = sec === "my-strip" ? new Set(DJ.watchSync(d.bySlug).map(x => x.c.s)) : new Set();
       list.forEach(c => {
-        const a = el("a", "strip-item");
-        a.href = DJ.href(c);
+        const a = el("a", "strip-item" + (news.has(c.s) ? " has-news" : ""));
+        a.href = DJ.href(c) + (news.has(c.s) ? "#trades" : "");
         a.append(el("span", "grade g-" + c.g, c.g), el("strong", "", c.n), el("span", "muted", (c.i ?? "-") + "점"));
+        if (news.has(c.s)) a.setAttribute("aria-label", c.n + ", 새 소식 있음");
         b.append(a);
       });
+      const tag = document.querySelector("[data-strip-news]");
+      if (tag && news.size) { tag.textContent = `새 소식 ${news.size}곳`; tag.hidden = false; }
       document.getElementById(sec).hidden = false;
     });
   };

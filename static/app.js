@@ -82,10 +82,62 @@
     DJ.paintFavCount();
     return on;
   };
-  // 메뉴의 '관심 단지' 옆 숫자
+  // 메뉴의 '관심 단지' 옆 숫자. 새 소식이 있는 관심 단지가 있으면 그 수를 빨간 숫자로
   DJ.paintFavCount = function () {
-    const n = DJ.favs().length;
-    document.querySelectorAll("[data-fav-count]").forEach(b => { b.hidden = !n; b.textContent = n > 99 ? "99+" : n; });
+    const n = DJ.favs().length, news = n ? load("watchN", 0) : 0;
+    document.querySelectorAll("[data-fav-count]").forEach(b => {
+      const k = news || n;
+      b.hidden = !k;
+      b.textContent = k > 99 ? "99+" : k;
+      b.classList.toggle("news", !!news);
+      b.title = news ? `관심 단지 새 소식 ${news}곳` : "";
+    });
+  };
+
+  // ---------- 관심 단지 새 소식: 지난번 확인했을 때와 견줘 새 거래·시세 변화 (이 브라우저에만) ----------
+  // 임장 후보를 지켜보다 실제 거래가 생기면 다음 임장·가격 협상 때를 바로 알 수 있게.
+  // watch = {단지: [거래 수, 마지막 거래일, 84㎡ 시세(만원), 확인한 날]}. 관심 단지에 넣거나 단지 페이지를 열면 그때 상태로 맞춥니다.
+  DJ.snap = c => [c.tc || 0, c.ld || "", c.p || 0, DJ.today()];
+  DJ.news = function (c) {
+    const old = load("watch", {})[c.s];
+    if (!old) return null;
+    const n = {}, more = (c.tc || 0) - old[0];
+    if (more > 0) n.trades = more;
+    else if (c.ld && old[1] && c.ld > old[1]) n.trades = 1;
+    if (n.trades && c.ld) n.last = [c.ld, c.lr, c.lp];
+    if (n.trades && c.h) n.high = true;
+    if (c.p && old[2] && Math.abs(c.p - old[2]) >= 500) n.dp = [old[2], c.p];   // 84㎡ 시세가 500만 원 넘게 바뀜
+    return Object.keys(n).length ? Object.assign(n, { since: old[3] }) : null;
+  };
+  DJ.watchSeen = function (c) {
+    const w = load("watch", {});
+    w[c.s] = DJ.snap(c);
+    save("watch", w);
+  };
+  // 관심 단지 중 소식이 있는 곳 [{c, n}] (처음 보는 관심 단지는 지금 상태를 기준으로 저장만)
+  DJ.watchSync = function (bySlug) {
+    const w = load("watch", {}), out = [];
+    let changed = false;
+    DJ.favs().forEach(s => {
+      const c = bySlug[s];
+      if (!c) return;
+      if (!w[s]) { w[s] = DJ.snap(c); changed = true; return; }
+      const n = DJ.news(c);
+      if (n) out.push({ c, n });
+    });
+    if (changed) save("watch", w);
+    save("watchN", out.length);
+    DJ.paintFavCount();
+    return out;
+  };
+  // short: 단지 페이지에서는 바로 위 가격 배지에 최근 거래가 있어 빼요
+  DJ.newsText = function (n, short) {
+    const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
+    const out = [];
+    if (n.trades) out.push(`새 거래 ${n.trades}건`);
+    if (n.last && !short) out.push(`최근 ${n.last[0].slice(5)}${n.last[1] || n.last[2] ? " · " : ""}${n.last[1] ? n.last[1] + "㎡ " : ""}${n.last[2] || ""}`.trim());
+    if (n.dp) out.push(`84㎡ 시세 ${eok(n.dp[0])} → ${eok(n.dp[1])}`);
+    return out;
   };
   DJ.recent = () => load("recent", []);
   DJ.addRecent = function (c) {
@@ -705,6 +757,19 @@
     if (apt) {
       const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade, n: apt.dataset.name, i: apt.dataset.score,
         p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
+      // 관심 단지 새 소식용 지금 상태 (거래 수·마지막 거래·84㎡ 시세)
+      const now = { s: c.s, tc: +apt.dataset.tc || 0, ld: apt.dataset.ld || "", lp: apt.dataset.lp || "", lr: +apt.dataset.lr || 0,
+        p: +apt.dataset.p || 0, h: apt.dataset.high === "1" };
+      if (DJ.isFav(c.s)) {
+        const n = DJ.news(now), box = document.querySelector("[data-watch-news]");
+        if (n && box) {
+          box.querySelector("[data-watch-text]").textContent = DJ.newsText(n, true).join(" · ") + (n.high ? " · 신고가" : "");
+          box.title = `${n.since.replace(/-/g, ".")}에 확인한 뒤 바뀐 것`;
+          box.hidden = false;
+          save("watchN", Math.max(0, load("watchN", 0) - 1));
+        }
+        DJ.watchSeen(now);
+      }
       // 카드첩에 모으기 (최근 본 목록에 넣기 전에: 처음 쓰는 기기에서 이 단지가 '첫 카드'로 세어지게)
       const got = DJ.collect(c.s);
       DJ.addRecent(c);
@@ -725,6 +790,7 @@
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
           const on = DJ.toggleFav(c.s);
+          if (on) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
           paint(on);
           if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
           if (on) { DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다"); DJ.checkBadges(); }

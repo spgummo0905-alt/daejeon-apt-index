@@ -555,6 +555,7 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 /* 관심 단지 수 (메뉴) */
 .fav-count { display: inline-block; min-width: 17px; margin-left: 4px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff;
   font-size: 10.5px; font-weight: 800; line-height: 17px; text-align: center; vertical-align: 1px; font-variant-numeric: tabular-nums; }
+.fav-count.news { background: #c9302f; }
 .tabbar .fav-count { position: absolute; top: 0; left: calc(50% + 6px); margin: 0; }
 .tabbar a { position: relative; }
 
@@ -562,6 +563,35 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
 .strip-item { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border);
   color: var(--text); scroll-snap-align: start; }
+.strip-item.has-news { position: relative; border-color: rgba(217, 63, 62, .45); }
+.strip-item.has-news::after { content: ""; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: #d93f3e; }
+.strip-news { margin-left: 6px; padding: 2px 9px; border-radius: 999px; background: #c9302f; color: #fff; font-size: 12px; font-weight: 800;
+  vertical-align: 3px; letter-spacing: 0; }
+.strip-news:hover { text-decoration: none; filter: brightness(1.08); }
+
+/* 관심 단지 페이지: 새 소식 */
+.wn { margin: 4px 0 18px; padding: 14px 16px 6px; border-radius: 16px; border: 1px solid rgba(217, 63, 62, .28);
+  background: color-mix(in srgb, #d93f3e 5%, var(--surface)); }
+.wn-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; }
+.wn-head p { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.wn-head b { font-size: 15px; color: #c9302f; }
+.wn-head .muted { font-size: 13px; }
+.wn-head .btn { margin: 0; padding: 6px 12px; font-size: 13px; }
+.wn-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.wn-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.wn-link { flex: 1; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "g n" "g w" "t t";
+  gap: 2px 10px; align-items: center; color: var(--text); }
+.wn-link:hover { text-decoration: none; }
+.wn-link:hover .wn-name { text-decoration: underline; }
+.wn-link .grade { grid-area: g; }
+.wn-name { grid-area: n; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wn-where { grid-area: w; font-size: 12.5px; }
+.wn-tags { grid-area: t; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.wn-tag { padding: 3px 9px; border-radius: 999px; background: var(--chip); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wn-tag.hot { background: #c9302f; color: #fff; }
+.wn-ok { flex: 0 0 auto; min-width: 52px; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-2); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.wn-ok:hover { border-color: var(--text-2); color: var(--text); }
 .world-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
 .world-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 18px; border: 1px solid var(--border);
   color: var(--text); background: var(--surface); box-shadow: var(--shadow); transition: transform .15s, border-color .15s; }
@@ -1364,6 +1394,14 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .mc-all { display: block; padding: 6px 0 2px; text-align: center; font-weight: 800; color: var(--b2); }
 .mc.g-D .mc-all { color: var(--accent); }
 .mc-note { margin: 4px 0 0; font-size: 12px; color: var(--sub); text-align: center; }
+/* 관심 단지 새 소식 (단지 메인 카드): 지난번 확인한 뒤 새 거래·시세 변화 */
+.mc-news { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; margin: 12px auto 0; width: fit-content;
+  max-width: 100%; padding: 7px 14px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none;
+  background: var(--glass); border: 1px solid var(--line); animation: card-in 320ms var(--ease-out) both; }
+.mc-news b { position: relative; padding-left: 13px; font-size: 12px; font-weight: 800; }
+.mc-news b::before { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: #d93f3e;
+  box-shadow: 0 0 0 3px rgba(217, 63, 62, .2); }
+.mc-news:hover { text-decoration: none; border-color: rgba(217, 63, 62, .55); }
 .mc-strip { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 12px; }
 .mc-strip span { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--sub); background: var(--glass); border: 1px solid var(--line); }
 .mc-strip span.hot { color: #fff; background: #d93f3e; border-color: transparent; }
