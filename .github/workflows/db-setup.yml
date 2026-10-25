@@ -1,0 +1,39 @@
+name: db-setup
+
+# 기록 보관함(Supabase) 만들기 (수동 실행): scripts/supabase_setup.sql 을 데이터베이스에 실행하고 점검합니다.
+# Secrets 의 SUPABASE_DB_URL(Connect → Session pooler 의 URI, 비밀번호를 넣은 것)이 필요합니다.
+# 여러 번 실행해도 됩니다. 다 만들고 나면 SUPABASE_DB_URL 은 지워도 사이트에는 영향이 없습니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: SQL 실행
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then echo "Secrets 에 SUPABASE_DB_URL 이 없습니다."; exit 1; fi
+          case "$DB_URL" in
+            *YOUR-PASSWORD*) echo "주소 안의 [YOUR-PASSWORD] 를 실제 데이터베이스 비밀번호로 바꿔 넣어 주세요."; exit 1;;
+            *pooler.supabase.com*) ;;
+            *) echo "주의: Session pooler 주소가 아니면 GitHub 에서 연결되지 않을 수 있습니다 (직접 연결은 IPv6 전용).";;
+          esac
+          command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f scripts/supabase_setup.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c "notify pgrst, 'reload schema';"
+          psql "$DB_URL" -At -c "select '만든 것: ' || string_agg(name, ', ') from (select 'user_kv 표' as name from pg_tables where schemaname = 'public' and tablename = 'user_kv' union all select p.proname || ' 함수' from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in ('sync_put', 'delete_me', 'ping')) x;"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 점검
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          pip install -q requests
+          sleep 5
+          python scripts/account_check.py
