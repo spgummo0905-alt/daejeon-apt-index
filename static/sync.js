@@ -215,7 +215,7 @@
     const ch = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)));
     const back = location.origin + location.pathname + location.search;
     ls.set(PKCE, { v, hash: location.hash || (document.body.dataset.page === "my" ? "#account" : "") });
-    location.assign(`${API}/auth/v1/authorize?provider=kakao&redirect_to=${encodeURIComponent(back)}` +
+    location.assign(`${API}/auth/v1/authorize?provider=${encodeURIComponent(C.provider || "kakao")}&redirect_to=${encodeURIComponent(back)}` +
       `&code_challenge=${ch}&code_challenge_method=s256`);
   };
   DJ.logout = async function (wipe) {

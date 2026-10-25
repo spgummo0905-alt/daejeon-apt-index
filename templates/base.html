@@ -142,7 +142,7 @@
 <div class="toast-zone" id="toast-zone" aria-live="polite"></div>
 <script>window.DJ_ROOT = "{{ root }}";</script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>
-{% if account %}<script>window.DJ_SB = {{ {"url": account.url, "key": account.key} | tojson }};</script>
+{% if account %}<script>window.DJ_SB = {{ {"url": account.url, "key": account.key, "provider": account.provider or "kakao"} | tojson }};</script>
 <script src="{{ root }}static/sync.js?v={{ v }}"></script>{% endif %}
 <script src="{{ root }}static/charts.js?v={{ v }}"></script>
 <script src="{{ root }}static/holo.js?v={{ v }}"></script>

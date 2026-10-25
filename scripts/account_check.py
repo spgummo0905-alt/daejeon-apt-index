@@ -16,6 +16,7 @@ _u = urlparse(os.environ.get("SUPABASE_URL", "").strip())
 URL = f"{_u.scheme}://{_u.netloc}" if _u.netloc else ""   # 끝에 /rest/v1 같은 경로가 붙어 있어도 주소만
 KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
 SITE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+PROVIDER = os.environ.get("SUPABASE_PROVIDER", "custom:kakao")   # config.toml [account] provider 와 같게
 
 
 def mask(s: str) -> str:
@@ -47,22 +48,23 @@ def main(argv: list[str]) -> int:
     st = requests.get(f"{URL}/auth/v1/settings", headers=h, timeout=30)
     if st.ok:
         ext = st.json().get("external", {})
-        print(f"로그인 설정: 카카오 {'켜짐' if ext.get('kakao') else '꺼짐'} · 새 가입 {'막힘' if st.json().get('disable_signup') else '허용'}")
+        on = [k for k, v in ext.items() if v and ("kakao" in k or k.startswith("custom"))]
+        print(f"로그인 설정: 켜진 연결 {', '.join(on) or '(없음)'} · 새 가입 {'막힘' if st.json().get('disable_signup') else '허용'}")
     else:
         print(f"로그인 설정: HTTP {st.status_code} {code_of(st)}")
 
     # 로그인 버튼이 여는 주소: 카카오로 넘어가는지, 어떤 동의항목(scope)을 묻는지, 돌아올 주소가 무엇인지
-    au = requests.get(f"{URL}/auth/v1/authorize", params={"provider": "kakao", "redirect_to": SITE,
+    au = requests.get(f"{URL}/auth/v1/authorize", params={"provider": PROVIDER, "redirect_to": SITE,
                                                          "code_challenge": "x" * 43, "code_challenge_method": "s256"},
                       headers=h, allow_redirects=False, timeout=30)
     loc = au.headers.get("Location", "")
     if loc:
         u = urlparse(loc)
         q = parse_qs(u.query)
-        print(f"로그인 요청: {u.netloc}{u.path} · scope={q.get('scope', ['(없음)'])[0]} · "
+        print(f"로그인 요청({PROVIDER}): {u.netloc}{u.path} · scope={q.get('scope', ['(없음)'])[0]} · "
               f"client_id={mask(q.get('client_id', [''])[0])} · redirect_uri={q.get('redirect_uri', ['(없음)'])[0].split('://')[-1].split('.', 1)[-1]}")
     else:
-        print(f"로그인 요청: HTTP {au.status_code} {code_of(au) or au.text[:120]}")
+        print(f"로그인 요청({PROVIDER}): HTTP {au.status_code} {code_of(au) or au.text[:120]}")
 
     # 표·함수: 로그인 안 한 상태에선 막혀야 정상 (permission denied = 있음, 못 찾음 = 아직 안 만듦)
     tb = requests.get(f"{URL}/rest/v1/user_kv", params={"select": "k", "limit": "1"}, headers=h, timeout=30)

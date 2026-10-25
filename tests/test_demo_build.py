@@ -407,10 +407,11 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert "sync.js" not in my and 'id="account"' not in my and not (out / "privacy.html").exists()
 
     monkeypatch.setattr(config.Config, "account", property(lambda self: {
-        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26",
+        "provider": "custom:kakao"}))
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'window.DJ_SB = {"key": "sb_publishable_test", "url": "https://demo.supabase.co"}' in my
+    assert 'window.DJ_SB = {"key": "sb_publishable_test", "provider": "custom:kakao", "url": "https://demo.supabase.co"}' in my
     assert my.index("static/app.js") < my.index("static/sync.js") < my.index("static/my.js")
     assert 'id="account"' in my and "data-login" in my and "data-delete" in my and "data-logout-wipe" in my
     assert my.index('id="account"') < my.index('id="favs"')
@@ -422,6 +423,7 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
         assert s in privacy
     js = (out / "static" / "sync.js").read_text(encoding="utf-8")
     assert "grant_type=pkce" in js and "code_challenge_method=s256" in js and "/rest/v1/rpc/sync_put" in js
+    assert 'provider=${encodeURIComponent(C.provider || "kakao")}' in js
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert 'DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"]' in app and 'localStorage.setItem("djdex-t"' in app
     sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
