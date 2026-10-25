@@ -25,6 +25,17 @@
   }
   DJ.load = load; DJ.save = save;
 
+  // ---------- 내 설정 (관심 화면 '내 설정', prefs.js). 로그인하면 기기끼리 같이 맞춰짐 ----------
+  // region: 사이트를 열면 먼저 볼 지역, unit: 면적 단위, dp: 관심 단지 84㎡ 시세가 이만큼(만원) 바뀌면 새 소식 (0 = 받지 않음),
+  // checks: 내가 더한 현장 체크 항목 (현장 모드·임장 코스 체크리스트에 함께)
+  DJ.prefs = () => Object.assign({ region: "", unit: "", dp: 500, checks: [] }, load("prefs", {}));
+  DJ.setPref = function (k, v) {
+    const p = load("prefs", {});
+    p[k] = v;
+    save("prefs", p);
+    document.dispatchEvent(new CustomEvent("dj:prefs", { detail: k }));
+  };
+
   // ---------- 데이터 ----------
   let dataPromise = null;
   DJ.data = function () {
@@ -117,7 +128,8 @@
     else if (c.ld && old[1] && c.ld > old[1]) n.trades = 1;
     if (n.trades && c.ld) n.last = [c.ld, c.lr, c.lp];
     if (n.trades && c.h) n.high = true;
-    if (c.p && old[2] && Math.abs(c.p - old[2]) >= 500) n.dp = [old[2], c.p];   // 84㎡ 시세가 500만 원 넘게 바뀜
+    const dp = DJ.prefs().dp;   // 84㎡ 시세가 이만큼(기본 500만 원) 넘게 바뀜. 0이면 시세 변화는 알리지 않음
+    if (dp && c.p && old[2] && Math.abs(c.p - old[2]) >= dp) n.dp = [old[2], c.p];
     return Object.keys(n).length ? Object.assign(n, { since: old[3] }) : null;
   };
   DJ.watchSeen = function (c) {
@@ -170,6 +182,7 @@
     "상가·마트·병원·학원 (걸어서 닿는지)",
     "부동산에 들러 매물·호가·분위기 묻기",
   ];
+  DJ.hash = t => { let h = 5381; for (const ch of String(t)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0; return h.toString(36); };
   DJ.visit = s => Object.assign({ c: [], x: {}, m: "", q: [] }, load("visit:" + s, {}));
   DJ.saveVisit = (s, v) => save("visit:" + s, v);
   // 이 단지 자료로 짚는 현장 확인 거리 [id, 할 일, 왜]: 숫자로 본 약점을 현장에서 직접 확인하게
@@ -189,6 +202,7 @@
     if (c.jr != null && c.jr >= 70) out.push(["jeonse", "전세 매물과 호가도 함께 묻기", `전세가율 ${c.jr}% · 매매와 전세 차이가 작아요`]);
     if (c.h) out.push(["high", "지금 호가가 신고가보다 높은지 묻기", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
     else if (c.dd != null && c.dd <= -10) out.push(["dip", "급매·가격을 낮춘 매물이 있는지 묻기", `고점보다 ${Math.abs(Math.round(c.dd))}% 낮아요`]);
+    DJ.prefs().checks.forEach(t => out.push(["my:" + DJ.hash(t), t, "내가 더한 항목"]));   // 내 설정의 체크 항목
     return out;
   };
   // 임장 코스에 단지 더하기 (관심 화면 임장 코스와 같은 목록, 8곳까지). 더한 수를 돌려줌, 꽉 차면 -1
@@ -266,9 +280,10 @@
   DJ.unit = () => document.documentElement.classList.contains("u-py") ? "py" : "m2";
   const syncUnit = () => document.querySelectorAll("[data-area-unit]").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.areaUnit === DJ.unit())));
-  DJ.setUnit = function (u) {
+  DJ.setUnit = function (u, keep) {
     document.documentElement.classList.toggle("u-py", u === "py");
     try { localStorage.setItem("dj-unit", u); } catch (e) { /* 저장 못 해도 이번 화면은 바뀜 */ }
+    if (keep !== false && DJ.prefs().unit !== u) DJ.setPref("unit", u);
     syncUnit();
     document.dispatchEvent(new CustomEvent("dj:unit", { detail: u }));
   };
@@ -276,6 +291,9 @@
     const b = e.target.closest && e.target.closest("[data-area-unit]");
     if (b) DJ.setUnit(b.dataset.areaUnit);
   });
+  // 다른 기기에서 받아 온 설정(면적 단위)을 이 화면에 (sync.js 도 받아 온 뒤 부름)
+  DJ.applyPrefs = function () { const u = DJ.prefs().unit; if (u && u !== DJ.unit()) DJ.setUnit(u, false); };
+  DJ.applyPrefs();
   syncUnit();
   // 글자로 쓰는 면적 (select 처럼 태그를 못 넣는 곳): '97㎡(전용 77)' · '29평(전용 23)', 공급면적을 모르면 '전용 77㎡'
   DJ.area = function (ex, su, dec) {
