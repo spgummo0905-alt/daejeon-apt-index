@@ -82,9 +82,7 @@
 </section>
 {% endif %}
 
-</div>
-</div>
-
+{# 관련 점수: 넓은 화면에선 한눈에 보기 아래 오른쪽 칸에 (메인 카드 옆이 비지 않게), 휴대폰은 같은 순서로 아래에 #}
 <div class="apt-more">
 <div class="sec-head">
   <h2>관련 점수</h2>
@@ -123,6 +121,9 @@
     <span class="muted">{% if c.location_top is nan %}입지 정보 없음{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span>
   </div>
 </section>
+</div>
+
+</div>
 </div>
 
 {# 바로가기: 현장에서 휴대폰으로 필요한 칸만 바로 (스크롤 따라 붙고 지금 보는 칸을 표시, app.js scrollSpy) #}

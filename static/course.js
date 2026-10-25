@@ -176,7 +176,10 @@
       s("circle", { cx: x, cy: y, r: 11, class: "cs-dot" }, svg);
       const t = s("text", { x, y: y + 4, class: "cs-dot-no", "text-anchor": "middle" }, svg);
       t.textContent = i + 1;
-      const nm = s("text", { x, y: y - 16, class: "cs-dot-nm", "text-anchor": "middle" }, svg);
+      // 가장자리 단지는 이름이 지도 밖으로 잘리지 않게 안쪽으로 붙이고, 맨 위 단지는 점 아래에
+      const anchor = x > W - 72 ? "end" : x < 72 ? "start" : "middle";
+      const nm = s("text", { x: anchor === "end" ? x + 12 : anchor === "start" ? x - 12 : x, y: y < 30 ? y + 28 : y - 16,
+        class: "cs-dot-nm", "text-anchor": anchor }, svg);
       nm.textContent = c.n.length > 9 ? c.n.slice(0, 8) + "…" : c.n;
     });
     box.replaceChildren(svg);

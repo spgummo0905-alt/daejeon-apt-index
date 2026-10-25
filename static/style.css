@@ -1051,7 +1051,9 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .pd1 .pd-medal { background: linear-gradient(145deg, #fff3c4, #d4af52 55%, #a37b22); width: 46px; height: 46px; font-size: 20px; }
 .pd2 .pd-medal { background: linear-gradient(145deg, #ffffff, #c9d0db 55%, #8b95a7); }
 .pd3 .pd-medal { background: linear-gradient(145deg, #ffe0c7, #c98b5a 55%, #8a5a33); }
-.pd-name { font-size: 15px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-name { font-size: 15px; max-width: 100%; line-height: 1.3; overflow: hidden; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }   /* 1·2·3위 이름은 두 줄까지 */
+.nw { white-space: nowrap; }
 .pd-where { font-size: 12px; }
 .pd-val { margin-top: 6px; font-size: 24px; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .pd1 .pd-val { font-size: 28px; }
@@ -1117,7 +1119,8 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .ld-crown { width: 20px; height: 20px; fill: var(--gold); filter: drop-shadow(0 1px 1px rgba(0,0,0,.2)); transform-origin: 50% 90%; }
 .leader:hover .ld-crown { animation: crown-wiggle 600ms var(--ease-spring); }
 @keyframes crown-wiggle { 25% { transform: rotate(-12deg) translateY(-2px); } 60% { transform: rotate(8deg) translateY(-1px); } 100% { transform: none; } }
-.ld-name { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 16px; min-width: 0; }
+.ld-name { display: flex; align-items: flex-start; gap: 6px; font-weight: 800; font-size: 16px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere; }
+.ld-name .grade { flex: 0 0 auto; margin-top: 1px; }
 .ld-price { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .ld-chg { font-size: 13px; font-weight: 700; color: var(--muted); }
 .ld-chg.pos { color: var(--pos); } .ld-chg.neg { color: var(--neg); }
@@ -1293,12 +1296,12 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 /* ===== 단지 페이지 메인 카드 (이미지로 저장하는 카드와 같은 모양) ===== */
 .apt-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
 .apt-hero > * { min-width: 0; }
-/* 넓은 화면: 왼쪽 메인 카드, 오른쪽에 평형별 시세와 한눈에 보기 (휴대폰은 위에서 아래로 같은 순서).
-   관련 점수는 두 칸 아래 한 줄로 두어 오른쪽만 길어지지 않게 하고,
+/* 넓은 화면: 왼쪽 메인 카드, 오른쪽에 한눈에 보기와 관련 점수 (휴대폰은 위에서 아래로 같은 순서).
    오른쪽이 길어도 메인 카드가 화면을 따라 내려와 빈자리가 생기지 않게 */
 .apt-side .points { margin-top: 0; }
 @media (min-width: 900px) { .apt-hero { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); align-items: start; gap: 28px; }
-  .apt-more .sec-head { margin-top: 28px; } }
+  .apt-more .sec-head { margin-top: 22px; }
+  .apt-side .cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } }
 @media (min-width: 900px) and (min-height: 880px) {
   .apt-hero > .mc { position: sticky; top: 16px; }
   .apt-hero > .mc:has(.mc-deals:not([hidden])) { position: static; }  /* 거래 내역을 펼치면 화면보다 길어지니 따라오지 않게 */
@@ -1811,7 +1814,9 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .ki-grid .ki-main dd { font-size: 26px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .ki-grid .ki-main dd small { font-size: 14px; font-weight: 700; color: var(--text-2); margin: 0 2px; }
 .ki-grid .ki-main p { margin: 2px 0 0; font-size: 12.5px; color: var(--text-2); }
-@media (max-width: 719px) { .ki-grid .ki-main { grid-column: span 1; } .ki-grid .ki-main dd { font-size: 22px; } }
+@media (max-width: 719px) { .ki-grid .ki-main { grid-column: span 1; } .ki-grid .ki-main dd { font-size: 22px; }
+  /* 큰 칸이 홀수면 마지막 큰 칸은 한 줄을 다 써서 반쪽만 남지 않게 */
+  .ki-grid .ki-main + .ki-main + .ki-main, .ki-grid .ki-main:first-child:not(:has(+ .ki-main)) { grid-column: 1 / -1; } }
 
 
 /* 모바일 전용 배치: 단지 페이지를 짧게 */
