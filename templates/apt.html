@@ -8,6 +8,7 @@
   <div class="icon-actions">
     <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div>
     <button class="icon-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic"><use href="#i-star"/></svg></button>
+    {% if latlng %}<button class="icon-btn" data-course-add="{{ c.slug }}" type="button" aria-pressed="false" aria-label="임장 코스에 넣기" title="임장 코스에 넣기"><svg class="ic"><use href="#i-route"/></svg></button>{% endif %}
     <button class="icon-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic"><use href="#i-share"/></svg></button>
   </div>
 </div>

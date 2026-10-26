@@ -23,7 +23,7 @@
   const keep = () => DJ.saveVisit(slug, v);
 
   function open() {
-    if (!built) { built = true; DJ.data().then(d => build(d.bySlug[slug])).catch(() => build(null)); }
+    if (!built) { built = true; DJ.data().then(d => build(d.bySlug[slug], d)).catch(() => build(null)); }
     if (!back) {
       back = el("div", "sheet-back");
       back.hidden = true;
@@ -53,9 +53,67 @@
     return s;
   }
 
-  function build(c) {
-    body.replaceChildren(...[where(c), checks(c), quotes(c), photos(), memo()].filter(Boolean));
+  let last = null;
+  function build(c, d) {
+    last = [c, d];
+    body.replaceChildren(...[course(c, d), where(c), checks(c), quotes(c), photos(), memo()].filter(Boolean));
     if (DJ.paintSync) DJ.paintSync();
+  }
+
+  // 0. 임장 코스: 이 단지가 내 코스의 몇 번째인지, 다음 단지까지 거리·길찾기, 이전·다음 단지 현장 모드로 바로
+  //    (하루에 여러 단지를 돌 때 관심 화면으로 돌아가지 않고 현장에서 이어 가게). 코스에 없으면 넣기
+  function course(c, d) {
+    if (!c || !d || c.la == null) return null;
+    const { mode, stops } = DJ.courseStops(d), sp = DJ.SPEED[mode];
+    const k = stops.findIndex(x => x.s === slug);
+    const hm = m => m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? " " + (m % 60) + "분" : ""}`;
+    const redraw = () => document.dispatchEvent(new CustomEvent("dj:course"));   // 아래 dj:course 에서 다시 그림
+    let s;
+    if (k < 0 || stops.length < 2) {
+      s = section("임장 코스", "여러 단지를 둘러본다면 코스에 넣어 가까운 순서대로 다니세요. 다음 단지까지 거리와 길찾기가 여기에 나와요.");
+      s.dataset.course = "";
+      const add = el("button", "btn", "이 단지를 임장 코스에 넣기");
+      add.type = "button";
+      add.addEventListener("click", () => {
+        if (DJ.addToCourse([slug]) < 0) { DJ.toast("임장 코스가 꽉 찼어요", "관심 화면의 임장 코스에서 한 곳을 빼고 다시 넣어 주세요"); return; }
+        DJ.toast("임장 코스에 넣었어요", "코스의 다른 단지와 가까운 순서로 묶었어요");
+        redraw();
+      });
+      s.append(add);
+      return s;
+    }
+    s = section(`임장 코스 ${k + 1}/${stops.length}`, null);
+    s.classList.add("fm-course");
+    s.dataset.course = "";
+    const nx = stops[k + 1], pv = stops[k - 1];
+    if (nx) {
+      const km = DJ.km(c, nx), m = km < 1 ? Math.round(km * 1000 / 10) * 10 + "m" : km.toFixed(1) + "km";
+      const leg = el("p", "fm-leg", `다음 ${nx.n}까지 ${m} · ${sp.label} 약 ${hm(DJ.moveMin(km, mode))}`);
+      const go = el("a", "fm-leg-go", "길찾기 ›");
+      go.href = `https://map.kakao.com/link/from/${encodeURIComponent(c.n)},${c.la},${c.ln}/to/${encodeURIComponent(nx.n)},${nx.la},${nx.ln}`;
+      go.target = "_blank"; go.rel = "noopener";
+      leg.append(" ", go);
+      s.append(leg);
+    } else {
+      s.append(el("p", "fm-leg", "코스의 마지막 단지예요. 오늘 둘러본 기록은 관심 화면의 임장 노트에서 다시 볼 수 있어요."));
+    }
+    const nav = el("div", "fm-cnav");
+    const to = (x, label, cls) => {
+      const a = el("a", "fm-cgo " + cls);
+      a.href = DJ.href(x) + "#field";
+      a.append(el("small", "", label), el("b", "", x.n));
+      return a;
+    };
+    if (pv) nav.append(to(pv, "← 이전 단지", "prev"));
+    if (nx) nav.append(to(nx, "다음 단지 →", "next"));
+    else {
+      const a = el("a", "fm-cgo next");
+      a.href = (window.DJ_ROOT || "") + "my.html#notes";
+      a.append(el("small", "", "다 둘러봤다면"), el("b", "", "임장 노트 보기"));
+      nav.append(a);
+    }
+    s.append(nav);
+    return s;
   }
 
   // 1. 어디쯤: 역에서 단지까지(자료), 내 위치에서 단지까지(누르면), 길찾기
@@ -261,6 +319,14 @@
     s.append(t, been, note);
     return s;
   }
+
+  // 단지 페이지 위쪽 '코스에 넣기'나 여기서 넣고 빼면 코스 칸을 다시 그림
+  document.addEventListener("dj:course", () => {
+    const old = body.querySelector("[data-course]");
+    if (!last || !old) return;
+    const n = course(last[0], last[1]);
+    if (n) old.replaceWith(n);
+  });
 
   if (location.hash === "#field") open();
 })();
