@@ -418,7 +418,7 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     my = (out / "my.html").read_text(encoding="utf-8")
     assert 'window.DJ_SB = {"key": "sb_publishable_test", "provider": "custom:kakao", "url": "https://demo.supabase.co"}' in my
     assert my.index("static/app.js") < my.index("static/sync.js") < my.index("static/my.js")
-    assert 'id="account"' in my and "data-login" in my and "data-delete" in my and "data-logout-wipe" in my
+    assert 'id="account"' in my and "data-login" in my and 'href="me.html"' in my
     assert my.index('id="account"') < my.index('id="favs"')
     index = (out / "index.html").read_text(encoding="utf-8")
     assert "data-acct" in index and 'href="privacy.html"><b>개인정보처리방침</b>' in index
@@ -457,12 +457,44 @@ def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
         assert s in intro
     assert intro.count("data-login") == 2   # 위쪽 창과 인트로 로그인 줄
     apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
-    assert 'id="acct-pop"' in apt and 'href="../my.html#prefs"' in apt and 'href="../privacy.html"' in apt
+    assert 'id="acct-pop"' in apt and 'href="../me.html#prefs"' in apt and 'href="../me.html"' in apt and 'href="../privacy.html"' in apt
     assert 'id="my-favs"' in (out / "my.html").read_text(encoding="utf-8")
     css = (out / "static" / "style.css").read_text(encoding="utf-8")
     assert 'body[data-page="intro"] .acct-btn { display: none; }' not in css
     js = (out / "static" / "sync.js").read_text(encoding="utf-8")
     assert "function menu()" in js and "[data-when-out]" in js
+
+
+def test_my_info_page_only_for_logged_in(tmp_path, monkeypatch):
+    # 내 정보(me.html): 로그인을 켰을 때만 만들고, 로그인한 사람에게만 내용을 보여 줌 (전엔 로그인 안내만).
+    # 설정·가족과 함께 보기·계정 관리는 관심 화면에서 내 정보로 옮김. 로그인을 켜지 않은 사이트는 관심 화면에 설정 그대로
+    from djdex import config
+    out = tmp_path / "site"
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    assert not (out / "me.html").exists() and 'id="prefs"' in (out / "my.html").read_text(encoding="utf-8")
+
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    me = (out / "me.html").read_text(encoding="utf-8")
+    assert '<meta name="robots" content="noindex">' in me and "me.html" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert me.index('class="me-gate" data-when-out') < me.index('class="me" data-when-in hidden')
+    gated = me[me.index('class="me" data-when-in hidden'):]
+    for s in ("data-me-prog", 'id="share"', "data-share-actions", 'id="prefs"', 'data-pf="dp"', "data-pf-checks", "data-pf-backup",
+              "data-pf-restore", "data-sync-now", "data-logout-wipe", "data-delete", "help@example.com"):
+        assert s in gated, s
+    assert "static/prefs.js" in me and "static/me.js" in me
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert 'id="prefs"' not in my and "data-share" not in my and "data-delete" not in my and 'href="me.html"' in my
+    assert "data-nt-csv" in my   # 임장 노트 내보내기는 관심 화면에
+    js = (out / "static" / "me.js").read_text(encoding="utf-8")
+    assert "아직 안 가 본 관심 단지" in js and 'DJ.save("course"' in js
+    sync = (out / "static" / "sync.js").read_text(encoding="utf-8")
+    assert '["my", "cards", "me"]' in sync and "[data-sync-now]" in sync
+    assert "로그인하지 않아도 모든 기능" not in (out / "privacy.html").read_text(encoding="utf-8")
 
 
 def test_my_settings_and_note_export(tmp_path):
@@ -495,8 +527,8 @@ def test_family_share_and_field_photos(tmp_path, monkeypatch):
     share = (out / "share.html").read_text(encoding="utf-8")
     assert '<meta name="robots" content="noindex">' in share and "static/share.js" in share and "data-sh-body" in share
     assert "share.html" not in (out / "sitemap.xml").read_text(encoding="utf-8")
-    my = (out / "my.html").read_text(encoding="utf-8")
-    assert "data-share hidden" in my and "data-share-actions" in my
+    me = (out / "me.html").read_text(encoding="utf-8")
+    assert "data-share hidden" in me and "data-share-actions" in me
     js = (out / "static" / "share.js").read_text(encoding="utf-8")
     assert "/rest/v1/rpc/shared_view" in js and "DJ.photoUrl" in js
     sync = (out / "static" / "sync.js").read_text(encoding="utf-8")

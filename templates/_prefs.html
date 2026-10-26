@@ -1,0 +1,23 @@
+{# 내 설정 줄: 처음 볼 지역, 면적 단위, 임장 코스 이동, 새 소식 기준, 내 현장 체크 항목 (prefs.js).
+   카카오 로그인을 켰으면 내 정보 화면(me.html)에, 아니면 관심 화면에 #}
+    {% if regions | length > 1 %}
+    <div class="pf-row"><div class="pf-k"><b>처음 볼 지역</b><small>사이트를 열면 이 지역부터 보여 드려요</small></div>
+      <div class="seg pf-seg" role="group" aria-label="처음 볼 지역" data-pf="region">
+        <button type="button" class="seg-btn" data-v="">고르지 않음</button>
+        {% for g in regions %}<button type="button" class="seg-btn" data-v="{{ g.name }}">{{ g.name }}</button>{% endfor %}
+      </div></div>
+    {% endif %}
+    <div class="pf-row"><div class="pf-k"><b>면적 단위</b><small>단지 페이지·목록의 면적 표시</small></div>
+      <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div></div>
+    <div class="pf-row"><div class="pf-k"><b>임장 코스 이동</b><small>코스의 이동 시간을 이 방법으로 계산해요</small></div>
+      <div class="seg pf-seg" role="group" aria-label="임장 코스 이동" data-pf="mode">
+        <button type="button" class="seg-btn" data-v="walk">걸어서</button><button type="button" class="seg-btn" data-v="car">차로</button></div></div>
+    <div class="pf-row"><div class="pf-k"><b>관심 단지 시세 알림</b><small>84㎡ 시세가 이만큼 바뀌면 '새 소식'에 알려 드려요</small></div>
+      <div class="seg pf-seg" role="group" aria-label="시세 알림 기준" data-pf="dp">
+        <button type="button" class="seg-btn" data-v="300">300만</button><button type="button" class="seg-btn" data-v="500">500만</button>
+        <button type="button" class="seg-btn" data-v="1000">1천만</button><button type="button" class="seg-btn" data-v="2000">2천만</button>
+        <button type="button" class="seg-btn" data-v="0">안 받기</button></div></div>
+    <div class="pf-row pf-col"><div class="pf-k"><b>내 현장 체크 항목</b><small>현장 모드와 임장 코스 체크리스트에 함께 나와요 (10개까지)</small></div>
+      <ul class="pf-checks" data-pf-checks></ul>
+      <form class="pf-add" data-pf-add><input type="text" maxlength="40" placeholder="예: 반려견 산책로, 학원 셔틀 정류장" aria-label="체크 항목 더하기">
+        <button type="submit" class="btn">더하기</button></form></div>

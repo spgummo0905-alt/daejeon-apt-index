@@ -220,7 +220,7 @@
     if (DJ.applyPrefs && (changed.includes("prefs") || changed.includes("*"))) DJ.applyPrefs();   // 다른 기기의 면적 단위 등
     const page = document.body.dataset.page;
     const last = +ss.get("djdex-reload") || 0;
-    if ((hello || ["my", "cards"].includes(page)) && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게
+    if ((hello || ["my", "cards", "me"].includes(page)) && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게
       ss.set("djdex-reload", String(Date.now()));
       location.reload();
       return;
@@ -316,8 +316,8 @@
     document.querySelectorAll("[data-when-in]").forEach(x => { x.hidden = !u; });
     if (u) {
       document.querySelectorAll("[data-user-name]").forEach(x => { x.textContent = `${u.name}님`; });
-      document.querySelectorAll("[data-pop-av]").forEach(x => face(x, u, true));
-      document.querySelectorAll("[data-pop-state]").forEach(x => { x.textContent = stateText(); x.classList.toggle("bad", S.state === "error"); });
+      document.querySelectorAll("[data-user-av]").forEach(x => face(x, u, true));
+      document.querySelectorAll("[data-user-state]").forEach(x => { x.textContent = stateText(); x.classList.toggle("bad", S.state === "error"); });
     }
     const uid = u ? u.id : null;
     if (uid !== lastUid) { lastUid = uid; document.dispatchEvent(new CustomEvent("dj:auth", { detail: u })); }   // 로그인·로그아웃 때 한 번
@@ -359,7 +359,7 @@
       pop.hidden = false;
       btn.setAttribute("aria-expanded", "true");
       requestAnimationFrame(() => pop.classList.add("on"));
-      const first = pop.querySelector(S.user ? ".ap-links a" : "[data-login]");
+      const first = pop.querySelector(S.user ? ".ap-me" : "[data-login]");
       if (first) first.focus({ preventScroll: true });
     }
     function close(back) {
@@ -372,9 +372,9 @@
     btn.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); pop.hidden ? open() : close(true); });
     document.addEventListener("click", e => { if (!pop.hidden && !pop.contains(e.target)) close(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) close(true); });
-    pop.querySelectorAll(".ap-links a").forEach(a => a.addEventListener("click", e => {
+    pop.querySelectorAll(".ap-me, .ap-links a").forEach(a => a.addEventListener("click", e => {
       close(false);
-      // 관심 화면에서 같은 화면 칸으로 갈 땐 직접 (주소가 같으면 브라우저가 움직이지 않음). 접힌 칸(내 설정)은 펼침
+      // 같은 화면 칸으로 갈 땐 직접 (주소가 같으면 브라우저가 움직이지 않음). 접힌 칸은 펼침
       const u = new URL(a.href), t = u.pathname === location.pathname && document.getElementById(u.hash.slice(1));
       if (!t) return;
       e.preventDefault();
@@ -394,6 +394,17 @@
       if (confirm("로그아웃하고 이 기기에 남은 관심 단지·임장 기록을 지울까요?\n계정에 저장된 기록은 그대로예요.")) DJ.logout(true);
     }));
     document.querySelectorAll("[data-delete]").forEach(b => b.addEventListener("click", () => DJ.deleteAccount()));
+    // 내 정보 '지금 맞추기': 현장에서 휴대폰으로 적고 와서 PC에서 바로 받아 보게
+    document.querySelectorAll("[data-sync-now]").forEach(b => b.addEventListener("click", () => {
+      if (!S.user) return;
+      b.disabled = true;
+      sync(true).then(ch => {
+        b.disabled = false;
+        if (S.state === "error") DJ.toast("지금은 맞추지 못했어요", "이 기기 기록은 그대로예요. 잠시 뒤 다시 해 주세요.");
+        else if (ch && ch.length) { DJ.toast("다른 기기의 기록을 받았어요", "화면을 새로 열어요."); applied(ch); }
+        else DJ.toast("모두 최신이에요", "이 기기와 카카오 계정의 기록이 같아요.");
+      });
+    }));
   }
 
   // ---------- 자동 저장 ----------

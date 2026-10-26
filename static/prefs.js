@@ -1,4 +1,4 @@
-// 관심 화면의 '내 설정'과 임장 노트 내보내기.
+// '내 설정'(로그인을 켠 사이트는 내 정보 화면, 아니면 관심 화면)과 임장 노트 내보내기.
 // - 내 설정: 처음 볼 지역, 면적 단위, 임장 코스 이동, 관심 단지 시세 알림 기준, 내 현장 체크 항목 (app.js 의 DJ.prefs).
 //   로그인하면 sync.js 가 다른 기기와 같이 맞춥니다.
 // - 내 기록 내려받기·되살리기: 관심 단지·임장 노트·코스·설정을 JSON 파일 하나로 (로그인 없이 기기를 옮길 때도)
@@ -74,7 +74,8 @@
     });
 
     // 내 기록 내려받기·되살리기 (로그인 정보는 넣지 않음)
-    box.querySelector("[data-pf-backup]").addEventListener("click", () => {
+    const backup = document.querySelector("[data-pf-backup]"), restore = document.querySelector("[data-pf-restore]");
+    if (backup) backup.addEventListener("click", () => {
       const data = {};
       try {
         for (let i = 0; i < localStorage.length; i++) {
@@ -84,7 +85,7 @@
       } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
       download(`aptindex-records-${stamp()}.json`, JSON.stringify({ app: "djdex", v: 1, at: new Date().toISOString(), data }, null, 1), "application/json");
     });
-    box.querySelector("[data-pf-restore]").addEventListener("change", e => {
+    if (restore) restore.addEventListener("change", e => {
       const f = e.target.files && e.target.files[0];
       e.target.value = "";
       if (!f) return;

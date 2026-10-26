@@ -8,7 +8,8 @@
   <p class="lead">{% if account %}관심 단지와 임장 기록은 이 기기에 저장되고, 카카오로 로그인하면 다른 기기에서도 이어 볼 수 있어요.{% else %}관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
 </section>
 {% if account %}
-{# 카카오 로그인: 현장에서 휴대폰으로 적은 호가·메모를 집 PC에서 이어 정리하게 (sync.js) #}
+{# 카카오 로그인: 현장에서 휴대폰으로 적은 호가·메모를 집 PC에서 이어 정리하게 (sync.js).
+   설정·가족과 함께 보기·계정 관리는 로그인한 사람만 보는 내 정보(me.html)에 #}
 <section class="acct" id="account" data-account aria-labelledby="acct-title">
   <div class="acct-out" data-acct-out>
     <div class="acct-copy">
@@ -18,63 +19,28 @@
     <button type="button" class="kakao-btn" data-login>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
       <span>카카오 로그인</span></button>
-    <p class="acct-fine">닉네임과 프로필 사진만 받아요 · 로그인하지 않아도 모든 기능을 쓸 수 있어요 · <a href="privacy.html">개인정보처리방침</a></p>
+    <p class="acct-fine">닉네임과 프로필 사진만 받아요 · 로그인하면 내 정보에서 설정·가족과 함께 보기를 관리해요 · <a href="privacy.html">개인정보처리방침</a></p>
   </div>
-  <div class="acct-in" data-acct-in hidden>
+  {# 로그인 뒤: 내 정보(설정·가족과 함께 보기·계정)로 가는 줄 #}
+  <a class="acct-in" href="me.html" data-acct-in hidden>
     <span class="acct-av" data-acct-av aria-hidden="true"></span>
-    <div class="acct-copy"><b data-acct-name></b><span class="acct-state" data-acct-state></span></div>
-    <div class="acct-actions">
-      <button type="button" class="btn ghost sm" data-logout>로그아웃</button>
-      <details class="acct-more">
-        <summary>계정 관리</summary>
-        <div class="acct-menu">
-          <button type="button" class="link-btn" data-logout-wipe>로그아웃하고 이 기기 기록 지우기</button>
-          <button type="button" class="link-btn danger" data-delete>계정과 저장된 기록 삭제</button>
-          <a href="privacy.html">개인정보처리방침</a>
-        </div>
-      </details>
-    </div>
-  </div>
-  {# 가족과 함께 보기: 배우자·가족에게 관심 단지·임장 노트(사진 포함)를 보기 전용 링크로 (prefs.js, share.html) #}
-  <div class="acct-share" data-share hidden>
-    <div class="acct-share-copy"><b>가족과 함께 보기</b>
-      <span>집은 혼자 정하지 않으니까요. 배우자·가족에게 관심 단지와 임장 노트(사진 포함)를 보기 전용 링크로 보여 줘요. 링크를 아는 사람만 볼 수 있고, 언제든 끊을 수 있어요.</span></div>
-    <div class="acct-share-actions" data-share-actions></div>
-  </div>
+    <span class="acct-copy"><b data-acct-name></b><span class="acct-state" data-acct-state></span></span>
+    <span class="acct-go">내 정보<svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></span></a>
 </section>
 {% endif %}
-{# 내 설정: 처음 볼 지역, 면적 단위, 임장 코스 이동, 새 소식 기준, 내 현장 체크 항목, 내 기록 내려받기·가져오기 (prefs.js).
-   로그인하면 다른 기기에서도 같은 설정 #}
+{# 내 설정: 로그인을 켜지 않은 사이트에서만 여기에 (켰으면 로그인한 사람의 내 정보 화면에) (prefs.js) #}
+{% if not account %}
 <details class="panel prefs" id="prefs">
   <summary><span class="pf-title">내 설정</span><span class="pf-sub">처음 볼 지역 · 면적 단위 · 새 소식 기준 · 내 체크 항목</span>
     <svg class="ic pf-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></summary>
   <div class="pf-body">
-    {% if regions | length > 1 %}
-    <div class="pf-row"><div class="pf-k"><b>처음 볼 지역</b><small>사이트를 열면 이 지역부터 보여 드려요</small></div>
-      <div class="seg pf-seg" role="group" aria-label="처음 볼 지역" data-pf="region">
-        <button type="button" class="seg-btn" data-v="">고르지 않음</button>
-        {% for g in regions %}<button type="button" class="seg-btn" data-v="{{ g.name }}">{{ g.name }}</button>{% endfor %}
-      </div></div>
-    {% endif %}
-    <div class="pf-row"><div class="pf-k"><b>면적 단위</b><small>단지 페이지·목록의 면적 표시</small></div>
-      <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div></div>
-    <div class="pf-row"><div class="pf-k"><b>임장 코스 이동</b><small>코스의 이동 시간을 이 방법으로 계산해요</small></div>
-      <div class="seg pf-seg" role="group" aria-label="임장 코스 이동" data-pf="mode">
-        <button type="button" class="seg-btn" data-v="walk">걸어서</button><button type="button" class="seg-btn" data-v="car">차로</button></div></div>
-    <div class="pf-row"><div class="pf-k"><b>관심 단지 시세 알림</b><small>84㎡ 시세가 이만큼 바뀌면 '새 소식'에 알려 드려요</small></div>
-      <div class="seg pf-seg" role="group" aria-label="시세 알림 기준" data-pf="dp">
-        <button type="button" class="seg-btn" data-v="300">300만</button><button type="button" class="seg-btn" data-v="500">500만</button>
-        <button type="button" class="seg-btn" data-v="1000">1천만</button><button type="button" class="seg-btn" data-v="2000">2천만</button>
-        <button type="button" class="seg-btn" data-v="0">안 받기</button></div></div>
-    <div class="pf-row pf-col"><div class="pf-k"><b>내 현장 체크 항목</b><small>현장 모드와 임장 코스 체크리스트에 함께 나와요 (10개까지)</small></div>
-      <ul class="pf-checks" data-pf-checks></ul>
-      <form class="pf-add" data-pf-add><input type="text" maxlength="40" placeholder="예: 반려견 산책로, 학원 셔틀 정류장" aria-label="체크 항목 더하기">
-        <button type="submit" class="btn">더하기</button></form></div>
+    {% include "_prefs.html" %}
     <div class="pf-row pf-col"><div class="pf-k"><b>내 기록</b><small>관심 단지·임장 노트·코스·설정을 파일 하나로 내려받거나, 받아 둔 파일로 되살려요</small></div>
       <div class="pf-actions"><button type="button" class="btn" data-pf-backup>내 기록 내려받기</button>
         <label class="btn ghost pf-file">파일로 되살리기<input type="file" accept="application/json,.json" data-pf-restore hidden></label></div></div>
   </div>
 </details>
+{% endif %}
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
 <a class="to-cards" href="cards.html"><span class="tc-ico"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
   <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>본 단지 카드와 임장 체크를 모아 봐요</span></span><span class="tc-go" aria-hidden="true">→</span></a>
