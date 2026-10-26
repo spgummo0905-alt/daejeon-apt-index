@@ -17,6 +17,10 @@ on:
         description: "서울 관리비 호출 수 상한 (하루 한도 안에서)"
         default: "3000"
 
+# 저장소는 읽기만 (받은 자료는 캐시에만 저장)
+permissions:
+  contents: read
+
 concurrency:
   group: catchup
   cancel-in-progress: false
