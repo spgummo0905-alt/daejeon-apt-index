@@ -158,13 +158,7 @@
       }
       sheet.append(art);
     });
-    document.body.append(sheet);
-    document.body.classList.add("print-notes");
-    return Promise.race([Promise.all([...sheet.querySelectorAll("img")].map(i => i.decode().catch(() => {}))),
-      new Promise(ok => setTimeout(ok, 3000))]).then(() => sheet);   // 사진이 뜬 뒤 인쇄
-  }).then(sheet => {
-    window.print();
-    setTimeout(() => { document.body.classList.remove("print-notes"); sheet.remove(); }, 800);
+    return DJ.printSheet(sheet);   // 사진이 뜬 뒤 인쇄 (app.js)
   }));
 })();
 
