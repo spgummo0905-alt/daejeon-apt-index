@@ -553,6 +553,26 @@ def test_share_sheet_art_and_recipient_landings(tmp_path, monkeypatch):
     assert 'u.searchParams.set("from", "share")' in card and '{ title: "우리 단지 찾기", link: home }' in card
 
 
+def test_convenience_course_everywhere_and_shortcuts(tmp_path):
+    # 편의: 현장 모드에서 코스 이전·다음 단지로 바로(같은 순서 DJ.courseOrder), 단지 페이지 '임장 코스에 넣기',
+    # 관심 화면 바로가기·휴대폰에선 관심 단지 옆으로 넘기기, 첫 화면 '이어서'
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    for s in ("DJ.courseOrder = function", "DJ.courseStops = function", "DJ.removeFromCourse = function", "function courseButton()", "function resume()"):
+        assert s in app, s
+    course = (out / "static" / "course.js").read_text(encoding="utf-8")
+    assert "DJ.courseOrder(cur().list.map(s => D.bySlug[s]))" in course
+    field = (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert "function course(c, d)" in field and "임장 코스 ${k + 1}/${stops.length}" in field and '"다음 단지 →"' in field
+    apt = next(p for p in (out / "apt").glob("*.html") if "data-course-add" in p.read_text(encoding="utf-8")).read_text(encoding="utf-8")
+    assert 'aria-label="임장 코스에 넣기"' in apt
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "data-my-jump" in my and 'href="#course"' in my and 'id="recent-sec"' in my
+    assert "fav-rail" in (out / "static" / "my.js").read_text(encoding="utf-8")
+    assert "data-resume" in (out / "index.html").read_text(encoding="utf-8")
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"

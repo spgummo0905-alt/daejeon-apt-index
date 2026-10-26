@@ -218,6 +218,7 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .icon-btn[data-fav].on { background: #fbf3dc; border-color: var(--gold); color: #8a6a12; }
 .icon-btn[data-fav].on .ic { fill: var(--gold); stroke: #8a6a12; }
 .icon-btn.pop { animation: fav-pop 420ms var(--ease-spring); }
+.icon-btn[data-course-add][aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border-color: var(--accent); color: var(--accent); }
 @keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-color-scheme: dark) { .icon-btn[data-fav].on { background: #3a3012; color: var(--gold); } }
 /* 한눈에 보기: 메인 카드에 없는 강점·비교를 숫자 타일로 */
@@ -2530,6 +2531,29 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 .cs-leg, .cs-first { display: block; margin-top: 10px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
   background: var(--quad); color: var(--accent); }
 .cs-leg:hover, .cs-first:hover { text-decoration: none; filter: brightness(.97); }
+/* 첫 화면 '이어서' (다시 온 사람) */
+.resume { display: flex; align-items: center; gap: 8px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.resume::-webkit-scrollbar { display: none; }
+.resume-k { flex: none; font-size: 12.5px; font-weight: 800; color: var(--muted); }
+.resume-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 13.5px; font-weight: 700; }
+.resume-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume-chip .ic { width: 15px; height: 15px; color: var(--accent); flex: none; }
+.resume-chip:hover { text-decoration: none; border-color: var(--text-2); }
+.resume-chip.hot { border-color: color-mix(in srgb, var(--pos) 50%, var(--border)); }
+.resume-chip.hot .ic { color: var(--pos); }
+/* 관심 화면 바로가기 (붙어 다니는 줄) */
+.my-jump { margin: 12px 0; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.my-jump::-webkit-scrollbar { display: none; }
+.my-jump a b { margin-left: 2px; color: var(--accent); font-variant-numeric: tabular-nums; }
+@media (max-width: 719px) { .my-jump a { padding: 6px 12px; font-size: 13.5px; } }
+body[data-page="my"] main > .panel, body[data-page="my"] main > section { scroll-margin-top: 60px; }
+/* 관심 단지가 둘 이상이면 휴대폰에선 옆으로 넘기는 줄 (코스·노트가 아래로 밀리지 않게) */
+@media (max-width: 719px) {
+  #favs.fav-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 4px 16px 12px; scrollbar-width: none; }
+  #favs.fav-rail::-webkit-scrollbar { display: none; }
+  #favs.fav-rail > * { flex: 0 0 86%; scroll-snap-align: center; }
+}
 /* 받은 코스 안내 (my.html?course=…) */
 .cs-got { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; margin: 0 0 14px; padding: 12px 14px;
   border-radius: 14px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
@@ -2647,6 +2671,18 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 .fm-top h3 { outline: none; }
 .fm-top .muted { margin: 0; font-size: 13px; }
 .fm-top .icon-btn { flex: none; font-size: 22px; line-height: 1; }
+/* 현장 모드 맨 위 임장 코스: 다음 단지까지와 이전·다음 단지로 */
+.fm-course { padding: 14px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.fm-course h4 { color: var(--accent); }
+.fm-leg { margin: 4px 0 10px; font-size: 14.5px; font-weight: 700; line-height: 1.5; }
+.fm-leg-go { white-space: nowrap; font-weight: 800; }
+.fm-cnav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fm-cgo { display: grid; gap: 1px; min-width: 0; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+.fm-cgo:hover { text-decoration: none; border-color: var(--text-2); }
+.fm-cgo small { font-size: 12px; color: var(--muted); font-weight: 700; }
+.fm-cgo b { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-cgo.next { grid-column: 2; text-align: right; background: var(--navy); border-color: var(--navy); color: var(--on-navy); }
+.fm-cgo.next small { color: color-mix(in srgb, var(--on-navy) 70%, transparent); }
 .fm-body { margin-top: 8px; }
 .fm-sec { padding: 14px 0 12px; border-top: 1px solid var(--border); }
 .fm-sec:first-child { border-top: 0; }

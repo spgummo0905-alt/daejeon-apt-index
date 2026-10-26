@@ -41,6 +41,13 @@
   </div>
 </details>
 {% endif %}
+{# 바로가기: 관심 단지가 많아도 코스·노트로 바로 (my.js 가 수를 채움, 노트가 없으면 숨김) #}
+<nav class="jump my-jump" aria-label="관심 화면 바로가기" data-my-jump>
+  <a href="#my-favs">관심 단지<b data-mj="favs"></b></a>
+  <a href="#course">임장 코스<b data-mj="course"></b></a>
+  <a href="#notes" data-mj-notes hidden>임장 노트<b data-mj="notes"></b></a>
+  <a href="#recent-sec">최근 본<b data-mj="recent"></b></a>
+</nav>
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
 <a class="to-cards" href="cards.html"><span class="tc-ico"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
   <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>본 단지 카드와 임장 체크를 모아 봐요</span></span><span class="tc-go" aria-hidden="true">→</span></a>
@@ -66,7 +73,7 @@
       <button type="button" class="btn ghost" data-nt-print>인쇄·PDF로 저장</button></div></div>
   <ul class="nt-list" data-notes-list></ul>
 </section>
-<section class="panel">
+<section class="panel" id="recent-sec">
   <div class="panel-head row-between"><h2>최근 본 단지</h2><button class="btn ghost" id="recent-clear" type="button" hidden>기록 지우기</button></div>
   <ul class="recent-list" id="recent"></ul>
 </section>

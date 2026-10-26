@@ -219,6 +219,48 @@
     save("course", st);
     return n;
   };
+  // 임장 코스 공통 (관심 화면 코스·현장 모드·단지 페이지 '코스에 넣기'가 같은 순서·같은 목록을 쓰게)
+  DJ.SPEED = { walk: { kmh: 4.5, detour: 1.3, label: "걸어서" }, car: { kmh: 25, detour: 1.4, label: "차로" } };
+  DJ.km = (a, b) => {   // 두 단지 사이 직선거리 (km)
+    const R = 6371, r = Math.PI / 180;
+    const dLa = (b.la - a.la) * r, dLn = (b.ln - a.ln) * r;
+    const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.la * r) * Math.cos(b.la * r) * Math.sin(dLn / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  DJ.moveMin = (km, mode) => { const sp = DJ.SPEED[mode] || DJ.SPEED.walk; return Math.max(1, Math.round(km * sp.detour / sp.kmh * 60)); };
+  // 가장 짧은 방문 순서 (시작·끝 자유): 8곳까지라 모든 순서를 다 견줍니다. pts → 인덱스 순서
+  DJ.courseOrder = function (pts) {
+    const n = pts.length;
+    if (n <= 2) return pts.map((_, i) => i);
+    const M = pts.map(a => pts.map(b => DJ.km(a, b)));
+    let best = null, bestLen = Infinity;
+    const used = new Array(n).fill(false), path = [];
+    (function walk(len) {
+      if (len >= bestLen) return;
+      if (path.length === n) { bestLen = len; best = path.slice(); return; }
+      for (let i = 0; i < n; i++) {
+        if (used[i]) continue;
+        if (path.length === n - 1 && path[0] > i) continue;   // 거꾸로 된 같은 길은 한 번만
+        used[i] = true; path.push(i);
+        walk(len + (path.length > 1 ? M[path[path.length - 2]][i] : 0));
+        path.pop(); used[i] = false;
+      }
+    })(0);
+    return best;
+  };
+  // 지금 내 코스의 단지 (직접 고치기 전까지는 관심 단지), 위치가 있는 이 지역 단지만 방문 순서대로
+  DJ.courseStops = function (d) {
+    const st = load("course", {});
+    let list = (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
+    list = list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
+    const pts = list.map(s => d.bySlug[s]);
+    return { mode: st.mode || "walk", stops: DJ.courseOrder(pts).map(i => pts[i]) };
+  };
+  DJ.removeFromCourse = function (slug) {
+    const st = load("course", {});
+    const list = (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
+    save("course", Object.assign(st, { list: list.filter(s => s !== slug), auto: false }));
+  };
   // 체크한 수 / 전체 (이 단지 항목 + 기본 항목)
   DJ.visitDone = (v, items) => [items.filter(([id]) => v.x[id]).length + DJ.CHECK.filter((_, i) => v.c[i]).length, items.length + DJ.CHECK.length];
 
@@ -1383,8 +1425,61 @@
     main.prepend(box);
   }
 
+  // 단지 페이지 위쪽 '임장 코스에 넣기' (누르면 넣고, 다시 누르면 빼기). 현장 모드에서 넣거나 빼도 같이 바뀜
+  function courseButton() {
+    const b = document.querySelector("[data-course-add]");
+    if (!b) return;
+    const slug = b.dataset.courseAdd;
+    const paint = () => DJ.data().then(d => {
+      const { stops } = DJ.courseStops(d), on = stops.some(x => x.s === slug);
+      b.setAttribute("aria-pressed", String(on));
+      b.title = on ? `임장 코스에 있어요 (${stops.length}곳) · 누르면 빼기` : "임장 코스에 넣기";
+      b.setAttribute("aria-label", b.title);
+    });
+    b.addEventListener("click", () => {
+      if (b.getAttribute("aria-pressed") === "true") {
+        DJ.removeFromCourse(slug);
+        DJ.toast("임장 코스에서 뺐어요", "관심 단지에서는 빠지지 않아요");
+      } else if (DJ.addToCourse([slug]) < 0) {
+        DJ.toast("임장 코스가 꽉 찼어요", "하루에 둘러보기 알맞은 8곳까지 넣을 수 있어요. 관심 화면의 코스에서 한 곳을 빼 주세요");
+        return;
+      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 묶었어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요");
+      paint();
+      document.dispatchEvent(new CustomEvent("dj:course"));
+    });
+    document.addEventListener("dj:course", paint);
+    paint();
+  }
+
+  // 첫 화면 '이어서': 다시 온 사람이 하던 임장 준비(관심 단지·새 소식·코스·마지막에 본 단지)로 바로
+  function resume() {
+    const box = document.querySelector("[data-resume]");
+    if (!box) return;
+    const favs = DJ.favs(), rec = DJ.recent(), news = favs.length ? load("watchN", 0) : 0;
+    if (!favs.length && !rec.length) return;
+    DJ.data().then(d => {
+      const chip = (href, icon, text, cls) => {
+        const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
+        a.href = ROOT + href;
+        a.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#${icon}"/></svg>`;
+        a.append(el("span", "", text));
+        box.append(a);
+      };
+      box.append(el("span", "resume-k", "이어서"));
+      if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
+      if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
+      const n = DJ.courseStops(d).stops.length;
+      if (n >= 2) chip("my.html#course", "i-route", `임장 코스 ${n}곳`);
+      const last = rec.map(r => d.bySlug[r.s]).find(Boolean);
+      if (last) chip("apt/" + last.s + ".html", "i-clock", last.n);
+      box.hidden = false;
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     welcome();
+    courseButton();
+    resume();
     regionPicker();
     recentDock();
     document.querySelectorAll("[data-hot]").forEach(hotRoll);

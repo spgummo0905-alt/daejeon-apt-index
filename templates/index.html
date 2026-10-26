@@ -17,6 +17,8 @@
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
       </div>
+      {# 다시 온 사람: 하던 임장 준비를 바로 이어서 (app.js resume) #}
+      <nav class="resume" data-resume aria-label="이어서 보기" hidden></nav>
     </div>
     {% if hero_cards %}
     <div class="hero-deck" aria-label="이번 달 지수 상위 단지">

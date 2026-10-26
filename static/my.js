@@ -108,6 +108,15 @@
       });
     };
     draw(recent);
-    clear.addEventListener("click", () => { DJ.save("recent", []); draw([]); });
+    clear.addEventListener("click", () => { DJ.save("recent", []); draw([]); mj("recent", 0); });
+
+    // 바로가기 수 (관심 단지·코스·노트·최근 본)
+    const mj = (k, n) => { const b = document.querySelector(`[data-mj="${k}"]`); if (b) b.textContent = n ? " " + n : ""; };
+    mj("favs", favs.length);
+    mj("course", DJ.courseStops(d).stops.length);
+    mj("recent", recent.length);
+    const nt = document.querySelector("[data-notes]"), na = document.querySelector("[data-mj-notes]");
+    if (nt && na) { na.hidden = nt.hidden; mj("notes", nt.querySelectorAll("[data-notes-list] > li").length); }
+    if (favs.length > 1) favBox.classList.add("fav-rail");   // 휴대폰은 옆으로 넘기기
   });
 })();

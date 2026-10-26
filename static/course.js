@@ -102,28 +102,8 @@
   const hm = m => m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? " " + (m % 60) + "분" : ""}`;
   const dist = d => d < 1 ? Math.round(d * 1000 / 10) * 10 + "m" : d.toFixed(1) + "km";
 
-  // 가장 짧은 방문 순서 (시작·끝 자유): 8곳까지라 모든 순서를 다 견줍니다
-  function order() {
-    const pts = cur().list.map(s => D.bySlug[s]);
-    const n = pts.length;
-    if (n <= 2) return pts.map((_, i) => i);
-    const M = pts.map(a => pts.map(b => km(a, b)));
-    let best = null, bestLen = Infinity;
-    const used = new Array(n).fill(false), path = [];
-    (function walk(len) {
-      if (len >= bestLen) return;
-      if (path.length === n) { bestLen = len; best = path.slice(); return; }
-      for (let i = 0; i < n; i++) {
-        if (used[i]) continue;
-        // 거꾸로 된 같은 길은 한 번만 (첫 단지 번호가 마지막보다 작을 때만)
-        if (path.length === n - 1 && path[0] > i) continue;
-        used[i] = true; path.push(i);
-        walk(len + (path.length > 1 ? M[path[path.length - 2]][i] : 0));
-        path.pop(); used[i] = false;
-      }
-    })(0);
-    return best;
-  }
+  // 가장 짧은 방문 순서 (app.js 의 DJ.courseOrder, 현장 모드와 같은 순서)
+  function order() { return DJ.courseOrder(cur().list.map(s => D.bySlug[s])); }
 
   // 순서대로 단지·구간 거리·합계
   function plan() {
