@@ -274,7 +274,8 @@
       {% if loc_sets | length > 1 %}<li class="loc-grp"><span>{{ g.label }}</span><span>{% if g.score is not nan %}{{ g.score | round(0) | int }}점{% endif %}</span></li>{% endif %}
       {% for f in g.rows %}
       <li><span class="loc-label">{{ f.label }}</span>
-        <span class="loc-raw">{{ f.raw or "-" }}</span>
+        {# 여러 곳을 늘어놓은 값(주변 중학교 3곳 등)은 곳마다 끊기지 않게, 줄이 바뀌어도 오른쪽 끝을 맞춤 #}
+        <span class="loc-raw">{% if f.raw and ", " in f.raw %}{% for p in f.raw.split(", ") %}<span class="nw">{{ p }}{{ "," if not loop.last }}</span>{{ " " if not loop.last }}{% endfor %}{% else %}{{ f.raw or "-" }}{% endif %}</span>
         <span class="loc-pct">{% if f.pct is nan %}-{% elif f.score %}{{ f.pct | round(0) | int }}점{% else %}{{ (100 - f.pct) | share }}{% endif %}</span></li>
       {% endfor %}
     {% endfor %}

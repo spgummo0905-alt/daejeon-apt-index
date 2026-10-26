@@ -236,8 +236,8 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .pt-s { font-size: 12px; line-height: 1.4; color: var(--muted); }
 .pt-note { margin: 10px 0 0; font-size: 13px; color: var(--text-2); }
 .loc-list { list-style: none; margin: 0; padding: 0; }
-.loc-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.loc-raw { font-weight: 700; font-variant-numeric: tabular-nums; }
+.loc-list li { display: grid; grid-template-columns: minmax(7.5em, 1fr) auto auto; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.loc-raw { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; max-width: 13em; }
 .loc-pct { color: var(--muted); font-size: 13px; min-width: 64px; text-align: right; }
 /* 입지 묶음: 교통·학군·생활 */
 .loc-list li.loc-grp { grid-template-columns: 1fr auto; padding: 14px 0 6px; border-bottom: 2px solid var(--text); font-weight: 800; font-size: 14.5px; }
