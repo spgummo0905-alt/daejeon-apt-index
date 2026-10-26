@@ -514,7 +514,7 @@
   function page() {
     const ws = works(S);
     list.slice(shown, shown + PAGE).forEach(({ c, f }) => {
-      const card = DJ.card(c, STATS);
+      const card = DJ.card(c, STATS, { fav: true });   // 결과를 훑으며 바로 관심 단지에 담기
       const bits = [];
       if (f.length) bits.push(`${f[0][0]}평 ${eok(f[0][1])}` + (f.length > 1 ? ` 외 ${f.length - 1}개 평형` : ""));
       ws.forEach(w => bits.push(`${shortName(w.name)} ${km(w.lat, w.lng, c.la, c.ln).toFixed(1)}km`));

@@ -573,6 +573,17 @@ def test_convenience_course_everywhere_and_shortcuts(tmp_path):
     assert "data-resume" in (out / "index.html").read_text(encoding="utf-8")
 
 
+def test_compare_fill_finder_fav_and_card_flip_target(tmp_path):
+    # 비교에 관심 단지 한 번에, 조건으로 찾기 결과 카드에서 바로 관심 단지 담기, 카드첩 뒤집기 단추는 누르는 자리를 넓게
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    assert "qa-fill" in (out / "static" / "compare.js").read_text(encoding="utf-8")
+    assert "DJ.card(c, STATS, { fav: true })" in (out / "static" / "finder.js").read_text(encoding="utf-8")
+    assert "if (opts.fav)" in (out / "static" / "app.js").read_text(encoding="utf-8")
+    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".mcard-turn::before" in css and ".gfav {" in css
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"
