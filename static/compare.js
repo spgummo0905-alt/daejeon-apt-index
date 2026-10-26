@@ -120,7 +120,20 @@
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
     out.append(verdict, wrap, el("p", "muted center small", "표시된 칸이 그 항목에서 가장 좋은 값입니다 (가격·거리는 낮을수록)."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
-    shareBtn.onclick = () => DJ.share("단지 비교: " + cs.map(c => c.n).join(" · "),
-      DJ.josa(cs.map(c => c.n).join(", "), "을/를") + " 입지·수익률·가격으로 비교했습니다");
+    // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
+    shareBtn.onclick = () => {
+      const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+      const url = base + "compare.html?s=" + cs.map(c => encodeURIComponent(c.s)).join(",") + "&from=share";
+      const vs = cs.map(c => c.n).join(" vs ");
+      const short = verdict.textContent.replace(/앞섭니다$/, "앞서요").replace(/비슷합니다$/, "비슷해요");
+      const o = {
+        head: "단지 비교 공유", button: "비교 보기", url, file: "apt-compare.png", og: base + "static/og/compare.jpg",
+        title: vs, desc: short + " · 입지·수익률·전세가율·학군까지 나란히",
+        copy: `${vs}\n${short}`, glyphs: vs + short + cs.map(c => (c.pt || "") + DJ.place(c)).join(""),
+        art: () => DJ.shareArt.compare({ cs, wins, verdict: short }),
+      };
+      if (DJ.shareSheet) DJ.shareSheet(o);
+      else DJ.share(o.title, o.copy, url);
+    };
   }
 })();

@@ -1,0 +1,69 @@
+<!doctype html>
+<!-- 공유 링크 미리보기 그림 (static/og/course.jpg · compare.jpg · family.jpg) 원본.
+     받은 코스·단지 비교·함께 보기 링크를 카카오톡에 붙였을 때 뜨는 그림이에요. 지역과 상관없이 같은 그림.
+     만들기: 1200×630 으로 열어 ?k=course|compare|family 마다 화면을 찍어 JPEG 로 (Pretendard 글꼴) -->
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+  @font-face { font-family: "Pretendard Variable"; src: url("PretendardVariable.woff2") format("woff2"); font-weight: 45 920; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { font-family: "Pretendard Variable", sans-serif; color: #f4f6fb; word-break: keep-all;
+    background: radial-gradient(620px 360px at 92% 0%, rgba(227,185,85,.28), rgba(227,185,85,0) 70%), linear-gradient(135deg, #0a1428, #13264a 60%, #0c1830); }
+  body::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.06) 1.2px, transparent 1.4px); background-size: 24px 24px; }
+  .wrap { position: relative; display: grid; grid-template-columns: 560px 1fr; gap: 48px; height: 554px; padding: 56px 56px 0; }
+  .kick { margin: 26px 0 14px; font-size: 26px; font-weight: 800; color: #e3b955; letter-spacing: .02em; }
+  h1 { margin: 0 0 18px; font-size: 64px; line-height: 1.12; letter-spacing: -0.04em; font-weight: 850; }
+  h1 em { font-style: normal; background: linear-gradient(100deg, #fff1c1, #e8bf5a 45%, #fff6d8 60%, #d9a63a 90%); -webkit-background-clip: text; color: transparent; }
+  p { margin: 0; font-size: 27px; line-height: 1.5; color: rgba(244,246,251,.82); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .chips span { padding: 8px 16px; border-radius: 999px; font-size: 22px; font-weight: 800; color: #f0cf74; background: rgba(227,185,85,.14); border: 1.5px solid rgba(227,185,85,.5); }
+  .art { position: relative; height: 470px; border-radius: 30px; background: rgba(4,10,24,.55); overflow: hidden;
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 28px 28px; }
+  .foot { position: absolute; left: 0; right: 0; bottom: 0; height: 76px; display: flex; align-items: center; gap: 14px; padding: 0 56px; border-top: 1px solid rgba(255,255,255,.08); }
+  .mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #1d3a6b, #0f2140); color: #e3b955; font-weight: 900; font-size: 20px; }
+  .foot b { font-size: 24px; }
+  .foot .tag { margin-left: auto; font-size: 20px; color: rgba(244,246,251,.6); font-weight: 600; }
+  /* 코스 */
+  .pin { position: absolute; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font-size: 24px; font-weight: 900; color: #241703;
+    background: linear-gradient(135deg, #fff0b8, #e1b24c); box-shadow: 0 0 0 6px #0b1630, 0 10px 20px rgba(0,0,0,.4); }
+  .nm { position: absolute; font-size: 21px; font-weight: 800; color: #f4f6fb; text-shadow: 0 2px 8px rgba(4,10,24,.9); }
+  svg.route { position: absolute; inset: 0; }
+  /* 비교 */
+  .vs { display: flex; align-items: center; justify-content: center; gap: 26px; height: 100%; }
+  .mini { display: grid; justify-items: center; gap: 10px; width: 190px; padding: 24px 0 22px; border-radius: 26px; background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.16); }
+  .mini.win { border: 3px solid rgba(227,185,85,.9); box-shadow: 0 0 40px rgba(227,185,85,.3); }
+  .g { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 22px; font-size: 46px; font-weight: 900; }
+  .gS { background: linear-gradient(135deg, #fff1bf, #d9b55a 35%, #a37b22 65%, #f0d68a); color: #2a1d02; }
+  .gA { background: linear-gradient(135deg, #f4f6f9, #aab3bf 60%, #e4e8ee); color: #1d2430; }
+  .mini b { font-size: 60px; font-weight: 850; letter-spacing: -0.03em; }
+  .mini small { font-size: 20px; color: rgba(244,246,251,.65); font-weight: 700; }
+  .vs em { font-style: italic; font-size: 44px; font-weight: 900; color: #e3b955; }
+  .bars { position: absolute; left: 36px; right: 36px; bottom: 28px; display: grid; gap: 10px; }
+  /* 함께 보기 */
+  .note { position: absolute; left: 70px; top: 46px; width: 400px; height: 380px; padding: 34px 32px; border-radius: 22px; background: #fbf6e6; color: #2b2b2b; transform: rotate(-3deg); box-shadow: 0 30px 50px rgba(0,0,0,.4); }
+  .note h3 { margin: 0 0 22px; font-size: 24px; color: #b88a2a; }
+  .note div { padding: 12px 0; border-bottom: 2px solid rgba(0,0,0,.1); font-size: 25px; font-weight: 700; }
+  .photo { position: absolute; right: 40px; bottom: 40px; width: 170px; height: 130px; border-radius: 14px; background: linear-gradient(160deg, #6fa8dc, #3d6d9e 60%, #2b4a6b); border: 6px solid #fff; transform: rotate(5deg); box-shadow: 0 16px 30px rgba(0,0,0,.4); }
+  .photo::after { content: ""; position: absolute; left: 18px; right: 18px; bottom: 16px; height: 50px; background: linear-gradient(90deg, #22344c 0 22%, transparent 22% 28%, #2a3f5a 28% 60%, transparent 60% 66%, #22344c 66%); }
+</style></head>
+<body>
+<div class="wrap" id="v"></div>
+<div class="foot"><span class="mark">D</span><b>아파트 지수</b><span class="tag">실거래가·입지로 매긴 S~D 등급 카드</span></div>
+<script>
+const k = new URLSearchParams(location.search).get("k") || "course";
+const V = {
+  course: `<div><p class="kick">임장 코스</p><h1>임장 코스를<br><em>받았어요</em></h1><p>둘러볼 단지 순서와 지도,<br>구간마다 길찾기까지</p>
+    <div class="chips"><span>지도</span><span>길찾기</span><span>현장 체크리스트</span></div></div>
+    <div class="art"><svg class="route" viewBox="0 0 480 470"><path d="M90 360 C140 360 150 214 200 214 S300 300 330 290 S400 120 420 110" fill="none" stroke="#e3b955" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 16"/></svg>
+      <span class="pin" style="left:64px;top:334px">1</span><span class="pin" style="left:174px;top:188px">2</span><span class="pin" style="left:304px;top:264px">3</span><span class="pin" style="left:394px;top:84px">4</span>
+      <span class="nm" style="left:40px;top:404px">걸어서 12분</span><span class="nm" style="left:236px;top:206px">8분</span><span class="nm" style="left:376px;top:200px">15분</span></div>`,
+  compare: `<div><p class="kick">단지 비교</p><h1>단지 비교를<br><em>받았어요</em></h1><p>입지·수익률·전세가율·학군을<br>항목마다 나란히</p>
+    <div class="chips"><span>등급 카드</span><span>항목별 우세</span><span>한 줄 결론</span></div></div>
+    <div class="art"><div class="vs"><div class="mini"><span class="g gA">A</span><b>71</b><small>종합 지수</small></div><em>VS</em><div class="mini win"><span class="g gS">S</span><b>86</b><small>종합 지수</small></div></div></div>`,
+  family: `<div><p class="kick">함께 보는 임장 기록</p><h1>가족이 보낸<br><em>임장 기록</em></h1><p>관심 단지와 현장에서 적은<br>체크·호가·메모·사진을 함께</p>
+    <div class="chips"><span>관심 단지</span><span>임장 노트</span><span>현장 사진</span></div></div>
+    <div class="art"><div class="note"><h3>임장 노트</h3><div>✓ 역까지 걸어서 7분</div><div>✓ 밤 주차 자리 넉넉</div><div>✓ 34평 12층 호가 7.9억</div></div><div class="photo"></div></div>`,
+};
+document.getElementById("v").innerHTML = V[k];
+</script>
+</body></html>

@@ -10,10 +10,13 @@
   // 현장 체크리스트: 지도·숫자로는 알 수 없고 가 봐야 아는 것
   let D = null;
   let state = Object.assign({ mode: "walk", list: null }, DJ.load("course", {}));
-  // 받은 코스 (my.html?course=a,b,c&m=walk): 내 코스를 덮지 않고 보여 주다가 '내 코스로 저장'을 누르면 저장
+  // 받은 코스 (course.html?c=a,b,c&m=walk, 예전 링크 my.html?course=…): 내 코스를 덮지 않고 보여 주다가 '내 코스로 저장'을 누르면 저장
   const q = new URLSearchParams(location.search);
-  let got = q.get("course") ? { list: q.get("course").split(",").slice(0, MAX), mode: q.get("m") === "car" ? "car" : "walk" } : null;
+  const RECV = document.body.dataset.page === "course";   // 받은 코스 화면
+  const given = q.get("c") || q.get("course");
+  let got = given ? { list: given.split(",").slice(0, MAX), mode: q.get("m") === "car" ? "car" : "walk" } : null;
   const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+  if (RECV && !got) { location.replace(base + "my.html#course"); return; }
 
   DJ.data().then(d => {
     D = d;
@@ -22,7 +25,10 @@
     state.list = state.list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
     if (got) {
       got.list = got.list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
-      if (got.list.length < 2) { DJ.toast("받은 코스를 열 수 없어요", "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.", 7000); clearGot(); }
+      if (got.list.length < 2) {
+        if (RECV) { hero(null); return; }
+        DJ.toast("받은 코스를 열 수 없어요", "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.", 7000); clearGot();
+      }
     }
     DJ.search(sec.querySelector("[data-cs-add]"), c => {
       const inp = sec.querySelector("[data-cs-add]");
@@ -36,8 +42,26 @@
       draw();
     });
     draw();
-    if (got) requestAnimationFrame(() => sec.scrollIntoView({ block: "start" }));
+    if (RECV) hero(plan());
+    else if (got) requestAnimationFrame(() => sec.scrollIntoView({ block: "start" }));
   });
+  // 받은 코스 화면 맨 위: 무엇을 받았는지 한 줄로
+  function hero(p) {
+    const t = document.querySelector("[data-rc-title]"), l = document.querySelector("[data-rc-lead]");
+    if (!t) return;
+    if (!p) {
+      t.textContent = "코스를 열 수 없어요";
+      l.textContent = "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.";
+      sec.hidden = true;
+      return;
+    }
+    t.textContent = `${p.stops.length}곳 · ${SPEED[cur().mode].label} 약 ${hm(p.move)}`;
+    const head = sec.querySelector(".panel-head");   // 위 소개와 겹치는 설명 대신
+    head.querySelector("h2").textContent = "코스 자세히";
+    head.querySelector("p").textContent = "단지 이름을 누르면 등급 카드가, 단지마다 '현장 체크리스트'를 펴면 가서 확인할 것이 나와요.";
+    l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지, 가장 짧은 순서로 묶은 임장 코스예요. 단지마다 현장에서 확인할 것도 붙였어요.`;
+    document.title = `임장 코스 ${p.stops.length}곳 · ${document.body.dataset.region || ""} 아파트 지수`;
+  }
   const cur = () => got || state;   // 지금 보여 주는 코스
   function clearGot() {
     got = null;
@@ -49,25 +73,24 @@
   document.addEventListener("dj:mode", e => { state.mode = e.detail; if (D) draw(); });
   // 인쇄·PDF: 화면 그대로가 아니라 들고 나갈 종이로 (요약·지도, 단지마다 체크리스트와 손으로 적을 메모 칸)
   sec.querySelector("[data-cs-print]").addEventListener("click", () => { if (D && cur().list.length >= 2) DJ.printSheet(sheet()); });
-  // 공유: 받는 사람이 같은 코스(순서·지도·길찾기)를 그대로 여는 링크와, 단지 순서를 글로
+  // 공유: 받는 사람이 같은 코스(순서·지도·길찾기·체크리스트)를 그대로 여는 받은 코스 화면 링크와,
+  // 지도 위 동선을 그린 그림 카드 (공유 시트, sharekit.js)
   sec.querySelector("[data-cs-share]").addEventListener("click", () => {
     if (!D || cur().list.length < 2) return;
-    const { stops, legs, move } = plan();
-    const url = `${base}my.html?course=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}#course`;
-    const text = `임장 코스 ${stops.length}곳 · ${SPEED[cur().mode].label} 약 ${hm(move)}\n` +
-      stops.map((c, k) => `${k + 1}. ${c.n} (${DJ.place(c)})${k < legs.length ? ` → ${dist(legs[k])}` : ""}`).join("\n");
-    if (navigator.share && !DJ.inApp()) {
-      navigator.share({ title: "임장 코스", text, url }).catch(e => { if (!e || e.name !== "AbortError") copyCourse(text, url); });
-      return;
-    }
-    copyCourse(text, url);
+    const { stops, legs, move, total } = plan(), mode = SPEED[cur().mode].label;
+    const url = `${base}course.html?c=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}`;
+    const list = stops.map((c, k) => `${k + 1}. ${c.n} (${DJ.place(c)})${k < legs.length ? ` → ${dist(legs[k])}` : ""}`).join("\n");
+    const o = {
+      head: "임장 코스 공유", button: "코스 보기", url, file: "imjang-course.png", og: base + "static/og/course.jpg",
+      title: `임장 코스 ${stops.length}곳 · ${mode} 약 ${hm(move)}`,
+      desc: stops.slice(0, 3).map(c => c.n).join(" → ") + (stops.length > 3 ? ` 외 ${stops.length - 3}곳` : "") + " · 지도·길찾기·현장 체크리스트까지",
+      copy: `임장 코스 ${stops.length}곳 · ${mode} 약 ${hm(move)}\n${list}\n\n코스 지도·길찾기·체크리스트:`,
+      glyphs: stops.map(c => c.n).join(""),
+      art: () => DJ.shareArt.course({ stops, mode, move: hm(move), total: dist(total) }),
+    };
+    if (DJ.shareSheet) { DJ.shareSheet(o); return; }
+    DJ.share(o.title, o.copy, url);   // 공유 시트를 못 불러왔을 때
   });
-  function copyCourse(text, url) {
-    DJ.copy(text + "\n\n코스 지도·길찾기: " + url).then(ok => {
-      if (ok) DJ.toast("코스를 복사했어요", "카카오톡에 붙여 넣으면 단지 순서와 코스 링크가 함께 가요");
-      else DJ.copyBox(url);
-    });
-  }
 
   const km = (a, b) => {   // 두 단지 사이 직선거리 (km)
     const R = 6371, r = Math.PI / 180;
@@ -117,13 +140,15 @@
       keep.type = mine.type = "button";
       keep.addEventListener("click", () => {
         state = Object.assign(state, { list: got.list.slice(), mode: got.mode, auto: false });
+        if (RECV) { DJ.save("course", state); location.href = base + "my.html#course"; return; }   // 관심 화면의 내 코스로
         clearGot(); draw();
         DJ.toast("내 코스로 저장했어요", "체크리스트와 메모도 단지마다 남길 수 있어요");
       });
-      mine.addEventListener("click", () => { clearGot(); draw(); });
+      mine.addEventListener("click", () => { if (RECV) { location.href = base + "my.html#course"; return; } clearGot(); draw(); });
       const acts = el("div", "cs-got-acts");
       acts.append(keep, mine);
-      bar.append(el("p", "", "받은 임장 코스예요. 저장하기 전엔 내 코스는 그대로예요."), acts);
+      bar.append(el("p", "", RECV ? "저장하면 관심 화면의 내 코스에 들어가고, 단지마다 체크리스트·메모를 남길 수 있어요. 지금 내 코스는 바뀌지 않아요."
+        : "받은 임장 코스예요. 저장하기 전엔 내 코스는 그대로예요."), acts);
       sec.querySelector(".panel-head").after(bar);
     }
   }

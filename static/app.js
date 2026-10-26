@@ -1338,7 +1338,53 @@
     if ("IntersectionObserver" in window)
       new IntersectionObserver(es => es.forEach(e => { seen = e.isIntersecting; arm(); }), { threshold: 0.35 }).observe(sec);
   }
+  // 공유받아 들어온 사람에게 (주소에 from=share): 무엇을 받았는지, 이 사이트가 무엇인지 한 줄과 바로 해 볼 일.
+  // 처음 온 사람도 '이게 뭐지?' 하지 않고 써 보고 싶게. 한 번 보이면 주소에서 from 을 지워 새로 고쳐도 다시 뜨지 않음
+  const FROM = new URLSearchParams(location.search).get("from");
+  function welcome() {
+    if (FROM !== "share") return;
+    const q = new URLSearchParams(location.search);
+    q.delete("from");
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    const main = document.querySelector("main"), page = document.body.dataset.page, region = document.body.dataset.region || "";
+    if (!main || page === "course" || page === "share") return;   // 받은 코스·함께 보기 화면은 따로
+    const KIND = {
+      apt: ["공유받은 단지 카드예요", `${region} 아파트를 실거래가·입지로 평가한 S~D 등급 카드예요. 마음에 들면 관심 단지에 담아 두고, 임장 갈 때 코스로 묶어 보세요.`],
+      compare: ["공유받은 단지 비교예요", "항목마다 더 좋은 값에 표시돼요. 단지를 바꾸거나 더해서 직접 비교해 보세요."],
+    };
+    const [title, sub] = KIND[page] || [`${region} 아파트 지수에 오신 걸 환영해요`, `${region} 아파트를 실거래가·입지로 평가해 S~D 등급 카드로 만들었어요.`];
+    const box = el("aside", "welcome");
+    box.setAttribute("aria-label", "처음 오셨나요");
+    const mark = el("span", "welcome-mark", "D");
+    mark.setAttribute("aria-hidden", "true");
+    const txt = el("div", "welcome-t");
+    txt.append(el("b", "", title), el("span", "", sub));
+    const acts = el("div", "welcome-acts");
+    const fav = page === "apt" && document.querySelector("[data-fav]");
+    if (fav && fav.getAttribute("aria-pressed") !== "true") {
+      const b = el("button", "btn primary sm", "관심 단지에 담기");
+      b.type = "button";
+      b.addEventListener("click", () => { fav.click(); b.textContent = "담았어요 ✓"; b.disabled = true; });
+      acts.append(b);
+    }
+    const intro = el("a", "btn sm", "1분 소개");
+    intro.href = (window.DJ_ROOT || "") + "intro.html";
+    acts.append(intro);
+    if (acts.children.length < 2) {   // 단추는 둘까지 (담기가 없으면 찾기)
+      const find = el("button", "btn ghost sm", "우리 단지 찾기");
+      find.type = "button";
+      find.addEventListener("click", () => { const h = document.querySelector("[data-hs-open]"); if (h) h.click(); });
+      acts.append(find);
+    }
+    const x = el("button", "welcome-x", "×");
+    x.type = "button"; x.setAttribute("aria-label", "닫기");
+    x.addEventListener("click", () => box.remove());
+    box.append(mark, txt, acts, x);
+    main.prepend(box);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    welcome();
     regionPicker();
     recentDock();
     document.querySelectorAll("[data-hot]").forEach(hotRoll);
