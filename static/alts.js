@@ -69,5 +69,7 @@
       ul.append(li);
     });
     box.hidden = false;
+    // 인트로 등에서 '#alts' 로 왔으면 다 그린 뒤 이 칸으로
+    if (location.hash === "#alts") requestAnimationFrame(() => box.scrollIntoView({ block: "start" }));
   });
 })();

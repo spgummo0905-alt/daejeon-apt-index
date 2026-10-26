@@ -311,6 +311,14 @@
         st.classList.toggle("bad", S.state === "error");
       }
     }
+    // 위쪽 계정 창·인트로처럼 로그인 전후로 다른 걸 보여 주는 곳
+    document.querySelectorAll("[data-when-out]").forEach(x => { x.hidden = !!u; });
+    document.querySelectorAll("[data-when-in]").forEach(x => { x.hidden = !u; });
+    if (u) {
+      document.querySelectorAll("[data-user-name]").forEach(x => { x.textContent = `${u.name}님`; });
+      document.querySelectorAll("[data-pop-av]").forEach(x => face(x, u, true));
+      document.querySelectorAll("[data-pop-state]").forEach(x => { x.textContent = stateText(); x.classList.toggle("bad", S.state === "error"); });
+    }
     const uid = u ? u.id : null;
     if (uid !== lastUid) { lastUid = uid; document.dispatchEvent(new CustomEvent("dj:auth", { detail: u })); }   // 로그인·로그아웃 때 한 번
     document.querySelectorAll("[data-sync-note]").forEach(p => {
@@ -319,6 +327,63 @@
     });
   }
   DJ.paintSync = paint;
+  // 지금 이 기기에 있는 기록 (계정 창에 '관심 단지 3곳 · 임장 노트 2곳 · 사진 5장')
+  function counts() {
+    const favs = ls.get(PFX + "favs", []);
+    let notes = 0, photos = 0;
+    localKeys().filter(k => k.startsWith("visit:")).forEach(k => {
+      const v = ls.get(PFX + k, null);
+      if (!v) return;
+      const p = (v.p || []).length;
+      if (v.d || v.m || p || (v.q || []).length || (v.c || []).some(Boolean) || Object.values(v.x || {}).some(Boolean)) notes++;
+      photos += p;
+    });
+    return [[favs.length, "관심 단지", "곳"], [notes, "임장 노트", "곳"], [photos, "사진", "장"]].filter(([n]) => n);
+  }
+  // 위쪽 계정 버튼: 누르면 작은 창. 로그인 전엔 왜 로그인하는지와 카카오 버튼(지금 화면으로 돌아옴),
+  // 로그인 뒤엔 저장 상태·기록 수·내 기록 바로가기·로그아웃
+  function menu() {
+    const btn = document.querySelector("[data-acct]"), pop = document.getElementById("acct-pop");
+    if (!btn || !pop) return;
+    const cnt = pop.querySelector("[data-pop-count]");
+    function open() {
+      paint();
+      if (cnt) {
+        cnt.replaceChildren();
+        counts().forEach(([n, label, unit], i) => {
+          if (i) cnt.append(" · ");
+          cnt.append(label + " ", el("b", "", n.toLocaleString() + unit));
+        });
+      }
+      pop.style.setProperty("--ap-top", Math.round(btn.getBoundingClientRect().bottom + 8) + "px");
+      pop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      requestAnimationFrame(() => pop.classList.add("on"));
+      const first = pop.querySelector(S.user ? ".ap-links a" : "[data-login]");
+      if (first) first.focus({ preventScroll: true });
+    }
+    function close(back) {
+      if (pop.hidden) return;
+      pop.classList.remove("on");
+      pop.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      if (back) btn.focus({ preventScroll: true });
+    }
+    btn.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); pop.hidden ? open() : close(true); });
+    document.addEventListener("click", e => { if (!pop.hidden && !pop.contains(e.target)) close(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) close(true); });
+    pop.querySelectorAll(".ap-links a").forEach(a => a.addEventListener("click", e => {
+      close(false);
+      // 관심 화면에서 같은 화면 칸으로 갈 땐 직접 (주소가 같으면 브라우저가 움직이지 않음). 접힌 칸(내 설정)은 펼침
+      const u = new URL(a.href), t = u.pathname === location.pathname && document.getElementById(u.hash.slice(1));
+      if (!t) return;
+      e.preventDefault();
+      history.replaceState(null, "", u.hash);
+      if (t.tagName === "DETAILS") t.open = true;
+      t.scrollIntoView({ block: "start", behavior: DJ.calm ? "auto" : "smooth" });
+    }));
+    pop.querySelectorAll("[data-logout]").forEach(b => b.addEventListener("click", () => close(true)));
+  }
   function wire() {
     document.querySelectorAll("[data-login]").forEach(b => b.addEventListener("click", () => {
       b.disabled = true;
@@ -364,6 +429,7 @@
   // ---------- 시작 ----------
   async function start() {
     wire();
+    menu();
     paint();
     const hello = ss.get("djdex-hello");
     if (hello) { ss.del("djdex-hello"); welcome(hello); }

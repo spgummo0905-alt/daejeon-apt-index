@@ -436,6 +436,35 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert "revoke all on public.user_kv from anon, authenticated" in sql
 
 
+def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
+    # 어느 화면에서든(인트로 포함) 위쪽 계정 버튼 → 작은 창에서 바로 카카오 로그인.
+    # 인트로 '04 · 임장 도구': 가기 전 → 현장에서 → 다녀와서. 로그인이 필요한 도구는 로그인을 켰을 때만 소개
+    from djdex import config
+    out = tmp_path / "site"
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    intro = (out / "intro.html").read_text(encoding="utf-8")
+    assert "04 · 임장 도구" in intro and "05 · 동네 온도" in intro and "#field" in intro and "my.html#course" in intro and "#alts" in intro
+    assert "acct-pop" not in intro and "현장 사진" not in intro and "가족과 함께 보기" not in intro and "data-login" not in intro
+
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    intro = (out / "intro.html").read_text(encoding="utf-8")
+    for s in ('id="acct-pop"', 'aria-controls="acct-pop"', "현장 사진", "가족과 함께 보기", 'class="it-login"', "data-when-in", "data-user-name"):
+        assert s in intro
+    assert intro.count("data-login") == 2   # 위쪽 창과 인트로 로그인 줄
+    apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert 'id="acct-pop"' in apt and 'href="../my.html#prefs"' in apt and 'href="../privacy.html"' in apt
+    assert 'id="my-favs"' in (out / "my.html").read_text(encoding="utf-8")
+    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    assert 'body[data-page="intro"] .acct-btn { display: none; }' not in css
+    js = (out / "static" / "sync.js").read_text(encoding="utf-8")
+    assert "function menu()" in js and "[data-when-out]" in js
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"
