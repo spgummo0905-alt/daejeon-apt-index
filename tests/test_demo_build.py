@@ -628,3 +628,64 @@ def test_family_share_and_field_photos(tmp_path, monkeypatch):
     for s in ("create table if not exists public.shares", "function public.shared_view(t text)", "'photos', 'photos', true, 1048576",
               "photos insert own", "public.photo_quota_ok()", "grant execute on function public.shared_view(text) to anon"):
         assert s in sql, s
+
+
+def test_admin_page_roles_settings_and_membership_groundwork(tmp_path, monkeypatch):
+    # 관리자 화면(admin.html): 로그인을 켰을 때만 만들고 검색에서 뺌. 권한 확인은 서버 함수가 하고(역할: 운영자 > 관리자 > 스태프),
+    # 사이트 설정(공지 띠·기능 켜고 끄기)은 누구나 읽는 공개 설정으로 모든 화면에 반영. 멤버십은 등급표·구독 표 자리만 (결제는 나중)
+    import re
+    from djdex import config
+    out = tmp_path / "site"
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    assert not (out / "admin.html").exists()
+
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    ad = (out / "admin.html").read_text(encoding="utf-8")
+    assert '<meta name="robots" content="noindex">' in ad and "admin.html" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert ad.index('class="me-gate" data-when-out') < ad.index("data-ad-deny") < ad.index('class="ad" data-ad hidden')
+    for tab in ("overview", "members", "settings", "plans", "logs"):
+        assert f'data-ad-go="{tab}"' in ad and f'data-ad-pane="{tab}"' in ad
+    assert 'data-ad-go="logs" aria-selected="false" data-ad-min="admin"' in ad and "static/admin.js" in ad
+    assert '<symbol id="i-shield"' in ad and 'href="admin.html" data-admin-link hidden' in (out / "my.html").read_text(encoding="utf-8")
+    # 내 정보: 회원 번호(권한을 받을 때), 멤버십 줄(켰을 때만), 꺼질 수 있는 기능 표시
+    me = (out / "me.html").read_text(encoding="utf-8")
+    assert "data-member-id" in me and "data-member-copy" in me and '<li data-feature="membership">' in me
+    assert 'id="share" aria-labelledby="share-title" data-feature="share"' in me
+    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    assert '.off-photos [data-feature="photos"], .off-share [data-feature="share"] { display: none !important; }' in css
+    assert 'html:not(.on-membership) [data-feature="membership"]' in css
+    assert 's.dataset.feature = "photos"' in (out / "static" / "field.js").read_text(encoding="utf-8")
+    sync = (out / "static" / "sync.js").read_text(encoding="utf-8")
+    assert "/rest/v1/rpc/my_member" in sync and "/rest/v1/app_settings?select=key,value" in sync and '"notice-bar"' in sync
+    assert "[data-admin-link]" in sync and "ls.get(NOTE_X" in sync
+
+    # 화면이 부르는 함수와 넘기는 이름이 SQL 함수와 같은지 (다르면 PostgREST 가 404)
+    sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
+    js = (out / "static" / "admin.js").read_text(encoding="utf-8")
+    sig = {m[0]: [a.split()[0] for a in m[1].split(",") if a.strip()]
+           for m in re.findall(r"create or replace function public\.(\w+)\(([^)]*)\)", sql)}
+    calls = re.findall(r'rpc\("(\w+)"(?:, \{([^}]*)\})?', js)
+    assert {c[0] for c in calls} == {"my_member", "admin_overview", "admin_members", "admin_set_member", "admin_set_setting",
+                                     "admin_plans", "admin_set_plan", "admin_logs"}
+    for fn, body in calls:
+        assert fn in sig, fn
+        keys = re.findall(r"(\w+):", re.sub(r"\([^()]*\)", "", body)) if body else []
+        assert set(keys) <= set(sig[fn]), (fn, keys, sig[fn])
+    # 표마다 행 보안을 켜고, 바꾸기는 함수로만 (security definer + 빈 search_path), 관리 기록은 정책 없이 함수로만
+    for t in ("members", "plans", "subscriptions", "app_settings", "admin_log"):
+        assert f"alter table public.{t} enable row level security;" in sql, t
+    assert "on public.admin_log for" not in sql
+    for fn in ("my_member", "admin_overview", "admin_members", "admin_set_member", "admin_set_setting", "admin_set_plan", "admin_plans", "admin_logs"):
+        body = sql[sql.index(f"function public.{fn}("):]
+        assert "security definer set search_path = ''" in body[:400], fn
+        assert f"revoke all on function public.{fn}(" in sql and f"grant execute on function public.{fn}(" in sql
+    assert "raise exception 'owner only'" in sql and "raise exception 'last owner'" in sql
+    assert "using (public)" in sql and "using (active)" in sql
+    # 첫 운영자는 db-setup 실행 때 회원 번호로 (모양 확인, psql 변수로 넘김)
+    wf = (config.ROOT / ".github" / "workflows" / "db-setup.yml").read_text(encoding="utf-8")
+    assert "owner_uid:" in wf and "grep -Eq '^[0-9a-f]{8}-" in wf and "-v uid=\"$OWNER_UID\"" in wf and ":'uid'::uuid" in wf

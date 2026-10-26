@@ -69,7 +69,8 @@ def main(argv: list[str]) -> int:
     # 표·함수: 로그인 안 한 상태에선 막혀야 정상 (permission denied = 있음, 못 찾음 = 아직 안 만듦)
     tb = requests.get(f"{URL}/rest/v1/user_kv", params={"select": "k", "limit": "1"}, headers=h, timeout=30)
     sp = requests.post(f"{URL}/rest/v1/rpc/sync_put", headers=h, json={"items": []}, timeout=30)
-    for name, r in (("user_kv 표", tb), ("sync_put 함수", sp)):
+    mm = requests.post(f"{URL}/rest/v1/rpc/my_member", headers=h, json={}, timeout=30)
+    for name, r in (("user_kv 표", tb), ("sync_put 함수", sp), ("my_member 함수(관리자·등급)", mm)):
         c = code_of(r)
         if r.status_code in (401, 403) or c == "42501":
             state = "있음 (로그인 전엔 막힘, 정상)"
@@ -80,6 +81,12 @@ def main(argv: list[str]) -> int:
         else:
             state = f"HTTP {r.status_code} {c}"
         print(f"{name}: {state}")
+    # 사이트 설정(공지·기능 켜고 끄기): 로그인 없이 공개 줄만 읽힘
+    st2 = requests.get(f"{URL}/rest/v1/app_settings", params={"select": "key"}, headers=h, timeout=30)
+    if st2.ok:
+        print(f"사이트 설정: 공개 {', '.join(sorted(r['key'] for r in st2.json())) or '(없음)'}")
+    else:
+        print(f"사이트 설정: {'없음 (SQL 을 아직 실행하지 않음)' if code_of(st2) in ('42P01', 'PGRST205') else 'HTTP ' + str(st2.status_code)}")
     return 0
 
 
