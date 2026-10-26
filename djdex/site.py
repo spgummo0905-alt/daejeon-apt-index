@@ -414,6 +414,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 가족과 함께 보기 (공유 링크로 들어오는 보기 전용 화면, 검색에는 넣지 않음)
         (out_dir / "share.html").write_text(
             env.get_template("share.html").render(root="", page_path="share.html", **common), encoding="utf-8")
+        # 내 정보 (로그인한 사람만: 나의 임장·가족과 함께 보기·내 설정·계정, 검색에는 넣지 않음)
+        (out_dir / "me.html").write_text(
+            env.get_template("me.html").render(root="", page_path="me.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
     import json as _json
