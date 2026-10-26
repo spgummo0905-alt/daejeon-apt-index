@@ -282,24 +282,30 @@ def cmd_slow(cfg, args) -> None:
     if cfg.collect.get("max_calls_per_run") and not (cfg.paths.data / "READY").exists():
         return   # 실거래를 다 모으기 전인 지역(서울)
     key = _need("DATA_GO_KR_KEY")
-    if cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
+    # 몰아받기(catchup.yml): 고른 단계만, 평소보다 많은 호출·긴 시간으로 (하루 호출 한도가 남은 날)
+    only = set((getattr(args, "only", None) or "fee,kapt,reviews,bldg").split(","))
+    mins = lambda v, default: v * 60 if v else default
+    if "fee" in only and cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
         try:
-            fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)),
-                        time_limit=480)
+            fee.collect(key, cfg.paths.kapt, cfg.districts,
+                        budget=getattr(args, "fee_calls", None) or int(cfg.collect.get("fee_calls_per_run", 2400)),
+                        time_limit=mins(getattr(args, "fee_minutes", None), 480))
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
-    if cfg.collect.get("collect_kapt"):
+    if "kapt" in only and cfg.collect.get("collect_kapt"):
         # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
         try:
-            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=kapt.SLOW_TIME, cools=kapt.SLOW_COOLS)
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=mins(getattr(args, "kapt_minutes", None), kapt.SLOW_TIME),
+                         cools=kapt.SLOW_COOLS)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
-    if os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
+    if "reviews" in only and os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
         _outside_reviews(cfg)
-    if cfg.collect.get("collect_bldg"):
+    if "bldg" in only and cfg.collect.get("collect_bldg"):
         try:
             bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
-                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)), time_limit=900)
+                         budget=getattr(args, "bldg_calls", None) or int(cfg.collect.get("bldg_calls_per_run", 4500)),
+                         time_limit=mins(getattr(args, "bldg_minutes", None), 900))
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
 
@@ -393,7 +399,12 @@ def main(argv: list[str] | None = None) -> None:
         s.add_argument("--end", help="수집 끝 YYYYMM (기본: 이번 달)")
         s.add_argument("--out", help="사이트 출력 폴더")
     sub.add_parser("locate")
-    sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    s = sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    s.add_argument("--only", help="받을 단계만 쉼표로: fee,kapt,reviews,bldg (기본: 모두)")
+    for k in ("fee", "bldg"):
+        s.add_argument(f"--{k}-calls", type=int, help="이번 실행의 호출 수 상한 (기본: 설정 값)")
+    for k in ("fee", "kapt", "bldg"):
+        s.add_argument(f"--{k}-minutes", type=float, help="이 단계의 시간 상한(분) (기본: 평소 값)")
     sub.add_parser("feeprobe", help="관리비 API 점검 (응답을 한 줄씩)")
     sub.add_parser("school", help="학교알리미 중학교 전출입과 물가·금리만 받기 (빠름)")
     sub.add_parser("elev", help="언덕(고저차)만 계산 (지형 타일, 새 단지만)")
