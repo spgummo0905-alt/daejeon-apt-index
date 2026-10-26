@@ -244,6 +244,7 @@
   function photos() {
     if (!DJ.sb) return null;
     const s = section("현장 사진", null);
+    s.dataset.feature = "photos";   // 관리자 화면에서 끄면 감춤
     if (!(DJ.sync && DJ.sync.user)) {
       s.append(el("p", "fm-sub", "카카오로 로그인하면 주차장·동 간격·언덕 같은 현장 사진을 이 단지 노트에 남길 수 있어요."));
       const go = el("a", "btn", "로그인하러 가기 ›");

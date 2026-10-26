@@ -66,6 +66,7 @@
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5zM10 20.5a2 2 0 0 0 4 0"/></symbol>
   <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M19.5 9.5A7.8 7.8 0 0 0 5.6 7.2L4 9M4 4.5V9h4.5M4.5 14.5a7.8 7.8 0 0 0 13.9 2.3L20 15M20 19.5V15h-4.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2 5 6v5.6c0 4.4 3 8 7 9.2 4-1.2 7-4.8 7-9.2V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
 </svg>
 <header class="site">
@@ -140,8 +141,10 @@
           <nav class="ap-links" aria-label="내 기록">
             <a href="{{ root }}my.html#my-favs"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>관심 단지·임장 노트</a>
             <a href="{{ root }}my.html#course"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg>임장 코스</a>
-            <a href="{{ root }}me.html#share"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>가족과 함께 보기</a>
+            <a href="{{ root }}me.html#share" data-feature="share"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>가족과 함께 보기</a>
             <a href="{{ root }}me.html#prefs"><svg class="ic" aria-hidden="true"><use href="#i-filter"/></svg>내 설정</a>
+            {# 운영자·관리자·스태프에게만 보임 (sync.js paintMember) #}
+            <a href="{{ root }}admin.html" data-admin-link hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>관리자 화면</a>
           </nav>
           <button type="button" class="link-btn ap-logout" data-logout>로그아웃</button>
         </div>

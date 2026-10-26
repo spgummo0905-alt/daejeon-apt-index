@@ -417,6 +417,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 내 정보 (로그인한 사람만: 나의 임장·가족과 함께 보기·내 설정·계정, 검색에는 넣지 않음)
         (out_dir / "me.html").write_text(
             env.get_template("me.html").render(root="", page_path="me.html", **common), encoding="utf-8")
+        # 관리자 화면 (권한은 서버 함수가 확인, 검색에는 넣지 않음)
+        (out_dir / "admin.html").write_text(
+            env.get_template("admin.html").render(root="", page_path="admin.html", **common), encoding="utf-8")
     # 받은 임장 코스 (공유 링크로 들어오는 화면, 검색에는 넣지 않음)
     (out_dir / "course.html").write_text(
         env.get_template("course.html").render(root="", page_path="course.html", **common), encoding="utf-8")

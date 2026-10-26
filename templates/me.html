@@ -38,7 +38,7 @@
     <a class="me-last" data-me-last hidden></a>
   </section>
 
-  <section class="panel me-sec" id="share" aria-labelledby="share-title">
+  <section class="panel me-sec" id="share" aria-labelledby="share-title" data-feature="share">
     <div class="panel-head"><h2 id="share-title">가족과 함께 보기</h2>
       <p class="muted">집은 혼자 정하지 않으니까요. 배우자·가족에게 관심 단지와 임장 노트(사진 포함)를 보기 전용 링크로 보여 줘요. 링크를 아는 사람만 볼 수 있고, 언제든 끊을 수 있어요.</p></div>
     <div class="acct-share me-share" data-share hidden><div class="acct-share-actions" data-share-actions></div></div>
@@ -68,11 +68,15 @@
   <section class="panel me-sec" id="manage" aria-labelledby="manage-title">
     <div class="panel-head"><h2 id="manage-title">계정</h2></div>
     <ul class="me-rows">
+      {# 멤버십: 관리자 화면에서 '멤버십 안내'를 켰을 때만 (지금은 결제 없이 등급만) #}
+      <li data-feature="membership"><div><b>멤버십 · <span data-member-plan>기본 등급</span></b><span data-member-limit></span></div></li>
       <li><div><b>로그아웃</b><span>이 기기의 기록은 그대로 남아요</span></div>
         <button type="button" class="btn" data-logout>로그아웃</button></li>
       <li><div><b>로그아웃하고 이 기기 기록 지우기</b><span>여럿이 쓰는 PC라면. 계정에 저장된 기록은 그대로예요</span></div>
         <button type="button" class="btn ghost" data-logout-wipe>지우고 로그아웃</button></li>
       <li><div><b>카카오 연결 끊기</b><span>카카오톡 → 설정 → 카카오계정 → 연결된 서비스 관리에서 끊을 수 있어요</span></div></li>
+      <li><div><b>회원 번호</b><span>문의하거나 권한을 받을 때 알려 주세요 · <code class="me-uid" data-member-id></code></span></div>
+        <button type="button" class="btn ghost" data-member-copy>복사</button></li>
       <li class="danger"><div><b>계정과 저장된 기록 삭제</b><span>계정에 저장된 기록과 현장 사진, 함께 보기 링크를 모두 지워요. 되돌릴 수 없어요</span></div>
         <button type="button" class="btn ghost danger" data-delete>삭제</button></li>
     </ul>

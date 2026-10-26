@@ -94,9 +94,76 @@
   const allPhotos = () => localKeys().filter(k => k.startsWith("visit:")).flatMap(k => ((getLocal(k) || {}).p || []).map(x => x[0]));
 
   function forget() {
-    ls.del(AUTH); ls.del(META);
+    ls.del(AUTH); ls.del(META); ss.del(MEM);
     S.user = null; S.state = "";
     paint();
+  }
+
+  // ---------- 회원 등급과 사이트 설정 (관리자 화면에서 정함, scripts/supabase_setup.sql) ----------
+  // 아직 데이터베이스에 표·함수가 없으면 조용히 넘어가고 사이트는 지금처럼 동작합니다.
+  const SET = "djdex-settings", MEM = "djdex-member", NOTE_X = "djdex-notice-x";
+  const fresh = (k, ms) => { try { const c = JSON.parse(ss.get(k) || "null"); return c && Date.now() - c.t < ms ? c.v : null; } catch (e) { return null; } };
+  // 내 역할·등급 (이 탭에 10분 기억). 운영자·관리자·스태프에게만 계정 창에 '관리자' 바로가기
+  async function loadMember() {
+    if (!S.user) { DJ.member = null; paintMember(); return; }
+    let v = fresh(MEM, 600000);
+    if (!v || v.id !== S.user.id) {
+      try { v = await call("/rest/v1/rpc/my_member", { method: "POST", body: {} }, await token()); } catch (e) { return; }
+      ss.set(MEM, JSON.stringify({ t: Date.now(), v }));
+    }
+    if (!S.user || v.id !== S.user.id) return;
+    DJ.member = v;
+    paintMember();
+    document.dispatchEvent(new CustomEvent("dj:member", { detail: v }));
+  }
+  function paintMember() {
+    const m = DJ.member, staff = !!m && ["owner", "admin", "staff"].includes(m.role);
+    document.querySelectorAll("[data-admin-link]").forEach(a => { a.hidden = !staff; });
+    document.querySelectorAll("[data-member-plan]").forEach(x => {
+      x.textContent = m ? `${m.plan_name || "기본"} 등급` + (m.until ? ` · ${new Date(m.until).toLocaleDateString("ko-KR")}까지` : "") : "";
+    });
+    document.querySelectorAll("[data-member-limit]").forEach(x => {
+      const n = m && m.features && +m.features.photos;
+      x.textContent = n ? `현장 사진 ${n.toLocaleString()}장까지 올릴 수 있어요` : "";
+    });
+  }
+  // 공개 설정: 공지 띠와 기능 켜고 끄기 (이 탭에 5분 기억, 관리자가 저장하면 바로 새로)
+  DJ.settings = fresh(SET, 86400000) || {};
+  DJ.applySettings = async function (reload) {
+    let v = reload ? null : fresh(SET, 300000);
+    if (!v) {
+      try { v = {}; (await call("/rest/v1/app_settings?select=key,value") || []).forEach(r => { v[r.key] = r.value; }); }
+      catch (e) { return; }
+      ss.set(SET, JSON.stringify({ t: Date.now(), v }));
+    }
+    DJ.settings = v;
+    flags(v);
+    notice(v.notice);
+  };
+  // 꺼 둔 기능은 data-feature 칸을 감춤 (style.css). 멤버십 안내는 켰을 때만 보임
+  function flags(v) {
+    const f = (v && v.features) || {}, h = document.documentElement.classList;
+    h.toggle("off-photos", f.photos === false);
+    h.toggle("off-share", f.share === false);
+    h.toggle("on-membership", f.membership === true);
+  }
+  flags(DJ.settings);   // 기억해 둔 설정으로 먼저 (화면이 깜박이지 않게)
+  function notice(n) {
+    const old = document.querySelector(".notice-bar");
+    if (old) old.remove();
+    const main = document.querySelector("main");
+    if (!n || !n.on || !n.text || !main) return;
+    if (ls.get(NOTE_X, "") === n.text) return;   // 닫은 공지 (문구가 바뀌면 다시 보임)
+    const bar = el("div", "notice-bar"), t = el(n.link ? "a" : "span", "notice-text", n.text);
+    bar.setAttribute("role", "status");
+    if (n.link && /^https:\/\//.test(n.link)) { t.href = n.link; t.rel = "noopener"; t.target = "_blank"; }
+    const x = el("button", "notice-x", "×");
+    x.type = "button"; x.setAttribute("aria-label", "공지 닫기");
+    x.addEventListener("click", () => { ls.set(NOTE_X, n.text); bar.remove(); });
+    bar.append(el("span", "notice-dot"), t, x);
+    // 첫 소개 화면은 위쪽 그림이 머리글 밑까지 올라가 있어, 그림 안 첫 줄 위에
+    const eb = document.querySelector(".it-hero .it-eyebrow");
+    if (eb) eb.before(bar); else main.prepend(bar);
   }
 
   // ---------- 기록 고르기 ----------
@@ -320,7 +387,15 @@
       document.querySelectorAll("[data-user-state]").forEach(x => { x.textContent = stateText(); x.classList.toggle("bad", S.state === "error"); });
     }
     const uid = u ? u.id : null;
-    if (uid !== lastUid) { lastUid = uid; document.dispatchEvent(new CustomEvent("dj:auth", { detail: u })); }   // 로그인·로그아웃 때 한 번
+    // 내 정보 '회원 번호' (문의하거나 권한을 받을 때)
+    document.querySelectorAll("[data-member-id]").forEach(x => { x.textContent = u ? u.id : ""; });
+    if (uid !== lastUid) {   // 로그인·로그아웃 때 한 번
+      lastUid = uid;
+      if (!u) DJ.member = null;
+      paintMember();
+      loadMember();
+      document.dispatchEvent(new CustomEvent("dj:auth", { detail: u }));
+    }
     document.querySelectorAll("[data-sync-note]").forEach(p => {
       p.textContent = u ? "기록은 카카오 계정에 저장돼 다른 기기에서도 이어 볼 수 있어요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요."
         : "기록은 이 기기의 브라우저에 남아요. 관심 화면에서 카카오로 로그인하면 다른 기기에서도 이어 볼 수 있어요.";
@@ -394,6 +469,9 @@
       if (confirm("로그아웃하고 이 기기에 남은 관심 단지·임장 기록을 지울까요?\n계정에 저장된 기록은 그대로예요.")) DJ.logout(true);
     }));
     document.querySelectorAll("[data-delete]").forEach(b => b.addEventListener("click", () => DJ.deleteAccount()));
+    document.querySelectorAll("[data-member-copy]").forEach(b => b.addEventListener("click", () => {
+      if (S.user) DJ.copy(S.user.id).then(ok => DJ.toast(ok ? "회원 번호를 복사했어요" : "길게 눌러 복사해 주세요", ok ? "문의하거나 권한을 받을 때 알려 주세요." : ""));
+    }));
     // 내 정보 '지금 맞추기': 현장에서 휴대폰으로 적고 와서 PC에서 바로 받아 보게
     document.querySelectorAll("[data-sync-now]").forEach(b => b.addEventListener("click", () => {
       if (!S.user) return;
@@ -442,6 +520,7 @@
     wire();
     menu();
     paint();
+    DJ.applySettings();
     const hello = ss.get("djdex-hello");
     if (hello) { ss.del("djdex-hello"); welcome(hello); }
     const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.replace(/^#/, ""));
