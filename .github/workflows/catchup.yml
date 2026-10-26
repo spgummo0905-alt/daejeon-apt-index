@@ -3,7 +3,7 @@ name: catchup
 # 몰아받기 (수동 실행): 하루 호출 한도가 남은 날, 대전·서울의 관리비·공급면적·단지 정보를 평소보다 오래 받아 둡니다.
 # 같은 인증 키로 지역이 한도를 나눠 쓰므로 거의 끝난 대전을 먼저 마무리하고, 남은 한도를 서울에 씁니다.
 # 받은 것은 배포와 같은 캐시 이름으로 저장해 다음 배포(매일 새벽)부터 화면에 나옵니다.
-# 이 실행이 도는 동안에는 배포를 돌리지 마세요 (배포가 옛 캐시로 덮어쓸 수 있음).
+# 배포와 같은 concurrency 이름이라, 이 실행이 도는 동안 시작된 배포는 끝날 때까지 기다립니다.
 on:
   workflow_dispatch:
     inputs:
@@ -21,8 +21,9 @@ on:
 permissions:
   contents: read
 
+# 배포(build.yml publish)와 같은 이름: 겹치면 뒤에 온 쪽이 기다림
 concurrency:
-  group: catchup
+  group: data-collect
   cancel-in-progress: false
 
 jobs:

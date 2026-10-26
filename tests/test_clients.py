@@ -196,3 +196,11 @@ def test_slow_catchup_picks_stages_and_raises_limits(tmp_path, monkeypatch):
     for k in ("djdex-rent2-${{ github.run_id }}-catchup", "djdex-bldg2-${{ github.run_id }}-catchup", "djdex-seoul-${{ github.run_id }}-catchup"):
         assert k in wf
     assert "${{ inputs." not in wf.split("run: |")[-1]
+
+
+def test_catchup_and_deploy_never_overlap():
+    # 몰아받기와 배포는 같은 호출 한도·캐시를 쓰므로 같은 concurrency 이름으로 차례를 기다림
+    from djdex import config
+    wf = config.ROOT / ".github" / "workflows"
+    for name in ("build.yml", "catchup.yml"):
+        assert "group: data-collect" in (wf / name).read_text(encoding="utf-8"), name
