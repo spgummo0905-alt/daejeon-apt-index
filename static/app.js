@@ -212,9 +212,10 @@
     let n = 0;
     for (const x of slugs) {
       if (st.list.includes(x)) continue;
-      if (st.list.length >= 8) { save("course", st); return n || -1; }
+      if (st.list.length >= 8) { if (n) st.auto = false; save("course", st); return n || -1; }
       st.list.push(x); n++;
     }
+    if (n) st.auto = false;   // 직접 고친 코스 (관심 단지를 따라가지 않음)
     save("course", st);
     return n;
   };
@@ -318,6 +319,27 @@
     if (await DJ.copy(url)) { DJ.toast("링크를 복사했어요", sub || "카카오톡이나 메신저에 붙여 넣어 보내세요"); return true; }
     DJ.copyBox(url);   // 복사가 완전히 막힌 브라우저에서만
     return false;
+  };
+  // 인쇄용 종이(sheet)만 찍기 (임장 코스·임장 노트). 휴대폰 브라우저는 print() 가 바로 돌아와 그 뒤에 페이지를 찍으므로
+  // 종이를 바로 치우지 않고 두었다가 다음 인쇄 때 바꿉니다 (화면엔 보이지 않음). PC 는 인쇄 창이 닫히면 치움.
+  // 카카오톡·네이버 같은 앱 안 브라우저는 인쇄가 되지 않아, 다른 브라우저로 열라고 알려 줌
+  DJ.inApp = () => /KAKAOTALK|NAVER\(inapp|DaumApps|Instagram|FBAN|FBAV|Line\/|; wv\)/i.test(navigator.userAgent);
+  DJ.printSheet = function (sheet) {
+    if (DJ.inApp()) {
+      DJ.toast("이 앱 안에서는 인쇄가 안 돼요", "오른쪽 위 메뉴에서 '다른 브라우저로 열기'를 누른 뒤 다시 눌러 주세요. 크롬·사파리에선 'PDF로 저장'도 돼요.", 9000);
+      return Promise.resolve(false);
+    }
+    document.querySelectorAll(".print-sheet").forEach(x => x.remove());
+    sheet.classList.add("print-sheet");
+    document.body.append(sheet);
+    document.body.classList.add("printing");
+    const imgs = [...sheet.querySelectorAll("img")].map(i => i.decode().catch(() => {}));
+    return Promise.race([Promise.all(imgs), new Promise(ok => setTimeout(ok, 3000))]).then(() => {   // 사진이 뜬 뒤
+      if (!matchMedia("(pointer: coarse)").matches)
+        addEventListener("afterprint", () => setTimeout(() => { sheet.remove(); document.body.classList.remove("printing"); }, 300), { once: true });
+      window.print();
+      return true;
+    });
   };
   DJ.share = async function (title, text, url) {
     url = url || location.href;

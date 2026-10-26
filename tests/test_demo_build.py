@@ -497,6 +497,24 @@ def test_my_info_page_only_for_logged_in(tmp_path, monkeypatch):
     assert "로그인하지 않아도 모든 기능" not in (out / "privacy.html").read_text(encoding="utf-8")
 
 
+def test_course_share_link_and_print_sheet(tmp_path):
+    # 임장 코스 공유: 단지 하나가 아니라 같은 코스를 여는 링크(my.html?course=…&m=…#course)와 순서를 글로.
+    # 인쇄·PDF: 화면 대신 들고 나갈 종이(요약·지도·체크리스트·메모 칸)만, 휴대폰은 인쇄 뒤에 치우지 않음, 앱 안 브라우저는 안내
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    course = (out / "static" / "course.js").read_text(encoding="utf-8")
+    assert 'my.html?course=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}#course' in course
+    assert 'q.get("course")' in course and "내 코스로 저장" in course and 'if (!got) DJ.save("course", state)' in course
+    assert "DJ.printSheet(sheet())" in course and "window.print" not in course
+    assert "state.auto = true" in course   # 빈 코스가 저장돼 있어도 관심 단지를 따라감
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.printSheet = function" in app and "KAKAOTALK" in app and '"(pointer: coarse)"' in app
+    prefs = (out / "static" / "prefs.js").read_text(encoding="utf-8")
+    assert "DJ.printSheet(sheet)" in prefs and "window.print" not in prefs
+    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    assert "body.printing > :not(.print-sheet)" in css and ".cs-p-checks" in css and "print-course" not in css
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"

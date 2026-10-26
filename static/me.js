@@ -88,7 +88,7 @@
         const st = DJ.load("course", {}), list = todo.slice(0, 8);
         const same = Array.isArray(st.list) && st.list.length && list.every(s => st.list.includes(s));
         if (!same && Array.isArray(st.list) && st.list.length && !confirm(`지금 임장 코스를 안 가 본 관심 단지 ${list.length}곳으로 바꿀까요?`)) return;
-        DJ.save("course", Object.assign(st, { list }));
+        DJ.save("course", Object.assign(st, { list, auto: false }));
         location.href = root + "my.html#course";
       });
       next.append(ul, go);
