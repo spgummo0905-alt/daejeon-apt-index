@@ -1,0 +1,115 @@
+name: catchup
+
+# 몰아받기 (수동 실행): 하루 호출 한도가 남은 날, 대전·서울의 관리비·공급면적·단지 정보를 평소보다 오래 받아 둡니다.
+# 같은 인증 키로 지역이 한도를 나눠 쓰므로 거의 끝난 대전을 먼저 마무리하고, 남은 한도를 서울에 씁니다.
+# 받은 것은 배포와 같은 캐시 이름으로 저장해 다음 배포(매일 새벽)부터 화면에 나옵니다.
+# 이 실행이 도는 동안에는 배포를 돌리지 마세요 (배포가 옛 캐시로 덮어쓸 수 있음).
+on:
+  workflow_dispatch:
+    inputs:
+      seoul_bldg_hours:
+        description: "서울 공급면적에 쓸 최대 시간 (시간)"
+        default: "3.5"
+      seoul_bldg_calls:
+        description: "서울 공급면적 호출 수 상한 (하루 한도 안에서)"
+        default: "7500"
+      seoul_fee_calls:
+        description: "서울 관리비 호출 수 상한 (하루 한도 안에서)"
+        default: "3000"
+
+concurrency:
+  group: catchup
+  cancel-in-progress: false
+
+jobs:
+  catchup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      PYTHONUNBUFFERED: "1"
+      DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      # 배포(build.yml)와 같은 경로·이름으로 가장 최근 캐시를 복원
+      - name: 수집 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/raw
+            data/raw_presale
+            data/geo.json
+            data/poi.json
+            data/school
+          key: djdex-data-${{ github.run_id }}
+          restore-keys: djdex-data-
+      - name: 전월세·단지 정보 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/raw_rent
+            data/kapt
+          key: djdex-rent2-${{ github.run_id }}
+          restore-keys: djdex-rent2-
+      - name: 공급면적 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: data/bldg
+          key: djdex-bldg2-${{ github.run_id }}
+          restore-keys: djdex-bldg2-
+      - name: 서울 수집 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: data/seoul
+          key: djdex-seoul-${{ github.run_id }}
+          restore-keys: djdex-seoul-
+      - name: 대전 관리비·공급면적 마무리
+        id: dj
+        continue-on-error: true
+        timeout-minutes: 70
+        run: python -m djdex slow --only fee,bldg --fee-calls 4000 --fee-minutes 30 --bldg-calls 1500 --bldg-minutes 30
+      - name: 대전 관리비 저장
+        if: ${{ always() && (steps.dj.outcome == 'success' || steps.dj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/raw_rent
+            data/kapt
+          key: djdex-rent2-${{ github.run_id }}-catchup
+      - name: 대전 공급면적 저장
+        if: ${{ always() && (steps.dj.outcome == 'success' || steps.dj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/bldg
+          key: djdex-bldg2-${{ github.run_id }}-catchup
+      - name: 서울 관리비·공급면적 몰아받기
+        id: se
+        if: ${{ !cancelled() && hashFiles('data/seoul/READY') != '' }}
+        continue-on-error: true
+        timeout-minutes: 250
+        env:
+          FEE_CALLS: ${{ inputs.seoul_fee_calls }}
+          BLDG_CALLS: ${{ inputs.seoul_bldg_calls }}
+          BLDG_HOURS: ${{ inputs.seoul_bldg_hours }}
+        run: |
+          minutes=$(python3 -c 'import os; print(min(float(os.environ["BLDG_HOURS"]), 3.9) * 60)')
+          python -m djdex --config config.seoul.toml slow --only fee,bldg \
+            --fee-calls "$FEE_CALLS" --fee-minutes 30 --bldg-calls "$BLDG_CALLS" --bldg-minutes "$minutes"
+      # 단지 정보(K-apt)는 포털 오류로 자주 멈춰서 맨 뒤에 (따로 된 한도)
+      - name: 서울 단지 정보 이어 받기
+        id: se_kapt
+        if: ${{ !cancelled() && hashFiles('data/seoul/READY') != '' }}
+        continue-on-error: true
+        timeout-minutes: 30
+        run: python -m djdex --config config.seoul.toml slow --only kapt --kapt-minutes 25
+      - name: 서울 수집 캐시 저장
+        if: ${{ always() && (steps.se.outcome == 'success' || steps.se.outcome == 'failure' || steps.se_kapt.outcome == 'success' || steps.se_kapt.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/seoul
+          key: djdex-seoul-${{ github.run_id }}-catchup

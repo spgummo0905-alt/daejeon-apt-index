@@ -166,3 +166,33 @@ def test_slow_puts_supply_area_last_with_time_limits(tmp_path, monkeypatch):
     cli.main(["--data", str(tmp_path), "slow"])
     assert [n for n, _ in order] == ["fee", "kapt", "reviews", "bldg"]   # 관리비를 단지 정보보다 먼저
     assert sum(t or 0 for _, t in order) < 45 * 60   # 단계별 상한 합이 워크플로 45분 제한 안
+
+
+def test_slow_catchup_picks_stages_and_raises_limits(tmp_path, monkeypatch):
+    # 몰아받기(catchup.yml): 고른 단계만, 평소보다 많은 호출·긴 시간으로. 고르지 않으면 평소 그대로
+    from djdex import bldg, cli, fee, kapt
+
+    monkeypatch.setenv("DATA_GO_KR_KEY", "x")
+    monkeypatch.setenv("KAKAO_REST_KEY", "x")
+    (tmp_path / "kapt").mkdir()
+    (tmp_path / "trades.csv").write_text("complex_id\n1\n", encoding="utf-8")
+    got = []
+    monkeypatch.setattr(kapt, "collect", lambda *a, **k: got.append(("kapt", k.get("time_limit"), None)))
+    monkeypatch.setattr(fee, "collect", lambda *a, **k: got.append(("fee", k.get("time_limit"), k.get("budget"))))
+    monkeypatch.setattr(cli, "_outside_reviews", lambda cfg: got.append(("reviews", None, None)))
+    monkeypatch.setattr(bldg, "collect", lambda *a, **k: got.append(("bldg", k.get("time_limit"), k.get("budget"))))
+    cli.main(["--data", str(tmp_path), "slow", "--only", "fee,bldg", "--fee-calls", "4000", "--fee-minutes", "30",
+              "--bldg-calls", "7500", "--bldg-minutes", "210"])
+    assert got == [("fee", 1800, 4000), ("bldg", 12600, 7500)]
+    got.clear()
+    cli.main(["--data", str(tmp_path), "slow", "--only", "kapt", "--kapt-minutes", "25"])
+    assert got == [("kapt", 1500, None)]
+    got.clear()
+    cli.main(["--data", str(tmp_path), "slow"])
+    assert [g[0] for g in got] == ["fee", "kapt", "reviews", "bldg"] and got[0][1:] == (480, 2400) and got[3][1:] == (900, 4500)
+    wf = (cli.config_mod.ROOT / ".github" / "workflows" / "catchup.yml").read_text(encoding="utf-8")
+    # 대전을 먼저 마무리하고 서울, 캐시는 배포와 같은 이름 앞부분으로 (다음 배포가 이어 씀), 입력은 환경 변수로만
+    assert wf.index("python -m djdex slow --only fee,bldg") < wf.index("config.seoul.toml slow --only fee,bldg")
+    for k in ("djdex-rent2-${{ github.run_id }}-catchup", "djdex-bldg2-${{ github.run_id }}-catchup", "djdex-seoul-${{ github.run_id }}-catchup"):
+        assert k in wf
+    assert "${{ inputs." not in wf.split("run: |")[-1]
