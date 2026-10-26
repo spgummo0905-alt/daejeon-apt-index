@@ -179,7 +179,7 @@
       mk.type = "button";
       mk.addEventListener("click", () => {
         const done = busy(mk);
-        rpc("share_create").then(t => { tok = t; render(); DJ.toast("함께 보기 링크를 만들었어요", "'링크 보내기'로 가족에게 보내 주세요."); })
+        rpc("share_create").then(t => { tok = t; render(); send(); })   // 만들면 바로 보내는 창으로
           .catch(() => { done(); DJ.toast("링크를 만들지 못했어요", "잠시 뒤 다시 해 주세요."); });
       });
       acts.append(mk);
@@ -188,13 +188,9 @@
     const url = el("input", "acct-share-url");
     url.readOnly = true; url.value = link(); url.setAttribute("aria-label", "함께 보기 링크");
     url.addEventListener("focus", () => url.select());
-    const send = el("button", "btn primary", "링크 보내기");
-    send.type = "button";
-    send.addEventListener("click", () => {
-      const text = "우리 집 임장 기록이에요. 관심 단지와 현장 메모를 같이 봐 주세요.";
-      if (navigator.share) navigator.share({ title: "임장 기록 함께 보기", text, url: link() }).catch(() => {});
-      else DJ.copyLink(link(), "카카오톡이나 문자로 가족에게 보내 주세요");
-    });
+    const sendBtn = el("button", "btn primary", "링크 보내기");
+    sendBtn.type = "button";
+    sendBtn.addEventListener("click", send);
     const cut = el("button", "btn ghost", "링크 끊기");
     cut.type = "button";
     cut.addEventListener("click", () => {
@@ -203,7 +199,36 @@
       rpc("share_revoke").then(() => { tok = null; render(); DJ.toast("링크를 끊었어요", "필요하면 새 링크를 만들 수 있어요."); })
         .catch(() => { done(); DJ.toast("끊지 못했어요", "잠시 뒤 다시 해 주세요."); });
     });
-    acts.append(url, send, cut);
+    acts.append(url, sendBtn, cut);
+  }
+  // 보내기: 누구의 기록인지·모은 수·관심 단지를 그린 그림 카드와 함께 (공유 시트, sharekit.js)
+  function send() {
+    const name = DJ.sync && DJ.sync.user ? DJ.sync.user.name : "";
+    let notes = 0, photos = 0;
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")).forEach(k => {
+        const v = DJ.visit(k.slice(12)), p = (v.p || []).length;
+        if (v.d || v.m || v.q.length || p || v.c.some(Boolean) || Object.values(v.x).some(Boolean)) notes++;
+        photos += p;
+      });
+    } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
+    const favs = DJ.favs();
+    const text = "우리 집 임장 기록이에요. 관심 단지와 현장 메모를 같이 봐 주세요.";
+    DJ.data().then(d => {
+      const list = favs.map(s => d.bySlug[s]).filter(Boolean);
+      const counts = [["관심 단지", favs.length, "곳"], ["임장 노트", notes, "곳"], ["현장 사진", photos, "장"]].filter(([, n]) => n).map(([k, n, u]) => [k, n + u]);
+      const o = {
+        head: "가족과 함께 보기", button: "기록 보기", url: link(), file: "imjang-family.png",
+        og: location.origin + location.pathname.replace(/[^/]*$/, "") + "static/og/family.jpg",
+        title: name ? `${name}님의 임장 기록` : "우리 집 임장 기록",
+        desc: (counts.map(([k, v]) => `${k} ${v}`).join(" · ") || "관심 단지와 임장 노트") + " · 보기 전용",
+        copy: text, glyphs: list.slice(0, 3).map(c => c.n + (c.pt || "") + DJ.place(c)).join("") + name,
+        art: () => DJ.shareArt.family({ name, counts, list }),
+      };
+      if (DJ.shareSheet) DJ.shareSheet(o);
+      else if (navigator.share) navigator.share({ title: o.title, text, url: o.url }).catch(() => {});
+      else DJ.copyLink(o.url, "카카오톡이나 문자로 가족에게 보내 주세요");
+    });
   }
   function check() {
     const u = DJ.sync && DJ.sync.user;

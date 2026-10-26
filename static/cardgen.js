@@ -315,9 +315,11 @@
   const UA = navigator.userAgent || "";
   const KAKAO = /KAKAOTALK/i.test(UA);
   const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|BAND\/|KAKAOSTORY|TikTok|musical_ly|; wv\)/i.test(UA);
-  const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); return u.toString(); };
+  // 보내는 주소: 받은 사람이 열면 '공유받은 단지 카드' 안내가 뜨게 from=share (app.js welcome)
+  const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); u.searchParams.set("from", "share"); return u.toString(); };
   function externalUrl() {
     const u = new URL(pageUrl());
+    u.searchParams.delete("from");   // 내 기기에서 여는 것
     u.searchParams.set("card", "1");
     return "kakaotalk://web/openExternal?url=" + encodeURIComponent(u.toString());
   }
@@ -485,13 +487,14 @@
     // (카드 이미지가 올라가 있으면 그것, 아니면 사이트 대표 이미지)
     sheet.querySelector('[data-act="kakao"]').addEventListener("click", () => {
       const url = pageUrl(), link = { mobileWebUrl: url, webUrl: url };
+      const homeUrl = new URL("../index.html", location.href).toString(), home = { mobileWebUrl: homeUrl, webUrl: homeUrl };
       if (window.Kakao && Kakao.Share && Kakao.isInitialized && Kakao.isInitialized()) {
         try {
           const img = kakaoImg && kakaoImg.url ? kakaoImg : (sheet.dataset.og ? { url: sheet.dataset.og, width: 1200, height: 630 } : null);
           if (img) {
             Kakao.Share.sendDefault({ objectType: "feed",
               content: { title, description: text, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height, link },
-              buttons: [{ title: "점수 보기", link }] });
+              buttons: [{ title: "카드 보기", link }, { title: "우리 단지 찾기", link: home }] });
           } else {
             Kakao.Share.sendDefault({ objectType: "text", text: title + "\n" + text, buttonTitle: "점수 보기", link });
           }

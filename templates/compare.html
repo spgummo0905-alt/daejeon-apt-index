@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}단지 비교 · {{ region }} 아파트 지수{% endblock %}
+{% block og_image %}static/og/compare.jpg{% endblock %}
 {% block description %}{{ region }} 아파트를 최대 4곳까지 입지, 성장성, 상승세, 가성비, 거래량과 가격·수익률로 나란히 비교해 보세요.{% endblock %}
 {% block body %}
 <section class="page-hero">
@@ -20,4 +21,5 @@
   <p class="muted center">단지를 두 곳 이상 고르면 여기에 비교 결과가 나옵니다.</p>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/compare.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}<script src="static/compare.js?v={{ v }}"></script>
+<script src="static/sharekit.js?v={{ v }}" defer></script>{% endblock %}

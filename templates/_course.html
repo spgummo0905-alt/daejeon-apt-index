@@ -1,0 +1,26 @@
+{# 임장 코스: 관심 단지를 가까운 순서로 묶어 하루 동선, 구간마다 카카오맵 길찾기, 단지마다 현장 체크리스트 (course.js) #}
+<section class="panel course" id="course" aria-labelledby="course-title">
+  <div class="panel-head">
+    <h2 id="course-title">임장 코스</h2>
+    <p class="muted">관심 단지를 가까운 순서로 묶어 하루 동선을 짜 드려요. 구간마다 카카오맵 길찾기와, 현장에서 확인할 체크리스트를 붙였어요.</p>
+  </div>
+  <div class="cs-ctl">
+    <div class="cs-add"><input type="search" placeholder="코스에 단지 더하기 (단지·동 이름)" aria-label="코스에 단지 더하기" data-cs-add></div>
+    <div class="seg" role="group" aria-label="이동 수단">
+      <button type="button" class="seg-btn active" data-cs-mode="walk" aria-pressed="true">걸어서</button>
+      <button type="button" class="seg-btn" data-cs-mode="car" aria-pressed="false">차로</button>
+    </div>
+  </div>
+  <p class="muted cs-empty" data-cs-empty hidden>관심 단지를 두 곳 이상 저장하거나 위에서 단지를 더하면 코스를 짜 드려요.</p>
+  <div class="cs-body" data-cs-body hidden>
+    <div class="cs-sum" data-cs-sum></div>
+    <div class="cs-grid">
+      <figure class="cs-map" data-cs-map></figure>
+      <ol class="cs-list" data-cs-list></ol>
+    </div>
+    <div class="cs-actions">
+      <button type="button" class="btn" data-cs-share><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span>코스 공유</span></button>
+      <button type="button" class="btn ghost" data-cs-print>인쇄·PDF로 저장</button>
+    </div>
+  </div>
+</section>

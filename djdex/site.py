@@ -384,7 +384,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
                   exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=loc_groups,
-                  account=_account(cfg),
+                  account=_account(cfg), kakao_js_key=kakao_js_key,
                   loc_weight=sum(f["weight"] for g in loc_groups for f in g["factors"]) or 1)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
@@ -397,7 +397,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
         leaders=month["leaders"], pulse=month["pulse"],
         hero_cards=sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])[:3],
-        kakao_js_key=kakao_js_key, **common), encoding="utf-8")
+        **common), encoding="utf-8")
     # 인트로: 처음 온 사람에게 한 번 보여 주는 소개 (첫 화면이 이리로 한 번 보냄). 등급 분포·1위 카드·뜨거운 동네는 실제 자료
     ranked = sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])
     grade_dist = [{"g": g, "name": gname, "n": sum(1 for r in ranked if r["grade"] == g)} for _, g, gname in charts.GRADES]
@@ -417,6 +417,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 내 정보 (로그인한 사람만: 나의 임장·가족과 함께 보기·내 설정·계정, 검색에는 넣지 않음)
         (out_dir / "me.html").write_text(
             env.get_template("me.html").render(root="", page_path="me.html", **common), encoding="utf-8")
+    # 받은 임장 코스 (공유 링크로 들어오는 화면, 검색에는 넣지 않음)
+    (out_dir / "course.html").write_text(
+        env.get_template("course.html").render(root="", page_path="course.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
     import json as _json
@@ -506,7 +509,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
-            kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
+            loc_sets=loc_sets, neighbors=neighbors,
             points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
             n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1),
             hill=hill_view(c), **common)

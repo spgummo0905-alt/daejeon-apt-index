@@ -498,13 +498,13 @@ def test_my_info_page_only_for_logged_in(tmp_path, monkeypatch):
 
 
 def test_course_share_link_and_print_sheet(tmp_path):
-    # 임장 코스 공유: 단지 하나가 아니라 같은 코스를 여는 링크(my.html?course=…&m=…#course)와 순서를 글로.
+    # 임장 코스 공유: 단지 하나가 아니라 같은 코스를 여는 받은 코스 화면 링크(course.html?c=…&m=…)와 순서를 글로.
     # 인쇄·PDF: 화면 대신 들고 나갈 종이(요약·지도·체크리스트·메모 칸)만, 휴대폰은 인쇄 뒤에 치우지 않음, 앱 안 브라우저는 안내
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     course = (out / "static" / "course.js").read_text(encoding="utf-8")
-    assert 'my.html?course=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}#course' in course
-    assert 'q.get("course")' in course and "내 코스로 저장" in course and 'if (!got) DJ.save("course", state)' in course
+    assert 'course.html?c=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}' in course
+    assert 'q.get("c") || q.get("course")' in course and "내 코스로 저장" in course and 'if (!got) DJ.save("course", state)' in course
     assert "DJ.printSheet(sheet())" in course and "window.print" not in course
     assert "state.auto = true" in course   # 빈 코스가 저장돼 있어도 관심 단지를 따라감
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
@@ -513,6 +513,44 @@ def test_course_share_link_and_print_sheet(tmp_path):
     assert "DJ.printSheet(sheet)" in prefs and "window.print" not in prefs
     css = (out / "static" / "style.css").read_text(encoding="utf-8")
     assert "body.printing > :not(.print-sheet)" in css and ".cs-p-checks" in css and "print-course" not in css
+
+
+def test_share_sheet_art_and_recipient_landings(tmp_path, monkeypatch):
+    # 공유 경험: 코스·비교·함께 보기는 받는 사람에게 보일 카톡 메시지(그림 카드·단추 두 개)를 미리 보여 주는 공유 시트로.
+    # 받는 사람: 받은 코스 화면(course.html), 공유받은 단지 카드·비교엔 from=share 안내, 함께 보기 아래엔 시작하기.
+    # 링크 미리보기 그림은 종류마다 (og/course·compare·family.jpg)
+    from djdex import config
+    monkeypatch.setenv("KAKAO_JS_KEY", "jskey")
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26"}))
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    kit = (out / "static" / "sharekit.js").read_text(encoding="utf-8")
+    for s in ("DJ.shareSheet = function", "DJ.shareArt = { course: courseArt, compare: compareArt, family: familyArt }",
+              "Kakao.Share.uploadImage", '{ title: "나도 써 보기", link: home }', "받는 사람에게는 이렇게 보여요"):
+        assert s in kit, s
+    for page, js in (("my.html", "static/sharekit.js"), ("compare.html", "static/sharekit.js"), ("me.html", "static/sharekit.js"),
+                     ("course.html", "static/course.js")):
+        assert js in (out / page).read_text(encoding="utf-8"), page
+    assert 'data-kakao="jskey"' in (out / "compare.html").read_text(encoding="utf-8")
+    assert "DJ.shareArt.course(" in (out / "static" / "course.js").read_text(encoding="utf-8")
+    assert "DJ.shareArt.compare(" in (out / "static" / "compare.js").read_text(encoding="utf-8")
+    assert "DJ.shareArt.family(" in (out / "static" / "prefs.js").read_text(encoding="utf-8")
+    course = (out / "course.html").read_text(encoding="utf-8")
+    assert '<meta name="robots" content="noindex">' in course and "data-rc-title" in course and 'id="course"' in course
+    assert "static/og/course.jpg" in course and "임장 코스를 받았어요" in course
+    assert "course.html" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "static/og/compare.jpg" in (out / "compare.html").read_text(encoding="utf-8")
+    share = (out / "share.html").read_text(encoding="utf-8")
+    assert "static/og/family.jpg" in share and "sh-about" in share
+    for k in ("course", "compare", "family"):
+        assert (out / "static" / "og" / f"{k}.jpg").stat().st_size > 20000
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'FROM !== "share"' in app and "공유받은 단지 카드예요" in app
+    card = (out / "static" / "cardgen.js").read_text(encoding="utf-8")
+    assert 'u.searchParams.set("from", "share")' in card and '{ title: "우리 단지 찾기", link: home }' in card
 
 
 def test_my_settings_and_note_export(tmp_path):
