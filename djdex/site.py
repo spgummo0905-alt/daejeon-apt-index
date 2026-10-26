@@ -425,6 +425,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         env.get_template("course.html").render(root="", page_path="course.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
+    # 이용약관 (권리와 하지 말아 주실 일, 늘 만듦). 문의처는 개인정보처리방침과 같은 곳
+    (out_dir / "terms.html").write_text(env.get_template("terms.html").render(
+        root="", page_path="terms.html", contact=cfg.account.get("email", ""), **common), encoding="utf-8")
     import json as _json
     finder_cfg = _json.dumps(cfg.raw.get("finder", {}), ensure_ascii=False)
     for name in APP_PAGES:

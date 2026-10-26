@@ -196,6 +196,11 @@ jobs:
           # 학교 자료를 새로 받았으면 아래에서 서울 캐시를 저장해 다음 배포 때 다시 받지 않게
           if [ "$(ls data/seoul/school 2>/dev/null | wc -l)" != "$before" ]; then echo "fresh=true" >> "$GITHUB_OUTPUT"; fi
           python -m djdex --config config.seoul.toml build --out site/seoul
+      # 배포본 화면 코드 압축: 설명 주석을 지우고 이름을 줄여 그대로 가져다 쓰기 어렵게 (저장소 원본은 그대로).
+      # 압축에 실패하면 압축하지 않은 채로 배포합니다
+      - name: 화면 코드 압축
+        continue-on-error: true
+        run: bash scripts/minify_site.sh site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

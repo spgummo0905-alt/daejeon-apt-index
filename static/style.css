@@ -55,6 +55,7 @@ header.site { display: flex; justify-content: space-between; align-items: center
 nav a { margin-left: 16px; color: var(--text-2); }
 footer { max-width: 1080px; margin: 0 auto; padding: 24px 16px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
 footer a { text-decoration: underline; text-underline-offset: 3px; }
+.ft-legal { margin: 8px 0 0; font-size: 12px; opacity: .85; }
 .demo-banner { background: var(--banner); color: var(--banner-text); padding: 10px 16px; text-align: center; font-weight: 600; }
 .muted { color: var(--muted); }
 h1 { font-size: 30px; margin: 6px 0 10px; line-height: 1.25; letter-spacing: -0.02em; }

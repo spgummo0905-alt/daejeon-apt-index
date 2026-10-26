@@ -689,3 +689,23 @@ def test_admin_page_roles_settings_and_membership_groundwork(tmp_path, monkeypat
     # 첫 운영자는 db-setup 실행 때 회원 번호로 (모양 확인, psql 변수로 넘김)
     wf = (config.ROOT / ".github" / "workflows" / "db-setup.yml").read_text(encoding="utf-8")
     assert "owner_uid:" in wf and "grep -Eq '^[0-9a-f]{8}-" in wf and "-v uid=\"$OWNER_UID\"" in wf and ":'uid'::uuid" in wf
+
+
+def test_rights_notice_terms_and_minified_deploy(tmp_path):
+    # 권리 표시: 모든 화면 아래쪽에 저작권·무단 복제 금지와 이용약관. 약관은 사이트가 권하는 쓰임(카드·링크 나누기)은 허용하고
+    # 자동 수집·복제·리버스 엔지니어링은 금지. 배포본은 화면 코드를 압축하고 맨 위에 권리 표시 (저장소 원본은 그대로)
+    from djdex import config
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    terms = (out / "terms.html").read_text(encoding="utf-8")
+    for s in ("자동 수집", "리버스 엔지니어링", "단지 카드 이미지·링크·임장 코스를 가족이나 지인과 나누기", "데이터베이스제작자"):
+        assert s in terms, s
+    for page in ("index.html", "rank.html", "methodology.html"):
+        html = (out / page).read_text(encoding="utf-8")
+        assert 'href="terms.html">이용약관</a>' in html and "무단 복제와 자동 수집을 금지합니다" in html, page
+    lic = (config.ROOT / "LICENSE").read_text(encoding="utf-8")
+    assert "All rights reserved" in lic and "리버스 엔지니어링" in lic
+    sh = (config.ROOT / "scripts" / "minify_site.sh").read_text(encoding="utf-8")
+    assert "esbuild@0.24.2" in sh and "--charset=utf8" in sh and "--allow-overwrite" in sh and "All rights reserved" in sh
+    wf = (config.ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    assert wf.index("bash scripts/minify_site.sh site") < wf.index("actions/upload-pages-artifact")
