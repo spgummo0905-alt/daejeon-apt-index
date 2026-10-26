@@ -67,8 +67,18 @@
       .filter(s => d.bySlug[s] && !picked.includes(s)).slice(0, 8);
     const qbox = document.getElementById("quick-chips");
     qbox.replaceChildren();
-    document.getElementById("quick-add").hidden = !quick.length || picked.length >= MAX;
-    quick.forEach(s => {
+    // 관심 단지 한 번에 (앞 4곳): 임장 후보끼리 바로 견주게. 이미 그대로 골랐으면 안 보임
+    const mine = DJ.favs().filter(s => d.bySlug[s]).slice(0, MAX);
+    const fill = mine.length >= 2 && !(mine.length === picked.length && mine.every(s => picked.includes(s)));
+    if (fill) {
+      const b = el("button", "chip qa-fill");
+      b.type = "button";
+      b.append(DJ.icon("star"), document.createTextNode(`관심 단지 ${mine.length}곳 한 번에`));
+      b.addEventListener("click", () => { picked = mine.slice(); render(d); });
+      qbox.append(b);
+    }
+    document.getElementById("quick-add").hidden = !fill && (!quick.length || picked.length >= MAX);
+    if (picked.length < MAX) quick.forEach(s => {
       const c = d.bySlug[s];
       const b = el("button", "chip", "+ " + c.n);
       b.type = "button";

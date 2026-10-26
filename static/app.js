@@ -714,6 +714,20 @@
     foot.append(el("span", "", c.pt ? "84㎡ " + c.pt : "가격 정보 없음"));
     if (c.dd != null && c.dd <= -5) foot.append(el("span", "", "고점 대비 " + Math.round(c.dd) + "%"));
     if (c.h) foot.append(el("span", "badge-high", "신고가"));
+    // opts.fav: 카드에서 바로 관심 단지에 담기 (조건으로 찾기 결과처럼 여러 곳을 훑어볼 때)
+    if (opts.fav) {
+      const b = el("button", "gfav");
+      b.type = "button";
+      b.append(DJ.icon("star"));
+      const paint = () => { const on = DJ.isFav(c.s); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? `${c.n} 관심 단지에서 빼기` : `${c.n} 관심 단지에 담기`); b.title = on ? "관심 단지에서 빼기" : "관심 단지에 담기"; };
+      b.addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        DJ.toggleFav(c.s); paint();
+        if (!DJ.calm) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+      });
+      paint();
+      foot.append(b);
+    }
     card.append(foot);
     return card;
   };
