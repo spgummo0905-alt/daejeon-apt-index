@@ -78,10 +78,17 @@ def main() -> None:
             out["카드첩 화면"] = cards.ok and all(k in cards.text for k in ('id="today"', 'id="badges"', 'id="album"'))
             out["메인에 오늘의 카드 없음"] = 'id="today"' not in html
             out["가까운데 값이 다른 곳"] = "data-cliffs" in html and "data-m3d-seg" not in html
+            # 배포본은 화면 코드를 압축해 함수 이름이 바뀌므로 문구·속성 이름으로 확인 (scripts/minify_site.sh)
             js = s.get(url + "static/cards.js", timeout=30)
-            out["임장 후보 코드"] = js.ok and "pickToday" in js.text
+            out["임장 후보 코드"] = js.ok and "요즘 수요가 몰리는지" in js.text
             app = s.get(url + "static/app.js", timeout=30)
-            out["동·역·조건 검색 코드"] = app.ok and "DJ.parseCond" in app.text
+            out["동·역·조건 검색 코드"] = app.ok and ".parseCond=" in app.text.replace(" ", "")
+            css = s.get(url + "static/style.css", timeout=30)
+            out["화면 코드 압축"] = {"권리 표시": app.ok and app.text.startswith("/*! © 2026") and css.ok and css.text.startswith("/*! © 2026"),
+                                 "설명 주석 없음": app.ok and "// ----------" not in app.text,
+                                 "app.js 크기(KB)": round(len(app.content) / 1024) if app.ok else None}
+            terms = s.get(url + "terms.html", timeout=30)
+            out["이용약관"] = terms.ok and "리버스 엔지니어링" in terms.text and 'href="terms.html">이용약관</a>' in html
             st = s.get(url + "stations.html", timeout=30)
             out["역 검색 연결"] = st.ok and "data-st-name=" in st.text
             my = s.get(url + "my.html", timeout=30)
