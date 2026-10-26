@@ -39,6 +39,10 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
+    # 몰아받기(catchup.yml)와 같은 이름: 둘이 겹치면 뒤에 온 쪽이 기다림 (같은 호출 한도·캐시를 나눠 쓰고 덮어쓰지 않게)
+    concurrency:
+      group: data-collect
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
