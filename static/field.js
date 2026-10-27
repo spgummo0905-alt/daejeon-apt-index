@@ -42,7 +42,8 @@
     if (location.hash === "#field") history.replaceState(null, "", location.pathname + location.search);
   }
   function esc(e) { if (e.key === "Escape") close(); }
-  opens.forEach(b => b.addEventListener("click", open));
+  // 현장 모드의 체크·호가·메모는 계정 기록이라 로그인을 켠 사이트에선 로그인 뒤에 (app.js DJ.askLogin)
+  opens.forEach(b => b.addEventListener("click", () => { if (!DJ.askLogin("현장 모드")) open(); }));
   sheet.querySelectorAll("[data-fm-close]").forEach(b => b.addEventListener("click", close));
 
   function section(title, sub) {
@@ -329,5 +330,5 @@
     if (n) old.replaceWith(n);
   });
 
-  if (location.hash === "#field") open();
+  if (location.hash === "#field" && !DJ.locked()) open();
 })();

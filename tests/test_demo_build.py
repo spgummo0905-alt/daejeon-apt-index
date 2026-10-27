@@ -436,6 +436,36 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert "revoke all on public.user_kv from anon, authenticated" in sql
 
 
+def test_personal_records_open_after_login(tmp_path, monkeypatch):
+    # 로그인을 켠 사이트: 관심 단지·임장 코스·임장 노트·카드첩은 계정 기록이라 로그인해야 열림 (어느 기기에서든 같은 기록)
+    from djdex import config
+    out = tmp_path / "site"
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])   # 로그인을 안 켬: 예전처럼 이 기기에
+    for page in ("my.html", "cards.html"):
+        assert "me-gate" not in (out / page).read_text(encoding="utf-8")
+    assert "nav-lock" not in (out / "index.html").read_text(encoding="utf-8")
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {"owner": "운영자", "email": "help@example.com"}))
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    for page, title, inner in (("my.html", "관심 단지는 로그인하면 열려요", 'id="favs"'), ("cards.html", "카드첩은 로그인하면 열려요", "data-album-cards")):
+        html = (out / page).read_text(encoding="utf-8")
+        gate = html.index('class="me-gate" data-when-out')
+        assert title in html and "data-login" in html[gate:]
+        assert gate < html.index("<div data-when-in hidden>") < html.index(inner)
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert index.count('class="nav-lock" data-when-out') == 3 and 'id="i-lock"' in index
+    assert "data-pop-why" in index and "로그인하지 않아도 단지 정보·관심 단지" not in index
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.locked = () => !!(DJ.sync && !DJ.sync.user)" in app
+    assert 'DJ.favs = () => DJ.locked() ? [] : load("favs", [])' in app
+    assert 'if (DJ.askLogin("관심 단지")) return DJ.isFav(s);' in app and 'if (DJ.askLogin("임장 코스")) return;' in app
+    assert 'DJ.askLogin("현장 모드")' in (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert 'DJ.askLogin("임장 코스")' in (out / "static" / "alts.js").read_text(encoding="utf-8")
+    assert "DJ.loginPrompt = what =>" in (out / "static" / "sync.js").read_text(encoding="utf-8")
+
+
 def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
     # 어느 화면에서든(인트로 포함) 위쪽 계정 버튼 → 작은 창에서 바로 카카오 로그인.
     # 인트로 '04 · 임장 도구': 가기 전 → 현장에서 → 다녀와서. 로그인이 필요한 도구는 로그인을 켰을 때만 소개

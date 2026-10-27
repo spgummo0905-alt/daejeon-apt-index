@@ -444,7 +444,18 @@
       btn.setAttribute("aria-expanded", "false");
       if (back) btn.focus({ preventScroll: true });
     }
-    btn.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); pop.hidden ? open() : close(true); });
+    // 관심 단지 ☆·코스에 넣기·현장 모드를 로그인 전에 눌렀을 때: 같은 창을 화면 아래쪽에 띄우고 무엇이 로그인 뒤에 열리는지 한 줄 더해서
+    // (화면을 내려 본 곳에서도 위로 올라가지 않게. 누른 그 클릭이 바깥 클릭으로 창을 닫지 않게 다음 차례에 엽니다)
+    const why = pop.querySelector("[data-pop-why]");
+    btn.addEventListener("click", e => {
+      e.preventDefault(); e.stopPropagation();
+      if (pop.hidden) { ask(false); open(); } else close(true);
+    });
+    function ask(what) {
+      pop.classList.toggle("ask", !!what);
+      if (why) { why.hidden = !what; why.textContent = what ? `${what} · 로그인하면 열려요` : ""; }
+    }
+    DJ.loginPrompt = what => setTimeout(() => { close(false); ask(what); open(); }, 0);
     document.addEventListener("click", e => { if (!pop.hidden && !pop.contains(e.target)) close(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) close(true); });
     pop.querySelectorAll(".ap-me, .ap-links a").forEach(a => a.addEventListener("click", e => {
