@@ -5,6 +5,10 @@ name: catchup
 # 받은 것은 배포와 같은 캐시 이름으로 저장해 다음 배포(매일 새벽)부터 화면에 나옵니다.
 # 배포와 같은 concurrency 이름이라, 이 실행이 도는 동안 시작된 배포는 끝날 때까지 기다립니다.
 on:
+  # 서울 공급면적을 다 받을 때까지(약 열흘) 매일 새벽 배포 뒤에 한 번. 다 받으면 이 두 줄을 지웁니다.
+  # 배포와 같은 concurrency 이름이라 배포가 늦어져도 겹치지 않고 차례로 돕니다.
+  schedule:
+    - cron: "47 22 * * *"
   workflow_dispatch:
     inputs:
       seoul_bldg_hours:
@@ -98,9 +102,9 @@ jobs:
         continue-on-error: true
         timeout-minutes: 250
         env:
-          FEE_CALLS: ${{ inputs.seoul_fee_calls }}
-          BLDG_CALLS: ${{ inputs.seoul_bldg_calls }}
-          BLDG_HOURS: ${{ inputs.seoul_bldg_hours }}
+          FEE_CALLS: ${{ inputs.seoul_fee_calls || '3000' }}
+          BLDG_CALLS: ${{ inputs.seoul_bldg_calls || '7500' }}
+          BLDG_HOURS: ${{ inputs.seoul_bldg_hours || '3.5' }}
         run: |
           minutes=$(python3 -c 'import os; print(min(float(os.environ["BLDG_HOURS"]), 3.9) * 60)')
           python -m djdex --config config.seoul.toml slow --only fee,bldg \
