@@ -567,6 +567,10 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .fav-count.news { background: #c9302f; }
 .tabbar .fav-count { position: absolute; top: 0; left: calc(50% + 6px); margin: 0; }
 .tabbar a { position: relative; }
+/* 로그인해야 열리는 메뉴(관심 단지·카드첩): 로그인 전엔 작은 자물쇠 */
+.nav-lock { display: inline-flex; margin-left: 4px; vertical-align: -1px; opacity: .55; }
+.nav-lock .ic, .tabbar .nav-lock .ic { width: 13px; height: 13px; stroke-width: 2; }
+.tabbar .nav-lock { position: absolute; top: 2px; left: calc(50% + 7px); margin: 0; }
 
 /* 홈: 관심 단지 줄, 구별 카드 */
 .strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
@@ -2824,6 +2828,12 @@ body[data-page="my"] main > .panel, body[data-page="my"] main > section { scroll
 .ap-links .ic { width: 18px; height: 18px; color: var(--muted); }
 .ap-logout { margin-top: 6px; padding: 8px 0 0; color: var(--muted); font-size: 13.5px; }
 @media (max-width: 719px) { .acct-pop { position: fixed; top: var(--ap-top, 64px); right: 12px; left: 12px; width: auto; max-height: calc(100dvh - var(--ap-top, 64px) - 12px); overflow-y: auto; } }
+/* 로그인 전에 관심 단지 ☆·코스에 넣기·현장 모드를 눌렀을 때: 같은 창을 화면 아래쪽에 (sync.js DJ.loginPrompt) */
+.acct-pop.ask { position: fixed; top: auto; bottom: 20px; left: 50%; right: auto; width: min(360px, calc(100vw - 24px)); transform: translate(-50%, 8px); }
+.acct-pop.ask.on { transform: translate(-50%, 0); }
+@media (max-width: 719px) { .acct-pop.ask { left: 12px; right: 12px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 100px); transform: translateY(8px); }
+  .acct-pop.ask.on { transform: none; } }
+.ap-ask { display: inline-flex; align-items: center; margin: 0 0 12px; padding: 5px 11px; border-radius: 999px; background: var(--chip); color: var(--text); font-size: 13px; font-weight: 750; }
 @media (prefers-reduced-motion: reduce) { .acct-pop { transition: none; } }
 
 /* 관심 화면 계정 칸 */

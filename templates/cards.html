@@ -2,10 +2,15 @@
 {% block title %}카드첩 · 임장 배지 · {{ region }} 아파트 지수{% endblock %}
 {% block description %}단지를 볼 때마다 모이는 카드와, 임장에 필요한 확인을 하나씩 해 보며 받는 임장 배지.{% endblock %}
 {% block body %}
+{% if account %}
+{% with gate_icon="i-book", gate_title="카드첩은 로그인하면 열려요",
+   gate_text="단지를 볼 때마다 모이는 카드와 임장 배지가 카카오 계정에 쌓여요. 내가 검토한 단지를 어느 기기에서든 이어 보고, 오늘 견줘 볼 임장 후보도 받아 보세요." %}{% include "_gate.html" %}{% endwith %}
+<div data-when-in hidden>
+{% endif %}
 <section class="page-hero">
   <p class="eyebrow">카드첩</p>
   <h1>내가 검토한 단지와<br>임장 체크</h1>
-  <p class="lead">단지를 볼 때마다 카드가 모이고, 현장에 가기 전에 해 두면 좋은 확인을 하나씩 해 보면 배지가 생겨요. 기록은 이 기기의 브라우저에만 저장됩니다.</p>
+  <p class="lead">단지를 볼 때마다 카드가 모이고, 현장에 가기 전에 해 두면 좋은 확인을 하나씩 해 보면 배지가 생겨요. {% if account %}기록은 카카오 계정에 저장돼요.{% else %}기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
 </section>
 
 {# 오늘의 임장 후보: 내가 본 단지·관심 단지를 기준으로 견줘 볼 곳, 요즘 신고가가 난 곳, 같은 값에 입지가 나은 곳 (cards.js) #}
@@ -37,5 +42,6 @@
   <ul class="album-areas" data-album-areas></ul>
   <p class="album-next" data-album-next hidden></p>
 </section>
+{% if account %}</div>{% endif %}
 {% endblock %}
 {% block scripts %}<script src="static/cards.js?v={{ v }}"></script>{% endblock %}

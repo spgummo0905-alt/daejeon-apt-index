@@ -58,6 +58,7 @@
       const add = el("button", "chip sm", "임장 코스에 더하기");
       add.type = "button";
       add.addEventListener("click", () => {
+        if (DJ.askLogin("임장 코스")) return;
         const n = DJ.addToCourse([slug, c.s]);
         if (n < 0) DJ.toast("임장 코스가 꽉 찼어요", "관심 화면의 임장 코스에서 한 곳을 빼고 다시 더해 주세요");
         else { DJ.toast(n ? "임장 코스에 더했어요" : "이미 코스에 있어요", "관심 화면의 '임장 코스'에서 동선을 볼 수 있어요"); add.textContent = "코스에 있어요 ✓"; add.disabled = true; }

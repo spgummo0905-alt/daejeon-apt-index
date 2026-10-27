@@ -93,10 +93,23 @@
 
   DJ.unlock = function () {}; // 예전 페이지 호환용 (업적 기능은 없앴습니다)
 
+  // ---------- 로그인해야 쓰는 내 기록 ----------
+  // 카카오 로그인을 켠 사이트에선 관심 단지·임장 코스·임장 노트·카드첩이 계정에 저장되는 기록이라,
+  // 어느 기기에서든 로그인만 하면 같은 기록을 이어 봅니다. 로그인 전엔 비어 보이고, 담으려 하면 로그인 안내.
+  // (로그인을 켜지 않은 사이트·로그인 기능이 안 되는 브라우저는 예전처럼 이 기기에)
+  DJ.locked = () => !!(DJ.sync && !DJ.sync.user);
+  DJ.askLogin = function (what) {
+    if (!DJ.locked()) return false;
+    if (DJ.loginPrompt) DJ.loginPrompt(what);
+    else DJ.toast(`${what} · 로그인하면 쓸 수 있어요`, "위쪽 '로그인'에서 카카오로 로그인해 주세요");
+    return true;
+  };
+
   // ---------- 찜 / 최근 본 ----------
-  DJ.favs = () => load("favs", []);
+  DJ.favs = () => DJ.locked() ? [] : load("favs", []);
   DJ.isFav = s => DJ.favs().includes(s);
   DJ.toggleFav = function (s) {
+    if (DJ.askLogin("관심 단지")) return DJ.isFav(s);
     let f = DJ.favs();
     const on = !f.includes(s);
     f = on ? [s, ...f] : f.filter(x => x !== s);
@@ -251,7 +264,7 @@
   // 지금 내 코스의 단지 (직접 고치기 전까지는 관심 단지), 위치가 있는 이 지역 단지만 방문 순서대로
   DJ.courseStops = function (d) {
     const st = load("course", {});
-    let list = (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
+    let list = DJ.locked() ? [] : (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
     list = list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
     const pts = list.map(s => d.bySlug[s]);
     return { mode: st.mode || "walk", stops: DJ.courseOrder(pts).map(i => pts[i]) };
@@ -284,6 +297,7 @@
   };
   // 새로 모은 카드면 그 지역에서 몇 장째인지, 이미 있던 카드면 0
   DJ.collect = function (s) {
+    if (DJ.locked()) return 0;
     const a = DJ.album();
     if (a[s]) return 0;
     a[s] = DJ.today();
@@ -885,6 +899,7 @@
   DJ.earned = () => load("badges", {});
   // 새로 받은 배지가 있으면 저장하고 알림. 여러 개면 한 번에 묶어서
   DJ.checkBadges = function (data) {
+    if (DJ.locked()) return [];
     const st = DJ.badgeState(data), got = DJ.earned(), fresh = [];
     DJ.BADGES.forEach(b => {
       if (got[b.id]) return;
@@ -1451,6 +1466,7 @@
       b.setAttribute("aria-label", b.title);
     });
     b.addEventListener("click", () => {
+      if (DJ.askLogin("임장 코스")) return;
       if (b.getAttribute("aria-pressed") === "true") {
         DJ.removeFromCourse(slug);
         DJ.toast("임장 코스에서 뺐어요", "관심 단지에서는 빠지지 않아요");
