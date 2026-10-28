@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block title %}관심 단지 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}저장한 관심 단지와 최근 본 단지를 모아 봅니다.{% endblock %}
+{% block description %}관심 단지와 임장 코스, 임장 노트, 최근 본 단지를 한곳에서 관리합니다.{% endblock %}
 {% block body %}
 {% if account %}
 {% with gate_icon="i-star", gate_title="관심 단지는 로그인하면 열려요",
-   gate_text="관심 단지·임장 코스·임장 노트는 카카오 계정에 저장돼요. 휴대폰으로 담은 단지와 현장에서 적은 호가·메모를 집 PC에서도 그대로 이어 볼 수 있어요." %}{% include "_gate.html" %}{% endwith %}
+   gate_text="관심 단지·임장 코스·임장 노트는 카카오 계정에 저장됩니다. 휴대폰으로 저장한 단지와 현장에서 적은 호가·메모를 PC에서도 이어서 볼 수 있습니다." %}{% include "_gate.html" %}{% endwith %}
 <div data-when-in hidden>
 {% endif %}
 <section class="page-hero">
   <p class="eyebrow">관심 단지</p>
-  <h1>저장한 단지와<br>최근 본 단지</h1>
-  <p class="lead">{% if account %}관심 단지와 임장 기록은 카카오 계정에 저장돼, 어느 기기에서든 로그인하면 이어 볼 수 있어요.{% else %}관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
+  <h1>관심 있는 아파트,<br>한곳에서 관리하세요</h1>
+  <p class="lead">{% if account %}관심 단지와 임장 기록은 카카오 계정에 저장되어, 어느 기기에서든 로그인하면 이어서 볼 수 있습니다.{% else %}관심 단지와 기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
 </section>
 {% if account %}
 {# 카카오 로그인: 현장에서 휴대폰으로 적은 호가·메모를 집 PC에서 이어 정리하게 (sync.js).
@@ -18,13 +18,13 @@
 <section class="acct" id="account" data-account aria-labelledby="acct-title">
   <div class="acct-out" data-acct-out>
     <div class="acct-copy">
-      <h2 id="acct-title">임장 기록, 어느 기기에서든 이어 보기</h2>
-      <p>현장에서 휴대폰으로 적은 호가·메모·체크를 집에서 PC로 이어 정리하세요. 관심 단지·임장 노트·코스가 카카오 계정에 저장돼요.</p>
+      <h2 id="acct-title">현장에서 남긴 기록, 집에서도 이어서</h2>
+      <p>휴대폰으로 적은 호가·메모·체크를 PC에서 이어 정리할 수 있습니다. 관심 단지·임장 노트·코스는 카카오 계정에 저장됩니다.</p>
     </div>
     <button type="button" class="kakao-btn" data-login>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
       <span>카카오 로그인</span></button>
-    <p class="acct-fine">닉네임과 프로필 사진만 받아요 · 로그인하면 내 정보에서 설정·가족과 함께 보기를 관리해요 · <a href="privacy.html">개인정보처리방침</a></p>
+    <p class="acct-fine">로그인에는 닉네임과 프로필 사진만 사용합니다 · <a href="privacy.html">개인정보처리방침</a></p>
   </div>
   {# 로그인 뒤: 내 정보(설정·가족과 함께 보기·계정)로 가는 줄 #}
   <a class="acct-in" href="me.html" data-acct-in hidden>
@@ -36,11 +36,11 @@
 {# 내 설정: 로그인을 켜지 않은 사이트에서만 여기에 (켰으면 로그인한 사람의 내 정보 화면에) (prefs.js) #}
 {% if not account %}
 <details class="panel prefs" id="prefs">
-  <summary><span class="pf-title">내 설정</span><span class="pf-sub">처음 볼 지역 · 면적 단위 · 새 소식 기준 · 내 체크 항목</span>
+  <summary><span class="pf-title">내 설정</span><span class="pf-sub">처음 볼 지역 · 면적 단위 · 새 소식 기준 · 체크 항목</span>
     <svg class="ic pf-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></summary>
   <div class="pf-body">
     {% include "_prefs.html" %}
-    <div class="pf-row pf-col"><div class="pf-k"><b>내 기록</b><small>관심 단지·임장 노트·코스·설정을 파일 하나로 내려받거나, 받아 둔 파일로 되살려요</small></div>
+    <div class="pf-row pf-col"><div class="pf-k"><b>내 기록</b><small>관심 단지·임장 노트·코스·설정을 파일 하나로 내려받거나, 받아 둔 파일로 복원합니다</small></div>
       <div class="pf-actions"><button type="button" class="btn" data-pf-backup>내 기록 내려받기</button>
         <label class="btn ghost pf-file">파일로 되살리기<input type="file" accept="application/json,.json" data-pf-restore hidden></label></div></div>
   </div>
@@ -55,14 +55,14 @@
 </nav>
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
 <a class="to-cards" href="cards.html"><span class="tc-ico"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
-  <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>본 단지 카드와 임장 체크를 모아 봐요</span></span><span class="tc-go" aria-hidden="true">→</span></a>
+  <span class="tc-txt"><b>카드첩 · 임장 배지</b><span data-cards-sum>살펴본 아파트 카드와 임장 체크 기록</span></span><span class="tc-go" aria-hidden="true">→</span></a>
 <section class="panel" id="my-favs">
   <div class="panel-head row-between"><h2>관심 단지</h2><a class="btn" id="fav-battle" hidden><svg class="ic"><use href="#i-compare"/></svg><span>관심 단지끼리 비교</span></a></div>
   {# 새 소식: 지난번 확인한 뒤 새 거래·시세 변화가 있는 관심 단지 (app.js 의 DJ.watchSync) #}
   <div class="wn" id="news" data-news hidden>
     <div class="wn-head">
-      <p><b>새 소식 <span data-news-n></span>곳</b><span class="muted">지난번 확인한 뒤 새 거래가 있거나 시세가 바뀐 관심 단지예요.</span></p>
-      <button type="button" class="btn ghost sm" data-news-done>모두 확인했어요</button>
+      <p><b>새 소식 <span data-news-n></span>곳</b><span class="muted">마지막으로 확인한 뒤 새 실거래가 등록되었거나 추정 시세가 바뀐 관심 단지입니다. 사이트에 들어왔을 때 확인하며, 알림을 따로 보내지는 않습니다.</span></p>
+      <button type="button" class="btn ghost sm" data-news-done>모두 확인</button>
     </div>
     <ul class="wn-list" data-news-list></ul>
   </div>
@@ -72,7 +72,7 @@
 {# 임장 노트: 단지 페이지 '현장 모드'와 임장 코스에서 남긴 체크·호가·메모 #}
 <section class="panel" id="notes" data-notes hidden>
   <div class="panel-head"><h2>임장 노트</h2>
-    <p class="muted">현장 모드와 임장 코스에서 남긴 체크·들은 호가·메모예요. 누르면 그 단지의 현장 모드가 열려요.</p>
+    <p class="muted">현장 모드와 임장 코스에서 남긴 체크·호가·메모입니다. 항목을 누르면 그 단지의 현장 모드가 열립니다.</p>
     {# 부동산 상담·가족 회의 때 쓰게: 엑셀(CSV)과 인쇄·PDF (prefs.js) #}
     <div class="nt-export"><button type="button" class="btn" data-nt-csv><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span>엑셀로 내려받기</span></button>
       <button type="button" class="btn ghost" data-nt-print>인쇄·PDF로 저장</button></div></div>

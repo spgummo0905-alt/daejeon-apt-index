@@ -9,13 +9,13 @@
   // 비교 표의 행: 값, 표시, 좋은 쪽(high/low/null)
   const ROWS = [
     ["종합 지수", c => c.i, c => c.i == null ? "-" : c.i + "점", "high"],
-    ["84㎡ 환산가", c => c.p, c => c.pt || "-", "low"],
+    ["84㎡ 환산가", c => c.p, c => c.pt || "-", null],   // 싼 게 늘 낫다고 볼 수 없어 표시하지 않음
     ["84㎡ 환산 전세", c => c.j, c => c.jt || "-", null],
     ["전세가율", c => c.jr, c => c.jr == null ? "-" : c.jr + "%", null],
     ["입지", c => c.st[0], c => c.st[0] ?? "-", "high"],
-    ["성장성", c => c.st[1], c => c.st[1] ?? "-", "high"],
-    ["상승세", c => c.st[2], c => c.st[2] ?? "-", "high"],
-    ["가성비", c => c.st[3], c => c.st[3] ?? "-", "high"],
+    ["장기 흐름", c => c.st[1], c => c.st[1] ?? "-", "high"],
+    ["5년 흐름", c => c.st[2], c => c.st[2] ?? "-", "high"],
+    ["입지 대비 가격", c => c.st[3], c => c.st[3] ?? "-", "high"],
     ["거래량", c => c.st[4], c => c.st[4] ?? "-", "high"],
     ["신축도", c => c.st[5], c => c.st[5] ?? "-", "high"],
     ["10년 연평균", c => c.c10, c => c.c10 == null ? "-" : (c.c10 > 0 ? "+" : "") + c.c10 + "%", "high"],
@@ -90,7 +90,7 @@
     const cs = picked.map(s => d.bySlug[s]);
     out.replaceChildren();
     shareBtn.hidden = cs.length < 2;
-    if (cs.length < 2) { out.append(el("p", "muted center", "단지를 두 곳 이상 고르면 여기에 비교 결과가 나옵니다.")); return; }
+    if (cs.length < 2) { out.append(el("p", "muted center", "비교할 아파트를 2곳 이상 선택해 주세요.")); return; }
 
     // 항목별 1위 횟수
     const wins = cs.map(() => 0);
@@ -124,11 +124,11 @@
     const verdict = el("p", "verdict", cs.length === 2
       ? (wins[0] === wins[1] ? "두 단지가 항목별로 비슷합니다"
          : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + nCounted + "개 중 " + wins[top] + "개에서 앞섭니다")
-      : "항목별로 가장 좋은 곳: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
+      : "항목별 우위: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
     const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
     const cards = el("div", "card-grid");
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(verdict, wrap, el("p", "muted center small", "표시된 칸이 그 항목에서 가장 좋은 값입니다 (가격·거리는 낮을수록)."), cards);
+    out.append(verdict, wrap, el("p", "muted center small", "표시된 칸은 그 항목에서 상대적으로 유리한 값입니다 (점수·세대수는 높을수록, 거리는 가까울수록). 가격은 표시하지 않습니다."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {

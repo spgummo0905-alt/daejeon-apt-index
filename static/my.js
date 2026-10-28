@@ -60,7 +60,7 @@
         const a = el("a", "nt-item");
         a.href = DJ.href(c) + "#field";
         const top = el("span", "nt-top");
-        top.append(el("span", "grade g-" + c.g, c.g), el("b", "nt-name", c.n), el("span", "nt-when" + (v.d ? " been" : ""), v.d ? v.d.slice(5).replace("-", ".") + " 다녀옴" : "아직 안 감"));
+        top.append(el("span", "grade g-" + c.g, c.g), el("b", "nt-name", c.n), el("span", "nt-when" + (v.d ? " been" : ""), v.d ? v.d.slice(5).replace("-", ".") + " 다녀옴" : "방문 전"));
         const meta = el("span", "nt-meta");
         meta.append(el("span", "", `체크 ${n}/${all}`));
         if (v.q.length) {
@@ -84,7 +84,7 @@
     }
 
     const favBox = document.getElementById("favs");
-    if (!favs.length) favBox.append(el("p", "muted", "아직 저장한 단지가 없습니다. 단지 페이지 오른쪽 위의 ☆를 누르면 여기에 모입니다."));
+    if (!favs.length) favBox.append(el("p", "muted", "아직 저장한 아파트가 없습니다. 단지 페이지 위쪽의 ☆를 눌러 관심 단지를 추가해 보세요."));
     favs.forEach(c => favBox.append(DJ.card(c, d.stats)));
     if (favs.length >= 2) {  // 비교는 네 곳까지
       const b = document.getElementById("fav-battle");
@@ -97,7 +97,7 @@
     const rec = document.getElementById("recent"), clear = document.getElementById("recent-clear");
     const draw = list => {
       rec.replaceChildren();
-      if (!list.length) { rec.append(el("li", "muted", "아직 둘러본 단지가 없습니다.")); clear.hidden = true; return; }
+      if (!list.length) { rec.append(el("li", "muted", "아직 살펴본 단지가 없습니다. 검색이나 지도에서 아파트를 열어 보세요.")); clear.hidden = true; return; }
       clear.hidden = false;
       list.forEach(c => {
         const a = el("a", "recent-item"); a.href = DJ.href(c);

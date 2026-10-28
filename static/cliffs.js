@@ -69,8 +69,8 @@
     });
     const c = clues(x);
     li.append(dl,
-      el("p", "cl-gap", `걸어서 약 ${Math.max(1, Math.round(x.d * 1000 / 67))}분(${Math.round(x.d * 1000)}m) 거리인데 84㎡가 ${eok(x.gap)} 차이`),
-      el("p", "cl-why", c.length ? "자료로 보이는 차이: " + c.join(" · ") : "자료로는 큰 차이가 안 보여요. 현장에서 이유를 찾아볼 곳이에요."));
+      el("p", "cl-gap", `직선 ${Math.round(x.d * 1000)}m 거리 · 84㎡ 환산가 ${eok(x.gap)} 차이`),
+      el("p", "cl-why", c.length ? "자료로 보이는 차이: " + c.join(" · ") : "자료상으로는 큰 차이가 보이지 않습니다. 현장에서 확인해 볼 만한 곳입니다."));
     const row = el("div", "cl-act");
     const go = el("button", "chip sm", "지도에서 보기");
     go.type = "button";

@@ -467,8 +467,9 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .gcard-title a, .gcard-title strong { font-weight: 800; font-size: 17px; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.02em; }
 .gcard-title .muted { font-size: 12px; }
 .gcard-score { font-size: 34px; font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
-.gstats { display: flex; flex-direction: column; gap: 7px; position: relative; z-index: 2; }
-.gstat { display: grid; grid-template-columns: 52px 1fr 30px; gap: 10px; align-items: center; font-size: 13px; }
+/* 항목 이름 길이(입지 대비 가격 등)에 맞춰 모든 줄의 이름 칸을 같은 너비로 */
+.gstats { display: grid; grid-template-columns: max-content minmax(0, 1fr) 30px; gap: 7px 10px; align-items: center; position: relative; z-index: 2; }
+.gstat { display: contents; font-size: 13px; }
 .gstat-name { color: var(--text-2); font-weight: 600; white-space: nowrap; }
 .gstat-val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .gbar { height: 8px; background: var(--chip); border-radius: 999px; overflow: hidden; }
@@ -865,9 +866,11 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .rg-badge { padding: 1px 6px; border-radius: 999px; font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .03em;
   color: #2a1c02; background: linear-gradient(135deg, #fff0b8, #d9a63a); }
 /* 첫 화면 제목 속 지역 이름: 눌러서 지역 바꾸기 */
-.rg-word { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer;
+.rg-word { position: relative; display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer;
   text-decoration: underline; text-decoration-style: dotted; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); }
-.rg-word .ic { width: .55em; height: .55em; stroke-width: 2.6; color: var(--accent); transition: transform 200ms var(--ease-out); }
+/* 화살표는 글자 밑(점선 아래)에: '대전에서'처럼 조사와 붙어 읽히게 */
+.rg-word .ic { position: absolute; left: 50%; bottom: -.5em; width: .38em; height: .38em; stroke-width: 3; color: var(--accent); transform: translateX(-50%); transition: transform 200ms var(--ease-out); }
+.rg-word[aria-expanded="true"] .ic { transform: translateX(-50%) rotate(180deg); }
 /* 휴대폰: 아래에서 올라오는 시트. 첫 화면 제목에서 연 넓은 화면은 가운데 창 */
 @media (max-width: 719px) {
   .rg { margin-left: 4px; }
@@ -1424,7 +1427,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .mc-strip span { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--sub); background: var(--glass); border: 1px solid var(--line); }
 .mc-strip span.hot { color: #fff; background: #d93f3e; border-color: transparent; }
 .mc-stats { position: relative; margin: 14px 2px 0; padding: 0; display: grid; gap: 9px; }
-.mc-stats > div { display: grid; grid-template-columns: 76px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
+.mc-stats > div { display: grid; grid-template-columns: 116px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
 .mc-stats .n { white-space: nowrap; }
 .mc-stats .n { font-size: 14px; font-weight: 800; }
 .mc-stats .bar { height: 9px; border-radius: 99px; background: var(--track); overflow: hidden; }

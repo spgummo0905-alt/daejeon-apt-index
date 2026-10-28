@@ -66,7 +66,7 @@
     const W = 112, Dx = 34, Dy = 17, L = 34, R = 50;
     const H = top * h, y0 = Dy + 6, base = y0 + H;
     const svg = s("svg", { viewBox: `0 0 ${L + W + Dx + R} ${base + 18}`, class: "fl-svg", role: "img",
-      "aria-label": `${top}층 건물의 층별 시세. 색이 파랄수록 시세보다 싸게, 주황일수록 비싸게 팔렸어요.` });
+      "aria-label": `${top}층 건물의 층별 시세. 파란색일수록 시세보다 낮게, 주황색일수록 높게 거래됐습니다.` });
     s("ellipse", { cx: L + (W + Dx) / 2, cy: base + 6, rx: (W + Dx) / 1.6, ry: 8, class: "fl-shadow" }, svg);
     const g = s("g", { class: "fl-floors" }, svg);
     // 옆 숫자는 시세와 2% 넘게 다른 층만, 글자끼리 겹치지 않게 (층이 많으면 한 칸이 글자보다 낮음)
@@ -127,7 +127,7 @@
       tip = `저층이 오히려 시세보다 평균 ${pct(low.v)} 높게 거래돼요. 1층 정원·테라스나 필로티 위 세대인지, 매물 구조를 현장에서 확인해 보세요.`;
     else if (high && high.v != null && high.n >= 2 && high.v <= -0.03)
       tip = `고층이 시세보다 평균 ${pct(high.v).slice(1)} 낮게 거래돼요. 꼭대기층 누수·단열이나 조망을 가리는 건물이 있는지 확인해 보세요.`;
-    else tip = "층에 따른 값 차이가 크지 않은 단지예요. 층보다는 동의 위치·향·수리 상태를 보고 견줘 보세요.";
+    else tip = "층에 따른 가격 차이가 크지 않은 단지입니다. 층보다는 동 위치·향·수리 상태를 비교해 보세요.";
     const t = el("p", "fl-tip");
     t.append(el("b", "", "임장 팁 "), document.createTextNode(tip));
     box.append(t, el("p", "fl-note muted", `최근 ${YEARS}년 매매 ${n}건 · 해제·직거래·분양권 빼고 · 그달 같은 평형 추정 시세와 견준 값`));

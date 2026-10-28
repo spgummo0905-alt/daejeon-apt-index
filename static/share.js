@@ -99,6 +99,6 @@
       others.forEach(g => { const a = el("a", "", g.name + "에서 보기"); a.href = g.url + "share.html?t=" + t; p.append(a, document.createTextNode(" ")); });
       box.append(p);
     }
-    if (!here.length && !away.length) box.append(el("p", "panel muted", "아직 보여 줄 관심 단지나 임장 노트가 없어요."));
+    if (!here.length && !away.length) box.append(el("p", "panel muted", "아직 공유된 관심 단지나 임장 노트가 없습니다."));
   }).catch(() => fail("기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요."));
 })();

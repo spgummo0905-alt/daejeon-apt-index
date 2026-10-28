@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ region }} 아파트 지수 · 우리 아파트, 카드 한 장으로{% endblock %}
-{% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가·입지·학군으로 평가해 S부터 D까지 등급 카드로 만들었어요. 우리 단지는 몇 등급일까요?{% endblock %}
+{% block title %}{{ region }} 아파트 지수 · 집값부터 입지까지 아파트 비교{% endblock %}
+{% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 장기 가격 흐름을 하나의 지수와 등급 카드로 정리했습니다.{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
@@ -15,21 +15,21 @@
   <div class="it-glow" aria-hidden="true"></div>
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
-      <p class="it-eyebrow"><span class="live-dot"></span>{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳 · 국토부 실거래 매일 반영</p>
-      <h1>집값·입지·학군,<br><span class="nw">이제 <em>카드 한 장</em>으로</span></h1>
-      <p class="it-lead">{{ region }} 아파트를 실거래가와 입지로 평가해 S부터 D까지 등급 카드로 만들었어요. 우리 단지는 몇 등급일까요?</p>
+      <p class="it-eyebrow"><span class="live-dot"></span>{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳 · 실거래 매일 반영</p>
+      <h1>집값부터 입지까지,<br>아파트 비교가 <em class="nw">쉬워집니다</em></h1>
+      <p class="it-lead">실거래가와 입지, 장기 가격 흐름을 하나의 지수로 정리했습니다. 관심 있는 아파트의 가격과 특징을 카드 한 장으로 확인해 보세요.</p>
       <div class="it-cta">
-        <a class="it-btn primary" href="index.html">시작하기 <span aria-hidden="true">→</span></a>
+        <a class="it-btn primary" href="index.html">아파트 찾아보기 <span aria-hidden="true">→</span></a>
         <a class="it-btn ghost" href="#it-card">카드 읽는 법</a>
       </div>
       <dl class="it-nums">
-        <div><dt>평가한 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_complexes) }}곳</dd></div>
+        <div><dt>지수 산정 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
         <div><dt>반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
         <div><dt>마지막 반영</dt><dd>{{ meta.updated or meta.asof }}</dd></div>
       </dl>
     </div>
     {% if top %}
-    <div class="it-fan" aria-label="이번 달 지수 1위 카드">
+    <div class="it-fan" aria-label="종합 지수 1위 카드">
       <span class="it-back b1" aria-hidden="true"><b>?</b></span>
       <span class="it-back b2" aria-hidden="true"><b>?</b></span>
       <a class="gcard it-card g-{{ top.grade }}" href="apt/{{ top.slug }}.html" data-holo>
@@ -45,9 +45,9 @@
             <span class="gstat-val">{{ v | score }}</span></div>
         {% endfor %}
         </div>
-        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | price }}</span></div>
+        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | price }}</span></div>
       </a>
-      <p class="it-fan-tag">이번 달 {{ region }} 1위 카드 · 다음 카드는 당신의 단지</p>
+      <p class="it-fan-tag">{{ region }} 종합 지수 1위 · {{ meta.updated or meta.asof }} 기준</p>
     </div>
     {% endif %}
   </div>
@@ -60,7 +60,7 @@
 <section class="it-sec it-anatomy" id="it-card">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>01 · 카드 읽는 법</p>
-    <h2 data-reveal>숫자 몇 개가 아니라,<br>단지의 <em>성적표 한 장</em></h2>
+    <h2 data-reveal>복잡한 아파트 정보,<br><em>카드 한 장</em>에</h2>
     <div class="it-ana-grid">
       <div class="it-ana-card" data-reveal>
         <a class="gcard g-{{ c2.grade }}" href="apt/{{ c2.slug }}.html" data-holo>
@@ -76,16 +76,16 @@
               <span class="gstat-val">{{ v | score }}</span></div>
           {% endfor %}
           </div>
-          <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 {{ c2.rank }}위</span><span>84㎡ {{ c2.price_ref | price }}</span></div>
+          <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 {{ c2.rank }}위</span><span>84㎡ {{ c2.price_ref | price }}</span></div>
         </a>
         <span class="it-pin p1" aria-hidden="true">1</span><span class="it-pin p2" aria-hidden="true">2</span>
         <span class="it-pin p3" aria-hidden="true">3</span><span class="it-pin p4" aria-hidden="true">4</span>
       </div>
       <ol class="it-ana-list">
-        <li data-reveal><b><i>1</i>등급</b><span>지수 80점 이상은 S, 65점 이상 A … 금·은박으로 한눈에 갈려요.</span></li>
-        <li data-reveal><b><i>2</i>종합 지수</b><span>입지·성장성·상승세를 0~100으로 매겨 평균했어요. {{ region }} 단지끼리의 상대 순위예요.</span></li>
-        <li data-reveal><b><i>3</i>항목별 막대</b><span>지하철·학군·생활 편의(입지), 10년 수익률(성장성), 최근 흐름(상승세), 가격 대비 입지(가성비).</span></li>
-        <li data-reveal><b><i>4</i>순위와 가격</b><span>{{ region }} 전체 순위와 전용 84㎡로 환산한 가격. 평형이 달라도 나란히 비교돼요.</span></li>
+        <li data-reveal><b><i>1</i>등급</b><span>지수 80점 이상은 S, 65점 이상은 A입니다. 등급별 색상으로 쉽게 구분할 수 있습니다.</span></li>
+        <li data-reveal><b><i>2</i>종합 지수</b><span>입지와 장기·5년 가격 흐름을 각각 0~100으로 환산해 평균했습니다. {{ region }} 단지끼리 비교한 상대 점수입니다.</span></li>
+        <li data-reveal><b><i>3</i>항목별 막대</b><span>입지(교통·학군·생활 편의), 장기 흐름(10년 수익률), 5년 흐름(5년 수익률), 입지 대비 가격.</span></li>
+        <li data-reveal><b><i>4</i>순위와 가격</b><span>{{ region }} 전체 순위와 전용 84㎡ 기준으로 환산한 추정 가격입니다. 평형이 달라도 같은 기준으로 비교할 수 있습니다.</span></li>
       </ol>
     </div>
   </div>
@@ -96,35 +96,35 @@
 <section class="it-sec it-ladder">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>02 · 등급</p>
-    <h2 data-reveal>S등급은 단 <em>{{ "%.0f" | format(s.pct if s else 0) }}%</em>,<br>{{ "{:,}".format(s.n if s else 0) }}곳뿐이에요</h2>
+    <h2 data-reveal>{{ region }} 아파트의<br><em>등급 분포</em></h2>
     <div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
       {% for d in grade_dist %}{% if d.n %}<span class="seg g-{{ d.g }}" style="--w: {{ '%.2f' | format(d.pct) }}"><b>{{ d.g }}</b></span>{% endif %}{% endfor %}
     </div>
     <ul class="it-grades" data-reveal>
       {% for d in grade_dist %}<li><span class="grade g-{{ d.g }}">{{ d.g }}</span><b>{{ d.name }}</b><span>{{ "{:,}".format(d.n) }}곳 · {{ "%.0f" | format(d.pct) }}%</span></li>{% endfor %}
     </ul>
-    <p class="it-sub" data-reveal>우리 단지는 어디쯤일까요? 카드를 열어 확인해 보세요.</p>
+    <p class="it-sub" data-reveal>지수를 산정한 {{ "{:,}".format(meta.n_ranked) }}곳 기준입니다. 각 단지가 {{ region }} 전체에서 어느 위치에 있는지 살펴보세요.{% if meta.n_ranked < meta.n_complexes %} 입지·거래 자료가 부족한 {{ "{:,}".format(meta.n_complexes - meta.n_ranked) }}곳은 등급을 매기지 않았습니다.{% endif %}</p>
   </div>
 </section>
 
 {# 4. 이렇게 써 보세요 #}
 <section class="it-sec it-uses">
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>03 · 이렇게 써 보세요</p>
-    <h2 data-reveal>임장 가기 전,<br><em>10분이면</em> 동네가 보여요</h2>
+    <p class="it-kicker" data-reveal>03 · 활용 방법</p>
+    <h2 data-reveal>임장 가기 전,<br><em>필요한 정보부터</em> 확인하세요</h2>
     <div class="it-use-grid">
       <a class="it-use" href="index.html#heat" data-reveal>
         <div class="it-art heat" aria-hidden="true">{% for k in [5,4,3,4,2,5,3,1,2,3,4,1] %}<i class="h{{ k }}"></i>{% endfor %}</div>
-        <b>동네 온도</b><span>가격 흐름과 거래량으로 지금 뜨거운 동네를 지도에서</span></a>
+        <b>동네 온도</b><span>최근 가격 변화와 거래량을 동네별로 비교</span></a>
       <a class="it-use" href="compare.html" data-reveal>
         <div class="it-art vs" aria-hidden="true"><span class="mini g-A"><i>A</i>71</span><em>VS</em><span class="mini g-S"><i>S</i>86</span></div>
-        <b>단지 대결</b><span>최대 네 단지를 입지·수익률·전세가율로 나란히</span></a>
+        <b>단지 비교</b><span>최대 4곳의 입지·수익률·전세가율을 나란히</span></a>
       <a class="it-use" href="finder.html" data-reveal>
-        <div class="it-art find" aria-hidden="true"><span>생애최초</span><span>학원가</span><span>5억 이하</span><strong>딱 맞는 단지 찾기</strong></div>
-        <b>조건으로 찾기</b><span>예산·직장·학군을 고르면 남는 단지가 바로 줄어요</span></a>
+        <div class="it-art find" aria-hidden="true"><span>생애최초</span><span>학원가</span><span>5억 이하</span><strong>조건에 맞는 단지</strong></div>
+        <b>조건으로 찾기</b><span>예산·직장·학군을 고르면 맞는 단지만 남습니다</span></a>
       <a class="it-use" href="rank.html" data-reveal>
         <div class="it-art chart" aria-hidden="true"><svg viewBox="0 0 120 56"><path class="band" d="M0 44 L20 40 L40 41 L60 30 L80 26 L100 18 L120 12 L120 24 L100 30 L80 36 L60 40 L40 50 L20 50 L0 54Z"/><path class="ln" d="M0 49 L20 45 L40 46 L60 35 L80 31 L100 24 L120 18"/><circle cx="120" cy="18" r="3.5"/></svg></div>
-        <b>시세와 랭킹</b><span>평형별 시세·전세가율, 이번 달 오른 단지와 신고가</span></a>
+        <b>시세와 랭킹</b><span>평형별 추정 시세·전세가율, 가격 변동과 최근 신고가</span></a>
     </div>
   </div>
 </section>
@@ -135,8 +135,8 @@
 <section class="it-sec it-tools">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>04 · 임장 도구</p>
-    <h2 data-reveal>발품 판 기록,<br><em>하나도 흘리지 않게</em></h2>
-    <p class="it-tools-lead" data-reveal>집은 결국 직접 가 보고 정하죠. 동선 짜기부터 현장 확인, 다녀와서 가족과 함께 고르는 데까지 임장의 처음과 끝을 함께해요.</p>
+    <h2 data-reveal>현장에서 확인한 것까지,<br><em>한곳에 기록하세요</em></h2>
+    <p class="it-tools-lead" data-reveal>사진이나 숫자만으로는 알 수 없는 것이 있습니다. 임장 동선을 계획하고, 현장에서 확인한 내용을 기록하고, 가족과 함께 비교해 보세요.</p>
     <div class="it-flow">
       <div class="it-step" data-reveal>
         <div class="it-step-art route" aria-hidden="true">
@@ -145,23 +145,23 @@
             <g class="pn"><circle cx="30" cy="72" r="10"/><text x="30" y="76">1</text><circle cx="100" cy="40" r="10"/><text x="100" y="44">2</text>
             <circle cx="172" cy="60" r="10"/><text x="172" y="64">3</text><circle cx="214" cy="28" r="10"/><text x="214" y="32">4</text></g></svg>
         </div>
-        <p class="it-step-n"><span>1</span>가기 전 · 헛걸음 없게</p>
+        <p class="it-step-n"><span>1</span>가기 전 · 방문할 단지 정하기</p>
         <a class="it-tool" href="my.html#course"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></span>
-          <span class="it-tool-t"><b>임장 코스</b><span>관심 단지를 가장 짧은 순서로 이어요. 걸어서·차로, 구간마다 길찾기까지</span></span></a>
+          <span class="it-tool-t"><b>임장 코스</b><span>관심 단지를 가장 짧은 순서로 잇고, 구간마다 카카오맵 길찾기로 연결합니다</span></span></a>
         <a class="it-tool" href="{{ apt_top }}{% if top %}#alts{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg></span>
-          <span class="it-tool-t"><b>같은 예산, 다른 선택지</b><span>보러 가는 단지와 값이 비슷한 가까운 단지를 함께. 간 김에 한 곳 더</span></span></a>
+          <span class="it-tool-t"><b>같은 예산, 다른 선택지</b><span>보러 가는 단지와 가격이 비슷한 주변 단지를 함께 확인합니다</span></span></a>
       </div>
       <div class="it-step" data-reveal>
         <div class="it-step-art phone" aria-hidden="true">
           <div class="it-ph"><span class="it-ph-h">현장 모드</span>
-            <i class="ok">역까지 걸어서 7분</i><i class="ok">밤 주차 자리 보기</i><i class="q">들은 호가 7.9억 <em>실거래 +3%</em></i></div>
+            <i class="ok">역까지 약 7분</i><i class="ok">밤 주차 자리 보기</i><i class="q">들은 호가 7.9억 <em>실거래 +3%</em></i></div>
         </div>
-        <p class="it-step-n"><span>2</span>현장에서 · 놓치지 않게</p>
+        <p class="it-step-n"><span>2</span>현장에서 · 직접 확인하고 기록하기</p>
         <a class="it-tool" href="{{ apt_top }}{% if top %}#field{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span>
-          <span class="it-tool-t"><b>현장 모드</b><span>단지 앞에서 휴대폰으로. 이 단지에서 꼭 볼 것, 역·학교까지 거리, 부동산에서 들은 호가를 실거래와 견주기</span></span></a>
+          <span class="it-tool-t"><b>현장 모드</b><span>단지 자료로 짚은 확인 항목과 역·학교까지 거리, 부동산에서 들은 호가를 실거래와 비교합니다</span></span></a>
         {% if account %}
         <a class="it-tool" href="{{ apt_top }}{% if top %}#field{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg></span>
-          <span class="it-tool-t"><b>현장 사진 <i class="it-need">로그인</i></b><span>주차장·복도·창밖을 찍어 임장 노트에 붙여요. 위치 정보는 지우고 저장해요</span></span></a>
+          <span class="it-tool-t"><b>현장 사진</b><span>주차장·복도·창밖 사진을 임장 노트에 저장합니다. 사진의 위치 정보는 지우고 올립니다</span></span></a>
         {% endif %}
       </div>
       <div class="it-step" data-reveal>
@@ -171,26 +171,26 @@
           <span class="dev pc"><i></i><i></i><i class="s"></i><i></i></span>
           <span class="it-link-pill"><svg class="ic"><use href="#i-link"/></svg>보기 전용 링크</span>
         </div>
-        <p class="it-step-n"><span>3</span>다녀와서 · 함께 고르게</p>
+        <p class="it-step-n"><span>3</span>다녀와서 · 기록을 모아 비교하기</p>
         <a class="it-tool" href="my.html#notes"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
-          <span class="it-tool-t"><b>임장 노트</b><span>{% if account %}휴대폰에 적은 체크·호가·메모를 집에서 PC로 이어 정리해요. 표나 인쇄용으로도 뽑아요{% else %}단지마다 체크·호가·메모를 모아 다시 봐요. 표나 인쇄용으로도 뽑아요{% endif %}</span></span></a>
+          <span class="it-tool-t"><b>임장 노트</b><span>{% if account %}휴대폰에 적은 체크·호가·메모를 PC에서 이어 정리합니다. 엑셀이나 인쇄용으로도 내려받을 수 있습니다{% else %}단지별 체크·호가·메모를 모아 봅니다. 엑셀이나 인쇄용으로도 내려받을 수 있습니다{% endif %}</span></span></a>
         {% if account %}
         <a class="it-tool" href="me.html#share"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
-          <span class="it-tool-t"><b>가족과 함께 보기 <i class="it-need">로그인</i></b><span>집은 혼자 정하지 않으니까요. 관심 단지와 임장 노트를 보기 전용 링크로</span></span></a>
+          <span class="it-tool-t"><b>가족과 함께 보기</b><span>관심 단지와 임장 노트를 보기 전용 링크로 가족과 공유합니다</span></span></a>
         {% endif %}
         <a class="it-tool" href="my.html#my-favs"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span>
-          <span class="it-tool-t"><b>관심 단지 새 소식</b><span>다녀온 뒤 생긴 새 거래·시세 변화만 모아 알려 줘요. 결정할 때까지 지켜보기</span></span></a>
+          <span class="it-tool-t"><b>관심 단지 새 소식</b><span>마지막으로 확인한 뒤 등록된 새 실거래와 추정 시세 변동을 관심 화면에 모아 보여 줍니다</span></span></a>
       </div>
     </div>
     {% if account %}
     <div class="it-login" data-reveal>
-      <div class="it-login-copy" data-when-out><b>카카오 로그인 한 번이면</b>
-        <span>휴대폰에 적은 기록을 PC에서도 그대로 보고, 현장 사진과 가족과 함께 보기도 쓸 수 있어요. 관심 단지·임장 코스·카드첩도 계정에 저장돼 어느 기기에서든 이어 봐요. 닉네임과 프로필 사진만 받아요.</span></div>
+      <div class="it-login-copy" data-when-out><b>임장 기록, 어디서든 이어서</b>
+        <span>임장 도구는 카카오 로그인 후 사용할 수 있습니다. 기록은 카카오 계정에 저장되어 휴대폰과 PC에서 같은 내용을 볼 수 있으며, 로그인에는 닉네임과 프로필 사진만 사용합니다.</span></div>
       <button type="button" class="kakao-btn" data-login data-when-out>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
         <span>카카오 로그인</span></button>
-      <div class="it-login-copy" data-when-in hidden><b><span data-user-name></span>, 기록이 카카오 계정에 저장되고 있어요</b>
-        <span>어느 기기에서든 관심 화면에서 이어 보세요.</span></div>
+      <div class="it-login-copy" data-when-in hidden><b><span data-user-name></span>의 기록은 카카오 계정에 저장됩니다</b>
+        <span>다른 기기에서도 관심 화면에서 이어 볼 수 있습니다.</span></div>
       <a class="it-btn ghost" href="my.html" data-when-in hidden>내 임장 기록 <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
@@ -202,19 +202,19 @@
 <section class="it-sec it-live" data-hot>
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>05 · 동네 온도</p>
-    <h2 data-reveal>요즘 뜨거운 동네는<br><span class="it-roll"><em data-hot-name>{{ h.d }}</em></span><span data-hot-j>{{ h.j }}</span></h2>
-    <p class="it-live-lead" data-reveal>가격 흐름과 거래량으로 동네마다 온도를 매겨요. 순위는 매달 바뀌어요.</p>
+    <h2 data-reveal>최근 거래 흐름이 강한 동네<br><span class="it-roll"><em data-hot-name>{{ h.d }}</em></span><span data-hot-j>{{ h.j }}</span></h2>
+    <p class="it-live-lead" data-reveal>최근 가격 변화와 거래량으로 동네별 흐름을 비교한 상대 지표입니다. 매달 새 실거래로 다시 계산합니다.</p>
     <div class="it-live-grid">
       <div class="it-dong" id="it-dong" data-reveal>
         <div class="it-dong-top"><span class="it-rank" data-hot-rank>온도 1위</span><span class="it-gu" data-hot-gu>{{ h.gu }}</span></div>
         <div class="it-temp"><strong><b data-hot-t>{{ h.t }}</b>°</strong><span class="it-temp-bar" aria-hidden="true"><i data-hot-bar style="width: {{ h.t }}%"></i></span></div>
         <dl class="it-dong-stats">
-          <div><dt>가격 흐름</dt><dd><b data-hot-c>{{ ('%+.1f%%' % h.c) if h.c is not none else '-' }}</b><small>1년 전보다</small></dd></div>
+          <div><dt>가격 흐름</dt><dd><b data-hot-c>{{ ('%+.1f%%' % h.c) if h.c is not none else '-' }}</b><small>1년 전 대비</small></dd></div>
           <div><dt>신고가</dt><dd><b data-hot-h>{{ h.h }}곳</b><small>최근 90일</small></dd></div>
           <div><dt>매매</dt><dd><b data-hot-n3>{{ h.n3 }}건</b><small data-hot-v>{{ ('평소의 ' ~ h.v) if h.v else '최근 3개월' }}</small></dd></div>
         </dl>
         <a class="it-best" data-hot-best href="{% if h.b %}apt/{{ h.b.s }}.html{% else %}rank.html{% endif %}"{% if not h.b %} hidden{% endif %}>
-          <span class="it-best-l">대장 단지</span><span class="grade g-{{ h.b.g if h.b else '-' }}" data-hot-bg>{{ h.b.g if h.b else '-' }}</span><b data-hot-bn>{{ h.b.n if h.b else '' }}</b><em data-hot-bi>{{ (h.b.i ~ '점') if h.b else '' }}</em><span class="it-best-go" aria-hidden="true">→</span></a>
+          <span class="it-best-l">지수 1위</span><span class="grade g-{{ h.b.g if h.b else '-' }}" data-hot-bg>{{ h.b.g if h.b else '-' }}</span><b data-hot-bn>{{ h.b.n if h.b else '' }}</b><em data-hot-bi>{{ (h.b.i ~ '점') if h.b else '' }}</em><span class="it-best-go" aria-hidden="true">→</span></a>
       </div>
       <div class="it-hot-side" data-reveal>
         <div class="it-hot-head"><span>온도 순위</span>{% if hot | length > 1 %}<button type="button" class="it-auto" data-hot-auto hidden>멈춤</button>{% endif %}</div>
@@ -242,12 +242,12 @@
     </div>
     {% endif %}
     <div class="it-final" data-reveal>
-      <h2>우리 단지 카드,<br>지금 열어 보세요</h2>
+      <h2>궁금한 아파트부터<br>찾아보세요</h2>
       <div class="hero-search it-search">
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
       </div>
-      <a class="it-btn primary" href="index.html">{{ region }} 아파트 지수 시작하기 <span aria-hidden="true">→</span></a>
+      <a class="it-btn primary" href="index.html#list">{{ region }} 아파트 검색하기 <span aria-hidden="true">→</span></a>
     </div>
   </div>
 </section>

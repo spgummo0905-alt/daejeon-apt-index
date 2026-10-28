@@ -37,7 +37,7 @@
     list = list.sort((a, b) => a.k - b.k).slice(0, 3);
     if (!list.length) return;
     box.querySelector("[data-alts-sub]").textContent =
-      `84㎡ ${eok(me.p)} 안팎(±10%)으로 ${list[list.length - 1].k <= 3 ? "3km" : "5km"} 안에 있는 단지예요. 임장 나간 김에 같이 보고, 왜 같은 값인지 견줘 보세요.`;
+      `84㎡ 환산가 ${eok(me.p)} 안팎(±10%)이고 직선 ${list[list.length - 1].k <= 3 ? "3km" : "5km"} 안에 있는 단지입니다. 가격대가 비슷한데 어떤 차이가 있는지 함께 비교해 보세요.`;
     const ul = box.querySelector("[data-alts-list]");
     list.forEach(({ c, k }) => {
       const li = el("li", "alt");
@@ -53,7 +53,7 @@
       const tags = el("div", "alt-tags");
       const ds = diffs(c, me);
       if (ds.length) ds.forEach(([t, good]) => tags.append(el("span", "alt-tag" + (good === true ? " good" : good === false ? " bad" : ""), t)));
-      else tags.append(el("span", "alt-tag", "자료로는 큰 차이가 없어요 · 현장에서 견줘 보기"));
+      else tags.append(el("span", "alt-tag", "자료상 큰 차이 없음 · 현장에서 비교해 보기"));
       const acts = el("div", "alt-acts");
       const add = el("button", "chip sm", "임장 코스에 더하기");
       add.type = "button";

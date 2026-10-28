@@ -168,7 +168,7 @@ def man(won: float) -> str:
 
 
 def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dict | None = None) -> list[dict]:
-    """단지 페이지 '한눈에 보기' 타일. 메인 카드에 이미 있는 지수·순위·최근 거래·수익률은 빼고
+    """단지 페이지 '이 아파트의 주요 특징' 타일. 메인 카드에 이미 있는 지수·순위·최근 거래·수익률은 빼고
     카드에 없는 강점과 비교만 짧은 값으로. bar: 막대 길이(0~1), mid: 막대 위 기준선 자리(0~1), tone: up/down."""
     out = []
     if not _nan(c.get("location_top")):
@@ -185,10 +185,10 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
                     "bar": min(ratio / 2, 1), "mid": 0.5, "tone": "up" if ratio >= 1.03 else "down" if ratio <= 0.97 else None})
     if leader and not c["small"] and not _nan(c.get("price_ref")):
         if leader["complex_id"] == c["complex_id"]:
-            out.append({"k": f"{c['gu']} 대장 단지", "v": "1위", "s": "84㎡ 환산가가 가장 높아요", "bar": 1})
+            out.append({"k": f"{c['gu']} 84㎡ 환산가", "v": "1위", "s": f"{c['gu']}에서 84㎡ 환산가가 가장 높은 단지", "bar": 1})
         else:
             ratio = c["price_ref"] / leader["price"]
-            out.append({"k": f"{c['gu']} 대장 단지 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
+            out.append({"k": f"{c['gu']} 환산가 1위 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
                         "bar": min(ratio, 1)})
     if c.get("hh"):
         size = "대단지" if c["hh"] >= 1000 else "중간 규모" if c["hh"] >= 500 else "작은 단지"
@@ -251,7 +251,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     main_t = table[~table["small"].astype(bool)]
     table["index_top"] = _top_share(main_t["index"]).reindex(table.index)
     table["location_top"] = _top_share(main_t["location_score"]).reindex(table.index)
-    n_total = len(main_t)
+    # 순위에 든 단지 수 (거래가 적어 지수를 못 매긴 단지는 빼고): 카드의 'N곳 중 M위'·등급 분포의 분모
+    n_total = int(main_t["index"].notna().sum())
+    meta = {**meta, "n_ranked": n_total}
     table = add_game_stats(table, trades, meta)
     # 입지 묶음(교통·학군·생활) 점수: 묶음 안 항목들의 가중평균. 입지점수 계산은 그대로입니다.
     loc_groups = _loc_groups(cfg, table)
@@ -269,7 +271,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 결측이 섞이면 pandas가 정수 열을 float로 바꾸므로 표시용으로 되돌립니다.
         d["build_year"] = None if _nan(d.get("build_year")) else int(d["build_year"])
         d["grade"], d["grade_name"] = grade(d.get("index"))
-        d["rank"] = None if _nan(d.get("rank")) else int(d["rank"])
+        # 지수를 못 매긴 단지(거래 부족)는 순위 없이 ('N곳 중 M위'의 N은 지수를 매긴 단지 수)
+        d["rank"] = None if _nan(d.get("rank")) or _nan(d.get("index")) else int(d["rank"])
         asof_year = int(meta["asof"][:4])
         d["is_new"] = bool((not _nan(d.get("build_year")) and d.get("build_year") and d["build_year"] >= asof_year - 5)
                            or "분양권" in str(d.get("price_basis") or ""))
@@ -365,7 +368,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     news = sorted([r for r in rows if not r["small"] and r["is_new"] and not _nan(r.get("location_score"))],
                   key=lambda r: -r["location_score"])[:5]
     if news:
-        tops.append({"title": "신축·분양권 단지 입지 순위", "tab": "신축 입지", "items": news,
+        tops.append({"title": "신축·분양권 단지의 입지 점수", "tab": "신축 입지", "items": news,
                      "value": lambda r: f"입지 {r['location_score']:.0f}" + (f" · {r['build_year']}년" if r.get("build_year") else "")})
     if highs:
         tops.insert(0, {"title": "최근 신고가", "tab": "신고가", "items": highs,
@@ -485,9 +488,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         lead = next((t for t in tr_list if not t.get("cancelled") and not (t.get("direct") and cfg.filters.get("exclude_direct"))),
                     tr_list[0] if tr_list else None)
         has_loc_c = not _nan(c.get("location_score"))
-        # 카드의 항목 이름(입지·성장성·상승세)과 같게
+        # 카드의 항목 이름(입지·장기 흐름·5년 흐름)과 같게
         comps = [("입지", c.get("location_score"), fmt_score(c.get("location_score")))]
-        comps += [(f"{'성장성' if n == years[0] else '상승세'} · {n}년 수익률", c.get(f"cagr_{n}y_pct"),
+        comps += [(f"{'장기 흐름' if n == years[0] else '5년 흐름'} · {n}년 수익률", c.get(f"cagr_{n}y_pct"),
                    fmt_score(c.get(f"cagr_{n}y_pct"))) for n in years]
         c_charts = {
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
@@ -756,23 +759,23 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
     highs = main_t[main_t.get("new_high_recent", pd.Series(False, index=main_t.index)).fillna(False).astype(bool)]
     highs = highs.sort_values(["last_date", "last_price"], ascending=False).head(10) if not highs.empty else highs
     ranks = [
-        {"key": "up", "tab": "많이 오른", "title": "1년 전보다 많이 오른 단지",
+        {"key": "up", "tab": "가격 상승", "title": "1년 전보다 가격이 오른 단지",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
-         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "up") for c, v in up.items()]},
-        {"key": "high", "tab": "신고가", "title": "최근 신고가 단지",
-         "note": "마지막 거래가 같은 면적대 이전 최고가를 넘은 단지 (최근 90일)",
+         "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "up") for c, v in up.items()]},
+        {"key": "high", "tab": "최근 신고가", "title": "최근 90일 신고가 단지",
+         "note": "마지막 거래(최근 90일)가 같은 면적대(±3㎡)의 이전 최고가를 넘은 단지",
          "items": [item(c, eok(r["last_price"]), f"{int(r['last_area'])}㎡ · {r['last_date']:%m.%d}", "up")
                    for c, r in highs.iterrows()]},
-        {"key": "busy", "tab": "거래 활발", "title": "최근 3개월 거래가 많은 단지",
-         "note": "최근 3개월 매매 신고 건수 (해제 거래 제외)",
-         "items": [item(c, f"{int(v)}건", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡") for c, v in busy.items()]},
-        {"key": "deal", "tab": "최고가 거래", "title": "최근 3개월 가장 비싼 거래",
-         "note": "단지마다 가장 비싼 한 건 (실거래 금액 그대로, 84㎡ 환산 아님)",
+        {"key": "busy", "tab": "거래량 상위", "title": "최근 3개월 거래가 많은 단지",
+         "note": "최근 3개월 매매 신고 건수 (계약 해제 거래 제외)",
+         "items": [item(c, f"{int(v)}건", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}") for c, v in busy.items()]},
+        {"key": "deal", "tab": "최고 거래금액", "title": "최근 3개월 거래금액 상위",
+         "note": "단지마다 가장 비싼 한 건 · 실제 거래금액 그대로 (84㎡ 환산 아님)",
          "items": [item(r["complex_id"], eok(r["price"]), f"{r['area']:.0f}㎡ · {pd.Timestamp(r['date']):%m.%d}")
                    for _, r in deals.iterrows()]},
-        {"key": "down", "tab": "많이 내린", "title": "1년 전보다 많이 내린 단지",
+        {"key": "down", "tab": "가격 하락", "title": "1년 전보다 가격이 내린 단지",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
-         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "down") for c, v in down.items()]},
+         "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "down") for c, v in down.items()]},
     ]
     ranks = [r for r in ranks if r["items"]]
 
@@ -876,17 +879,17 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
     tr = _transit(cfg)
     col = lambda k: t[k] if k in t else pd.Series(float("nan"), index=t.index)
     defs = [
-        ("school", "초품아", "초등학교까지 400m 안", col("elementary_raw") <= 400,
+        ("school", "초품아", "초등학교까지 직선 400m 이내 · 실제 배정 학교는 학구도로 확인", col("elementary_raw") <= 400,
          lambda c: f"초등학교 {t.at[c, 'elementary_raw']:.0f}m"),
-        ("transit", tr["tab"], f"{tr['stop']}까지 700m 안", col("subway_raw") <= 700,
+        ("transit", tr["tab"], f"{tr['stop']}까지 직선 700m 이내", col("subway_raw") <= 700,
          lambda c: f"{station_name(t.at[c, 'subway_name_raw']) or tr['stop']} {t.at[c, 'subway_raw']:.0f}m"),
-        ("hub", "학원가 도보권", "주요 학원가까지 15분 안 (도보·지하철)", col("hub_min_raw") <= 15,
+        ("hub", "학원가 도보권", "주요 학원가까지 도보·지하철 15분 이내 (추정)", col("hub_min_raw") <= 15,
          lambda c: f"{t.at[c, 'hub_name_raw']} {t.at[c, 'hub_min_raw']:.0f}분"),
         ("district", "학군 상위", "학군 점수(중학교 전입·학원가·주변 수학 학원) 상위 20%", col("grp_edu_top") <= 20,
          lambda c: f"학군 {t.at[c, 'grp_edu']:.0f}점"),
         ("new", "신축 10년", f"{asof_year - 9}년 이후 준공", col("build_year") >= asof_year - 9,
          lambda c: f"{int(t.at[c, 'build_year'])}년 준공"),
-        ("value", "입지 대비 가격", "가성비 점수 상위 20%", col("stat_value") >= 80,
+        ("value", "입지 대비 가격", "입지 대비 가격 점수 상위 20% · 저평가를 뜻하지는 않아요", col("stat_value") >= 80,
          lambda c: f"84㎡ {eok(t.at[c, 'price_ref'])}"),
     ]
     out = []
@@ -924,10 +927,10 @@ def _card_badges(c: dict) -> list[dict]:
     if stn and not _nan(dist):
         short = f"{dist / 1000:.1f}km" if dist >= 1000 else f"{dist:.0f}m"
         out.append({"icon": "train", "short": short, "title": stn,
-                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {max(1, round(dist * 1.3 / 80))}분"})
+                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {max(1, round(dist * 1.3 / 80))}분 (추정)"})
     hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
     if isinstance(hub, str) and not _nan(mins) and mins <= 25:
-        out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 {mins:.0f}분"})
+        out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 약 {mins:.0f}분 (추정)"})
     if c.get("hh"):
         ki, more = c.get("ki") or {}, []
         if ki.get("dongs"):
@@ -1025,11 +1028,11 @@ def station_name(raw) -> str | None:
 
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
-    ("location_score", "입지", "교통·학군·생활 편의 (아래 '입지는 어떤가')"),
-    ("stat_growth", "성장성", "10년 수익률 백분위 (없으면 5년)"),
-    ("stat_momentum", "상승세", "최근 5년 수익률 백분위"),
-    ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
-    ("stat_activity", "거래량", "최근 3년 거래가 얼마나 활발한지"),
+    ("location_score", "입지", "교통·학군·생활 편의 점수 (아래 '교통·학군·생활 입지')"),
+    ("stat_growth", "장기 흐름", "10년 연평균 수익률의 백분위 (10년 거래가 없으면 5년)"),
+    ("stat_momentum", "5년 흐름", "최근 5년 연평균 수익률의 백분위 (단기 흐름은 아님)"),
+    ("stat_value", "입지 대비 가격", "입지 점수에 비해 84㎡ 환산가가 낮을수록 높음 (저평가를 뜻하지는 않음)"),
+    ("stat_activity", "거래량", "최근 3년 매매 건수의 백분위"),
     ("stat_new", "신축도", "준공 1년차 100점, 30년 이상 0점 (분양권 100점)"),
 ]
 NEW_SPAN = 30  # 신축도가 0점이 되는 연차
