@@ -146,7 +146,7 @@
       lines.forEach(l => { const w = l.get(i); if (w != null) vals.push(w); });
     }
     if (plain) typeTr.forEach(t => { if (!(t[5] & F_CANCEL)) { const c = conv(t[3], t[0], base); if (c != null) vals.push(c); } });
-    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 보여 줄 거래가 없어요.")); return; }
+    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 거래가 없습니다.")); return; }
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const padV = (hi - lo) * 0.08 || hi * 0.05;
     lo = Math.max(0, lo - padV); hi += padV;
@@ -445,7 +445,7 @@
     const meta = head.querySelector("[data-pc-meta]"), badge = head.querySelector("[data-pc-badge]");
     const real = head.querySelector("[data-pc-real]");
     head.hidden = false;
-    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "시세를 추정할 거래가 부족해요."; badge.hidden = true; return; }
+    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "시세를 추정할 거래가 부족합니다."; badge.hidden = true; return; }
     nowB.textContent = eok(T.est[li]);
     rng.textContent = T.lo[li] != null ? `예상 거래 범위 ${eok(T.lo[li])} ~ ${eok(T.hi[li])} (10건 중 8건)` : "";
     const yr = D.tr.filter(t => t[2] === state.type && t[0] > D.n - 13 && !(t[5] & F_CANCEL));

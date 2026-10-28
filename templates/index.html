@@ -10,9 +10,9 @@
 <section class="hero hero-main">
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">국토부 실거래 기준 · {{ meta.updated }} 업데이트</p>
-      <h1>우리 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">몇 점</span>일까요?</h1>
-      <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳을 실거래가, 입지, 수익률로 평가했습니다. 단지·동·역 이름이나 '7억 이하 30평대' 같은 조건으로 찾아보세요.</p>
+      <p class="eyebrow">국토교통부 실거래 기준 · {{ meta.updated }} 업데이트</p>
+      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">몇 점</span>일까요?</h1>
+      <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 가격 흐름을 비교했습니다. 관심 있는 단지를 검색하거나 예산과 평형에 맞춰 찾아보세요.</p>
       <div class="hero-search">
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
@@ -21,8 +21,8 @@
       <nav class="resume" data-resume aria-label="이어서 보기" hidden></nav>
     </div>
     {% if hero_cards %}
-    <div class="hero-deck" aria-label="이번 달 지수 상위 단지">
-      <span class="deck-tag"><span class="deck-tag-d">이번 달 지수 1위</span><span class="deck-tag-m">이번 달 지수 TOP {{ hero_cards | length }} · 옆으로 넘겨 보세요</span></span>
+    <div class="hero-deck" aria-label="종합 지수 상위 단지">
+      <span class="deck-tag"><span class="deck-tag-d">{{ region }} 아파트 지수 1위</span><span class="deck-tag-m">종합 지수 TOP {{ hero_cards | length }} · 넘겨서 비교하기</span></span>
       <div class="deck-rail">
       {% for c in hero_cards | reverse %}{% set k = hero_cards | length - loop.index %}
       <a class="gcard deck-card g-{{ c.grade }}" href="apt/{{ c.slug }}.html" style="--k: {{ k }}"{% if k == 0 %} data-holo{% else %} data-deck-back tabindex="-1" aria-hidden="true"{% endif %}>
@@ -38,17 +38,17 @@
             <span class="gstat-val">{{ v | score }}</span></div>
         {% endfor %}
         </div>
-        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_complexes) }}곳 중 {{ c.rank }}위</span><span>84㎡ {{ c.price_ref | price }}</span></div>
+        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 {{ c.rank }}위</span><span>84㎡ {{ c.price_ref | price }}</span></div>
       </a>
       {% endfor %}
       </div>
-      <a class="deck-more" href="rank.html">이번 달 랭킹 보기 <span aria-hidden="true">→</span></a>
+      <a class="deck-more" href="rank.html">전체 랭킹 보기 <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
   </div>
   {% if ticker %}
-  <div class="ticker" aria-label="이번 달 화제의 단지">
-    <span class="ticker-label"><span class="live-dot"></span>이번 달 화제</span>
+  <div class="ticker" aria-label="최근 눈여겨볼 거래">
+    <span class="ticker-label"><span class="live-dot"></span>최근 눈여겨볼 거래</span>
     <div class="ticker-window">
       <div class="ticker-track">
       {% for dup in [0, 1] %}
@@ -60,19 +60,19 @@
   </div>
   {% endif %}
   <div class="quick">
-    <a class="quick-tile" href="themes.html"><svg class="ic"><use href="#i-star"/></svg><strong>테마로 찾기</strong><span>초품아·학원가·신축 모음</span></a>
-    <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.short }}마다 가까운 단지 순위</span></a>
-    <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>두 단지를 항목별로</span></a>
-    <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건으로</span></a>
+    <a class="quick-tile" href="themes.html"><svg class="ic"><use href="#i-star"/></svg><strong>테마로 찾기</strong><span>학교·교통·신축 등 조건별로</span></a>
+    <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.stop }} 주변 아파트 비교</span></a>
+    <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>최대 4곳의 가격·입지·수익률</span></a>
+    <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건에 맞는 집</span></a>
   </div>
 </section>
 
-<section class="stat-strip" aria-label="이번 달 숫자">
-  <div class="ss"><span class="label">평가한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span>{% if meta.n_small %}<span class="muted">빌라형 {{ "{:,}".format(meta.n_small) }}곳은 따로 봅니다</span>{% endif %}</div>
+<section class="stat-strip" aria-label="데이터 요약">
+  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}지수 산정 {{ "{:,}".format(meta.n_ranked) }}곳 · 나머지는 자료 부족{% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
   <div class="ss"><span class="label">반영한 실거래</span><span class="value" data-count>{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   {% if pulse %}
-  <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">해제된 거래는 뺐습니다</span></div>
-  <div class="ss"><span class="label">최근 신고가</span><span class="value" data-count>{{ "{:,}".format(pulse.highs) }}곳</span><span class="muted">최근 90일, 같은 면적 기준</span></div>
+  <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">계약 해제 거래 제외</span></div>
+  <div class="ss"><span class="label">최근 신고가</span><span class="value" data-count>{{ "{:,}".format(pulse.highs) }}곳</span><span class="muted">최근 90일 · 같은 면적대 이전 최고가 초과</span></div>
   {% endif %}
 </section>
 
@@ -89,8 +89,8 @@
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
   {% if board %}<a href="#heat">동네 온도</a>{% endif %}
   <a href="#world">{{ unit }}별 요약</a>
-  {% if leaders %}<a href="#leaders">대장 단지</a>{% endif %}
-  {% if value_list %}<a href="#value">가성비 단지</a>{% endif %}
+  {% if leaders %}<a href="#leaders">{{ unit }}별 최고가</a>{% endif %}
+  {% if value_list %}<a href="#value">입지 대비 가격</a>{% endif %}
   <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
 </nav>
@@ -99,7 +99,7 @@
 <section id="map" class="panel">
   <div class="panel-head">
     <h2>지도로 보는 {{ region }} 아파트</h2>
-    <p class="muted">핀에는 84㎡ 가격이 보이고, 색은 등급, 빨간 테두리는 최근 신고가예요. 예산과 조건으로 걸러 임장 갈 단지를 골라 보세요.</p>
+    <p class="muted">지도에서 단지별 84㎡ 환산가와 등급을 비교해 보세요. 빨간 테두리는 최근 신고가가 나온 단지입니다. 조건을 고르면 원하는 단지만 남깁니다.</p>
   </div>
   <div class="kmap-wrap" id="kmap-wrap">
     {# 지도 위 거르기 (카카오맵이 뜰 때만 보임, kmap.js) #}
@@ -119,13 +119,13 @@
       <p class="km-count" data-km-count aria-live="polite"></p>
     </div>
     <div id="kmap"></div>
-    <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 여기에 요약이 나옵니다.</span></div>
+    <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 요약이 표시됩니다.</span></div>
     <div class="map-fallback">{{ charts.map | safe }}</div>
   </div>
-  {# 가까운데 값이 크게 다른 곳: 걸어서 10분 안인데 84㎡ 가격이 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
+  {# 가까운 동네, 다른 아파트 가격: 직선 600m 안인데 84㎡ 환산가가 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
   <div class="cliffs" data-cliffs hidden>
-    <h3>가까운데 값이 크게 다른 곳</h3>
-    <p class="muted">걸어서 10분 안(600m)인데 84㎡ 가격이 1.4배 넘게 차이 나는 단지들이에요. 같은 동네인데 왜 값이 다른지, 연식·역까지 거리·학군·언덕을 임장 때 직접 확인해 보세요.</p>
+    <h3>가까운 동네, 다른 아파트 가격</h3>
+    <p class="muted">직선거리 600m 이내인데도 84㎡ 환산가가 1.4배 이상 차이 나는 단지들입니다. 연식과 교통, 학군, 언덕 등 어떤 차이가 있는지 비교해 보세요.</p>
     <ol></ol>
     <button type="button" class="more-btn" data-cliffs-more hidden></button>
   </div>
@@ -138,14 +138,14 @@
   <div class="panel-head">
     <p class="eyebrow">{{ meta.asof }} 기준</p>
     <h2>동네 온도</h2>
-    <p class="muted">가격 흐름과 거래량으로 매긴 동네 온도예요. 동네를 누르면 요약이 나와요.</p>
+    <p class="muted">최근 가격 변화와 거래량으로 동네별 시장 흐름을 비교했습니다. {{ region }} 안에서의 상대 비교이며, 앞으로의 가격을 예측하지 않습니다.</p>
   </div>
   <div class="heat-scale" role="group" aria-label="온도별로 골라 보기">
-    <span class="hs-end">차가운</span>
+    <span class="hs-end">약함</span>
     <span class="hs-steps">
     {% for b in board.bands | reverse %}{% if b.band %}<button type="button" class="hs-step b{{ b.band }}" data-band="{{ b.band }}" aria-pressed="false" aria-label="{{ b.name }} {{ b.count }}곳만 보기" title="{{ b.name }} {{ b.count }}곳"><i></i><span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
     </span>
-    <span class="hs-end">뜨거운</span>
+    <span class="hs-end">강함</span>
     {% for b in board.bands %}{% if b.band == 0 and b.count %}<button type="button" class="hs-step hs-quiet b0" data-band="0" aria-pressed="false" aria-label="{{ b.name }} {{ b.count }}곳만 보기"><i></i>거래 적은 동네 <span class="cnt">{{ b.count }}</span></button>{% endif %}{% endfor %}
   </div>
   <div class="heat-grid">
@@ -173,14 +173,14 @@
         {% for t in board.tiles %}{% if t.pin %}<g class="pin" style="--i: {{ t.pin }}" transform="translate({{ t.x }} {{ t.y - 6 }})"><g class="pin-in"><circle class="pin-pulse" r="11"/><circle class="pin-dot" r="10"/><text y="4">{{ t.pin }}</text></g></g>{% endif %}{% endfor %}
         </g>
       </svg>
-      <p class="heat-note muted">동 경계는 단지 위치로 그린 근사입니다. 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">온도 매기는 법</a></p>
+      <p class="heat-note muted">동 경계는 단지 위치로 그린 근사치이며, 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">산출 기준</a></p>
     </div>
     <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}" data-of="{{ board.n_ranked }}">
-      <p class="muted">지도에서 동네를 누르면 요약이 나옵니다.</p>
+      <p class="muted">지도에서 동네를 선택하면 요약이 표시됩니다.</p>
     </aside>
   </div>
   <div class="heat-ranks">
-    {% for title, items, tone in [("지금 가장 뜨거운 동네", board.hot, "hot"), ("가장 차가운 동네", board.cold, "cold")] %}{% if items %}
+    {% for title, items, tone in [("최근 거래 흐름이 강한 동네", board.hot, "hot"), ("최근 거래 흐름이 약한 동네", board.cold, "cold")] %}{% if items %}
     <div class="hr-col hr-{{ tone }}">
       <h3>{{ title }}</h3>
       <ol>
@@ -193,7 +193,7 @@
       </ol>
     </div>
     {% endif %}{% endfor %}
-    <p class="hr-note muted">가격은 최근 6개월 변화, 거래는 최근 3개월 건수가 1년 평균의 몇 배인지입니다. 순위는 둘을 함께 봅니다.</p>
+    <p class="hr-note muted">가격은 최근 6개월 변화율, 거래는 최근 3개월 건수를 1년 평균과 비교한 배수입니다. 순위는 두 값을 함께 반영합니다.</p>
   </div>
 </section>
 {% endif %}
@@ -201,7 +201,7 @@
 <section id="world" class="panel">
   <div class="panel-head">
     <h2>{{ unit }}별 한눈에 보기</h2>
-    <p class="muted">{{ unit }}마다 단지들의 중간값이에요. 누르면 그 {{ unit }} 단지만 목록에 보여 드려요.</p>
+    <p class="muted">{{ region }} {{ gu_stats | length }}개 {{ unit }}의 아파트 가격과 지수를 비교해 보세요. 수치는 {{ unit }}별 단지들의 중간값이며, 카드를 누르면 아래 목록에 그 {{ unit }} 단지만 남습니다.</p>
   </div>
   {# 구·동 카드는 늘 옆으로 넘기는 줄: 몇 곳뿐이면 카드를 크게(한 화면에 3장) #}
   <div class="rail-wrap" data-rail>
@@ -209,13 +209,13 @@
   {% for g in gu_stats %}
     <a class="world-card" href="#list" data-gu-jump="{{ g.gu }}">
       <div class="world-head"><strong>{{ g.gu | area }}</strong><span class="muted">{{ g.n }}개 단지</span></div>
-      <div class="world-score"><span class="num">{{ g.index | score }}</span><span class="muted">중간 점수</span></div>
+      <div class="world-score"><span class="num">{{ g.index | score }}</span><span class="muted">지수 중간값</span></div>
       <div class="gstats">
         <div class="gstat"><span class="gstat-name">입지</span><span class="gbar"><span style="width: {{ 0 if g.location is nan else g.location | round(1) }}%"></span></span><span class="gstat-val">{{ g.location | score }}</span></div>
-        <div class="gstat"><span class="gstat-name">성장</span><span class="gbar"><span style="width: {{ 0 if g.growth is nan else g.growth | round(1) }}%"></span></span><span class="gstat-val">{{ g.growth | score }}</span></div>
+        <div class="gstat"><span class="gstat-name">장기 흐름</span><span class="gbar"><span style="width: {{ 0 if g.growth is nan else g.growth | round(1) }}%"></span></span><span class="gstat-val">{{ g.growth | score }}</span></div>
       </div>
       <div class="world-foot"><span>84㎡ {{ g.price | eok }}</span>{% if g.highs %}<span class="badge-high">신고가 {{ g.highs }}</span>{% endif %}</div>
-      {% if g.best_name %}<div class="world-best muted">대표 단지 · {{ g.best_name }}</div>{% endif %}
+      {% if g.best_name %}<div class="world-best muted">지수 1위 · {{ g.best_name }}</div>{% endif %}
     </a>
   {% endfor %}
   </div>
@@ -225,8 +225,8 @@
 {% if leaders %}
 <section id="leaders" class="panel">
   <div class="panel-head">
-    <h2>{{ unit }}별 대장 단지</h2>
-    <p class="muted">{{ unit }}마다 84㎡ 환산가 1위 단지예요. 막대는 {{ unit }} 중간 단지가 대장의 몇 %인지예요.</p>
+    <h2>{{ unit }}별 84㎡ 환산가 최고 단지</h2>
+    <p class="muted">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다. 막대는 {{ unit }} 중간 가격이 이 단지의 몇 %인지 보여 줍니다.</p>
   </div>
   {% set rail = true %}{# 다 들어가면 화살표는 숨김 (app.js rail) #}
   {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
@@ -236,9 +236,9 @@
       <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu | area }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
       <span class="ld-name"><span class="grade g-{{ d.grade }}">{{ d.grade }}</span>{{ d.name }}</span>
       <span class="ld-price" data-count>{{ d.price_text }}</span>
-      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 전과 견줄 거래 부족{% endif %}</span>
-      {% if d.ratio %}<span class="ld-meter" title="{{ d.gu }} 중간 단지는 대장의 {{ d.ratio }}%"><span style="--w: {{ d.ratio }}%"></span></span>
-      <span class="ld-meter-label muted">{{ unit }} 중간 단지는 대장의 <strong>{{ d.ratio }}%</strong></span>{% endif %}
+      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 전과 비교할 거래 부족{% endif %}</span>
+      {% if d.ratio %}<span class="ld-meter" title="{{ d.gu }} 중간 가격은 이 단지의 {{ d.ratio }}%"><span style="--w: {{ d.ratio }}%"></span></span>
+      <span class="ld-meter-label muted">{{ unit }} 중간 가격은 <strong>{{ d.ratio }}%</strong> 수준</span>{% endif %}
     </a>
   {% endfor %}
   </div>
@@ -249,7 +249,7 @@
 <section id="gu" class="panel">
   <div class="panel-head">
     <h2>{{ unit }}별로 비교하기</h2>
-    <p class="muted">항목을 누르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 모두 {{ unit }}마다 단지들의 중간값입니다.</p>
+    <p class="muted">항목을 고르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 수치는 모두 {{ unit }}별 단지들의 중간값입니다.</p>
   </div>
   <div class="chips gu-tabs" role="tablist">
   {% for b in gu_boards %}<button class="chip{% if loop.first %} active{% endif %}" type="button" role="tab" data-board="{{ b.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ b.tab }}</button>{% endfor %}
@@ -275,14 +275,14 @@
 {% if value_list %}
 <section id="value" class="panel">
   <div class="panel-head">
-    <h2>입지에 비해 저렴한 단지</h2>
-    <p class="muted">입지는 중간({{ value_ref.loc_med | score }}점) 이상, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지를 입지 순으로 모았어요.</p>
+    <h2>입지 대비 가격이 낮은 단지</h2>
+    <p class="muted">입지 점수는 {{ region }} 중간({{ value_ref.loc_med | score }}점) 이상, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지를 입지 순으로 모았습니다. 환산가는 실거래로 계산한 비교용 추정치입니다.</p>
   </div>
   {% set n_villa = value_list | selectattr("small") | list | length %}
   <div class="chips type-chips" id="value-type" role="group" aria-label="단지 종류">
     <button class="chip" type="button" data-type="" aria-pressed="false">전체 <span class="cnt">{{ value_list | length }}</span></button>
     <button class="chip active" type="button" data-type="apt" aria-pressed="true">아파트 <span class="cnt">{{ value_list | length - n_villa }}</span></button>
-    <button class="chip" type="button" data-type="villa" aria-pressed="false" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">빌라 <span class="cnt">{{ n_villa }}</span></button>
+    <button class="chip" type="button" data-type="villa" aria-pressed="false" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">소규모·원룸형 <span class="cnt">{{ n_villa }}</span></button>
   </div>
   <ol class="value-list" id="value-list">
   {% for r in value_list %}
@@ -290,11 +290,11 @@
       <span class="vl-rank">{{ loop.index }}</span>
       <span class="vl-name"><span class="vl-title"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span><strong>{{ r.name }}</strong>{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</span><span class="muted">{{ r | place }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
       <span class="vl-loc"><span class="vl-label">입지</span><span class="gbar"><span style="width: {{ r.location_score | round(1) }}%"></span></span><strong>{{ r.location_score | score }}</strong></span>
-      <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="vl-cheap"><span class="vl-d">중간보다 </span>{{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}%<span class="vl-d">↓</span><span class="vl-m"> 저렴</span></span></span>
+      <span class="vl-price"><strong>{{ r.price_ref | eok }}</strong><span class="vl-cheap"><span class="vl-d">중간보다 </span>{{ ((1 - r.price_ref / value_ref.price_med) * 100) | round | int }}%<span class="vl-d">↓</span><span class="vl-m"> 낮음</span></span></span>
     </a></li>
   {% endfor %}
   </ol>
-  <p class="muted vl-empty" id="value-empty" hidden>이 조건에 맞는 단지가 없습니다.</p>
+  <p class="muted vl-empty" id="value-empty" hidden>이 분류에 해당하는 단지가 없습니다.</p>
   <button class="more-btn" type="button" id="value-more" hidden>더 보기</button>
 </section>
 {% endif %}
@@ -323,14 +323,14 @@
 <section class="panel">
   <div class="panel-head">
     <h2>등급과 분포</h2>
-    <p class="muted">점수대마다 단지 수예요. 등급은 동네의 우열이 아니라 지금 지표의 구간이에요.</p>
+    <p class="muted">점수대별 단지 수입니다. 등급은 단지나 동네의 우열이 아니라 현재 지표가 어느 구간에 있는지를 나타냅니다.</p>
   </div>
   {{ grade_legend | safe }}
   {{ charts.hist | safe }}
 </section>
 
 <section id="list" class="panel">
-  <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬됩니다.</p></div>
+  <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬 기준이 바뀝니다.</p></div>
   <div class="controls">
     {% if area_groups %}
     <label class="select-pill" id="gu-select-wrap"><span class="sr-only">{{ unit }} 고르기</span>
@@ -351,7 +351,7 @@
   <div class="chips type-chips" id="table-type">
     <button class="chip" type="button" data-type="">전체</button>
     <button class="chip active" type="button" data-type="apt">아파트 <span class="cnt">{{ "{:,}".format(meta.n_complexes) }}</span></button>
-    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">빌라 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
+    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">소규모·원룸형 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
   </div>
   {% endif %}
   <div class="table-wrap">

@@ -1,44 +1,44 @@
 {% extends "base.html" %}
-{% block title %}카드첩 · 임장 배지 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}단지를 볼 때마다 모이는 카드와, 임장에 필요한 확인을 하나씩 해 보며 받는 임장 배지.{% endblock %}
+{% block title %}카드첩 · 임장 기록 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}살펴본 아파트의 등급 카드와, 임장 전에 해 두면 좋은 확인을 기록하는 임장 배지.{% endblock %}
 {% block body %}
 {% if account %}
 {% with gate_icon="i-book", gate_title="카드첩은 로그인하면 열려요",
-   gate_text="단지를 볼 때마다 모이는 카드와 임장 배지가 카카오 계정에 쌓여요. 내가 검토한 단지를 어느 기기에서든 이어 보고, 오늘 견줘 볼 임장 후보도 받아 보세요." %}{% include "_gate.html" %}{% endwith %}
+   gate_text="살펴본 아파트의 카드와 임장 체크 기록이 카카오 계정에 저장됩니다. 검토한 단지를 어느 기기에서든 다시 보고, 매일 비교 후보 3곳도 확인할 수 있습니다." %}{% include "_gate.html" %}{% endwith %}
 <div data-when-in hidden>
 {% endif %}
 <section class="page-hero">
   <p class="eyebrow">카드첩</p>
-  <h1>내가 검토한 단지와<br>임장 체크</h1>
-  <p class="lead">단지를 볼 때마다 카드가 모이고, 현장에 가기 전에 해 두면 좋은 확인을 하나씩 해 보면 배지가 생겨요. {% if account %}기록은 카카오 계정에 저장돼요.{% else %}기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
+  <h1>살펴본 아파트와<br>임장 기록</h1>
+  <p class="lead">단지 페이지를 열 때마다 그 아파트의 카드가 저장되고, 임장 전에 해 두면 좋은 확인을 마칠 때마다 배지로 기록됩니다. {% if account %}기록은 카카오 계정에 저장됩니다.{% else %}기록은 이 기기의 브라우저에만 저장됩니다.{% endif %}</p>
 </section>
 
 {# 오늘의 임장 후보: 내가 본 단지·관심 단지를 기준으로 견줘 볼 곳, 요즘 신고가가 난 곳, 같은 값에 입지가 나은 곳 (cards.js) #}
 <section class="panel today" id="today" aria-labelledby="today-title">
   <div class="today-text">
-    <p class="eyebrow">오늘의 임장 후보</p>
-    <h2 id="today-title">오늘 견줘 볼 단지 세 곳</h2>
-    <p class="muted">내가 본 단지와 관심 단지를 기준으로 근처에서 견줘 볼 곳, 요즘 신고가가 난 곳, 비슷한 값에 입지가 나은 곳을 하루 세 장 골라 드려요. 뒤집으면 왜 골랐는지 보이고, 카드의 <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg> 버튼을 누르면 임장 메모가 나와요.</p>
-    <p class="today-done" data-today-done hidden>오늘 후보를 다 열었어요. 내일 새 후보 세 곳이 나와요.</p>
+    <p class="eyebrow">매일 새로 고르는 후보</p>
+    <h2 id="today-title">오늘의 비교 후보 3곳</h2>
+    <p class="muted">최근 살펴본 아파트와 관심 단지를 바탕으로 비교해 볼 만한 후보 3곳을 보여 줍니다. 카드를 뒤집으면 선정 이유를, <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg> 버튼을 누르면 임장 메모를 확인할 수 있습니다.</p>
+    <p class="today-done" data-today-done hidden>오늘의 후보를 모두 확인했습니다. 다음 후보는 내일 새로 표시됩니다.</p>
   </div>
   <div class="today-row" data-today-row aria-live="polite"></div>
 </section>
 
 <section class="panel badges" id="badges" aria-labelledby="badges-title">
   <div class="panel-head row-between"><h2 id="badges-title">임장 배지</h2><span class="album-count" data-badge-n></span></div>
-  <p class="muted badges-lead">배지는 임장 체크리스트예요. 현장에 가기 전에 해 두면 좋은 확인을 하나씩 해 보면 생겨요. 배지를 누르면 임장에 왜 필요한지 알려 드려요.</p>
+  <p class="muted badges-lead">배지는 임장 준비 체크리스트입니다. 실거래 확인, 전세가율 비교처럼 현장에 가기 전 해 두면 좋은 확인을 마치면 기록됩니다. 배지를 누르면 임장에 왜 필요한지 볼 수 있습니다.</p>
   <div class="badge-groups" data-badge-groups></div>
   <div class="badge-detail" data-badge-detail aria-live="polite"></div>
 </section>
 
 <section class="panel album" id="album" aria-labelledby="album-title">
-  <div class="panel-head row-between"><h2 id="album-title">내 카드첩</h2><span class="album-count" data-album-total></span></div>
+  <div class="panel-head row-between"><h2 id="album-title">살펴본 아파트 카드</h2><span class="album-count" data-album-total></span></div>
   <div class="album-bar" aria-hidden="true"><span data-album-bar></span></div>
   <ul class="album-grades" data-album-grades aria-label="등급별로 모은 카드"></ul>
-  <p class="muted album-empty" data-album-empty hidden>아직 모은 카드가 없어요. 단지 페이지를 열거나 위의 오늘의 임장 후보를 뒤집으면 여기에 모여요.</p>
+  <p class="muted album-empty" data-album-empty hidden>아직 저장된 단지가 없습니다. 관심 있는 아파트를 살펴보면 이곳에서 다시 확인할 수 있습니다.</p>
   <div class="album-cards" data-album-cards></div>
   <button type="button" class="btn ghost album-more" data-album-more hidden></button>
-  <h3 class="album-sub">{{ unit }}별로 모은 카드</h3>
+  <h3 class="album-sub">{{ unit }}별로 살펴본 단지</h3>
   <ul class="album-areas" data-album-areas></ul>
   <p class="album-next" data-album-next hidden></p>
 </section>

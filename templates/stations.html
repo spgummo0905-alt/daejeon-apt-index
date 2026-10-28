@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ transit.tab }} 단지 순위 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}{{ region }} {{ transit.stop }}마다 걸어서 갈 만한({{ radius }}m 안) 아파트 단지를 지수 순으로 정리했습니다.{% endblock %}
+{% block title %}{{ transit.tab }} 아파트 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} {{ transit.stop }}에서 직선거리 {{ radius }}m 이내인 아파트를 역별로 모아 가격과 입지 점수를 비교합니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">{{ transit.tab }} 단지</p>
-  <h1>{{ transit.short }}마다 가까운 단지를<br>한눈에</h1>
-  <p class="lead">가장 가까운 {{ transit.stop }}까지 {{ radius }}m 안인 단지를 역별로 묶었습니다. 역 이름을 누르면 펼치거나 접을 수 있어요.</p>
+  <h1>{{ transit.stop }} 주변 아파트,<br>한눈에 비교</h1>
+  <p class="lead">{{ transit.stop }}에서 직선거리 {{ radius }}m 이내에 있는 아파트를 모았습니다. 역별 가격과 지수를 비교해 보세요. 걷는 시간은 직선거리로 계산한 추정치입니다.</p>
   {% if stations %}
   <div class="seg" role="group" aria-label="정렬">
     <button type="button" class="seg-btn active" data-st-sort="i" aria-pressed="true">종합 지수 높은 순</button>
@@ -22,14 +22,14 @@
   <details class="panel station" id="st-{{ loop.index }}" data-st-name="{{ st.name }}" {% if loop.index <= 3 %}open{% endif %}>
     <summary>
       <span class="st-name">{{ st.name }}</span>
-      <span class="st-meta">단지 {{ st.n }}곳 · 중간 점수 {{ st.index | score }} · 84㎡ 중간 가격 {{ st.price | eok }}</span>
+      <span class="st-meta">단지 {{ st.n }}곳 · 지수 중간값 {{ st.index | score }} · 84㎡ 환산 중간 {{ st.price | eok }}</span>
     </summary>
     <ol class="st-items">
     {% for r in st["items"] %}
       <li data-d="{{ r.subway_raw }}" data-i="{{ loop.index0 }}"><a href="apt/{{ r.slug }}.html">
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
         <span class="top-name">{{ r.name }}<span class="muted"> {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
-        <span class="top-val"><span class="st-walk" title="직선거리 {{ '%.0f' | format(r.subway_raw) }}m">{{ "%.0f" | format(r.subway_raw) }}m · 도보 약 {{ [1, (r.subway_raw / 67) | round(0, 'ceil') | int] | max }}분</span> · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
+        <span class="top-val"><span class="st-walk" title="직선거리 {{ '%.0f' | format(r.subway_raw) }}m">직선 {{ "%.0f" | format(r.subway_raw) }}m · 약 {{ [1, (r.subway_raw / 67) | round(0, 'ceil') | int] | max }}분</span> · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
       </a></li>
     {% endfor %}
     </ol>
@@ -37,6 +37,6 @@
 {% endfor %}
 </div>
 {% else %}
-<section class="panel"><p class="muted">역 정보가 아직 없습니다. 다음 데이터 갱신 때 채워집니다.</p></section>
+<section class="panel"><p class="muted">역 정보가 아직 없습니다. 다음 데이터 갱신 때 추가됩니다.</p></section>
 {% endif %}
 {% endblock %}

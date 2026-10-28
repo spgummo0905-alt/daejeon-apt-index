@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}단지 비교 · {{ region }} 아파트 지수{% endblock %}
 {% block og_image %}static/og/compare.jpg{% endblock %}
-{% block description %}{{ region }} 아파트를 최대 4곳까지 입지, 성장성, 상승세, 가성비, 거래량과 가격·수익률로 나란히 비교해 보세요.{% endblock %}
+{% block description %}{{ region }} 아파트를 최대 4곳까지 가격과 입지, 수익률, 전세가율, 학군을 같은 기준으로 나란히 비교합니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">단지 비교</p>
-  <h1>최대 네 단지를<br>나란히 비교해 보세요</h1>
-  <p class="lead">항목마다 가장 좋은 값을 표시해 드립니다. 비교 결과 주소는 그대로 공유할 수 있습니다.</p>
+  <h1>고민되는 아파트,<br>나란히 비교해 보세요</h1>
+  <p class="lead">최대 4개 단지의 가격과 입지, 수익률을 같은 기준에서 비교할 수 있습니다. 항목별 차이를 한눈에 살펴보고, 결과를 링크로 공유해 보세요.</p>
 </section>
 <section class="panel">
   <label class="field"><span>비교할 단지 추가 (최대 4곳)</span><input id="pick" type="search" placeholder="단지명 또는 동"></label>
@@ -18,7 +18,7 @@
   </div>
 </section>
 <section id="vs-result" class="vs-result" aria-live="polite">
-  <p class="muted center">단지를 두 곳 이상 고르면 여기에 비교 결과가 나옵니다.</p>
+  <p class="muted center">비교할 아파트를 2곳 이상 선택해 주세요.</p>
 </section>
 {% endblock %}
 {% block scripts %}<script src="static/compare.js?v={{ v }}"></script>

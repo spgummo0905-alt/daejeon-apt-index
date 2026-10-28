@@ -76,7 +76,7 @@ def test_complexes_json_and_small_rows(tmp_path):
     assert '<details class="panel station"' in stations and "역 " in stations
     finder = (out / "finder.html").read_text(encoding="utf-8")
     assert '"workplaces"' in finder and "정부세종청사" in finder
-    assert [s["n"] for s in data["stats"]] == ["입지", "성장성", "상승세", "가성비", "거래량", "신축도"]
+    assert [s["n"] for s in data["stats"]] == ["입지", "장기 흐름", "5년 흐름", "입지 대비 가격", "거래량", "신축도"]
     assert all(len(c["st"]) == 6 and all(v is None or 0 <= v <= 100 for v in c["st"]) for c in pts)
     assert "dapi.kakao.com" not in index  # 키가 없으면 카카오 지도 스크립트를 넣지 않음
     assert not (out / "quiz.html").exists()
@@ -140,7 +140,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     assert '<p class="rg-grp" data-rg-grp>충청권</p>' in index and 'data-rg-name="세종" aria-current="page"' in index
     assert 'data-rg-name="대전"' in index
     stations = (out / "stations.html").read_text(encoding="utf-8")
-    assert "BRT 정류장마다" in stations and "지하철" not in stations
+    assert "BRT 정류장 주변" in stations and "지하철" not in stations
     robots = (out / "robots.txt").read_text(encoding="utf-8")
     assert "daejeon-apt-index/sitemap.xml" in robots and "sejong/sitemap.xml" in robots
 
@@ -169,7 +169,7 @@ def test_pages_have_filters_and_index_next_to_name(tmp_path):
     themes = (out / "themes.html").read_text(encoding="utf-8")
     assert "data-area-filter" in themes and "data-theme-list" in themes and "data-theme-more" in themes
     stations = (out / "stations.html").read_text(encoding="utf-8")
-    assert 'data-st-sort="d"' in stations and "도보 약" in stations
+    assert 'data-st-sort="d"' in stations and "직선 " in stations
     apt = next(p for p in (out / "apt").glob("*.html") if "data-trades" in p.read_text(encoding="utf-8"))
     html = apt.read_text(encoding="utf-8")
     assert "종합 지수에 들어가는 항목" in html and "참고 지표" in html
@@ -183,9 +183,9 @@ def test_intro_page_and_first_visit(tmp_path):
     assert 'class="gcard it-card g-' in intro and "1위" in intro
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
     assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
-    assert 'class="it-hot"' in intro and 'href="index.html">시작하기' in intro
+    assert 'class="it-hot"' in intro and 'href="index.html">아파트 찾아보기' in intro
     # 요즘 뜨거운 동네: 지역 이름 없이, 온도 상위 동네를 넘겨 볼 자료와 대장 단지
-    assert "요즘 뜨거운 동네는" in intro and "지금 대전에서는" not in intro
+    assert "최근 거래 흐름이 강한 동네" in intro and "지금 대전에서는" not in intro
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
     assert 1 <= len(hot) <= 5 and all({"d", "j", "t", "h", "n3"} <= set(h) for h in hot)
     assert [h["t"] for h in hot] == sorted((h["t"] for h in hot), reverse=True)
@@ -212,7 +212,7 @@ def test_fee_shown_per_m2_and_quotes_below_price(tmp_path):
     fee = [h for h in pages if "<dt>관리비</dt>" in h]
     assert fee and all("㎡당" in h and "공용관리비" in h for h in fee)
     html = next(h for h in pages if 'class="quotes"' in h)
-    assert html.index('id="price"') < html.index('class="quotes"') < html.index("<h2>입지는 어떤가</h2>")   # 평형별 시세는 시세 아래
+    assert html.index('id="price"') < html.index('class="quotes"') < html.index("<h2>교통·학군·생활 입지</h2>")   # 평형별 시세는 시세 아래
 
 
 def test_fee_rank_needs_enough_complexes_and_range():
@@ -228,7 +228,7 @@ def test_cards_page_today_badges_album(tmp_path):
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'id="today"' not in index and "cards.html" in index   # 메인엔 없고 메뉴에만
     cards = (out / "cards.html").read_text(encoding="utf-8")
-    for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 임장 후보", "임장 배지", "내 카드첩", "static/cards.js"):
+    for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 비교 후보", "임장 배지", "살펴본 아파트 카드", "static/cards.js"):
         assert sec in cards, sec
     assert cards.index('id="today"') < cards.index('id="badges"') < cards.index('id="album"')
     my = (out / "my.html").read_text(encoding="utf-8")
@@ -326,7 +326,7 @@ def test_home_price_gap_pairs(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     html = (out / "index.html").read_text(encoding="utf-8")
-    assert "data-cliffs" in html and "static/cliffs.js" in html and "가까운데 값이 크게 다른 곳" in html
+    assert "data-cliffs" in html and "static/cliffs.js" in html and "가까운 동네, 다른 아파트 가격" in html
     assert html.index('id="kmap"') < html.index("data-cliffs")
     assert "m3d" not in html and "deck.gl" not in html and not (out / "static" / "m3d.js").exists()
     js = (out / "static" / "cliffs.js").read_text(encoding="utf-8")

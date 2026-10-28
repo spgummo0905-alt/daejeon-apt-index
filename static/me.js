@@ -43,7 +43,7 @@
       bar.append(fill);
       top.append(head, bar);
     } else {
-      const p = el("p", "me-empty", "관심 단지를 저장하면, 그중 몇 곳을 직접 가 봤는지 여기서 보여 드려요. ");
+      const p = el("p", "me-empty", "아직 저장한 관심 단지가 없습니다. 관심 단지를 저장하면 그중 몇 곳을 직접 다녀왔는지 여기에 표시됩니다. ");
       const a = el("a", "", "단지 둘러보기");
       a.href = root + "index.html";
       p.append(a);

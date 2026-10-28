@@ -468,7 +468,7 @@
       last = document.activeElement;
       back.hidden = false; sheet.hidden = false;
       requestAnimationFrame(() => { back.classList.add("on"); sheet.classList.add("on"); });
-      say(IN_APP && save && !navigator.share ? "'이미지 저장'을 누르면 카드를 크게 띄워 드려요. 길게 눌러 저장하면 돼요." : "");
+      say(IN_APP && save && !navigator.share ? "'이미지 저장'을 누르면 카드가 크게 열립니다. 길게 눌러 저장하세요." : "");
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();

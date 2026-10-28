@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}이번 달 랭킹 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}{{ region }} 아파트 이번 달 랭킹: 1년 전보다 많이 오른 단지, 신고가, 거래가 활발한 단지, 가장 비싼 거래.{% endblock %}
+{% block title %}거래·가격 랭킹 · {{ region }} 아파트 지수{% endblock %}
+{% block description %}{{ region }} 아파트 거래·가격 랭킹: 1년 전 대비 가격 상승·하락, 최근 신고가, 거래량 상위, 최고 거래금액.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">{{ meta.asof }} 실거래 기준</p>
-  <h1>이번 달 {{ region }} 랭킹</h1>
-  <p class="lead">실거래로만 매긴 순위입니다. 조회수나 광고는 섞지 않았습니다.</p>
+  <h1>{{ region }} 아파트 거래·가격 랭킹</h1>
+  <p class="lead">국토교통부 실거래 데이터로 가격 변동과 거래량을 비교했습니다. 광고나 조회수는 순위에 반영하지 않습니다.</p>
 </section>
 <section class="panel rank">
   <div class="rank-tabs" role="tablist" id="rank-tabs">

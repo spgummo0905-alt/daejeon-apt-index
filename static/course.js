@@ -27,16 +27,16 @@
       got.list = got.list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
       if (got.list.length < 2) {
         if (RECV) { hero(null); return; }
-        DJ.toast("받은 코스를 열 수 없어요", "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.", 7000); clearGot();
+        DJ.toast("받은 코스를 열 수 없습니다", "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.", 7000); clearGot();
       }
     }
     DJ.search(sec.querySelector("[data-cs-add]"), c => {
       const inp = sec.querySelector("[data-cs-add]");
       inp.value = "";
-      if (c.la == null) { DJ.toast("위치 정보가 없는 단지예요", "지도에 위치가 없는 단지는 코스에 넣을 수 없어요"); return; }
+      if (c.la == null) { DJ.toast("위치 정보가 없는 단지입니다", "지도에 위치가 없는 단지는 코스에 추가할 수 없습니다"); return; }
       const st = cur();
       if (st.list.includes(c.s)) return;
-      if (st.list.length >= MAX) { DJ.toast(`코스에는 ${MAX}곳까지 넣을 수 있어요`, "하루에 둘러보기 알맞은 수예요"); return; }
+      if (st.list.length >= MAX) { DJ.toast(`코스에는 ${MAX}곳까지 추가할 수 있습니다`, "하루에 둘러보기 알맞은 수입니다"); return; }
       st.list.push(c.s);
       st.auto = false;
       draw();
@@ -50,7 +50,7 @@
     const t = document.querySelector("[data-rc-title]"), l = document.querySelector("[data-rc-lead]");
     if (!t) return;
     if (!p) {
-      t.textContent = "코스를 열 수 없어요";
+      t.textContent = "코스를 열 수 없습니다";
       l.textContent = "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.";
       sec.hidden = true;
       return;
@@ -58,8 +58,8 @@
     t.textContent = `${p.stops.length}곳 · ${SPEED[cur().mode].label} 약 ${hm(p.move)}`;
     const head = sec.querySelector(".panel-head");   // 위 소개와 겹치는 설명 대신
     head.querySelector("h2").textContent = "코스 자세히";
-    head.querySelector("p").textContent = "단지 이름을 누르면 등급 카드가, 단지마다 '현장 체크리스트'를 펴면 가서 확인할 것이 나와요.";
-    l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지, 가장 짧은 순서로 묶은 임장 코스예요. 단지마다 현장에서 확인할 것도 붙였어요.`;
+    head.querySelector("p").textContent = "단지 이름을 누르면 등급 카드가, '현장 체크리스트'를 펼치면 현장에서 확인할 항목이 표시됩니다.";
+    l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지 가장 짧은 순서로 이은 임장 코스입니다. 단지마다 현장 확인 항목도 함께 담았습니다.`;
     document.title = `임장 코스 ${p.stops.length}곳 · ${document.body.dataset.region || ""} 아파트 지수`;
   }
   const cur = () => got || state;   // 지금 보여 주는 코스
@@ -122,13 +122,13 @@
         state = Object.assign(state, { list: got.list.slice(), mode: got.mode, auto: false });
         if (RECV) { DJ.save("course", state); location.href = base + "my.html#course"; return; }   // 관심 화면의 내 코스로
         clearGot(); draw();
-        DJ.toast("내 코스로 저장했어요", "체크리스트와 메모도 단지마다 남길 수 있어요");
+        DJ.toast("내 코스로 저장했습니다", "단지마다 체크리스트와 메모를 남길 수 있습니다");
       });
       mine.addEventListener("click", () => { if (RECV) { location.href = base + "my.html#course"; return; } clearGot(); draw(); });
       const acts = el("div", "cs-got-acts");
       acts.append(keep, mine);
-      bar.append(el("p", "", RECV ? "저장하면 관심 화면의 내 코스에 들어가고, 단지마다 체크리스트·메모를 남길 수 있어요. 지금 내 코스는 바뀌지 않아요."
-        : "받은 임장 코스예요. 저장하기 전엔 내 코스는 그대로예요."), acts);
+      bar.append(el("p", "", RECV ? "저장하면 관심 화면의 내 코스에 추가되고 단지마다 체크리스트·메모를 남길 수 있습니다. 지금 내 코스는 그대로입니다."
+        : "받은 임장 코스입니다. 저장하기 전에는 내 코스가 바뀌지 않습니다."), acts);
       sec.querySelector(".panel-head").after(bar);
     }
   }

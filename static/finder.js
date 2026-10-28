@@ -34,14 +34,14 @@
   const LIMITS = [3, 5, 8, 12];
   let ctx = {};   // 분위 기준값 (자료를 받은 뒤 채움)
   const MUST = [
-    { id: "academy", label: "학원가", sub: "주요 학원가까지 20분 안 (걸어서·지하철)", test: c => ctx.hasHub ? c.hm != null && c.hm <= 20 : (c.f.academy_math ?? c.f.academy ?? -1) >= ctx.acadQ },
+    { id: "academy", label: "학원가", sub: "주요 학원가까지 도보·지하철 20분 이내 (추정)", test: c => ctx.hasHub ? c.hm != null && c.hm <= 20 : (c.f.academy_math ?? c.f.academy ?? -1) >= ctx.acadQ },
     { id: "edu", label: "학군 상위", sub: "학군 점수 상위 30%", test: c => c.ed != null && c.ed >= ctx.eduQ },
     { id: "mart", label: "대형마트", sub: "1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
     { id: "hospital", label: "병원 많은 곳", sub: "반경 1km 병원 수 상위 30%", test: c => c.f.hospital != null && c.f.hospital >= ctx.hospQ },
     { id: "top", label: "A등급 이상", sub: "종합 지수 65점 이상", test: c => c.i != null && c.i >= 65 },
-    { id: "rising", label: "상승세", sub: "최근 5년 상승세 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
+    { id: "rising", label: "5년 흐름 상위", sub: "최근 5년 연평균 수익률 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
     { id: "dip", label: "고점 대비 하락", sub: "전고점보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
-    { id: "high", label: "최근 신고가", sub: "최근 90일 안 신고가 거래", test: c => !!c.h },
+    { id: "high", label: "최근 신고가", sub: "최근 90일 안에 같은 면적대 신고가", test: c => !!c.h },
     { id: "big", label: "대단지", sub: "1,000세대 이상", test: c => c.hh != null && c.hh >= 1000 },
     { id: "mid", label: "500세대 이상", sub: "중간 규모 이상 단지", test: c => c.hh != null && c.hh >= 500 },
     { id: "park", label: "주차 넉넉", sub: "세대당 1.2대 이상", test: c => c.pk != null && c.pk >= 1.2 },
@@ -110,21 +110,21 @@
 
   // ---------- 질문 ----------
   const STEPS = [
-    { id: "status", name: "상황", q: "지금 어떤 상황인가요?", sub: "예산 단계에서 대출 한도를 계산할 때만 써요. 남는 단지 수는 그대로예요.",
+    { id: "status", name: "상황", q: "지금 어떤 상황인가요?", sub: "예산 단계의 대출 한도 계산에만 쓰입니다. 결과 수는 바뀌지 않습니다.",
       on: () => !!S.status, clear: () => { S.status = ""; }, draw: drawStatus },
-    { id: "gu", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳 골라도 돼요. 건너뛰면 ${REGION} 전체를 봐요.`,
+    { id: "gu", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳을 고를 수 있습니다. 건너뛰면 ${REGION} 전체가 대상입니다.`,
       on: () => S.gus.length > 0, clear: () => { S.gus = []; }, draw: drawGu },
-    { id: "work", name: "직장", q: "직장은 어디인가요?", sub: "직장에서 몇 km 안까지 볼지 골라 주세요. 재택이면 건너뛰어도 돼요.",
+    { id: "work", name: "직장", q: "직장은 어디인가요?", sub: "직장에서 직선거리로 몇 km 안까지 볼지 정해 주세요. 재택이면 건너뛰어도 됩니다.",
       on: () => works(S).length > 0, clear: () => { S.works = blank().works; S.two = false; }, draw: drawWork },
-    { id: "budget", name: "예산", q: "예산은 얼마인가요?", sub: "가격대로 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
+    { id: "budget", name: "예산", q: "예산은 얼마인가요?", sub: "가격대를 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
       on: () => !!S.budget, clear: () => { S.budget = 0; }, draw: drawBudget },
-    { id: "py", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준이에요. 여러 개 골라도 돼요.",
+    { id: "py", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준입니다. 여러 개를 고를 수 있습니다.",
       on: () => S.py.length > 0, clear: () => { S.py = []; }, draw: drawPy },
-    { id: "age", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도로 골라요.",
+    { id: "age", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도 기준입니다.",
       on: () => !!S.age, clear: () => { S.age = ""; }, draw: drawAge },
-    { id: "near", name: "역·학교", q: `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지 잰 직선거리예요.",
+    { id: "near", name: "역·학교", q: `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지의 직선거리 기준입니다.",
       on: () => !!(S.stn || S.sch), clear: () => { S.stn = 0; S.sch = 0; }, draw: drawNear },
-    { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "고른 조건을 모두 갖춘 단지만 남겨요.",
+    { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "선택한 조건을 모두 갖춘 단지만 남습니다.",
       on: () => S.must.length > 0, clear: () => { S.must = []; }, draw: drawMust },
   ];
 
@@ -146,7 +146,7 @@
   function drawStatus() {
     q.append(grid("c4", ...STATUS.map(st => option(st.label, st.sub, null, S.status === st.id,
       () => { S.status = S.status === st.id ? "" : st.id; }))));
-    if (S.status) q.append(el("p", "sv-note", `대출 한도는 LTV ${Math.round(LTV[S.status] * 100)}%로 계산해요. 실제 한도는 은행 심사와 정책에 따라 달라질 수 있어요.`));
+    if (S.status) q.append(el("p", "sv-note", `LTV ${Math.round(LTV[S.status] * 100)}% 기준의 참고용 계산입니다. 실제 한도는 은행 심사와 정책에 따라 달라집니다.`));
   }
   function drawGu() {
     const n = {};
@@ -182,10 +182,10 @@
         const here = el("button", "btn", "내 위치");
         here.type = "button";
         here.addEventListener("click", () => {
-          if (!navigator.geolocation) return DJ.toast("위치를 쓸 수 없어요", "이 브라우저는 위치 기능을 지원하지 않아요");
+          if (!navigator.geolocation) return DJ.toast("위치를 사용할 수 없습니다", "이 브라우저는 위치 기능을 지원하지 않습니다");
           navigator.geolocation.getCurrentPosition(pos => {
             S.here = [pos.coords.latitude, pos.coords.longitude]; w.w = "here"; if (!w.lim) w.lim = 8; changed();
-          }, () => DJ.toast("위치를 가져오지 못했어요", "브라우저에서 위치 권한을 확인해 주세요"), { timeout: 8000 });
+          }, () => DJ.toast("위치를 가져오지 못했습니다", "브라우저에서 위치 권한을 확인해 주세요"), { timeout: 8000 });
         });
         row.append(here);
       }
@@ -203,7 +203,7 @@
     const two = el("label", "sv-check");
     const cb = el("input"); cb.type = "checkbox"; cb.checked = S.two;
     cb.addEventListener("change", () => { S.two = cb.checked; changed(); });
-    two.append(cb, document.createTextNode(" 맞벌이라 직장이 두 곳이에요"));
+    two.append(cb, document.createTextNode(" 직장이 두 곳 (맞벌이)"));
     q.append(two);
     if (S.two) q.append(slot(1));
   }
@@ -244,19 +244,19 @@
     function calc() {
       out.replaceChildren();
       const income = +S.af.income, equity = +S.af.equity, rate = +S.af.rate, years = +S.af.years, debt = +S.af.debt || 0;
-      if (!income || !equity || !years) { out.append(el("p", "muted", "연소득과 자기자본을 넣으면 바로 계산돼요.")); return; }
+      if (!income || !equity || !years) { out.append(el("p", "muted", "연소득과 자기자본을 입력하면 바로 계산됩니다.")); return; }
       const ltv = LTV[S.status || "none"];
       const r = rate / 100 / 12, n = years * 12;
       const monthly = Math.max(0, income * DSR - debt) / 12;
       const loanDsr = r > 0 ? monthly * (1 - Math.pow(1 + r, -n)) / r : monthly * n;
       const lim = maxPrice(equity, loanDsr, ltv), max = lim.p, loan = Math.max(0, max - equity);
-      const why = lim.why === "cap" ? `집값 ${eok(lim.hi)} 이하 대출 한도(${eok(lim.cap)}) 기준으로 정해져요`
-        : lim.why === "edge" ? `${DJ.josa(eok(lim.hi), "을/를")} 넘으면 대출 한도가 ${eok(lim.next)}으로 줄어서 여기까지예요`
-        : lim.why === "dsr" ? `소득(DSR ${Math.round(DSR * 100)}%) 기준으로 한도가 정해져요`
-        : lim.why === "ltv" ? `LTV ${Math.round(ltv * 100)}% 기준으로 한도가 정해져요` : "대출 없이 자기자본만으로 계산했어요";
+      const why = lim.why === "cap" ? `집값 ${eok(lim.hi)} 이하 대출 한도(${eok(lim.cap)}) 기준`
+        : lim.why === "edge" ? `${DJ.josa(eok(lim.hi), "을/를")} 넘으면 대출 한도가 ${eok(lim.next)}으로 줄어 이 금액이 상한`
+        : lim.why === "dsr" ? `소득(DSR ${Math.round(DSR * 100)}%) 기준`
+        : lim.why === "ltv" ? `LTV ${Math.round(ltv * 100)}% 기준` : "대출 없이 자기자본 기준";
       const pay = r > 0 ? loan * r / (1 - Math.pow(1 + r, -n)) : loan / n;
       const big = el("div", "af-big");
-      big.append(el("span", "label", "최대로 살 수 있는 가격 (대략)"), el("strong", "", eok(max)));
+      big.append(el("span", "label", "매수 가능 가격 (참고용 추정)"), el("strong", "", eok(max)));
       out.append(big, el("p", "muted", `대출 ${eok(loan)} · 매달 갚는 돈 약 ${Math.round(pay).toLocaleString()}만원 · ` +
         why));
       const b = Math.max(0.5, Math.floor(max / 5000) / 2);
@@ -278,7 +278,7 @@
     q.append(label(STOP));
     q.append(grid("c4", ...[300, 500, 800, 0].map(m => option(m ? `${m}m 안` : "상관없어요", null, countWith({ stn: m }), S.stn === m, () => { S.stn = m; }, "sm"))));
     q.append(label("초등학교"));
-    q.append(grid("c4", ...[300, 500, 0].map(m => option(m ? `${m}m 안` : "상관없어요", m === 300 ? "초품아 수준" : null, countWith({ sch: m }), S.sch === m, () => { S.sch = m; }, "sm"))));
+    q.append(grid("c4", ...[300, 500, 0].map(m => option(m ? `${m}m 안` : "상관없어요", m === 300 ? "초등학교 가까이" : null, countWith({ sch: m }), S.sch === m, () => { S.sch = m; }, "sm"))));
   }
   function drawMust() {
     q.append(grid("c3", ...MUST.map(m => option(m.label, m.sub, countWith({ must: S.must.includes(m.id) ? S.must : [...S.must, m.id] }),
@@ -321,9 +321,9 @@
     box.querySelector("[data-sv-unit]").textContent = idle ? "곳" : "곳 결과 보기";
     d.textContent = "";
     d.className = "sv-delta";
-    if (idle) d.textContent = "답할수록 줄어들어요";
+    if (idle) d.textContent = "조건을 고를수록 좁혀집니다";
     else if (lastN != null) {
-      d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄었어요" : "늘었어요"}`;
+      d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄어듦" : "늘어남"}`;
       d.className = "sv-delta " + (n < lastN ? "down" : n > lastN ? "up" : "");
     }
     if (n === 0) d.textContent += " · 조건을 하나 풀어 보세요";
@@ -488,7 +488,7 @@
   // 결과가 없을 때: 어떤 조건을 빼면 몇 곳이 되는지 보여주고 바로 뺄 수 있게
   function relax() {
     const wrap = el("div", "sv-empty");
-    wrap.append(el("p", "", "조건에 맞는 단지가 없어요. 조건을 하나 빼 볼까요?"));
+    wrap.append(el("p", "", "조건에 맞는 아파트가 없습니다. 지역이나 예산을 조정하거나 조건을 하나 빼 보세요."));
     const opts = STEPS.map((st, i) => {
       if (!st.on()) return null;
       const keep = Object.assign({}, S);   // clear() 는 값을 새로 넣기만 해서 얕은 복사로 되돌릴 수 있음

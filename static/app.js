@@ -626,7 +626,7 @@
           const n = condCount(d.complexes, cond, gu);
           group("조건으로 찾기");
           item({ kind: "cond", label: (gu ? gu + " · " : "") + cond.label.join(" · "),
-                 sub: n ? `맞는 단지 ${n.toLocaleString()}곳 · 조건을 더 고를 수 있어요` : "맞는 단지가 없어요 · 조건을 바꿔 볼 수 있어요",
+                 sub: n ? `맞는 단지 ${n.toLocaleString()}곳 · 조건을 더 고를 수 있어요` : "조건에 맞는 아파트가 없습니다 · 지역이나 예산을 조정해 보세요",
                  go: "조건으로 찾기", href: DJ.condHref(cond, gu) });
           if (gu || !q) { show(true); return; }
         }
@@ -654,7 +654,7 @@
         if (apts.length) { if (wide && rows.length) group("단지"); apts.forEach(c => item(aptRow(c))); }
         if (!rows.length) {
           list.append(el("li", "ac-empty", wide
-            ? "찾는 것이 없어요. 단지·동·역 이름이나 '7억 이하 30평대'처럼 조건으로도 찾을 수 있어요."
+            ? "검색 결과가 없습니다. 단지·동·역 이름이나 '7억 이하 30평대' 같은 조건으로 찾아보세요."
             : "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
         }
         show(true);
@@ -845,46 +845,46 @@
   const most = arr => { const m = {}; arr.forEach(k => { m[k] = (m[k] || 0) + 1; }); return Math.max(0, ...Object.values(m)); };
   DJ.BADGES = [
     { id: "first", group: "둘러보기", icon: "home", name: "첫 단지", goal: 1, n: st => seenList(st).length,
-      how: "단지 페이지를 하나 열어 봐요.", why: "한 곳을 숫자와 지도로 제대로 보고 나면, 현장에서 무엇을 확인할지가 정해져요.",
+      how: "단지 페이지를 하나 열어 보세요.", why: "한 곳을 숫자와 지도로 꼼꼼히 보고 나면 현장에서 무엇을 확인할지가 정해집니다.",
       tip: "현장에서 볼 것이 정해져요", go: ["랭킹에서 고르기", "rank.html"] },
     { id: "dong", group: "둘러보기", icon: "map", name: "동네 한 바퀴", goal: 3,
       n: st => most(seenList(st).filter(([, v]) => v[2]).map(([s, v]) => DJ.sido(s) + v[1] + v[2])),
-      how: "같은 동의 단지 세 곳을 열어 봐요.", why: "임장은 한 단지가 아니라 동네 안에서 견줘 보는 일이에요. 옆 단지와 값 차이가 보여야 적정가가 보여요.",
-      tip: "옆 단지와 견줘야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
+      how: "같은 동의 단지 세 곳을 열어 보세요.", why: "임장은 한 단지가 아니라 동네 안에서 비교하는 일입니다. 옆 단지와의 가격 차이를 알아야 적정 가격을 가늠할 수 있습니다.",
+      tip: "옆 단지와 비교해야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
     { id: "ten", group: "둘러보기", icon: "walk", name: "발품 10곳", goal: 10, n: st => seenList(st).length,
-      how: "단지 열 곳을 열어 봐요.", why: "많이 볼수록 '이 동네에서 이 값이면 싸다·비싸다'를 가늠하는 눈이 생겨요.",
+      how: "단지 열 곳을 열어 보세요.", why: "여러 단지를 볼수록 '이 동네에서 이 가격이면 높은지 낮은지'를 가늠하는 기준이 생깁니다.",
       tip: "많이 볼수록 시세 감이 생겨요", go: ["랭킹에서 고르기", "rank.html"] },
     { id: "gus", group: "둘러보기", icon: "pin", name: "세 동네 시세", goal: 3,
       n: st => new Set(seenList(st).filter(([, v]) => v[1]).map(([s, v]) => DJ.sido(s) + v[1])).size,
-      how: "서로 다른 구(세종은 동) 세 곳의 단지를 열어 봐요.", why: "다른 지역 시세를 알아야 내 후보 지역이 어디쯤인지, 같은 돈으로 어디까지 갈 수 있는지 보여요.",
+      how: "서로 다른 구(세종은 동) 세 곳의 단지를 열어 보세요.", why: "다른 지역 시세를 알아야 후보 지역이 어느 수준인지, 같은 예산으로 어디까지 고를 수 있는지 보입니다.",
       tip: "내 후보 지역의 위치가 보여요", go: ["지역별 요약 보기", "index.html#world"] },
     { id: "top", group: "둘러보기", icon: "rank", name: "상급지 기준", goal: 3, n: st => seenList(st).filter(([, v]) => v[0] === "S").length,
-      how: "S등급 단지 세 곳을 열어 봐요.", why: "지역 최상위 단지를 알아야 다른 단지가 그보다 무엇이 모자라고 얼마나 싼지 가늠할 기준이 생겨요.",
+      how: "S등급 단지 세 곳을 열어 보세요.", why: "지역 상위 단지를 알아 두면 다른 단지와 무엇이 다르고 가격 차이가 얼마인지 비교할 기준이 생깁니다.",
       tip: "다른 단지를 잴 기준이 생겨요", go: ["랭킹 보기", "rank.html"] },
     { id: "trade", group: "따져보기", icon: "receipt", name: "실거래 확인", goal: 1, n: st => st.acts.trade || 0,
-      how: "단지 페이지에서 실거래 표나 가격 그래프의 기간·보기 방식을 바꿔 봐요.", why: "호가가 아니라 실제로 계약된 값이 판단의 출발점이에요. 언제, 몇 층이, 얼마에 팔렸는지가 협상 근거가 돼요.",
+      how: "단지 페이지에서 실거래 표나 가격 그래프의 기간·보기 방식을 바꿔 보세요.", why: "호가가 아니라 실제로 계약된 가격이 판단의 출발점입니다. 언제, 몇 층이, 얼마에 거래됐는지가 협상 근거가 됩니다.",
       tip: "실제 계약된 값이 협상 근거예요" },
     { id: "jeonse", group: "따져보기", icon: "coin", name: "전세가율 체크", goal: 1, n: st => st.acts.jeonse || 0,
-      how: "실거래 표의 전세 탭이나 그래프의 '전세·갭'을 열어 봐요.", why: "전세가율은 매매가를 받쳐 주는 힘이에요. 너무 낮으면 하락에 약하고, 높으면 필요한 자기 돈(갭)이 작아요.",
-      tip: "매매가를 받쳐 주는 힘을 봐요" },
+      how: "실거래 표의 전세 탭이나 그래프의 '전세·갭'을 열어 보세요.", why: "전세가율은 매매가 대비 전세가 수준입니다. 높을수록 매매가와 전세가의 차이(갭)가 작고, 낮을수록 매수에 필요한 자기자본이 커집니다.",
+      tip: "매매가와 전세가 차이를 확인해요" },
     { id: "loc", group: "따져보기", icon: "train", name: "입지 동선", goal: 1, n: st => st.acts.loc || 0,
-      how: "단지 페이지의 '입지는 어떤가' 지도를 마지막 단계까지 넘겨 봐요.", why: "역까지 걸어 보고, 학교 가는 길과 마트·병원을 확인하는 게 현장 임장의 기본 동선이에요. 지도로 먼저 동선을 짜 두면 하루에 더 많이 봐요.",
+      how: "단지 페이지의 '교통·학군·생활 입지' 지도를 마지막 단계까지 넘겨 보세요.", why: "역까지 걸어 보고 학교 가는 길과 마트·병원을 확인하는 것이 임장의 기본 동선입니다. 지도로 동선을 미리 정해 두면 현장에서 시간을 아낄 수 있습니다.",
       tip: "현장 동선을 미리 짤 수 있어요" },
     { id: "cmp", group: "따져보기", icon: "compare", name: "나란히 비교", goal: 1, n: st => st.acts.cmp || 0,
-      how: "단지 비교에서 두 곳 이상을 견줘 봐요.", why: "후보를 나란히 놓아야 값 차이의 이유(연식·입지·세대수)가 보여요.",
-      tip: "값 차이의 이유가 보여요", go: ["단지 비교", "compare.html"] },
+      how: "단지 비교에서 두 곳 이상을 견줘 보세요.", why: "후보를 나란히 놓아야 가격 차이의 이유(연식·입지·세대수)가 보입니다.",
+      tip: "가격 차이의 이유가 보여요", go: ["단지 비교", "compare.html"] },
     { id: "hot", group: "따져보기", icon: "fire", name: "시장 흐름", goal: 3, n: st => seenList(st).filter(([, v]) => v[3]).length,
-      how: "최근 신고가가 난 단지 세 곳을 열어 봐요.", why: "신고가가 나오는 곳은 지금 수요가 몰리는 곳이에요. 현장 분위기와 매물 상황을 먼저 확인할 곳이에요.",
-      tip: "수요가 몰리는 곳을 먼저 봐요", go: ["동네 온도 보기", "index.html#heat"] },
+      how: "최근 신고가가 난 단지 세 곳을 열어 보세요.", why: "신고가 거래가 나온 단지는 매물과 호가가 빠르게 바뀔 수 있습니다. 현장에서 실제 매물 상황을 확인해 볼 곳입니다.",
+      tip: "최근 거래가 활발한 곳을 확인해요", go: ["동네 온도 보기", "index.html#heat"] },
     { id: "find", group: "정리하기", icon: "filter", name: "내 조건 정리", goal: 1, n: st => st.acts.find || 0,
-      how: "조건으로 찾기에서 예산이나 생활 조건을 골라 봐요.", why: "예산과 출퇴근·학군 조건을 먼저 정해야 임장 갈 지역이 좁혀져요.",
+      how: "조건으로 찾기에서 예산이나 생활 조건을 골라 보세요.", why: "예산과 출퇴근·학군 조건을 먼저 정해야 임장 갈 지역이 좁혀집니다.",
       tip: "임장 갈 지역이 좁혀져요", go: ["조건으로 찾기", "finder.html"] },
     { id: "fav", group: "정리하기", icon: "star", name: "임장 후보 3곳", goal: 3, n: st => st.favs.length,
-      how: "관심 단지를 세 곳 저장해 봐요.", why: "후보를 추려 두면 가까운 단지끼리 묶어 하루 동선으로 돌 수 있어요.",
+      how: "관심 단지를 세 곳 저장해 보세요.", why: "후보를 추려 두면 가까운 단지끼리 묶어 하루 동선으로 둘러볼 수 있습니다.",
       tip: "하루 동선으로 묶어 돌 수 있어요" },
     { id: "days", group: "정리하기", icon: "calendar", name: "꾸준한 시세 확인", goal: 5, n: st => st.days.length,
-      how: "서로 다른 날 다섯 번, 카드첩의 오늘의 임장 후보를 열어 봐요.", why: "시세는 한 번이 아니라 꾸준히 봐야 흐름이 보여요. 자주 볼수록 급매도 알아봐요.",
-      tip: "꾸준히 봐야 흐름이 보여요", go: ["오늘의 임장 후보", "cards.html#today"] },
+      how: "서로 다른 날 다섯 번, 카드첩의 오늘의 비교 후보를 열어 보세요.", why: "시세는 꾸준히 봐야 흐름이 보입니다. 자주 확인할수록 시세보다 낮은 매물도 알아보기 쉽습니다.",
+      tip: "꾸준히 봐야 흐름이 보여요", go: ["오늘의 비교 후보", "cards.html#today"] },
     { id: "dongall", group: "정리하기", icon: "flag", name: "동네 완주", goal: 1,
       n: st => {   // 세 곳 이상인 동의 단지 카드를 모두 모음 (단지 자료가 있을 때만 셈)
         if (!st.data) return null;
@@ -892,7 +892,7 @@
         st.data.complexes.forEach(c => { const k = c.gu + "|" + c.d; (g[k] || (g[k] = [])).push(c.s); });
         return Object.values(g).filter(v => v.length >= 3 && v.every(s => st.album[s])).length;
       },
-      how: "단지가 세 곳 이상인 동 하나의 카드를 모두 모아 봐요.", why: "한 동네를 빠짐없이 보면 그 동네 시세표가 머릿속에 그려지고, 매물이 나왔을 때 바로 싼지 비싼지 알아봐요.",
+      how: "단지가 세 곳 이상인 동 하나의 단지를 모두 살펴보세요.", why: "한 동네를 빠짐없이 보면 동네 시세가 정리되어, 매물이 나왔을 때 가격 수준을 바로 판단할 수 있습니다.",
       tip: "동네 시세표가 머릿속에 그려져요", go: ["카드첩 보기", "cards.html#album"] },
   ];
   DJ.badgeState = data => ({ seen: DJ.seen(), favs: DJ.favs(), acts: load("acts", {}), days: load("days", []), album: DJ.album(), data });
@@ -908,7 +908,7 @@
     });
     if (!fresh.length) return fresh;
     save("badges", got);
-    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 볼 수 있어요");
+    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 확인할 수 있어요");
     else DJ.toast(`임장 배지 ${fresh.length}개를 받았어요`, fresh.map(b => b.name).join(", "));
     document.dispatchEvent(new Event("dj:badges"));
     return fresh;
@@ -948,7 +948,7 @@
       DJ.note(c.s, c.g, c.gu, apt.dataset.dong, apt.dataset.high === "1");
       // 배지 알림이 뜨면 카드 알림은 생략 (두 개가 한꺼번에 뜨지 않게)
       if (!DJ.checkBadges().length && got && ALBUM_MARKS.includes(got))
-        DJ.toast(got === 1 ? "첫 카드를 카드첩에 모았어요" : `카드첩에 ${got}번째 카드를 모았어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 위)에서 모아 볼 수 있어요");
+        DJ.toast(got === 1 ? "카드첩에 첫 단지를 저장했어요" : `카드첩에 ${got}번째 단지를 저장했어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 안)에서 다시 볼 수 있어요");
       const fav = document.querySelector("[data-fav]");
       if (fav) {
         const label = fav.querySelector("span"); // 아이콘만 있는 버튼이면 글자 대신 aria-label 로 상태를 알립니다
@@ -965,7 +965,7 @@
           if (on) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
           paint(on);
           if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
-          if (on) { DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다"); DJ.checkBadges(); }
+          if (on) { DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"); DJ.checkBadges(); }
         });
       }
     }
@@ -1420,10 +1420,10 @@
     const main = document.querySelector("main"), page = document.body.dataset.page, region = document.body.dataset.region || "";
     if (!main || page === "course" || page === "share") return;   // 받은 코스·함께 보기 화면은 따로
     const KIND = {
-      apt: ["공유받은 단지 카드예요", `${region} 아파트를 실거래가·입지로 평가한 S~D 등급 카드예요. 마음에 들면 관심 단지에 담아 두고, 임장 갈 때 코스로 묶어 보세요.`],
-      compare: ["공유받은 단지 비교예요", "항목마다 더 좋은 값에 표시돼요. 단지를 바꾸거나 더해서 직접 비교해 보세요."],
+      apt: ["공유받은 단지 카드예요", `${region} 아파트의 실거래가와 입지, 가격 흐름을 정리한 S~D 등급 카드예요. 관심 단지에 저장해 두면 임장 코스로 묶어 볼 수 있어요.`],
+      compare: ["공유받은 단지 비교예요", "항목별로 상대적으로 유리한 값에 표시돼요. 단지를 바꾸거나 추가해 직접 비교해 보세요."],
     };
-    const [title, sub] = KIND[page] || [`${region} 아파트 지수에 오신 걸 환영해요`, `${region} 아파트를 실거래가·입지로 평가해 S~D 등급 카드로 만들었어요.`];
+    const [title, sub] = KIND[page] || [`${region} 아파트 지수에 오신 걸 환영해요`, `${region} 아파트의 실거래가와 입지, 가격 흐름을 S~D 등급 카드로 정리했어요.`];
     const box = el("aside", "welcome");
     box.setAttribute("aria-label", "처음 오셨나요");
     const mark = el("span", "welcome-mark", "D");
@@ -1471,9 +1471,9 @@
         DJ.removeFromCourse(slug);
         DJ.toast("임장 코스에서 뺐어요", "관심 단지에서는 빠지지 않아요");
       } else if (DJ.addToCourse([slug]) < 0) {
-        DJ.toast("임장 코스가 꽉 찼어요", "하루에 둘러보기 알맞은 8곳까지 넣을 수 있어요. 관심 화면의 코스에서 한 곳을 빼 주세요");
+        DJ.toast("임장 코스가 꽉 찼어요", "하루에 둘러보기 알맞은 8곳까지 추가할 수 있어요. 관심 화면의 코스에서 한 곳을 빼 주세요");
         return;
-      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 묶었어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요");
+      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 정리했어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요");
       paint();
       document.dispatchEvent(new CustomEvent("dj:course"));
     });

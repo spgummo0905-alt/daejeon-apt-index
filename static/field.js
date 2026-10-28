@@ -187,7 +187,7 @@
   // 3. 들은 호가 적기: 평형 시세와 견줘 비싼지·싼지 바로
   function quotes(c) {
     const tp = (c && c.tp || []).slice().sort((a, b) => a[0] - b[0]);
-    const s = section("들은 호가 적기", tp.length ? "부동산에서 들은 호가를 적으면 그 평형 시세와 견줘 드려요." : "부동산에서 들은 호가를 적어 두세요.");
+    const s = section("들은 호가 적기", tp.length ? "부동산에서 들은 호가를 적으면 그 평형의 추정 시세와 비교합니다." : "부동산에서 들은 호가를 적어 두세요.");
     const form = el("form", "fm-qform");
     const py = el("select");
     py.setAttribute("aria-label", "평형");

@@ -27,7 +27,7 @@
   <div class="mc-art" data-mc-art>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
     {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
-    {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{{ c.small_reason or '소규모' }} 단지라 순위와 TOP 목록에서는 뺐어요">순위 제외</button>{% endif %}
+    {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{% if c.small %}{{ c.small_reason or '소규모' }} 단지는 일반 아파트와 가격 구조가 달라 순위에서 제외합니다{% else %}입지·거래 자료가 부족해 지수를 산정하지 않았습니다{% endif %}">순위 제외</button>{% endif %}
     <p class="mc-tip" data-mc-tip role="status" hidden></p>
     <div class="mc-badges">
       {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="최근 실거래 {{ t0.price | price }}, 거래 내역 펼치기">
@@ -45,7 +45,7 @@
       <strong>{{ t.price | price }}</strong></div>
     {% endfor %}
     <a class="mc-all" href="#trades">거래 내역 더 보기 ›</a>
-    <p class="mc-note">계약일 기준, {{ meta.updated }}까지 신고된 거래입니다. 계약 후 30일 안에 신고해 최근 거래는 늦게 올라올 수 있습니다. 평은 전용면적으로 어림한 평형입니다.</p>
+    <p class="mc-note">계약일 기준이며 {{ meta.updated }}까지 신고된 거래입니다. 신고 기한이 계약 후 30일이라 최근 거래는 늦게 반영될 수 있습니다.</p>
   </div>
   {% endif %}
   {# 관심 단지면 지난번 확인한 뒤 새 거래·시세 변화 (app.js 의 DJ.news) #}
@@ -54,23 +54,23 @@
   <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<div class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></div>
-    {% elif loop.index0 == 3 %}<div class="mc-grp"><span>참고 지표</span><em>지수에는 넣지 않아요</em></div>{% endif %}
+    {% elif loop.index0 == 3 %}<div class="mc-grp"><span>참고 지표</span><em>지수에 반영하지 않음</em></div>{% endif %}
     <div{% if loop.index0 >= 3 %} class="ref"{% endif %} data-stat tabindex="0" role="button" aria-expanded="false"><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></div>
   {% endfor %}
   </div>
   {% set c10 = c["cagr_%dy" % years[0]] %}
   <div class="mc-cells">
-    <div><span>84㎡ 환산</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
+    <div><span>84㎡ 환산가</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
     <div><span>{{ years[0] }}년 연평균</span><strong>{{ c10 | pct }}</strong></div>
     <div><span>전고점 대비</span><strong>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</strong></div>
   </div>
-  <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="희귀도 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
+  <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="등급 표시 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
 </div></section>
 
 <div class="apt-side">
 {% if points or c.small %}
 <section class="points">
-  <h2>한눈에 보기</h2>
+  <h2>이 아파트의 주요 특징</h2>
   {% if points %}<ul class="pt-grid">
   {% for p in points %}<li class="pt">
     <span class="pt-k">{{ p.k }}</span>
@@ -79,21 +79,21 @@
     <span class="pt-s">{{ p.s }}</span>
   </li>{% endfor %}
   </ul>{% endif %}
-  {% if c.small %}<p class="pt-note">거래가 적은 소규모 단지라 순위와 TOP 목록에서는 뺐어요.</p>{% endif %}
+  {% if c.small %}<p class="pt-note">{{ c.small_reason or "소규모" }} 단지는 일반 아파트와 가격 구조가 달라 순위와 TOP 목록에서 제외합니다.</p>{% endif %}
 </section>
 {% endif %}
 
-{# 관련 점수: 넓은 화면에선 한눈에 보기 아래 오른쪽 칸에 (메인 카드 옆이 비지 않게), 휴대폰은 같은 순서로 아래에 #}
+{# 주요 지표 비교: 넓은 화면에선 한눈에 보기 아래 오른쪽 칸에 (메인 카드 옆이 비지 않게), 휴대폰은 같은 순서로 아래에 #}
 <div class="apt-more">
 <div class="sec-head">
-  <h2>관련 점수</h2>
+  <h2>주요 지표 비교</h2>
   <a href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg>다른 단지와 비교</a>
 </div>
-<section class="cards" tabindex="0" aria-label="관련 점수 카드">
+<section class="cards" tabindex="0" aria-label="주요 지표">
   <div class="card">
     <span class="label">전용 {{ ref_area }}㎡ 환산가</span>
     <span class="value">{{ c.price_ref | price }}</span>
-    <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }}, ㎡당 중간 가격 기준{% endif %}</span>
+    <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }}, ㎡당 중간 가격으로 환산한 비교용 추정치{% endif %}</span>
   </div>
   {% if c.from_peak is defined and c.from_peak is not nan %}
   <div class="card">
@@ -104,7 +104,7 @@
   {% endif %}
   {% if c.last_price is not nan %}
   <div class="card">
-    <span class="label">가장 최근 거래</span>
+    <span class="label">최근 실거래</span>
     <span class="value">{{ c.last_price | price }}{% if c.new_high %}<span class="badge-high">신고가</span>{% endif %}</span>
     <span class="muted">{{ c.last_date.strftime("%Y.%m.%d") }} · {{ ar(c, c.last_area) }}{% if c.last_kind != "매매" %} · {{ c.last_kind }}{% endif %}{% if c.prev_high is not nan and not c.new_high %} · 이전 최고 {{ c.prev_high | price }}{% endif %}</span>
   </div>
@@ -117,7 +117,7 @@
   </div>
   {% endfor %}
   <div class="card">
-    <span class="label">입지점수</span>
+    <span class="label">입지 점수</span>
     <span class="value">{{ c.location_score | score }}</span>
     <span class="muted">{% if c.location_top is nan %}입지 정보 없음{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span>
   </div>
@@ -143,7 +143,7 @@
 <section class="panel ki" id="info">
   <div class="panel-head">
     <h2>단지 정보</h2>
-    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 내용이에요.{% if c.fee_m2 %} 관리비는 경비·청소·승강기처럼 함께 쓰는 공용관리비만이에요 (난방·전기·수도처럼 집마다 쓰는 만큼 내는 사용료는 빠져 있어요).{% endif %}</p>
+    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 정보입니다.{% if c.fee_m2 %} 관리비는 경비·청소·승강기 같은 공용관리비만 포함하며, 난방·전기·수도 등 세대별 사용료는 빠져 있습니다.{% endif %}</p>
   </div>
   <dl class="ki-grid">
     {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
@@ -166,8 +166,8 @@
 
 <section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">
   <div class="panel-head">
-    <h2>지수는 이렇게 나왔어요</h2>
-    <p class="muted">입지·성장성·상승세 세 항목을 0~100으로 맞춰 평균한 값이 종합 지수입니다. 세로선은 {{ region }} 단지들의 한가운데(50)입니다.</p>
+    <h2>종합 지수는 어떻게 계산됐을까요?</h2>
+    <p class="muted">입지와 장기 흐름(10년 수익률), 5년 흐름(5년 수익률)을 각각 0~100으로 환산해 평균한 값입니다. 세로선은 {{ region }} 단지들의 중간(50)입니다.</p>
   </div>
   {{ charts.components | safe }}
   {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
@@ -176,7 +176,7 @@
 <section class="panel" id="price">
   <div class="panel-head">
     <h2>시세</h2>
-    <p class="muted">평형별 추정 시세와 실제 거래예요. 평형·기간·보기를 바꿔 보세요.</p>
+    <p class="muted">선은 평형별 추정 시세, 점은 실제 거래입니다. 평형과 기간, 보기 방식을 바꿔 볼 수 있습니다.</p>
   </div>
   <div class="pc" data-pc data-src="d/{{ c.slug }}.json" data-market="{{ root }}market.json" data-gu="{{ c.gu }}" data-region="{{ region }}">
     <div class="pc-head" data-pc-head hidden>
@@ -208,13 +208,11 @@
     <div class="pc-legend" data-pc-legend></div>
     <details class="pc-how">
       <summary>계산 기준</summary>
-      <p class="muted">추정 시세는 같은 평형 거래를 대표 면적에 맞춘 뒤, 그달 앞뒤 6개월 거래를 가까운 달일수록 크게 쳐서 평균한 값이에요.
-      거래가 드문 달은 앞뒤 12개월까지 넓혀 보고 점선으로 그려요. 해제 거래{% if exclude_direct %}와 직거래{% endif %}, 1~3층 거래(시세보다 싸게 팔리는 일이 많아요)는 빼고,
-      시세와 크게 동떨어진 거래도 한 번 걸러내요. 예상 거래 범위는 10건 중 8건이 들어오는 폭이에요.
-      실질은 소비자물가지수로 물가 오른 만큼을 뺀 값이고, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 견줘서 구한 가격 수준이에요.
-      전세는 월세 없는 계약만 같은 방식으로 구했고, 갱신 계약은 인상 폭이 5%로 묶여 있어 시세에서는 빼고 계약 수에만 넣었어요.
-      갭은 매매 추정 시세에서 전세 추정 보증금을 뺀 값이에요.
-      출처: 국토교통부 실거래가(매매·전월세), 한국은행 경제통계(물가·금리).</p>
+      <p class="muted"><b>추정 시세</b> 같은 평형 거래를 대표 면적에 맞춘 뒤, 그달 앞뒤 6개월 거래를 가까운 달일수록 큰 비중으로 평균합니다. 거래가 드문 달은 앞뒤 12개월까지 넓혀 계산하고 점선으로 표시합니다.</p>
+      <p class="muted"><b>제외하는 거래</b> 해제 거래{% if exclude_direct %}와 직거래{% endif %}, 1~3층 거래(시세보다 낮게 거래되는 경우가 많음), 시세와 크게 동떨어진 거래.</p>
+      <p class="muted"><b>예상 거래 범위</b> 거래 10건 중 8건이 들어오는 폭입니다. <b>실질</b>은 소비자물가 상승분을 뺀 값이고, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 비교한 가격 수준입니다.</p>
+      <p class="muted"><b>전세·갭</b> 전세는 월세 없는 계약만 같은 방식으로 계산하며, 갱신 계약은 인상 폭이 5%로 제한돼 시세에서 제외하고 계약 수에만 포함합니다. 갭은 매매 추정 시세에서 전세 추정 보증금을 뺀 값입니다.</p>
+      <p class="muted">출처: 국토교통부 실거래가(매매·전월세), 한국은행 경제통계(물가·금리).</p>
     </details>
   </div>
   <div class="pc-tables" data-pc-tables hidden></div>
@@ -223,7 +221,7 @@
 {% if c.quotes %}
 {% set has_rent = (c.quotes | selectattr("je") | list) or (c.quotes | selectattr("wr") | list) %}
 <section class="quotes" id="quotes" aria-labelledby="q-title">
-  <div class="q-head"><h2 id="q-title">평형별 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
+  <div class="q-head"><h2 id="q-title">평형별 추정 시세</h2><span>{{ meta.updated or meta.asof }} 기준</span></div>
   <table class="qt">
     <thead><tr><th scope="col">{{ "공급(전용)" if c.sup else "전용면적" }}</th><th scope="col">매매</th>{% if has_rent %}<th scope="col">전세</th><th scope="col">월세</th>{% endif %}</tr></thead>
     <tbody>
@@ -236,7 +234,7 @@
     {% endfor %}
     </tbody>
   </table>
-  <p class="q-note">매매·전세는 최근 거래로 구한 추정 시세예요.{% if has_rent %} 월세는 보증금/월세(만원)로, 최근 1년 새 계약 중 가운데 계약이에요.{% endif %}
+  <p class="q-note">매매·전세는 최근 거래로 계산한 추정 시세이며 실제 거래가와 다를 수 있습니다.{% if has_rent %} 월세는 보증금/월세(만원)이며, 최근 1년 신규 계약의 중간값입니다.{% endif %}
     <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
 </section>
 {% endif %}
@@ -246,7 +244,7 @@
 <section class="panel floors" id="floors" data-floors data-src="d/{{ c.slug }}.json" data-top="{{ c.ki.top if c.ki and c.ki.top else '' }}" hidden>
   <div class="panel-head">
     <h2>층별 시세</h2>
-    <p class="muted">최근 5년 매매를 그달 같은 평형의 추정 시세와 견줘, 층마다 시세보다 비싸게 또는 싸게 팔렸는지 봤어요.</p>
+    <p class="muted">최근 5년 매매를 그달 같은 평형의 추정 시세와 비교해, 층별로 시세보다 높거나 낮게 거래됐는지 정리했습니다.</p>
   </div>
   <div class="fl-wrap">
     <figure class="fl-fig"><div data-fl-tower></div><figcaption class="fl-legend" data-fl-legend></figcaption></figure>
@@ -258,8 +256,8 @@
 
 <section class="panel" id="loc">
   <div class="panel-head">
-    <h2>입지는 어떤가</h2>
-    <p class="muted">{% for g in loc_sets %}{{ g.label }}{{ "·" if not loop.last }}{% endfor %} 점수(0~100)와 {{ region }} 안 순위예요. 그래프는 넓을수록 좋아요.</p>
+    <h2>교통·학군·생활 입지</h2>
+    <p class="muted">{% for g in loc_sets %}{{ g.label }}{{ "·" if not loop.last }}{% endfor %} 점수(0~100)와 {{ region }} 안 순위입니다. 그래프는 넓을수록 입지 점수가 높습니다.</p>
   </div>
   {% if loc_sets | length > 1 %}
   <div class="loc-sum">
@@ -296,7 +294,7 @@
       </dl>
       {% if hill.svg %}<figure class="hill-fig"><figcaption>{{ hill.name }} → 이 단지 땅 높이 (직선 {{ hill.dist }})</figcaption>{{ hill.svg }}</figure>{% endif %}
     </div>
-    <p class="note">위성 지형 자료(30m 격자)로 어림한 값이에요. 고층 건물이 많은 곳은 실제보다 크게 나올 수 있으니, 임장 때 역에서 단지까지 직접 걸어 보세요. 유모차·장보기 동선이라면 특히요.</p>
+    <p class="note">위성 지형 자료(30m 격자)로 계산한 추정치입니다. 고층 건물이 많은 곳은 실제보다 크게 나올 수 있으니, 유모차·장보기 동선이 중요하다면 임장 때 역에서 단지까지 직접 걸어 보세요.</p>
   </div>
   {% endif %}
   {% if latlng %}
@@ -319,7 +317,7 @@
         <span class="lm-count" data-lm-count role="img"></span>
         <button type="button" class="lm-next" data-lm-next><span class="lm-t"><span>다음 지도</span><b></b></span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></button>
       </div>
-      <p class="lm-src">주변 시설은 지금 카카오 장소 검색으로 찾아요 · 거리는 단지 중심에서 잰 직선거리</p>
+      <p class="lm-src">주변 시설은 카카오 장소 검색 결과입니다 · 거리는 단지 중심에서 잰 직선거리</p>
     </div>
     {% else %}
     <p><a class="btn" href="https://map.kakao.com/link/map/{{ c.name | urlencode }},{{ latlng[0] }},{{ latlng[1] }}" target="_blank" rel="noopener">카카오맵에서 위치 보기 ↗</a></p>
@@ -329,7 +327,7 @@
 
 {# 같은 값, 가까운 다른 선택지 (alts.js): 84㎡ ±10%·3km 안 단지 세 곳과 다른 점, 임장 코스에 더하기 #}
 <section class="panel alts" id="alts" data-alts="{{ c.slug }}" hidden>
-  <div class="panel-head"><h2>같은 값으로 가까이에 있는 단지</h2><p class="muted" data-alts-sub></p></div>
+  <div class="panel-head"><h2>비슷한 가격대의 주변 아파트</h2><p class="muted" data-alts-sub></p></div>
   <ol class="alt-list" data-alts-list></ol>
 </section>
 
@@ -339,8 +337,8 @@
 {% set ext = c.ext or {} %}
 <section class="panel rv" id="reviews">
   <div class="panel-head">
-    <h2>살아본 사람들 이야기</h2>
-    <p class="muted">{% if ext.posts %}이 단지 이름과 사는 이야기(소음·주차·관리·학군 …)가 함께 나오는 네이버 블로그 글만 골랐어요. 누르면 로그인 없이 원문이 열려요.{% else %}소음·이웃·관리처럼 숫자로 안 보이는 이야기예요. 앱 설치나 로그인 없이 바로 열려요.{% endif %}</p>
+    <h2>이 아파트에 관한 후기와 정보</h2>
+    <p class="muted">{% if ext.posts %}단지 이름과 생활 이야기(소음·주차·관리·학군 등)가 함께 나오는 네이버 블로그 글입니다. 실제 거주자 후기인지는 확인되지 않았으며, 홍보성 글이 섞여 있을 수 있습니다.{% else %}소음·이웃·관리처럼 숫자로 보이지 않는 이야기를 찾아볼 수 있는 검색 링크입니다. 홍보성 글이 섞여 있을 수 있습니다.{% endif %}</p>
   </div>
   {% if ext.posts %}
   <ul class="rv-posts">
@@ -363,13 +361,13 @@
     {% else %}<a class="rv-link" href="https://m.map.naver.com/search?query={{ q | urlencode }}" target="_blank" rel="noopener">
       <svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span><b>지도·리뷰</b><small>네이버 지도</small></span></a>{% endif %}
   </div>
-  <p class="rv-q muted">검색어 ‘{{ q }}’ · 모두 앱 설치나 로그인 없이 열려요. 광고 글이 섞여 있을 수 있어요.{% if ext.posts %} 매물·분양·시공·수리·가게 홍보 글은 뺐어요.{% endif %}</p>
+  <p class="rv-q muted">검색어 ‘{{ q }}’ · 앱 설치나 로그인 없이 열립니다.{% if ext.posts %} 매물·분양·시공·수리·가게 홍보로 보이는 글은 제외했습니다.{% endif %}</p>
 </section>
 
 <section class="panel">
   <div class="panel-head">
-    <h2>{{ region }}에서 이 단지의 위치</h2>
-    <p class="muted">{{ region }} 전체 단지의 지수 분포예요. 이 단지가 속한 칸만 진하게 칠했어요.</p>
+    <h2>{{ region }} 아파트 중 어느 정도일까요?</h2>
+    <p class="muted">{{ region }} 전체 단지의 종합 지수 분포입니다. 이 단지가 속한 구간을 진하게 표시했습니다.</p>
   </div>
   {{ charts.hist | safe }}
 </section>
@@ -388,14 +386,14 @@
 
 <section class="panel" id="trades">
   <div class="panel-head ph-row"><div><h2>최근 거래</h2>
-    <p class="muted">계약일 순이에요. 흐린 줄은 해제{% if exclude_direct %}·직거래{% endif %}라 지수에서 뺐어요.{% if not c.sup %} 공급면적 정보가 없어 전용면적으로 보여 드려요.{% endif %}</p></div>
+    <p class="muted">계약일 순입니다. 흐린 줄은 해제{% if exclude_direct %}·직거래{% endif %} 거래로 지수 계산에서 제외했습니다.{% if not c.sup %} 공급면적 정보가 없어 전용면적으로 표시합니다.{% endif %}</p></div>
     <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div></div>
   {% if jeonse or wolse %}
   <div class="seg trade-kind" role="group" aria-label="거래 종류">
     {% for k, label, rows_ in [("s", "매매", recent), ("j", "전세", jeonse), ("w", "월세", wolse)] if rows_ %}<button type="button" class="seg-btn{% if loop.first %} active{% endif %}" data-trade-kind="{{ k }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>{% endfor %}
   </div>
   {% endif %}
-  <p class="trade-note" data-rent-note hidden>전월세 신고 자료예요. 갱신은 살던 세입자가 계약을 늘린 거라(인상 폭 5% 상한) 흐리게 표시하고 시세에서 뺐어요.</p>
+  <p class="trade-note" data-rent-note hidden>전월세 신고 자료입니다. 갱신 계약은 인상 폭이 5%로 제한돼 흐리게 표시하고 시세 계산에서 제외했습니다.</p>
   {% if area_types | length > 1 %}
   <div class="chips trade-area" role="group" aria-label="면적으로 거르기">
     <button type="button" class="chip active" data-area="" data-n="{{ recent | length }},{{ jeonse | length }},{{ wolse | length }}">전체 <span class="cnt">{{ recent | length }}</span></button>
@@ -438,7 +436,7 @@
 <div class="sheet fm-sheet" id="field-sheet" role="dialog" aria-modal="true" aria-labelledby="fm-title" hidden
      data-slug="{{ c.slug }}" data-name="{{ c.name }}" data-la="{{ c.lat if c.lat is not none else '' }}" data-ln="{{ c.lng if c.lng is not none else '' }}">
   <div class="sheet-grab" aria-hidden="true"></div>
-  <div class="fm-top"><div><h3 id="fm-title" tabindex="-1">현장 모드</h3><p class="muted">{{ c.name }} · 임장하면서 확인할 것을 모았어요</p></div>
+  <div class="fm-top"><div><h3 id="fm-title" tabindex="-1">현장 모드</h3><p class="muted">{{ c.name }} · 현장에서 확인할 항목과 기록</p></div>
     <button type="button" class="icon-btn" data-fm-close aria-label="닫기"><span aria-hidden="true">×</span></button></div>
   <div class="fm-body" data-fm-body><p class="muted">불러오는 중…</p></div>
 </div>
@@ -448,7 +446,7 @@
      data-text="{{ c | place }}{% if c.rank %} · {{ n_total }}곳 중 {{ c.rank }}위{% endif %}">
   <div class="sheet-grab" aria-hidden="true"></div>
   <h3 id="sheet-title">공유하기</h3>
-  <p class="muted">링크를 보내거나, 위 카드를 이미지로 저장할 수 있어요.</p>
+  <p class="muted">링크를 보내거나 위 카드를 이미지로 저장할 수 있습니다.</p>
   {% if not c.small %}<div class="sheet-prev"><img alt="" data-sheet-thumb hidden><span class="sheet-thumb-ph" aria-hidden="true"></span><div><b>{{ c.name }} · {{ c.index | score }}점{% if c.grade != '-' %} {{ c.grade }}등급{% endif %}</b><span data-sheet-info>카드 이미지를 만드는 중…</span></div></div>{% endif %}
   <div class="sheet-acts">
     <button type="button" class="sheet-act" data-act="kakao"><i class="kakao"><svg class="ic"><use href="#i-chat"/></svg></i><span>카카오톡</span></button>

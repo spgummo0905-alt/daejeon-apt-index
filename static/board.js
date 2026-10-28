@@ -66,10 +66,10 @@
     if (d.chg !== "") {
       const v = parseFloat(d.chg);
       const num = el("strong", "hc-chg " + (v > 0 ? "pos" : v < 0 ? "neg" : ""), (v > 0 ? "+" : "") + v.toFixed(1) + "%");
-      big.append(num, el("span", "muted", "최근 6개월 가격, 1년 전 같은 때보다"));
+      big.append(num, el("span", "muted", "최근 6개월 가격 · 1년 전 같은 기간 대비"));
       if (!quiet) DJ.countUp(num, 500);
     } else {
-      big.append(el("strong", "hc-chg", "-"), el("span", "muted", "견줄 거래가 부족합니다"));
+      big.append(el("strong", "hc-chg", "-"), el("span", "muted", "비교할 거래가 부족합니다"));
     }
     card.append(big);
     const last3 = +d.last3, usual = +d.usual;
@@ -78,8 +78,8 @@
     // 온도는 이렇게: 가격 흐름 6 + 거래 흐름 4 (다른 동네와 견준 순위)
     if (d.pc !== "" && d.pv !== "") {
       const why = el("div", "hc-why");
-      why.append(el("p", "hc-sub", "온도는 이렇게 매겼어요"), pctRow("가격 흐름", +d.pc), pctRow("거래 흐름", +d.pv),
-                 el("p", "hc-note muted", "가격 6 : 거래 4로 섞어 다른 동네와 견줍니다"));
+      why.append(el("p", "hc-sub", "산출 기준"), pctRow("가격 흐름", +d.pc), pctRow("거래 흐름", +d.pv),
+                 el("p", "hc-note muted", "가격 60%, 거래 40% 비중으로 다른 동네와 비교합니다"));
       card.append(why);
     }
     const facts = el("dl", "hc-facts");
@@ -113,8 +113,8 @@
         b.disabled = !to; if (to) b.addEventListener("click", () => show(to));
         return b;
       };
-      nav.append(mk("‹ 더 뜨거운", order[i - 1], "더 뜨거운 동네 보기"), el("span", "muted", (i + 1) + " / " + order.length),
-                 mk("덜 뜨거운 ›", order[i + 1], "덜 뜨거운 동네 보기"));
+      nav.append(mk("‹ 더 강한", order[i - 1], "흐름이 더 강한 동네 보기"), el("span", "muted", (i + 1) + " / " + order.length),
+                 mk("더 약한 ›", order[i + 1], "흐름이 더 약한 동네 보기"));
       foot.append(nav);
     }
     card.append(foot);
