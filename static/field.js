@@ -15,7 +15,7 @@
 
   const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
   const dist = m => (m < 1000 ? Math.round(m) + "m" : (m / 1000).toFixed(1) + "km");
-  const walk = m => Math.max(1, Math.round(m * 1.3 / 67));   // 직선의 1.3배를 걷는다고 보고, 1분에 67m
+  const walk = m => DJ.walkMin(m);   // 직선거리 → 걸어서 몇 분 (app.js 공통 계산)
   const meters = (a1, o1, a2, o2) => {
     const r = x => x * Math.PI / 180, h = Math.sin(r(a2 - a1) / 2) ** 2 + Math.cos(r(a1)) * Math.cos(r(a2)) * Math.sin(r(o2 - o1) / 2) ** 2;
     return 2 * 6371000 * Math.asin(Math.sqrt(h));

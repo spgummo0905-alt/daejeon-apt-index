@@ -29,7 +29,7 @@
       <li data-d="{{ r.subway_raw }}" data-i="{{ loop.index0 }}"><a href="apt/{{ r.slug }}.html">
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
         <span class="top-name">{{ r.name }}<span class="muted"> {{ r.dong }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
-        <span class="top-val"><span class="st-walk" title="직선거리 {{ '%.0f' | format(r.subway_raw) }}m">직선 {{ "%.0f" | format(r.subway_raw) }}m · 약 {{ [1, (r.subway_raw / 67) | round(0, 'ceil') | int] | max }}분</span> · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
+        <span class="top-val"><span class="st-walk" title="직선거리 {{ '%.0f' | format(r.subway_raw) }}m">직선 {{ "%.0f" | format(r.subway_raw) }}m · 약 {{ r.subway_raw | walk_min }}분</span> · {{ r.index | score }}점 · {{ r.price_ref | price }}</span>
       </a></li>
     {% endfor %}
     </ol>
