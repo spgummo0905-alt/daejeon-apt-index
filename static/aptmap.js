@@ -9,7 +9,7 @@
   const lat = parseFloat(root.dataset.lat), lng = parseFloat(root.dataset.lng), NAME = root.dataset.name;
   const HUBS = (() => { try { return JSON.parse(root.dataset.hubs || "[]"); } catch (e) { return []; } })();
   const STOP = root.dataset.stop || "지하철역";
-  const walk = m => Math.max(1, Math.round(m * 1.3 / 80));   // 직선거리 → 걸어서 몇 분 (우회 1.3배, 분당 80m)
+  const walk = m => DJ.walkMin(m);   // 직선거리 → 걸어서 몇 분 (app.js 공통 계산)
   const fmtM = m => m >= 1000 ? (m / 1000).toFixed(1) + "km" : Math.round(m) + "m";
 
   // 키워드 검색은 이름에 그 낱말만 들어가도 잡혀서('세븐일레븐노은공원점', '공원빌라') 업종으로 한 번 더 거릅니다.
@@ -184,7 +184,7 @@
   const shortStn = n => n.replace(/\s.*$/, "");
 
   function drawWalk(r) {
-    [[250, "반경 250m · 걸어서 약 4분"], [500, "500m · 약 8분"], [750, "750m · 약 12분"]].forEach(([m, t]) => ring(m, t));
+    [[250, `반경 250m · 걸어서 약 ${walk(250)}분`], [500, `500m · 약 ${walk(500)}분`], [750, `750m · 약 ${walk(750)}분`]].forEach(([m, t]) => ring(m, t));
     nearest(r.stn, 2).forEach(p => { line(p, "stn"); dot(p, "stn", `${shortStn(p.place_name)} ${fmtM(dist(p))}`, 4); });
     nearest(r.ele, 1).forEach(p => { line(p); dot(p, "ele", `${p.place_name.replace(/등학교$/, "")} ${fmtM(dist(p))}`, 4); });
     legend([["k-ring", "반경 250·500·750m"], ["k-stn", STOP], ["k-ele", "가장 가까운 초등학교"]]);
@@ -192,7 +192,7 @@
     if (!rows.length) rows.push([STOP, "1.5km 안에 없음", ""]);
     const e = nearest(r.ele, 1)[0];
     rows.push(["초등학교", e ? `${e.place_name} ${fmtM(dist(e))}` : "1.5km 안에 없음", e ? `걸어서 약 ${walk(dist(e))}분` : ""]);
-    facts(rows, "거리는 단지 중심에서 잰 직선거리이고, 걷는 시간은 길을 1.3배쯤 돌아간다고 보고 계산했어요. 배정 학교는 교육청 학구도에서 꼭 확인하세요.");
+    facts(rows, "거리는 단지 중심에서 잰 직선거리이고, 걷는 시간은 길이 직선보다 1.3배쯤 돌아간다고 보고 분당 75m로 계산한 추정치예요. 배정 학교는 교육청 학구도에서 꼭 확인하세요.");
   }
   function drawEdu(r) {
     const kind = p => /초등학교$/.test(p.place_name) ? "ele" : /중학교$/.test(p.place_name) ? "mid" : /고등학교$/.test(p.place_name) ? "high" : null;

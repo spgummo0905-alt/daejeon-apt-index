@@ -138,10 +138,20 @@ def area_name(name) -> Markup:
     return Markup(f'<span class="area-sub">{escape(head)}</span>{escape(tail)}')
 
 
+# 걷는 시간 어림: 직선거리의 1.3배를 시속 4.5km(분당 75m)로 걷는다고 봄.
+# 화면 어디서나 같은 계산 (static/app.js 의 DJ.SPEED.walk · DJ.walkMin 과 같은 값)
+WALK_DETOUR, WALK_M_PER_MIN = 1.3, 75
+
+
+def walk_min(m) -> int:
+    """직선거리(m) → 걸어서 약 몇 분."""
+    return max(1, round(float(m) * WALK_DETOUR / WALK_M_PER_MIN))
+
+
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
-    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
+    env.filters.update(walk_min=walk_min, price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
                        pyeong=pyeong, man=man, fee_word=fee_word, wol=lambda w: fmt_wol(*w[:2]) if w else "-")
     # 면적: ar(c, 전용㎡[, 소수 자리]) → 공급(전용) 표시. 공급면적은 c.sup ([[전용, 공급], ...])에서 찾습니다
     env.globals["ar"] = lambda c, ex, dec=0: area_html(ex, supply_of(c.get("sup"), ex), dec)
@@ -927,7 +937,7 @@ def _card_badges(c: dict) -> list[dict]:
     if stn and not _nan(dist):
         short = f"{dist / 1000:.1f}km" if dist >= 1000 else f"{dist:.0f}m"
         out.append({"icon": "train", "short": short, "title": stn,
-                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {max(1, round(dist * 1.3 / 80))}분 (추정)"})
+                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {walk_min(dist)}분 (추정)"})
     hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
     if isinstance(hub, str) and not _nan(mins) and mins <= 25:
         out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 약 {mins:.0f}분 (추정)"})

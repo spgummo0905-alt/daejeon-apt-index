@@ -49,7 +49,7 @@
       const gap = Math.round((c.p / me.p - 1) * 100);
       pr.append(el("b", "", eok(c.p)), el("small", "", gap === 0 ? "같은 값" : `${gap > 0 ? "+" : "−"}${Math.abs(gap)}%`));
       a.append(nm, pr);
-      const where = el("p", "alt-where", `${DJ.place(c)} · 여기서 ${dist(k)} · 걸어서 약 ${Math.max(1, Math.round(k * 1000 * 1.3 / 67))}분`);
+      const where = el("p", "alt-where", `${DJ.place(c)} · 여기서 ${dist(k)} · 걸어서 약 ${DJ.walkMin(k * 1000)}분`);
       const tags = el("div", "alt-tags");
       const ds = diffs(c, me);
       if (ds.length) ds.forEach(([t, good]) => tags.append(el("span", "alt-tag" + (good === true ? " good" : good === false ? " bad" : ""), t)));

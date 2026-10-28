@@ -739,3 +739,16 @@ def test_rights_notice_terms_and_minified_deploy(tmp_path):
     assert "esbuild@0.24.2" in sh and "--charset=utf8" in sh and "--allow-overwrite" in sh and "All rights reserved" in sh
     wf = (config.ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
     assert wf.index("bash scripts/minify_site.sh site") < wf.index("actions/upload-pages-artifact")
+
+
+def test_walk_minutes_use_one_rule_everywhere():
+    # 걷는 시간: 직선거리 × 1.3 ÷ 분당 75m 하나로 (역세권·단지 배지·입지 지도·현장 모드·주변 단지가 같은 값)
+    from djdex import site
+    assert site.walk_min(256) == 4 and site.walk_min(700) == 12 and site.walk_min(10) == 1
+    js = (config_root := site.ROOT / "static")
+    app = (js / "app.js").read_text(encoding="utf-8")
+    assert 'walk: { kmh: 4.5, detour: 1.3' in app and 'DJ.walkMin = m => DJ.moveMin(m / 1000, "walk")' in app
+    for f in ("aptmap.js", "field.js", "alts.js"):
+        t = (js / f).read_text(encoding="utf-8")
+        assert "DJ.walkMin(" in t and "/ 67" not in t and "/ 80" not in t, f
+    assert "walk_min" in (site.ROOT / "templates" / "stations.html").read_text(encoding="utf-8")

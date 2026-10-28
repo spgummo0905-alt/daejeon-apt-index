@@ -240,6 +240,8 @@
     const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.la * r) * Math.cos(b.la * r) * Math.sin(dLn / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(h));
   };
+  // 직선거리(m) → 걸어서 약 몇 분. 화면 어디서나 같은 계산 (djdex/site.py 의 walk_min 과 같은 값)
+  DJ.walkMin = m => DJ.moveMin(m / 1000, "walk");
   DJ.moveMin = (km, mode) => { const sp = DJ.SPEED[mode] || DJ.SPEED.walk; return Math.max(1, Math.round(km * sp.detour / sp.kmh * 60)); };
   // 가장 짧은 방문 순서 (시작·끝 자유): 8곳까지라 모든 순서를 다 견줍니다. pts → 인덱스 순서
   DJ.courseOrder = function (pts) {
