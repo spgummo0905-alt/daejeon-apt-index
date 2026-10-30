@@ -12,7 +12,7 @@ group_by = "dong"
 example_dong = "도담동"
 
 [site]
-base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/"
+base_url = "https://www.jipgam.kr/sejong/"
 # 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
 og_image = "static/og/sejong.jpg"
 # 세종은 지하철이 없어 BRT 정류장 거리로 대신합니다.

@@ -9,7 +9,7 @@ districts = { "30110" = "동구", "30140" = "중구", "30170" = "서구", "30200
 [site]
 # 배포 주소. 링크 미리보기(카카오톡 등)와 사이트맵은 절대 주소가 필요합니다.
 # 내 도메인을 연결하면 이 값을 그 주소로 바꾸세요. 끝에 / 를 붙입니다.
-base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+base_url = "https://www.jipgam.kr/"
 # 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
 og_image = "static/og/daejeon.jpg"
 # 검색 등록 확인 코드: 네이버 서치어드바이저 / 구글 서치 콘솔에서 'HTML 태그' 방식으로 받은
@@ -21,10 +21,10 @@ google_site_verification = ""
 # ready 가 있으면 그 파일이 있을 때만 보여줍니다 (서울은 실거래를 다 모은 뒤 공개).
 # 지역이 늘어도 위쪽에는 버튼 하나만 두고, 7곳이 넘으면 고르기 창에 검색칸이 생깁니다.
 regions = [
-  { name = "서울", group = "수도권", desc = "25개 구", badge = "NEW", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/", ready = "data/seoul/READY" },
-  { name = "대전", group = "충청권", desc = "5개 구", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/" },
-  { name = "세종", group = "충청권", desc = "세종시 전역", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/" },
-  { name = "청주", group = "충청권", desc = "4개 구", badge = "NEW", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/cheongju/", ready = "data/cheongju/READY" },
+  { name = "서울", group = "수도권", desc = "25개 구", badge = "NEW", url = "https://www.jipgam.kr/seoul/", ready = "data/seoul/READY" },
+  { name = "대전", group = "충청권", desc = "5개 구", url = "https://www.jipgam.kr/" },
+  { name = "세종", group = "충청권", desc = "세종시 전역", url = "https://www.jipgam.kr/sejong/" },
+  { name = "청주", group = "충청권", desc = "4개 구", badge = "NEW", url = "https://www.jipgam.kr/cheongju/", ready = "data/cheongju/READY" },
 ]
 
 [account]
