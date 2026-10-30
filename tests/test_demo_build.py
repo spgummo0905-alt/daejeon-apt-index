@@ -68,8 +68,9 @@ def test_complexes_json_and_small_rows(tmp_path):
     data = json.loads((out / "complexes.json").read_text(encoding="utf-8"))
     pts = data["complexes"]
     index = (out / "index.html").read_text(encoding="utf-8")
-    n_small = index.count('data-small="1"')
-    assert n_small > 0 and len(pts) == 61 - n_small
+    small = json.loads((out / "small.json").read_text(encoding="utf-8"))["complexes"]
+    n_small = len(small)
+    assert n_small > 0 and len(pts) == 61 - n_small and all(c["sm"] == 1 and c["sr"] for c in small)
     assert {"s", "n", "gu", "d", "i", "g", "p", "st", "f", "la", "ln", "dd", "py", "stn", "nw"} <= set(pts[0])
     assert any(c["stn"] and c["stn"].endswith("역") for c in pts)  # '정부청사역 대전1호선' → '정부청사역'
     stations = (out / "stations.html").read_text(encoding="utf-8")
@@ -133,7 +134,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     out = tmp_path / "sejong"
     cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert ">세종<svg" in index and "동별로 비교하기" in index and "구별" not in index
+    assert ">세종<svg" in index and "동별 비교" in index and "구별" not in index
     assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
     # 지역 고르기: 위쪽은 버튼 하나, 창 안에 권역별 지역 카드 (지금 지역 표시)
     assert 'class="rg-btn"' in index and '<span>아파트 지수</span>' in index
@@ -149,7 +150,7 @@ def test_month_pages_built(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert 'class="ticker"' in index and 'id="heat-svg"' in index and 'id="leaders"' in index
+    assert 'class="ticker"' in index and 'id="heat-svg"' in index and 'data-gu-panel="top"' in index
     assert 'class="dm-hl"' in index and 'data-rank="1"' in index and "data-top=" in index  # 동네 카드 내용, 마우스 올림 표시
     rank = (out / "rank.html").read_text(encoding="utf-8")
     assert rank.count('class="rank-panel"') >= 3 and 'class="podium"' in rank
@@ -752,3 +753,19 @@ def test_walk_minutes_use_one_rule_everywhere():
         t = (js / f).read_text(encoding="utf-8")
         assert "DJ.walkMin(" in t and "/ 67" not in t and "/ 80" not in t, f
     assert "walk_min" in (site.ROOT / "templates" / "stations.html").read_text(encoding="utf-8")
+
+
+def test_home_is_lighter_and_tops_live_on_rank(tmp_path):
+    # 첫 화면: 구별 세 칸을 한 칸(요약·순위·최고가)으로, 주목할 단지는 랭킹으로, 등급 분포는 빼고,
+    # 전체 목록은 상위 30곳만 HTML에 두고 나머지는 단지 자료로 그림 (단지가 많은 서울도 가볍게)
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'data-gu-view="sum"' in index and 'data-gu-panel="rank"' in index
+    assert 'id="top"' not in index and "<h2>등급과 분포</h2>" not in index
+    assert 'id="complex-table" data-lazy' in index
+    body = index[index.index("<tbody>"):index.index("</tbody>")]
+    assert body.count("<tr") - body.count('data-small="1"') == 30
+    rank = (out / "rank.html").read_text(encoding="utf-8")
+    assert 'id="top"' in rank and "지수·수익률 순위" in rank and 'role="tab"' in rank
+    assert 'class="ki-more"' in "".join(p.read_text(encoding="utf-8") for p in list((out / "apt").glob("*.html"))[:20])

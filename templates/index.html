@@ -88,10 +88,8 @@
 <nav class="jump" data-spy aria-label="이 페이지 바로가기">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
   {% if board %}<a href="#heat">동네 온도</a>{% endif %}
-  <a href="#world">{{ unit }}별 요약</a>
-  {% if leaders %}<a href="#leaders">{{ unit }}별 최고가</a>{% endif %}
+  <a href="#world">{{ unit }}별 비교</a>
   {% if value_list %}<a href="#value">입지 대비 가격</a>{% endif %}
-  <a href="#top">주목할 단지</a>
   <a href="#list">전체 목록</a>
 </nav>
 
@@ -120,7 +118,7 @@
     </div>
     <div id="kmap"></div>
     <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 요약이 표시됩니다.</span></div>
-    <div class="map-fallback">{{ charts.map | safe }}</div>
+    <div class="map-fallback"{% if kakao_js_key %} data-src="map-fallback.html"></div>{% else %}>{{ charts.map | safe }}</div>{% endif %}
   </div>
   {# 가까운 동네, 다른 아파트 가격: 직선 600m 안인데 84㎡ 환산가가 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
   <div class="cliffs" data-cliffs hidden>
@@ -198,11 +196,19 @@
 </section>
 {% endif %}
 
+{# { unit }별 비교: 요약 카드 · 항목별 순위 · 84㎡ 환산가 최고 단지를 한 칸에 (home.js data-gu-view) #}
 <section id="world" class="panel">
   <div class="panel-head">
-    <h2>{{ unit }}별 한눈에 보기</h2>
-    <p class="muted">{{ region }} {{ gu_stats | length }}개 {{ unit }}의 아파트 가격과 지수를 비교해 보세요. 수치는 {{ unit }}별 단지들의 중간값이며, 카드를 누르면 아래 목록에 그 {{ unit }} 단지만 남습니다.</p>
+    <h2>{{ unit }}별 비교</h2>
+    <p class="muted">{{ region }} {{ gu_stats | length }}개 {{ unit }}의 가격과 지수를 비교해 보세요. 수치는 {{ unit }}별 단지들의 중간값입니다.</p>
   </div>
+  <div class="seg gu-view" role="tablist" aria-label="{{ unit }}별 비교 보기">
+    <button type="button" class="seg-btn active" role="tab" aria-selected="true" data-gu-view="sum">요약</button>
+    <button type="button" class="seg-btn" role="tab" aria-selected="false" data-gu-view="rank">항목별 순위</button>
+    {% if leaders %}<button type="button" class="seg-btn" role="tab" aria-selected="false" data-gu-view="top">84㎡ 최고가 단지</button>{% endif %}
+  </div>
+  <div data-gu-panel="sum">
+  <p class="muted gv-note">카드를 누르면 아래 전체 목록에 그 {{ unit }} 단지만 남습니다.</p>
   {# 구·동 카드는 늘 옆으로 넘기는 줄: 몇 곳뿐이면 카드를 크게(한 화면에 3장) #}
   <div class="rail-wrap" data-rail>
   <div class="world-grid rail{% if gu_stats | length <= 8 %} rail-wide{% endif %}">
@@ -220,37 +226,9 @@
   {% endfor %}
   </div>
   {{ rail_nav }}</div>
-</section>
-
-{% if leaders %}
-<section id="leaders" class="panel">
-  <div class="panel-head">
-    <h2>{{ unit }}별 84㎡ 환산가 최고 단지</h2>
-    <p class="muted">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다. 막대는 {{ unit }} 중간 가격이 이 단지의 몇 %인지 보여 줍니다.</p>
   </div>
-  {% set rail = true %}{# 다 들어가면 화살표는 숨김 (app.js rail) #}
-  {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
-  <div class="leader-row{% if rail %} rail{% endif %}">
-  {% for d in leaders %}
-    <a class="leader" href="apt/{{ d.slug }}.html" data-reveal style="--i: {{ loop.index0 }}">
-      <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu | area }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
-      <span class="ld-name"><span class="grade g-{{ d.grade }}">{{ d.grade }}</span>{{ d.name }}</span>
-      <span class="ld-price" data-count>{{ d.price_text }}</span>
-      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 전과 비교할 거래 부족{% endif %}</span>
-      {% if d.ratio %}<span class="ld-meter" title="{{ d.gu }} 중간 가격은 이 단지의 {{ d.ratio }}%"><span style="--w: {{ d.ratio }}%"></span></span>
-      <span class="ld-meter-label muted">{{ unit }} 중간 가격은 <strong>{{ d.ratio }}%</strong> 수준</span>{% endif %}
-    </a>
-  {% endfor %}
-  </div>
-  {% if rail %}{{ rail_nav }}</div>{% endif %}
-</section>
-{% endif %}
-
-<section id="gu" class="panel">
-  <div class="panel-head">
-    <h2>{{ unit }}별로 비교하기</h2>
-    <p class="muted">항목을 고르면 그 기준으로 {{ unit }} 순위가 바뀝니다. 수치는 모두 {{ unit }}별 단지들의 중간값입니다.</p>
-  </div>
+  <div data-gu-panel="rank" hidden>
+  <p class="muted gv-note">항목을 고르면 그 기준으로 {{ unit }} 순위가 바뀝니다.</p>
   <div class="chips gu-tabs" role="tablist">
   {% for b in gu_boards %}<button class="chip{% if loop.first %} active{% endif %}" type="button" role="tab" data-board="{{ b.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ b.tab }}</button>{% endfor %}
   </div>
@@ -270,7 +248,29 @@
     {% if b.ref_pos is not none %}<p class="gb-note muted"><i></i>세로선은 {{ region }} 전체 중간값</p>{% endif %}
   </div>
   {% endfor %}
+  </div>
+  {% if leaders %}
+  <div data-gu-panel="top" hidden>
+  <p class="muted gv-note">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다. 막대는 {{ unit }} 중간 가격이 이 단지의 몇 %인지 보여 줍니다.</p>
+  {% set rail = true %}{# 다 들어가면 화살표는 숨김 (app.js rail) #}
+  {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
+  <div class="leader-row{% if rail %} rail{% endif %}">
+  {% for d in leaders %}
+    <a class="leader" href="apt/{{ d.slug }}.html" data-reveal style="--i: {{ loop.index0 }}">
+      <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu | area }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
+      <span class="ld-name"><span class="grade g-{{ d.grade }}">{{ d.grade }}</span>{{ d.name }}</span>
+      <span class="ld-price" data-count>{{ d.price_text }}</span>
+      <span class="ld-chg{% if d.chg is not none %} {{ 'pos' if d.chg > 0 else 'neg' if d.chg < 0 else '' }}{% endif %}">{% if d.chg is not none %}1년 {{ '%+.1f' % d.chg }}%{% else %}1년 전과 비교할 거래 부족{% endif %}</span>
+      {% if d.ratio %}<span class="ld-meter" title="{{ d.gu }} 중간 가격은 이 단지의 {{ d.ratio }}%"><span style="--w: {{ d.ratio }}%"></span></span>
+      <span class="ld-meter-label muted">{{ unit }} 중간 가격은 <strong>{{ d.ratio }}%</strong> 수준</span>{% endif %}
+    </a>
+  {% endfor %}
+  </div>
+  {% if rail %}{{ rail_nav }}</div>{% endif %}
+  </div>
+  {% endif %}
 </section>
+
 
 {% if value_list %}
 <section id="value" class="panel">
@@ -299,35 +299,6 @@
 </section>
 {% endif %}
 
-<section id="top" class="panel">
-  <div class="panel-head"><h2>주목할 단지</h2></div>
-  <div class="chips top-tabs" role="tablist" aria-label="주목할 단지 종류">
-  {% for t in tops %}<button type="button" class="chip{% if loop.first %} active{% endif %}" role="tab" id="top-tab-{{ loop.index }}" aria-controls="top-card-{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %} title="{{ t.title }}">{{ t.tab or t.title }}</button>{% endfor %}
-  </div>
-  <div class="top-grid">
-  {% for t in tops %}
-    <div class="top-card" role="tabpanel" id="top-card-{{ loop.index }}" aria-labelledby="top-tab-{{ loop.index }}"{% if not loop.first %} hidden{% endif %}>
-      <h3>{{ t.title }}</h3>
-      <ol>
-      {% for r in t["items"] %}
-        <li><a href="apt/{{ r.slug }}.html"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
-          <span class="top-name">{{ r.name }}<span class="muted"> {{ r | place }}</span></span>
-          <span class="top-val">{{ t.value(r) }}</span></a></li>
-      {% endfor %}
-      </ol>
-    </div>
-  {% endfor %}
-  </div>
-</section>
-
-<section class="panel">
-  <div class="panel-head">
-    <h2>등급과 분포</h2>
-    <p class="muted">점수대별 단지 수입니다. 등급은 단지나 동네의 우열이 아니라 현재 지표가 어느 구간에 있는지를 나타냅니다.</p>
-  </div>
-  {{ grade_legend | safe }}
-  {{ charts.hist | safe }}
-</section>
 
 <section id="list" class="panel">
   <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬 기준이 바뀝니다.</p></div>
@@ -355,7 +326,8 @@
   </div>
   {% endif %}
   <div class="table-wrap">
-  <table id="complex-table">
+  {# 처음엔 상위 30곳만 HTML에 (첫 화면을 가볍게). 나머지는 단지 자료(complexes.json·small.json)로 table.js 가 그림 #}
+  <table id="complex-table" data-lazy data-years="{{ years | join(',') }}">
     <thead><tr>
       <th data-sort="num">순위</th>
       <th data-sort="text" class="col-name">단지</th>
@@ -367,7 +339,7 @@
       <th data-sort="num">입지</th>
     </tr></thead>
     <tbody>
-    {% for r in rows %}
+    {% for r in (rows | rejectattr("small") | list)[:30] %}
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
       <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
