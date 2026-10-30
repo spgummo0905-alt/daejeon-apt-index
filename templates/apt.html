@@ -130,48 +130,14 @@
 {# 바로가기: 현장에서 휴대폰으로 필요한 칸만 바로 (스크롤 따라 붙고 지금 보는 칸을 표시, app.js scrollSpy) #}
 <nav class="jump apt-jump" data-spy aria-label="이 단지 바로가기">
   <button type="button" class="jump-field" data-field aria-haspopup="dialog" aria-controls="field-sheet"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>현장 모드</button>
-  {% if c.ki %}<a href="#info">단지 정보</a>{% endif %}
   <a href="#price">시세</a>
   {% if c.quotes %}<a href="#quotes">평형별</a>{% endif %}
   {% if has_pc %}<a href="#floors" data-floors-link hidden>층별</a>{% endif %}
+  {% if c.ki %}<a href="#info">단지 정보</a>{% endif %}
   <a href="#loc">입지</a>
   <a href="#reviews">후기</a>
   <a href="#trades">거래</a>
 </nav>
-
-{% if c.ki %}{% set k = c.ki %}
-<section class="panel ki" id="info">
-  <div class="panel-head">
-    <h2>단지 정보</h2>
-    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 정보입니다.{% if c.fee_m2 %} 관리비는 경비·청소·승강기 같은 공용관리비만 포함하며, 난방·전기·수도 등 세대별 사용료는 빠져 있습니다.{% endif %}</p>
-  </div>
-  <dl class="ki-grid">
-    {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
-      <p>{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</p></div>{% endif %}
-    {% if k.ppu %}<div class="ki-main"><dt>주차</dt><dd><small>세대당</small> {{ "%.1f" | format(k.ppu) }}<small>대</small></dd>
-      <p>총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</p></div>{% endif %}
-    {% if c.fee_m2 %}<div class="ki-main"><dt>관리비</dt><dd><small>㎡당</small> {{ "{:,}".format(c.fee_m2) }}<small>원</small></dd>
-      <p>84㎡ 한 달 약 {{ (c.fee_m2 * 84) | man }}{% if c.fee_m2_top is not nan %} · {{ region }}에서 {{ c.fee_m2_top | fee_word }}{% endif %} · {{ c.fee_ym }} 공용관리비</p></div>{% endif %}
-    {% if k.top %}<div><dt>층수</dt><dd>최고 {{ k.top }}층{% if k.base %}, 지하 {{ k.base }}층{% endif %}</dd></div>{% endif %}
-    {% if k.use %}<div><dt>사용승인</dt><dd>{{ k.use }}</dd></div>{% endif %}
-    {% if k.heat %}<div><dt>난방</dt><dd>{{ k.heat }}</dd></div>{% endif %}
-    {% if k.hall %}<div><dt>복도</dt><dd>{{ k.hall }}</dd></div>{% endif %}
-    {% if k.elev %}<div><dt>승강기</dt><dd>{{ k.elev }}대</dd></div>{% endif %}
-    {% if k.evc %}<div><dt>전기차 충전기</dt><dd>{{ k.evc }}기</dd></div>{% endif %}
-    {% if k.builder %}<div><dt>시공사</dt><dd>{{ k.builder }}</dd></div>{% endif %}
-    {% if k.mgr %}<div><dt>관리 방식</dt><dd>{{ k.mgr }}</dd></div>{% endif %}
-  </dl>
-</section>
-{% endif %}
-
-<section class="panel{% if c.index_parts >= 3 %} m-hide{% endif %}">
-  <div class="panel-head">
-    <h2>종합 지수는 어떻게 계산됐을까요?</h2>
-    <p class="muted">입지와 장기 흐름(10년 수익률), 5년 흐름(5년 수익률)을 각각 0~100으로 환산해 평균한 값입니다. 세로선은 {{ region }} 단지들의 중간(50)입니다.</p>
-  </div>
-  {{ charts.components | safe }}
-  {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
-</section>
 
 <section class="panel" id="price">
   <div class="panel-head">
@@ -251,6 +217,36 @@
     <div class="fl-side" data-fl-side></div>
   </div>
   <details class="fl-more"><summary>층별 표로 보기</summary><div data-fl-table></div></details>
+</section>
+{% endif %}
+
+{% if c.ki %}{% set k = c.ki %}
+<section class="panel ki" id="info">
+  <div class="panel-head">
+    <h2>단지 정보</h2>
+    <p class="muted">공동주택관리정보시스템(K-apt)에 등록된 정보입니다.{% if c.fee_m2 %} 관리비는 경비·청소·승강기 같은 공용관리비만 포함하며, 난방·전기·수도 등 세대별 사용료는 빠져 있습니다.{% endif %}</p>
+  </div>
+  <dl class="ki-grid">
+    {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
+      <p>{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</p></div>{% endif %}
+    {% if k.ppu %}<div class="ki-main"><dt>주차</dt><dd><small>세대당</small> {{ "%.1f" | format(k.ppu) }}<small>대</small></dd>
+      <p>총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</p></div>{% endif %}
+    {% if c.fee_m2 %}<div class="ki-main"><dt>관리비</dt><dd><small>㎡당</small> {{ "{:,}".format(c.fee_m2) }}<small>원</small></dd>
+      <p>84㎡ 한 달 약 {{ (c.fee_m2 * 84) | man }}{% if c.fee_m2_top is not nan %} · {{ region }}에서 {{ c.fee_m2_top | fee_word }}{% endif %} · {{ c.fee_ym }} 공용관리비</p></div>{% endif %}
+  </dl>
+  <details class="ki-more">
+    <summary>건물·관리 정보 더 보기</summary>
+    <dl class="ki-grid ki-sub">
+    {% if k.top %}<div><dt>층수</dt><dd>최고 {{ k.top }}층{% if k.base %}, 지하 {{ k.base }}층{% endif %}</dd></div>{% endif %}
+    {% if k.use %}<div><dt>사용승인</dt><dd>{{ k.use }}</dd></div>{% endif %}
+    {% if k.heat %}<div><dt>난방</dt><dd>{{ k.heat }}</dd></div>{% endif %}
+    {% if k.hall %}<div><dt>복도</dt><dd>{{ k.hall }}</dd></div>{% endif %}
+    {% if k.elev %}<div><dt>승강기</dt><dd>{{ k.elev }}대</dd></div>{% endif %}
+    {% if k.evc %}<div><dt>전기차 충전기</dt><dd>{{ k.evc }}기</dd></div>{% endif %}
+    {% if k.builder %}<div><dt>시공사</dt><dd>{{ k.builder }}</dd></div>{% endif %}
+    {% if k.mgr %}<div><dt>관리 방식</dt><dd>{{ k.mgr }}</dd></div>{% endif %}
+    </dl>
+  </details>
 </section>
 {% endif %}
 
@@ -364,11 +360,15 @@
   <p class="rv-q muted">검색어 ‘{{ q }}’ · 앱 설치나 로그인 없이 열립니다.{% if ext.posts %} 매물·분양·시공·수리·가게 홍보로 보이는 글은 제외했습니다.{% endif %}</p>
 </section>
 
-<section class="panel">
+<section class="panel" id="index-calc">
   <div class="panel-head">
-    <h2>{{ region }} 아파트 중 어느 정도일까요?</h2>
-    <p class="muted">{{ region }} 전체 단지의 종합 지수 분포입니다. 이 단지가 속한 구간을 진하게 표시했습니다.</p>
+    <h2>종합 지수는 어떻게 계산됐을까요?</h2>
+    <p class="muted">입지와 장기 흐름(10년 수익률), 5년 흐름(5년 수익률)을 각각 0~100으로 환산해 평균한 값입니다. 세로선은 {{ region }} 단지들의 중간(50)입니다.</p>
   </div>
+  <div{% if c.index_parts >= 3 %} class="m-hide"{% endif %}>{{ charts.components | safe }}</div>{# 휴대폰은 메인 카드에 같은 막대가 있어 숨김 #}
+  {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
+  <h3 class="sub">{{ region }} 아파트 중 어느 정도일까요?</h3>
+  <p class="muted">{{ region }} 전체 단지의 종합 지수 분포입니다. 이 단지가 속한 구간을 진하게 표시했습니다.</p>
   {{ charts.hist | safe }}
 </section>
 

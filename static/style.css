@@ -1427,6 +1427,16 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .mc-strip span { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--sub); background: var(--glass); border: 1px solid var(--line); }
 .mc-strip span.hot { color: #fff; background: #d93f3e; border-color: transparent; }
 .mc-stats { position: relative; margin: 14px 2px 0; padding: 0; display: grid; gap: 9px; }
+/* 첫 화면 구별 비교: 보기 바꾸기 아래 짧은 안내 */
+.gu-view { margin-top: 4px; }
+.gv-note { margin: 12px 0 10px; font-size: 13.5px; line-height: 1.55; }
+/* 단지 정보: 세대수·주차·관리비만 펼쳐 두고 건물·관리 세부는 접기 */
+.ki-more { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.ki-more > summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--text-2); list-style: none; padding: 6px 0; }
+.ki-more > summary::-webkit-details-marker { display: none; }
+.ki-more > summary::after { content: " ›"; display: inline-block; transition: transform 160ms var(--ease-out); }
+.ki-more[open] > summary::after { transform: rotate(90deg); }
+.ki-more .ki-sub { margin-top: 8px; }
 .mc-stats > div { display: grid; grid-template-columns: 116px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
 .mc-stats .n { white-space: nowrap; }
 .mc-stats .n { font-size: 14px; font-weight: 800; }

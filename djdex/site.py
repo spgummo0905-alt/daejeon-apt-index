@@ -405,6 +405,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     themes = _themes(main_t, by_id, cfg, meta)
     (out_dir / "themes.html").write_text(env.get_template("themes.html").render(
         root="", page_path="themes.html", themes=themes, **common), encoding="utf-8")
+    # 지도 대체 그림(카카오맵이 안 뜰 때만 보임)은 크기가 커서, 카카오맵을 쓰면 따로 두고 필요할 때만 받음 (home.js)
+    if kakao_js_key and index_charts.get("map"):
+        (out_dir / "map-fallback.html").write_text(index_charts["map"], encoding="utf-8")
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
@@ -420,7 +423,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         root="", page_path="intro.html", hero_cards=ranked[:3], grade_dist=grade_dist, hot=hot_roll(month["board"]),
         **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
-        root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
+        root="", page_path="rank.html", ranks=month["ranks"],
+        tops=[t for t in tops if t["tab"] != "신고가"], **common), encoding="utf-8")
     if common["account"]:
         (out_dir / "privacy.html").write_text(
             env.get_template("privacy.html").render(root="", page_path="privacy.html", **common), encoding="utf-8")
@@ -544,6 +548,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
                     {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
                      "url": cfg.site.get("base_url", "")})
+    # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
+    write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
                   [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
@@ -1103,7 +1109,8 @@ def _r(x, nd=0):
     return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
 
 
-def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None) -> None:
+def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None,
+                    name: str = "complexes.json") -> None:
     import json
     data = []
     for r in rows:
@@ -1134,11 +1141,11 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
-            **({"sm": 1} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
+            **({"sm": 1, "sr": r.get("small_reason") or "소규모"} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
             **({"hl": [_r(r["hill"].get("rf")), _r(r["hill"].get("st"))]} if (r.get("hill") or {}).get("rf") is not None else {}),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
-    (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out_dir / name).write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[str] | None = None) -> None:

@@ -26,4 +26,24 @@
   addEventListener("resize", () => moveInk(tabs.find(t => t.classList.contains("active"))));
   const first = tabs.find(t => "#" + t.dataset.tab === location.hash) || tabs[0];
   requestAnimationFrame(() => open(first, false));
+
+  {
+    // 지수·수익률 순위 탭 (화살표 키로도)
+    const tabs = Array.from(document.querySelectorAll(".top-tabs [role=tab]"));
+    const pick = t => tabs.forEach(b => {
+      const on = b === t;
+      b.classList.toggle("active", on); b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
+      document.getElementById(b.getAttribute("aria-controls")).hidden = !on;
+    });
+    tabs.forEach((b, i) => {
+      b.addEventListener("click", () => pick(b));
+      b.addEventListener("keydown", e => {
+        const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        const n = tabs[(i + step + tabs.length) % tabs.length];
+        pick(n); n.focus();
+      });
+    });
+  }
 })();
