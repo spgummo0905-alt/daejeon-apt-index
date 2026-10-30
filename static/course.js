@@ -60,7 +60,7 @@
     head.querySelector("h2").textContent = "코스 자세히";
     head.querySelector("p").textContent = "단지 이름을 누르면 등급 카드가, '현장 체크리스트'를 펼치면 현장에서 확인할 항목이 표시됩니다.";
     l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지 가장 짧은 순서로 이은 임장 코스입니다. 단지마다 현장 확인 항목도 함께 담았습니다.`;
-    document.title = `임장 코스 ${p.stops.length}곳 · ${document.body.dataset.region || ""} 아파트 지수`;
+    document.title = `임장 코스 ${p.stops.length}곳 · 집감`;
   }
   const cur = () => got || state;   // 지금 보여 주는 코스
   function clearGot() {
@@ -179,7 +179,7 @@
     const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
     const out = el("section", "cs-print");
     out.append(el("h2", "", "임장 코스"),
-      el("p", "cs-p-sub", `${region} 아파트 지수 · ${DJ.today().replace(/-/g, ".")} · ${SPEED[st.mode].label} · ${stops.length}곳 · 총 ${dist(total)} · ` +
+      el("p", "cs-p-sub", `집감 ${region} · ${DJ.today().replace(/-/g, ".")} · ${SPEED[st.mode].label} · ${stops.length}곳 · 총 ${dist(total)} · ` +
         `이동 약 ${hm(move)} (둘러보기 포함 약 ${hm(move + VISIT * stops.length)})`));
     const top = el("div", "cs-p-top"), svg = sec.querySelector("[data-cs-map] svg");
     if (svg) top.append(svg.cloneNode(true));

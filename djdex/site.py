@@ -226,9 +226,9 @@ def write_pwa(out_dir: Path, cfg, version: str) -> None:
         u = g.get("url", "")
         if base and u.startswith(base) and u != base:
             other.append(u[len(base):].strip("/"))
-    name = f"{cfg.region_name} 아파트 지수"
+    name = f"집감 {cfg.region_name}"
     manifest = {
-        "name": name, "short_name": name.replace(" 아파트", ""), "lang": "ko",
+        "name": name, "short_name": "집감", "lang": "ko",
         "description": f"{cfg.region_name} 아파트 실거래가·입지 비교와 임장 기록",
         "start_url": "index.html?skip=1", "scope": "./", "display": "standalone",
         "background_color": "#f4f2ee", "theme_color": "#0f1b33",

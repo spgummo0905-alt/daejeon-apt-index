@@ -417,7 +417,7 @@ def cmd_demo(cfg, args) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(prog="djdex", description="대전 아파트 지수")
+    p = argparse.ArgumentParser(prog="djdex", description="집감: 아파트 실거래가·입지 지수")
     p.add_argument("--config", type=Path, help="설정 파일 (기본: config.toml)")
     p.add_argument("--data", type=Path, help="데이터 폴더 (기본: data/)")
     sub = p.add_subparsers(dest="cmd", required=True)

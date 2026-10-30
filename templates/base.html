@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ region }} 아파트 지수{% endblock %}</title>
+<title>{% block title %}집감 · {{ region }} 아파트 실거래가·입지 비교{% endblock %}</title>
 <meta name="description" content="{% block description %}{{ region }} 아파트를 실거래가, 입지점수, 실질수익률로 비교합니다.{% endblock %}">
 {% set base = site.base_url %}
 {% if base %}
 <link rel="canonical" href="{{ base }}{{ page_path }}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="{{ region }} 아파트 지수">
+<meta property="og:site_name" content="집감">
 <meta property="og:locale" content="ko_KR">
 <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
 <meta property="og:description" content="{{ self.description() }}">
@@ -17,7 +17,7 @@
 <meta property="og:image" content="{{ base }}{% block og_image %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endblock %}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{ region }} 아파트 지수: 실거래가, 입지, 수익률로 보는 단지 비교">
+<meta property="og:image:alt" content="집감 {{ region }}: 실거래가, 입지, 수익률로 보는 단지 비교">
 <meta name="twitter:card" content="summary_large_image">
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
@@ -28,7 +28,7 @@
 <link rel="manifest" href="{{ root }}manifest.webmanifest">
 <link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
 <meta name="theme-color" content="#0f1b33">
-<meta name="apple-mobile-web-app-title" content="{{ region }} 아파트 지수">
+<meta name="apple-mobile-web-app-title" content="집감">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
 {% block head_extra %}{% endblock %}
@@ -75,8 +75,8 @@
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
 </svg>
 <header class="site">
-  {# 지역이 여럿이면 이름 대신 '아파트 지수' + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
-  <a class="brand" href="{{ root }}index.html"><span class="brand-mark">D</span><span>{% if regions | length > 1 %}아파트 지수{% else %}{{ region }} 아파트 지수{% endif %}</span></a>
+  {# 브랜드 '집감'(집 + 감각) + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
+  <a class="brand" href="{{ root }}index.html" aria-label="집감 {{ region }} 첫 화면"><span class="brand-word">집<em>감</em></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
   {% if regions | length > 1 %}
   <div class="rg">
     <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="지역 바꾸기, 지금 {{ region }}">
@@ -167,7 +167,7 @@
 <footer>
   국토교통부 아파트 매매·분양권·전월세 실거래가 기준 ({{ meta.asof }}) · 단지 정보 공동주택관리정보시스템(K-apt) · 공급면적 건축물대장 · 위치 정보 카카오 로컬 ·{% if factors and factors | selectattr("osm_route", "defined") | list %} {{ transit.stop }} © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 기여자 ·{% endif %}
   광고 없음 · 공개 데이터만 사용 · 지수와 점수는 참고용이며 투자 권유가 아닙니다. · <a href="{{ root }}methodology.html">산출 방법</a> · <a href="{{ root }}intro.html">서비스 소개</a> · <a href="{{ root }}terms.html">이용약관</a>{% if account %} · <a href="{{ root }}privacy.html"><b>개인정보처리방침</b></a>{% endif %}
-  <p class="ft-legal">© 2026 아파트 지수. 점수·등급·화면의 무단 복제와 자동 수집을 금지합니다.</p>
+  <p class="ft-legal">© 2026 집감. 점수·등급·화면의 무단 복제와 자동 수집을 금지합니다.</p>
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">
   <a href="{{ root }}index.html" data-tab="index"><svg class="ic"><use href="#i-home"/></svg>홈</a>

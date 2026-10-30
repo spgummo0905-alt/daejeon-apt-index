@@ -137,7 +137,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     assert ">세종<svg" in index and "동별 비교" in index and "구별" not in index
     assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
     # 지역 고르기: 위쪽은 버튼 하나, 창 안에 권역별 지역 카드 (지금 지역 표시)
-    assert 'class="rg-btn"' in index and '<span>아파트 지수</span>' in index
+    assert 'class="rg-btn"' in index and 'class="brand-word">집<em>감</em>' in index
     assert '<p class="rg-grp" data-rg-grp>충청권</p>' in index and 'data-rg-name="세종" aria-current="page"' in index
     assert 'data-rg-name="대전"' in index
     stations = (out / "stations.html").read_text(encoding="utf-8")
@@ -792,7 +792,7 @@ def test_pwa_manifest_icons_and_service_worker(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     man = json.loads((out / "manifest.webmanifest").read_text(encoding="utf-8"))
-    assert man["display"] == "standalone" and man["start_url"] == "index.html?skip=1" and "아파트 지수" in man["name"]
+    assert man["display"] == "standalone" and man["start_url"] == "index.html?skip=1" and man["name"].startswith("집감") and man["short_name"] == "집감"
     for ic in man["icons"]:
         assert (out / ic["src"]).exists()
     sw = (out / "sw.js").read_text(encoding="utf-8")

@@ -356,8 +356,13 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
 /* ===================== 단지 카드·상위 등급 연출 ===================== */
 .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .brand { display: inline-flex; align-items: center; gap: 10px; letter-spacing: -0.02em; }
-.brand-mark { display: inline-flex; width: 28px; height: 28px; border-radius: 8px; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #1d3a66, var(--navy)); color: #f3e3b3; font-weight: 800; font-size: 14px; }
+/* 브랜드 '집감' (집 + 감각): 남색 글자에 '감'만 금빛으로 */
+.brand-word { font-size: 21px; font-weight: 900; letter-spacing: -0.06em; color: var(--navy); line-height: 1; }
+.brand-word em { font-style: normal; color: #b8862a; }
+.brand-sub { font-size: 13px; font-weight: 700; color: var(--text-2); padding: 3px 8px; border-radius: 999px; background: var(--chip); }
+@media (prefers-color-scheme: dark) { .brand-word { color: var(--text); } .brand-word em { color: var(--gold); } }
+body[data-page="intro"] .brand-word { color: #fff; }
+body[data-page="intro"] .brand-word em { color: #e8bf5a; }
 .hd-end { display: flex; align-items: center; gap: 14px; margin-left: auto; }
 .top-nav a { margin-left: 18px; color: var(--text-2); font-size: 14.5px; font-weight: 500; }
 .top-nav a:hover { color: var(--text); text-decoration: none; }

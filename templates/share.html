@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}함께 보는 임장 기록 · {{ region }} 아파트 지수{% endblock %}
+{% block title %}함께 보는 임장 기록 · 집감{% endblock %}
 {% block description %}가족이 보낸 관심 단지와 임장 노트(체크리스트·들은 호가·메모·사진)예요. 눌러서 함께 보세요.{% endblock %}
 {% block og_image %}static/og/family.jpg{% endblock %}
-{% block og_title %}함께 보는 임장 기록 · {{ region }} 아파트 지수{% endblock %}
+{% block og_title %}함께 보는 임장 기록 · 집감{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
 {% block body %}
 {# 가족과 함께 보기: 관심 화면에서 만든 링크(share.html?t=…)로 들어와 보기 전용으로 (share.js). 로그인 없이 #}
@@ -14,7 +14,7 @@
 <div data-sh-body data-regions='{{ regions | tojson }}' data-region="{{ region }}"></div>
 {# 받은 사람도 써 보고 싶게: 이 기록을 어떻게 만들었는지와 시작하기 #}
 <section class="rc-about sh-about" aria-labelledby="sh-about-title">
-  <p class="rc-kicker">{{ region }} 아파트 지수</p>
+  <p class="rc-kicker">집감 · {{ region }}</p>
   <h2 id="sh-about-title">우리 집 임장 기록도 이렇게 모아 볼까요?</h2>
   <ul class="rc-why">
     <li><b>관심 단지</b><span>{{ region }} 아파트를 실거래가·입지로 매긴 S~D 등급 카드로 보고, 마음에 드는 곳을 담아요.</span></li>

@@ -22,7 +22,7 @@
     </div>
     {% if hero_cards %}
     <div class="hero-deck" aria-label="종합 지수 상위 단지">
-      <span class="deck-tag"><span class="deck-tag-d">{{ region }} 아파트 지수 1위</span><span class="deck-tag-m">종합 지수 TOP {{ hero_cards | length }} · 넘겨서 비교하기</span></span>
+      <span class="deck-tag"><span class="deck-tag-d">{{ region }} 집감 지수 1위</span><span class="deck-tag-m">종합 지수 TOP {{ hero_cards | length }} · 넘겨서 비교하기</span></span>
       <div class="deck-rail">
       {% for c in hero_cards | reverse %}{% set k = hero_cards | length - loop.index %}
       <a class="gcard deck-card g-{{ c.grade }}" href="apt/{{ c.slug }}.html" style="--k: {{ k }}"{% if k == 0 %} data-holo{% else %} data-deck-back tabindex="-1" aria-hidden="true"{% endif %}>

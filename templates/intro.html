@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ region }} 아파트 지수 · 집값부터 입지까지 아파트 비교{% endblock %}
+{% block title %}집감 · {{ region }} 아파트, 집 볼 때도 감이 필요하니까{% endblock %}
 {% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 장기 가격 흐름을 하나의 지수와 등급 카드로 정리했습니다.{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
@@ -16,8 +16,8 @@
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
       <p class="it-eyebrow"><span class="live-dot"></span>{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳 · 실거래 매일 반영</p>
-      <h1>집값부터 입지까지,<br>아파트 비교가 <em class="nw">쉬워집니다</em></h1>
-      <p class="it-lead">실거래가와 입지, 장기 가격 흐름을 하나의 지수로 정리했습니다. 관심 있는 아파트의 가격과 특징을 카드 한 장으로 확인해 보세요.</p>
+      <h1>집 볼 때도<br><em class="nw">감</em>이 필요하니까</h1>
+      <p class="it-lead">집감은 실거래가와 입지, 장기 가격 흐름을 하나의 지수로 정리해 집값의 감을 잡도록 돕습니다. 관심 있는 아파트의 가격과 특징을 카드 한 장으로 확인해 보세요.</p>
       <div class="it-cta">
         <a class="it-btn primary" href="index.html">아파트 찾아보기 <span aria-hidden="true">→</span></a>
         <a class="it-btn ghost" href="#it-card">카드 읽는 법</a>

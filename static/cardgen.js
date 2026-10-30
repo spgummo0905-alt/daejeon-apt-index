@@ -229,7 +229,7 @@
     ctx.fillText("◆".repeat(t.stars) + "◇".repeat(5 - t.stars), W / 2, fy + 1);
     ctx.textAlign = "right"; ctx.fillStyle = t.sub; ctx.font = `600 15px ${FONT}`;
     ctx.fillText((data.asof || "") + " 실거래 기준", W - 56, fy - 10);
-    ctx.fillText((data.region || "대전") + " 아파트 지수", W - 56, fy + 10);
+    ctx.fillText("집감 · " + (data.region || "대전"), W - 56, fy + 10);
 
     holo(ctx, 22, 22, W - 44, H - 44, t, rand);
     return cv;
@@ -385,7 +385,7 @@
         const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
         const c = data.bySlug[slug];
         if (!c) throw new Error("no card");
-        await glyphs(JSON.stringify(c) + (data.region || "") + "아파트 지수 등급 점 위 상위 하위 억 만 원 년 평 ㎡");
+        await glyphs(JSON.stringify(c) + (data.region || "") + "집감 · 지수 등급 점 위 상위 하위 억 만 원 년 평 ㎡");
         const cv = draw(c, data);
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
