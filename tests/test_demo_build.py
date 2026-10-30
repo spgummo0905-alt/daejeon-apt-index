@@ -51,7 +51,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert f'<meta property="og:url" content="{base}apt/DEMO-0001.html">' in page
     assert f'<meta property="og:image" content="{base}static/og/daejeon.jpg">' in page
     assert 'property="og:title" content="데모단지 01 · 지수' in page
-    assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "favicon.svg").exists()
+    assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "brand" / "favicon-48.png").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
     assert sitemap.count("<url>") == 63 + 8  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
@@ -137,7 +137,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     assert ">세종<svg" in index and "동별 비교" in index and "구별" not in index
     assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
     # 지역 고르기: 위쪽은 버튼 하나, 창 안에 권역별 지역 카드 (지금 지역 표시)
-    assert 'class="rg-btn"' in index and 'class="brand-word">집<em>감</em>' in index
+    assert 'class="rg-btn"' in index and 'class="brand-word">집감<i class="brand-dot"' in index
     assert '<p class="rg-grp" data-rg-grp>충청권</p>' in index and 'data-rg-name="세종" aria-current="page"' in index
     assert 'data-rg-name="대전"' in index
     stations = (out / "stations.html").read_text(encoding="utf-8")
