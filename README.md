@@ -99,7 +99,7 @@ python -m djdex all
   3. 받은 태그의 `content="..."` 값만 `config.toml` 의 `google_site_verification`, `naver_site_verification` 에 넣고 다시 배포한 뒤 확인 버튼을 누릅니다.
   4. 두 곳 모두 사이트맵 제출 메뉴에 `sitemap.xml` 주소를 넣습니다.
 - **배포 주소가 바뀌면** `config.toml` 의 `base_url` 을 새 주소로 바꿉니다. 미리보기와 사이트맵이 이 값을 씁니다.
-- **단지 페이지 지도**: 카카오 개발자 콘솔의 앱 설정에서 웹 플랫폼 도메인에 `https://spgummo0905-alt.github.io` 를 등록하고, JavaScript 키를 `KAKAO_JS_KEY` 시크릿으로 넣으면 단지 페이지에 카카오맵이 뜹니다.
+- **단지 페이지 지도**: 카카오 개발자 콘솔의 앱 설정에서 웹 플랫폼 도메인에 `https://www.jipgam.kr` 를 등록하고, JavaScript 키를 `KAKAO_JS_KEY` 시크릿으로 넣으면 단지 페이지에 카카오맵이 뜹니다.
 
 ## 구조
 

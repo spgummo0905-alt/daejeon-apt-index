@@ -18,7 +18,7 @@ from djdex import reviews  # noqa: E402
 from djdex.kapt import _base_name  # noqa: E402
 from djdex.molit import _norm_name  # noqa: E402
 
-BASE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+BASE = "https://www.jipgam.kr/"
 REGIONS = {"대전": ("", 16), "세종": ("sejong/", 6), "서울": ("seoul/", 6), "청주": ("cheongju/", 6)}
 RAW = 60   # 검색어마다 RAW 로 남기는 결과 수
 OLD = re.compile(r"급매|매물|매매가|전세가|월세|중개|공인|부동산|분양|모델하우스|청약|체험단|협찬|원고료|제공받|광고|"
