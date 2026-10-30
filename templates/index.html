@@ -61,7 +61,8 @@
   {% endif %}
   <div class="quick">
     <a class="quick-tile" href="themes.html"><svg class="ic"><use href="#i-star"/></svg><strong>테마로 찾기</strong><span>학교·교통·신축 등 조건별로</span></a>
-    <a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.stop }} 주변 아파트 비교</span></a>
+    {% if transit.page %}<a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.stop }} 주변 아파트 비교</span></a>
+    {% else %}<a class="quick-tile" href="#map"><svg class="ic"><use href="#i-map"/></svg><strong>지도로 보기</strong><span>동네별 시세와 단지 위치</span></a>{% endif %}
     <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>최대 4곳의 가격·입지·수익률</span></a>
     <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건에 맞는 집</span></a>
   </div>
@@ -112,7 +113,7 @@
       <div class="km-chips" role="group" aria-label="조건">
         <button type="button" class="chip" data-km-flag="new" aria-pressed="false">신축 10년</button>
         <button type="button" class="chip" data-km-flag="big" aria-pressed="false">500세대 이상</button>
-        <button type="button" class="chip" data-km-flag="stn" aria-pressed="false">역 500m</button>
+        {% if transit.page %}<button type="button" class="chip" data-km-flag="stn" aria-pressed="false">역 500m</button>{% endif %}
         <button type="button" class="chip" data-km-flag="hi" aria-pressed="false">최근 신고가</button>
       </div>
       <p class="km-count" data-km-count aria-live="polite"></p>

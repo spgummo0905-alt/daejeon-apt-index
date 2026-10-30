@@ -1,0 +1,61 @@
+# 청주 버전: config.toml 위에 청주에서 다른 부분만 덮어씁니다.
+# 실행: python -m djdex --config config.cheongju.toml all --out site/cheongju
+extends = "config.toml"
+data = "data/cheongju"
+
+[region]
+name = "청주"
+geo_name = "충청북도 청주시"   # 카카오 주소 검색용
+districts = { "43111" = "상당구", "43112" = "서원구", "43113" = "흥덕구", "43114" = "청원구" }
+example_dong = "복대동"
+# 입주 예정 물량: 청약홈은 시·도(충북)로 묶어 있어 주소에 '청주'가 든 공고만 씁니다.
+movein_area = "충북"
+movein_addr = "청주"
+
+[site]
+base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/cheongju/"
+# 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
+og_image = "static/og/cheongju.jpg"
+# 청주는 지하철이 없어 교통을 KTX 오송역·청주역까지 거리(서울·대전 출퇴근 기준)로 봅니다.
+# 걸어서 가는 역이 아니라 역세권 화면·테마·'역 500m' 조건은 두지 않습니다 (site._transit page).
+transit = { tab = "기차역", stop = "오송역·청주역", short = "역" }
+
+[location]
+# 목록은 통째로 바뀌므로 전체 항목을 다시 적습니다. 지하철 대신 기차역까지 거리:
+# 좌표는 정해 둔 값 (오송역은 세종 설정과 같고, 청주역은 위키데이터 36°38′44″N 127°23′30″E).
+factors = [
+  { key = "rail",         label = "오송역·청주역까지 거리", short = "기차역", kind = "nearest", radius = 40000, weight = 0.25, keep_name = true, points = [{ name = "오송역", lat = 36.6203, lng = 127.3270 }, { name = "청주역", lat = 36.6456, lng = 127.3917 }], note = "KTX 오송역과 충북선 청주역 중 가까운 곳까지 직선거리. 청주는 지하철이 없어 서울·대전으로 오가는 기준으로 봅니다" },
+  { key = "hub",          label = "주요 학원가 접근성", short = "학원가", kind = "score", weight = 0.25 },
+  { key = "school_mid",   label = "주변 중학교 순전입률", short = "중학교 전입", kind = "value", weight = 0.10, note = "주변 중학교의 (전입 − 전출) ÷ 학생 수, 최근 3년 평균. 학군을 보고 이사 오는 집이 많을수록 높습니다" },
+  { key = "elementary",   label = "초등학교까지 거리", short = "초등학교", category = "SC4", kind = "nearest", radius = 2000, weight = 0.10, name_contains = "초등학교" },
+  { key = "academy_math", label = "반경 1km 수학 학원 수", short = "수학 학원", category = "AC5", kind = "count", radius = 1000, weight = 0.10, query = "수학", note = "입시 학원가를 가려내려고 이름이나 분류에 '수학'이 들어간 학원만 셉니다" },
+  { key = "mart",         label = "대형마트까지 거리", short = "대형마트", category = "MT1", kind = "nearest", radius = 5000, weight = 0.10 },
+  { key = "hospital",     label = "반경 1km 병원 수", short = "병원", category = "HP8", kind = "count", radius = 1000, weight = 0.10 },
+]
+groups = [
+  { key = "transit", label = "교통", factors = ["rail"] },
+  { key = "edu",     label = "학군", factors = ["school_mid", "hub", "academy_math"] },
+  { key = "life",    label = "생활", factors = ["elementary", "mart", "hospital"] },
+]
+
+[location.hub]
+# 청주 학원가는 수학 학원이 몰린 곳을 자동으로 찾습니다 (산남·복대·용암·오창 같은 곳, 걸어서 걸리는 시간 기준).
+auto = true
+hubs = []
+detect = { merge_m = 1500, top = 0.15, max_hubs = 5 }
+
+[collect]
+# 처음에는 2006년부터 받아야 해서, 같은 키로 받는 대전·세종·서울 몫을 남기도록 한 번에 이만큼씩 나눠 받습니다.
+max_calls_per_run = 1500
+
+[school]
+sido = "43"
+
+[finder]
+workplaces = [
+  { name = "충북도청", lat = 36.6357, lng = 127.4914 },
+  { name = "오송역(KTX)", lat = 36.6203, lng = 127.3270 },
+  { name = "청주국제공항(오창)", lat = 36.7166, lng = 127.4991 },
+  { name = "정부세종청사", lat = 36.5040, lng = 127.2649 },
+  { name = "둔산·정부대전청사", lat = 36.3605, lng = 127.3836 },
+]

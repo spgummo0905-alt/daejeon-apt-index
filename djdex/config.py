@@ -72,6 +72,11 @@ class Paths:
         return self.data / "noise_lines.json"
 
     @property
+    def points(self) -> Path:
+        """교통 항목의 '정해 둔 곳'(예: 오송역·청주역) 좌표 (points.py 가 씀)"""
+        return self.data / "points.json"
+
+    @property
     def osm_stops(self) -> Path:
         return self.data / "osm_stops.json"
 

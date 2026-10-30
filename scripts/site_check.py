@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "https://spgummo0905-alt.github.io/daejeon-apt-index/"
-REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/"}
+REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/", "청주": "cheongju/"}
 # 단지 페이지에 있어야 하는 화면 요소 (한눈에 보기 타일, 관련 점수 줄, 평형별 시세)
 MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"',
          "바로가기 탭": 'apt-jump', "층별 시세": "data-floors"}

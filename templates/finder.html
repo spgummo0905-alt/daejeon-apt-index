@@ -9,7 +9,7 @@
   <p class="sv-basis">{{ meta.asof }} 실거래까지 반영 · 가격은 평형별 추정 시세 · 거리는 직선거리</p>
 </section>
 
-<section class="panel sv" id="survey" data-stop="{{ transit.stop }}" data-stop-short="{{ transit.short }}" data-region="{{ region }}" data-unit="{{ unit }}">
+<section class="panel sv" id="survey" data-stop="{{ transit.stop }}" data-stop-short="{{ transit.short }}"{% if not transit.page %} data-no-stop{% endif %} data-region="{{ region }}" data-unit="{{ unit }}">
   <div class="sv-top">
     <div>
       <h2>원하는 조건 선택하기</h2>

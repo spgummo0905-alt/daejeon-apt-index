@@ -103,7 +103,7 @@
       <a href="{{ root }}index.html#map">지도</a>
       <a href="{{ root }}rank.html">랭킹</a>
       <a href="{{ root }}themes.html">테마</a>
-      <a href="{{ root }}stations.html">{{ transit.tab }}</a>
+      {% if transit.page %}<a href="{{ root }}stations.html">{{ transit.tab }}</a>{% endif %}
       <a href="{{ root }}compare.html">단지 비교</a>
       <a href="{{ root }}finder.html">조건으로 찾기</a>
       <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span>{% if account %}<span class="nav-lock" data-when-out role="img" aria-label="로그인하면 열려요"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span>{% endif %}</a>
