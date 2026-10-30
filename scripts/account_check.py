@@ -15,7 +15,7 @@ import requests
 _u = urlparse(os.environ.get("SUPABASE_URL", "").strip())
 URL = f"{_u.scheme}://{_u.netloc}" if _u.netloc else ""   # 끝에 /rest/v1 같은 경로가 붙어 있어도 주소만
 KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
-SITE = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+SITE = "https://www.jipgam.kr/"
 PROVIDER = os.environ.get("SUPABASE_PROVIDER", "custom:kakao")   # config.toml [account] provider 와 같게
 
 
