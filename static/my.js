@@ -81,6 +81,7 @@
         ul.append(li);
       });
       nbx.hidden = !notes.length;
+      visitCompare(notes, eok);
     }
 
     const favBox = document.getElementById("favs");
@@ -119,4 +120,76 @@
     if (nt && na) { na.hidden = nt.hidden; mj("notes", nt.querySelectorAll("[data-notes-list] > li").length); }
     if (favs.length > 1) favBox.classList.add("fav-rail");   // 휴대폰은 옆으로 넘기기
   });
+
+  // 다녀온 단지 나란히 비교: 임장 노트를 단지끼리 한 표로 (체크·확인 못 한 것·들은 호가와 시세 차이·메모·사진).
+  // 숫자 자료 비교는 단지 비교(compare.html)에, 여기는 현장에서 직접 본 것 위주로
+  function visitCompare(notes, eok) {
+    const box = document.querySelector("[data-visit-cmp]");
+    if (!box) return;
+    const mjv = document.querySelector("[data-mj-vc]");
+    box.hidden = notes.length < 2;
+    if (mjv) mjv.hidden = box.hidden;
+    if (box.hidden) return;
+    const MAX = 4, region = document.body.dataset.region;
+    // 처음엔 다녀온 곳부터 최근 4곳
+    let picked = notes.filter(x => x.v.d).concat(notes.filter(x => !x.v.d)).slice(0, MAX).map(x => x.c.s);
+    const pickBox = box.querySelector("[data-vc-pick]"), table = box.querySelector("[data-vc-table]");
+    const short = (t, n) => (t.length > n ? t.slice(0, n) + "…" : t);
+    const quote = (c, q) => {
+      const [p, f, won] = q, ref = ((c.tp || []).find(t => String(t[0]) === String(p)) || [])[1];
+      const pct = ref ? Math.round((won / ref - 1) * 100) : null;
+      return `${p ? p + "평 " : ""}${f ? f + "층 " : ""}${eok(won)}` + (pct == null ? "" : ` (시세 ${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${Math.abs(pct)}%)`);
+    };
+    const ROWS = [
+      ["등급·지수", ({ c }) => (c.g && c.g !== "-" ? c.g + "등급 · " : "") + (c.i == null ? "-" : c.i + "점")],
+      ["84㎡ 환산가", ({ c }) => c.pt || "-"],
+      ["다녀온 날", ({ v }) => (v.d ? v.d.replace(/-/g, ".") : "방문 전")],
+      ["현장 체크", ({ c, v }) => { const [n, all] = DJ.visitDone(v, DJ.visitItems(c, region)); return `${n} / ${all}`; }],
+      ["확인 못 한 것", ({ c, v }) => {
+        const left = DJ.visitItems(c, region).filter(([id]) => !v.x[id]).map(t => t[1]).concat(DJ.CHECK.filter((_, i) => !v.c[i]));
+        return left.length ? left.slice(0, 2).map(t => short(t.replace(/ \(.*\)$/, ""), 18)).join(" · ") + (left.length > 2 ? ` 외 ${left.length - 2}개` : "") : "모두 확인";
+      }],
+      ["들은 호가", ({ c, v }) => (v.q.length ? v.q.slice(0, 2).map(q => quote(c, q)).join("\n") + (v.q.length > 2 ? `\n외 ${v.q.length - 2}건` : "") : "-")],
+      ["메모", ({ v }) => (v.m ? short(v.m, 80) : "-")],
+      ["현장 사진", ({ v }) => ((v.p || []).length ? v.p.length + "장" : "-")],
+      ["역까지", ({ c }) => (c.f && c.f.subway != null ? (c.stn ? c.stn + " " : "") + c.f.subway + "m" : "-")],
+      ["학군 점수", ({ c }) => (c.ed == null ? "-" : c.ed + "점")],
+    ];
+    function draw() {
+      pickBox.replaceChildren();
+      notes.forEach(({ c }) => {
+        const on = picked.includes(c.s);
+        const b = el("button", "chip" + (on ? " active" : ""), c.n);
+        b.type = "button"; b.setAttribute("aria-pressed", String(on));
+        b.disabled = !on && picked.length >= MAX;
+        b.addEventListener("click", () => {
+          picked = on ? picked.filter(s => s !== c.s) : picked.concat(c.s);
+          draw();
+        });
+        pickBox.append(b);
+      });
+      const cols = picked.map(s => notes.find(x => x.c.s === s)).filter(Boolean);
+      table.replaceChildren();
+      if (cols.length < 2) {
+        table.append(el("caption", "muted", "비교할 단지를 2곳 이상 선택해 주세요."));
+      } else {
+        const thead = el("thead"), hr = el("tr");
+        hr.append(el("th", "", ""));
+        cols.forEach(({ c }) => { const th = el("th"); const a = el("a", "", c.n); a.href = DJ.href(c) + "#field"; th.append(a); hr.append(th); });
+        thead.append(hr);
+        const tb = el("tbody");
+        ROWS.forEach(([name, get]) => {
+          const tr = el("tr");
+          tr.append(el("th", "", name));
+          cols.forEach(x => { const td = el("td", "", String(get(x))); tr.append(td); });
+          tb.append(tr);
+        });
+        table.append(thead, tb);
+      }
+      const link = box.querySelector("[data-vc-data]");
+      link.hidden = cols.length < 2;
+      link.href = "compare.html?s=" + cols.map(x => encodeURIComponent(x.c.s)).join(",");
+    }
+    draw();
+  }
 })();

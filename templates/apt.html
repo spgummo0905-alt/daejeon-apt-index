@@ -202,6 +202,25 @@
   </table>
   <p class="q-note">매매·전세는 최근 거래로 계산한 추정 시세이며 실제 거래가와 다를 수 있습니다.{% if has_rent %} 월세는 보증금/월세(만원)이며, 최근 1년 신규 계약의 중간값입니다.{% endif %}
     <a href="#trades" data-trade-jump="{{ 'j' if jeonse else 's' }}">{{ "전세·월세 계약 보기" if has_rent else "거래 내역 보기" }} ›</a></p>
+  {# 이 단지 사려면 한 달에 얼마: 평형 추정 시세 · 자기자본 · 금리로 대출과 월 상환액 어림 (pay.js). 기본은 접어 둠 #}
+  {% set sale_q = c.quotes | selectattr("sale") | list %}
+  {% if sale_q %}
+  <details class="pay" data-pay data-rules="{{ pay_rules | tojson | forceescape }}">
+    <summary><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg>이 단지 사려면 한 달에 얼마?</summary>
+    <div class="pay-body">
+      <div class="pay-form">
+        <label class="pay-wide"><span>평형</span><select data-pay-py>{% for q in sale_q %}<option value="{{ q.sale }}"{% if loop.index0 == (sale_q | length) // 2 %} selected{% endif %}>전용 {{ q.a | round | int }}㎡ · {{ q.sale | price }}</option>{% endfor %}</select></label>
+        <label><span>상황</span><select data-pay-st>
+          <option value="first">생애최초</option><option value="none" selected>무주택</option><option value="switch">1주택 갈아타기</option><option value="multi">2주택 이상</option></select></label>
+        <label><span>자기자본 (만원)</span><input type="number" inputmode="numeric" min="0" step="500" placeholder="예: 20000" data-pay-eq></label>
+        <label><span>금리 (%)</span><input type="number" inputmode="decimal" min="0" step="0.1" data-pay-rate></label>
+        <label><span>기간 (년)</span><input type="number" inputmode="numeric" min="1" step="1" data-pay-yr></label>
+      </div>
+      <div class="pay-out" data-pay-out aria-live="polite"></div>
+      <p class="pay-note">평형별 추정 시세 기준의 참고용 계산입니다. 실제 대출 한도는 은행 심사·스트레스 DSR·정책에 따라 다르며, 취득세·중개보수는 별도입니다.</p>
+    </div>
+  </details>
+  {% endif %}
 </section>
 {% endif %}
 
@@ -462,6 +481,7 @@
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 <script src="{{ root }}static/field.js?v={{ v }}" defer></script>
 <script src="{{ root }}static/alts.js?v={{ v }}" defer></script>
+<script src="{{ root }}static/pay.js?v={{ v }}" defer></script>
 {% if has_pc %}<script src="{{ root }}static/pricechart.js?v={{ v }}" defer></script>
 <script src="{{ root }}static/floors.js?v={{ v }}" defer></script>{% endif %}
 {% if latlng and kakao_js_key %}

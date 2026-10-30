@@ -51,6 +51,7 @@
   <a href="#my-favs">관심 단지<b data-mj="favs"></b></a>
   <a href="#course">임장 코스<b data-mj="course"></b></a>
   <a href="#notes" data-mj-notes hidden>임장 노트<b data-mj="notes"></b></a>
+  <a href="#visit-cmp" data-mj-vc hidden>다녀온 단지 비교</a>
   <a href="#recent-sec">최근 본<b data-mj="recent"></b></a>
 </nav>
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
@@ -77,6 +78,16 @@
     <div class="nt-export"><button type="button" class="btn" data-nt-csv><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span>엑셀로 내려받기</span></button>
       <button type="button" class="btn ghost" data-nt-print>인쇄·PDF로 저장</button></div></div>
   <ul class="nt-list" data-notes-list></ul>
+</section>
+{# 다녀온 단지 나란히 비교: 임장 노트(체크·들은 호가·메모·사진)를 단지끼리 한 표로. 다녀와서 가족과 함께 고를 때 (my.js) #}
+<section class="panel vc" id="visit-cmp" data-visit-cmp hidden>
+  <div class="panel-head">
+    <h2>다녀온 단지 나란히 비교</h2>
+    <p class="muted">임장 노트를 단지끼리 한 표로 봅니다. 비교할 단지를 고르세요 (최대 4곳).</p>
+  </div>
+  <div class="chips vc-pick" data-vc-pick role="group" aria-label="비교할 단지"></div>
+  <div class="table-wrap vc-wrap"><table class="cmp-table vc-table" data-vc-table></table></div>
+  <p class="vc-foot"><a class="btn ghost" data-vc-data href="compare.html">자료로도 비교하기 →</a></p>
 </section>
 <section class="panel" id="recent-sec">
   <div class="panel-head row-between"><h2>최근 본 단지</h2><button class="btn ghost" id="recent-clear" type="button" hidden>기록 지우기</button></div>

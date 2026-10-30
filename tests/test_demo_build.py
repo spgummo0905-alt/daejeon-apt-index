@@ -769,3 +769,17 @@ def test_home_is_lighter_and_tops_live_on_rank(tmp_path):
     rank = (out / "rank.html").read_text(encoding="utf-8")
     assert 'id="top"' in rank and "지수·수익률 순위" in rank and 'role="tab"' in rank
     assert 'class="ki-more"' in "".join(p.read_text(encoding="utf-8") for p in list((out / "apt").glob("*.html"))[:20])
+
+
+def test_visit_compare_and_monthly_payment(tmp_path):
+    # 다녀온 단지 나란히 비교(관심 화면)와 단지 화면 '한 달에 얼마?' (설정 [finder] 의 LTV·DSR·금리를 그대로)
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert "data-visit-cmp" in my and "data-vc-table" in my and "다녀온 단지 나란히 비교" in my
+    assert "function visitCompare(notes, eok)" in (out / "static" / "my.js").read_text(encoding="utf-8")
+    apts = [p.read_text(encoding="utf-8") for p in list((out / "apt").glob("*.html"))[:30]]
+    pay = next(h for h in apts if "data-pay " in h)
+    assert "이 단지 사려면 한 달에 얼마?" in pay and "static/pay.js" in pay and "&#34;dsr&#34;: 0.4" in pay
+    js = (out / "static" / "pay.js").read_text(encoding="utf-8")
+    assert "loan * r / (1 - Math.pow(1 + r, -n))" in js and "pay * 12 / DSR" in js
