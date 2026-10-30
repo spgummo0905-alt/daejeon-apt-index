@@ -400,6 +400,9 @@ alter table public.push_subs enable row level security;
 alter table public.push_state enable row level security;
 alter table public.push_keys enable row level security;
 revoke all on public.push_subs, public.push_state, public.push_keys from anon, authenticated;
+-- 보내는 쪽(secret 키 = service_role)이 쓰는 표. 새 프로젝트는 표를 만들어도 자동으로 열리지 않아 직접 엶
+grant select, insert, update, delete on public.push_subs, public.push_state, public.push_keys to service_role;
+grant select on public.user_kv to service_role;
 
 create or replace function public.push_key()
 returns text language sql stable security definer set search_path = '' as $$

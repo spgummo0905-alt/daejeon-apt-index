@@ -116,6 +116,18 @@ class Store:
         self.s.delete(self.api + path, headers=self.h, params=params, timeout=30).raise_for_status()
 
 
+def _why(e: Exception) -> str:
+    """보관함(PostgREST) 오류에서 상태 번호와 오류 코드·문구만"""
+    r = getattr(e, "response", None)
+    if r is None:
+        return ""
+    try:
+        j = r.json()
+        return f"{r.status_code} {j.get('code', '')} {str(j.get('message', ''))[:120]}".strip()
+    except ValueError:
+        return str(r.status_code)
+
+
 def _b64(b: bytes) -> str:
     return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
 
@@ -201,8 +213,8 @@ def main(argv: list[str]) -> int:
     try:
         pub, priv = vapid_keys(store)
         subs = store.get("push_subs", select="user_id,endpoint,p256dh,auth")
-    except Exception as e:   # 표가 아직 없으면(db-setup 전) 조용히
-        print(f"[알림] 알림 표를 읽지 못해 건너뜁니다: {type(e).__name__}")
+    except Exception as e:   # 표가 아직 없으면(db-setup 전) 조용히. 상태 번호와 보관함 오류 문구만 남김 (키·주소는 안 찍음)
+        print(f"[알림] 알림 표를 읽지 못해 건너뜁니다: {type(e).__name__} {_why(e)}")
         return 0
     if not subs:
         print("[알림] 알림을 켠 회원이 없습니다")
