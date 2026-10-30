@@ -27,6 +27,12 @@ regions = [
   { name = "청주", group = "충청권", desc = "4개 구", badge = "NEW", url = "https://www.jipgam.kr/cheongju/", ready = "data/cheongju/READY" },
 ]
 
+[app]
+# 안드로이드 앱(android/ 폴더, TWA). 앱 소유 확인 파일(/.well-known/assetlinks.json)에 들어갈 서명 인증서 지문(SHA-256).
+# 비어 있으면 파일을 만들지 않아요. Play Console → 앱 무결성(앱 서명)의 'SHA-256 인증서 지문'을 적습니다 (여러 개 가능).
+android_package = "kr.jipgam.app"
+android_sha256 = []
+
 [account]
 # 카카오 로그인으로 기록 이어 보기 (Supabase). 저장소 주소와 공개용 키는 GitHub Secrets 의
 # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY 에 넣고, 표·함수는 scripts/supabase_setup.sql 로 만듭니다.
