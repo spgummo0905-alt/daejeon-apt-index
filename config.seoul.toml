@@ -39,7 +39,7 @@ example_dong = "잠실동"
 "11740" = "강동구"
 
 [site]
-base_url = "https://www.jipgam.kr/seoul/"
+base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/"
 # 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
 og_image = "static/og/seoul.jpg"
 
