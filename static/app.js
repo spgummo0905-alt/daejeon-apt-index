@@ -209,6 +209,11 @@
       out.push(["bus", "버스 정류장과 배차 간격 확인", f.subway == null ? "걸어갈 만한 거리에 역이 없어요" : `${c.stn || "역"}까지 직선 ${m(f.subway)}`]);
     if (f.elementary != null && f.elementary > 500) out.push(["school", "초등학교까지 아이 걸음으로 걸어 보기", `직선 ${m(f.elementary)}`]);
     if (c.pk != null && (c.pk < 1 || (c.pq != null && c.pq >= 70))) out.push(["park", "밤 9시 넘어 주차장 빈자리 보기", `세대당 ${c.pk}대${c.pq != null ? " · " + rank(c.pq).trim() : ""}`]);
+    if (c.nz) {   // 소음 체크: 큰길(고속·간선은 150m, 대로는 60m)이나 철도(150m) 가까이
+      const [road, kind, rail] = c.nz, big = kind === "고속도로" || kind === "간선도로";
+      if (road != null && road <= (big ? 150 : 60)) out.push(["noise", "큰길 쪽 동에서 소음 들어 보기 (창문 닫고·열고)", `${kind}까지 직선 ${m(road)}`]);
+      else if (rail != null && rail <= 150) out.push(["noise", "열차 지나갈 때 소음·진동 확인", `철도까지 직선 ${m(rail)}`]);
+    }
     const age = c.y ? new Date().getFullYear() - c.y : null;
     if (age != null && age >= 25) out.push(["old", "외벽 균열·배관·엘리베이터 상태 보기", `${age}년 차 · 재건축·리모델링 이야기도 부동산에 묻기`]);
     if (c.fm && c.fq != null && c.fq <= 30) out.push(["fee", "관리사무소에 관리비가 높은 이유 묻기", `㎡당 ${c.fm.toLocaleString()}원 · ${rank(c.fq).trim()}`]);

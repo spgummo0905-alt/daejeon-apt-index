@@ -259,10 +259,11 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
           kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None,
-          hill: dict | None = None) -> int:
+          hill: dict | None = None, noise: dict | None = None) -> int:
     """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다.
     outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load).
-    hill: 단지별 언덕 자료 {e, rf, st, pf} (elev.load)."""
+    hill: 단지별 언덕 자료 {e, rf, st, pf} (elev.load).
+    noise: 단지별 큰길·철도까지 거리 {road, road_kind, road_name, rail, rail_name} (noise.load)."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -334,6 +335,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["sup"] = (supply or {}).get(cid) or []
         d["ext"] = (outside or {}).get(cid) or {}
         d["hill"] = (hill or {}).get(cid) or {}
+        d["noise"] = (noise or {}).get(cid) or {}
         rows.append(d)
     # 세대수·세대당 주차·관리비(㎡당)가 지역에서 어디쯤인지 (정보가 있는 단지끼리). 관리비는 '상위' = 비싼 쪽
     for key in ("hh", "ppu", "fee_m2"):
@@ -567,7 +569,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             loc_sets=loc_sets, neighbors=neighbors,
             points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
             n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1),
-            hill=hill_view(c), **common)
+            hill=hill_view(c), noise=noise_view(c), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)
     tot = sum(r.get("n_trades") or 0 for r in rows) or 1
@@ -996,6 +998,22 @@ FLOOR_M = 2.9   # 아파트 한 층 높이 어림
 HILL_STATION_M = 1500   # 역이 이보다 멀면 역과 높이 비교·단면은 빼요
 
 
+def noise_view(c: dict) -> dict | None:
+    """단지 화면 '소음 체크': 큰길·철도까지 거리와 구간 (거리만 본 어림, 실제 소음은 현장에서)."""
+    from . import noise as noise_mod
+    n = c.get("noise") or {}
+    lv = noise_mod.level(n)
+    if not lv:
+        return None
+    m = lambda v: f"{v:,}m" if v < 1000 else f"{v / 1000:.1f}km"
+    out = {"cls": lv[0], "label": lv[1], "rows": []}
+    if "road" in n:
+        out["rows"].append((f"가까운 {n['road_kind']}", f"{n['road_name'] or n['road_kind']} {m(n['road'])}"))
+    if "rail" in n:
+        out["rows"].append(("철도", f"{n['rail_name'] or '철도'} {m(n['rail'])}"))
+    return out
+
+
 def hill_view(c: dict) -> dict | None:
     """단지 페이지 '언덕 체크' 칸에 쓸 값. 자료가 없으면 None."""
     h = c.get("hill") or {}
@@ -1175,6 +1193,8 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "hh": r.get("hh"), "pk": r.get("ppu"),
             **({"sm": 1, "sr": r.get("small_reason") or "소규모"} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
             **({"hl": [_r(r["hill"].get("rf")), _r(r["hill"].get("st"))]} if (r.get("hill") or {}).get("rf") is not None else {}),
+            # 소음 체크(현장 모드): [큰길까지 m, 큰길 종류, 철도까지 m] (1km 밖은 비움)
+            **({"nz": [r["noise"].get("road"), r["noise"].get("road_kind"), r["noise"].get("rail")]} if r.get("noise") else {}),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
     (out_dir / name).write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
