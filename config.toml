@@ -24,6 +24,7 @@ regions = [
   { name = "서울", group = "수도권", desc = "25개 구", badge = "NEW", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/", ready = "data/seoul/READY" },
   { name = "대전", group = "충청권", desc = "5개 구", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/" },
   { name = "세종", group = "충청권", desc = "세종시 전역", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/" },
+  { name = "청주", group = "충청권", desc = "4개 구", badge = "NEW", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/cheongju/", ready = "data/cheongju/READY" },
 ]
 
 [account]

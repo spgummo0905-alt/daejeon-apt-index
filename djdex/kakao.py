@@ -41,6 +41,16 @@ class Kakao:
         d = next((d for d in docs if "아파트" in d.get("category_name", "")), docs[0])
         return float(d["y"]), float(d["x"])
 
+    def place(self, name: str, prefer: str = "") -> tuple[float, float, str] | None:
+        """이름으로 한 곳의 좌표 (lat, lng, 찾은 이름·분류). 이름이 똑같고 분류에 prefer 가 든 곳을 먼저 씁니다
+        (예: '청주역' → 기차역, 같은 이름의 정류장·상가 말고)"""
+        docs = self._get("keyword", query=name).get("documents", [])
+        if not docs:
+            return None
+        rank = lambda d: (d.get("place_name") != name, prefer not in d.get("category_name", ""))
+        d = min(docs, key=rank)
+        return float(d["y"]), float(d["x"]), f"{d.get('place_name', '')} · {d.get('category_name', '').split(' > ')[-1]}"
+
     def nearest_place(self, lat: float, lng: float, category: str | None, radius: int,
                       name_contains: str | None = None, query: str | None = None) -> tuple[float, str] | None:
         """가장 가까운 시설의 (거리 m, 이름). 반경 안에 없으면 None.
@@ -116,8 +126,8 @@ def enrich(complexes: list[dict], factors: list[dict], region: str,
         lat, lng = geo[cid]
         entry = poi.setdefault(cid, {})
         for f in factors:
-            if f["kind"] in ("score", "value") or f.get("osm_route"):
-                continue  # 카카오 조회 없이 계산하는 항목 (학원가 접근성, 학군, OSM 정류장)
+            if f["kind"] in ("score", "value") or f.get("osm_route") or f.get("points"):
+                continue  # 카카오 조회 없이 계산하는 항목 (학원가 접근성, 학군, OSM 정류장, 정해 둔 곳)
             want_name = f.get("keep_name") and hasattr(client, "nearest_place")
             if f["key"] in entry and (not want_name or f["key"] + "_name" in entry):
                 continue

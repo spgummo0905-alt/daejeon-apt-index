@@ -122,7 +122,8 @@
       on: () => S.py.length > 0, clear: () => { S.py = []; }, draw: drawPy },
     { id: "age", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도 기준입니다.",
       on: () => !!S.age, clear: () => { S.age = ""; }, draw: drawAge },
-    { id: "near", name: "역·학교", q: `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지의 직선거리 기준입니다.",
+    { id: "near", name: "noStop" in box.dataset ? "학교" : "역·학교",
+      q: "noStop" in box.dataset ? "초등학교는 얼마나 가까워야 하나요?" : `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지의 직선거리 기준입니다.",
       on: () => !!(S.stn || S.sch), clear: () => { S.stn = 0; S.sch = 0; }, draw: drawNear },
     { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "선택한 조건을 모두 갖춘 단지만 남습니다.",
       on: () => S.must.length > 0, clear: () => { S.must = []; }, draw: drawMust },
@@ -275,8 +276,8 @@
     q.append(grid("c3", ...AGE.map(a => option(a.label, a.sub, countWith({ age: a.id }), S.age === a.id, () => { S.age = a.id; }))));
   }
   function drawNear() {
-    q.append(label(STOP));
-    q.append(grid("c4", ...[300, 500, 800, 0].map(m => option(m ? `${m}m 안` : "상관없어요", null, countWith({ stn: m }), S.stn === m, () => { S.stn = m; }, "sm"))));
+    if (!("noStop" in box.dataset)) q.append(label(STOP));
+    if (!("noStop" in box.dataset)) q.append(grid("c4", ...[300, 500, 800, 0].map(m => option(m ? `${m}m 안` : "상관없어요", null, countWith({ stn: m }), S.stn === m, () => { S.stn = m; }, "sm"))));
     q.append(label("초등학교"));
     q.append(grid("c4", ...[300, 500, 0].map(m => option(m ? `${m}m 안` : "상관없어요", m === 300 ? "초등학교 가까이" : null, countWith({ sch: m }), S.sch === m, () => { S.sch = m; }, "sm"))));
   }

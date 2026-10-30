@@ -488,8 +488,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", finder_cfg=finder_cfg,
                                                        finder=cfg.raw.get("finder", {}), **common),
             encoding="utf-8")
-    (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
-        root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
+    if _transit(cfg)["page"]:
+        (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
+            root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
 
     # 단지 페이지
     trades = trades.copy()
@@ -587,7 +588,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
     write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
@@ -760,9 +761,12 @@ def _regions(cfg) -> list[dict]:
 
 
 def _transit(cfg) -> dict:
-    """역세권 화면 문구: 대전은 지하철역, 세종은 BRT 정류장처럼 지역마다 다릅니다."""
+    """역세권 화면 문구: 대전은 지하철역, 세종은 BRT 정류장처럼 지역마다 다릅니다.
+    page: 걸어서 가는 역·정류장 항목(subway)이 있을 때만 역세권 화면·테마·조건을 둡니다
+    (청주처럼 기차역까지 거리로 보는 지역은 km 단위라 '역 700m 안' 같은 조건이 맞지 않음)."""
     t = {"tab": "역세권", "stop": "지하철역", "short": "역"}
     t.update(cfg.site.get("transit", {}))
+    t.setdefault("page", any(f["key"] == "subway" for f in cfg.location_factors))
     return t
 
 
@@ -945,6 +949,8 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
          lambda c: f"84㎡ {eok(t.at[c, 'price_ref'])}"),
     ]
     out = []
+    if not tr["page"]:   # 걸어서 가는 역이 없는 지역(청주 등)은 역세권 테마를 두지 않음
+        defs = [d for d in defs if d[0] != "transit"]
     for key, title, desc, mask, fact in defs:
         sel = t[mask.fillna(False)].dropna(subset=["index"]).sort_values("index", ascending=False)
         if sel.empty:

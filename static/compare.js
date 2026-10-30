@@ -22,6 +22,7 @@
     ["5년 연평균", c => c.c5, c => c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "%", "high"],
     ["전고점 대비", c => c.dd, c => c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%" + (c.py ? " (" + c.py + ")" : ""), null],
     ["지하철역", c => c.f.subway, c => c.f.subway == null ? "-" : (c.stn ? c.stn + " " : "") + c.f.subway + "m", "low"],
+    ["기차역", c => c.f.rail, c => c.f.rail == null ? "-" : (c.f.rail / 1000).toFixed(1) + "km", "low"],   // 청주: 오송역·청주역 중 가까운 곳
     ["학군 점수", c => c.ed, c => c.ed == null ? "-" : c.ed + "점", "high"],
     ["· 중학교 순전입", c => c.f.school_mid, c => c.f.school_mid == null ? "-" : (c.f.school_mid > 0 ? "+" : "") + c.f.school_mid + "%", "high"],
     ["· 주요 학원가", c => c.hm, c => c.hm == null ? "-" : c.hn + " " + c.hm + "분", "low"],

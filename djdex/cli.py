@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, movein, noise, osm, reviews, school, site
+from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, movein, noise, osm, points, reviews, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -156,6 +156,11 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
             poi_df = poi_df.drop(columns=[f["key"], f["key"] + "_name"], errors="ignore").join(near)
             if not stops:
                 print(f"::warning::{f['label']}: 정류장 정보가 없어 이 항목을 빼고 계산합니다")
+        if f.get("points") and not demo and not poi_df.empty and geo:
+            # 정해 둔 곳(오송역·청주역 등)까지 거리: 받아 둔 좌표로 매번 계산 (카카오 조회 없음)
+            pts = points.resolve(f["points"], cfg.paths.points)
+            near = osm.nearest(geo, pts, f["key"], f["radius"])
+            poi_df = poi_df.drop(columns=[f["key"], f["key"] + "_name"], errors="ignore").join(near)
     if not poi_df.empty and geo and cfg.school and any(f["kind"] == "value" for f in cfg.location_factors):
         sch = school.load(cfg.paths.school, cfg.school, cfg.region_name)
         if not sch.empty:
@@ -352,6 +357,11 @@ def cmd_all(cfg, args) -> None:
             detail = getattr(getattr(e, "response", None), "text", "")[:300]
             print(f"::warning::카카오 입지 수집 실패, 입지점수 없이 진행합니다: {e} {detail}")
     for f in cfg.location_factors:
+        if f.get("points") and os.environ.get("KAKAO_REST_KEY"):   # 정해 둔 곳 좌표 (처음 한 번만 찾음)
+            try:
+                points.resolve(f["points"], cfg.paths.points, kakao.Kakao(os.environ["KAKAO_REST_KEY"]))
+            except requests.RequestException as e:
+                print(f"::warning::{f['label']} 좌표 찾기 실패: {type(e).__name__}")
         if f.get("osm_route") and cfg.paths.geo.exists():
             try:
                 osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
@@ -359,7 +369,9 @@ def cmd_all(cfg, args) -> None:
                 print(f"::warning::OSM 정류장 수집 실패: {e}")
     if os.environ.get("DATA_GO_KR_KEY"):   # 입주 예정 물량 (청약홈 분양 공고, 활용신청 전이면 건너뜀)
         try:
-            movein.collect(os.environ["DATA_GO_KR_KEY"], cfg.region_name, list(cfg.districts.values()), cfg.paths.movein,
+            # 청약홈은 시·도 이름(충북 등)으로 묶어 있어, 시 하나인 지역은 movein_area 와 주소(movein_addr)로 거름
+            movein.collect(os.environ["DATA_GO_KR_KEY"], cfg.raw["region"].get("movein_area", cfg.region_name),
+                           list(cfg.districts.values()), cfg.paths.movein,
                            addr_has=cfg.raw["region"].get("movein_addr", ""))
         except (ValueError, OSError) as e:
             print(f"::warning::입주 예정 물량 수집 실패, 이번에는 빼고 만듭니다: {e!r}")
