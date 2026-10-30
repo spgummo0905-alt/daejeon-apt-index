@@ -203,3 +203,18 @@ def noise(trades: pd.DataFrame, seed: int = 15) -> dict:
             row.update(rail=rnd.choice([90, 240, 610]), rail_name=rnd.choice(["경부선", "호남선"]))
         out[cid] = row
     return out
+
+
+def movein(districts: dict, seed: int = 16) -> list[dict]:
+    """데모용 가짜 입주 예정 물량 (movein.json 의 rows 모양): 앞으로 3년 동안 구마다 몇 단지."""
+    from datetime import date
+    rnd = random.Random(seed)
+    t, out = date.today(), []
+    for k, gu in enumerate(districts.values()):
+        for j in range(rnd.randint(1, 3)):
+            y, m = t.year + rnd.randint(0, 2), rnd.randint(1, 12)
+            if (y, m) <= (t.year, t.month):
+                y += 1
+            out.append({"id": f"D{k}{j}", "name": f"데모{gu}입주{j + 1}단지", "addr": f"데모시 {gu} 데모동",
+                        "area": gu, "hh": rnd.choice([320, 680, 1150, 1840]), "ym": f"{y:04d}{m:02d}", "notice": ""})
+    return sorted(out, key=lambda r: r["ym"])
