@@ -96,7 +96,9 @@ def message(items: list[dict], base: str = "") -> dict:
 class Store:
     def __init__(self, url: str, key: str, session=None):
         import requests
-        self.api = url.rstrip("/") + "/rest/v1/"
+        import re   # 주소 끝에 /rest/v1 이나 슬래시가 붙어 있어도 프로젝트 주소만 씀 (PGRST125 방지)
+        base = re.sub(r"/(rest|auth|storage)/v1/?$", "", url.strip().rstrip("/"))
+        self.api = base.rstrip("/") + "/rest/v1/"
         self.h = {"apikey": key, "Content-Type": "application/json"}
         if key.startswith("eyJ"):   # 예전 service_role 키
             self.h["Authorization"] = "Bearer " + key
