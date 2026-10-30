@@ -7,6 +7,10 @@
   --g-S: #b8912f; --g-A: #8b95a7; --g-B: #2f6fb8; --g-C: #6d7a8c; --g-D: #b9c0ca;
   --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #ffffff; --g-C-ink: #ffffff; --g-D-ink: #1d232c;
   --navy: #13294b; --gold: #c9a24a; --on-navy: #ffffff;
+  /* 브랜드 '집감': 심볼의 하늘 → 파랑 → 보라 그라데이션과 워드마크 남색. 로고·소개·대표 버튼 같은 브랜드 자리에만 씀
+     (차트·등급 색은 위 토큰 그대로) */
+  --brand-ink: #182848; --brand-sky: #3cbaf6; --brand-blue: #3a8cf7; --brand-violet: #7b5cf8;
+  --brand-grad: linear-gradient(135deg, var(--brand-sky), var(--brand-blue) 45%, var(--brand-violet));
   --quad: rgba(42, 120, 214, 0.06);
   --banner: #fff4d6; --banner-text: #6b4e00;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
@@ -29,6 +33,7 @@
     --g-S: #d4af52; --g-A: #a9b3c4; --g-B: #4f8fd8; --g-C: #7f8ca0; --g-D: #5b6370;
     --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #ffffff; --g-C-ink: #ffffff; --g-D-ink: #f0efec;
     --navy: #9ec5f4; --gold: #d4af52; --on-navy: #0d1b2e;
+    --brand-ink: #eef0f8; --brand-violet: #9a83ff;
     --quad: rgba(57, 135, 229, 0.10);
     --banner: #3a3012; --banner-text: #f5d98a;
     --shadow: none;
@@ -356,13 +361,20 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
 /* ===================== 단지 카드·상위 등급 연출 ===================== */
 .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .brand { display: inline-flex; align-items: center; gap: 10px; letter-spacing: -0.02em; }
-/* 브랜드 '집감' (집 + 감각): 남색 글자에 '감'만 금빛으로 */
-.brand-word { font-size: 21px; font-weight: 900; letter-spacing: -0.06em; color: var(--navy); line-height: 1; }
-.brand-word em { font-style: normal; color: #b8862a; }
+/* 브랜드 '집감' (집 + 감각): 심볼 + 남색 워드마크 + 보라 점 (assets/brand 원본) */
+.brand-sym { width: 30px; height: 30px; flex: none; }
+.brand-word { font-size: 21px; font-weight: 900; letter-spacing: -0.06em; color: var(--brand-ink); line-height: 1; display: inline-flex; align-items: flex-end; }
+.brand-dot { display: inline-block; width: .26em; height: .26em; border-radius: 50%; background: var(--brand-violet); margin: 0 0 .06em .1em; }
+.brand { gap: 8px; }
+.brand .brand-sub { margin-left: 2px; }
+footer .ft-brand { display: flex; align-items: center; gap: 8px; margin: 18px 0 6px; color: var(--muted); }
+footer .ft-brand b { font-size: 16px; font-weight: 900; letter-spacing: -0.05em; color: var(--brand-ink); display: inline-flex; align-items: flex-end; }
+footer .ft-brand span { font-size: 13px; }
+footer .ft-brand b { line-height: 1; }
+footer .ft-brand .brand-dot { margin-bottom: .06em; }
 .brand-sub { font-size: 13px; font-weight: 700; color: var(--text-2); padding: 3px 8px; border-radius: 999px; background: var(--chip); }
-@media (prefers-color-scheme: dark) { .brand-word { color: var(--text); } .brand-word em { color: var(--gold); } }
 body[data-page="intro"] .brand-word { color: #fff; }
-body[data-page="intro"] .brand-word em { color: #e8bf5a; }
+body[data-page="intro"] .brand-dot { background: #a28cff; }
 .hd-end { display: flex; align-items: center; gap: 14px; margin-left: auto; }
 .top-nav a { margin-left: 18px; color: var(--text-2); font-size: 14.5px; font-weight: 500; }
 .top-nav a:hover { color: var(--text); text-decoration: none; }
@@ -2061,6 +2073,8 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
 .it-sec h2, .it-final h2 { margin: 0 0 36px; font-size: clamp(30px, 4.6vw, 48px); line-height: 1.2; letter-spacing: -0.04em; font-weight: 850; }
 .it-sec h2 em, .it-hero h1 em { font-style: normal; background: linear-gradient(100deg, #fff1c1 0%, #e8bf5a 45%, #fff6d8 60%, #d9a63a 90%);
   -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* 첫 화면 큰 제목의 '감'은 브랜드 심볼 색 (어두운 바탕용으로 밝게) */
+.it-hero h1 em { background: linear-gradient(110deg, #7fd6fb 0%, #7fa8ff 50%, #b39dff 100%); -webkit-background-clip: text; background-clip: text; }
 .it-sub { margin: 24px 0 0; color: var(--text-2); font-size: 17px; }
 /* 스크롤하면 떠오르기 (app.js 의 data-reveal) */
 .js body[data-page="intro"] [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 700ms var(--ease-out), transform 800ms var(--ease-out); }
@@ -2086,7 +2100,7 @@ body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom
   transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast); }
 .it-btn:hover { text-decoration: none; transform: translateY(-1px); }
 .it-btn:active { transform: scale(.98); }
-.it-btn.primary { color: #241703; background: linear-gradient(135deg, #fff0b8, #e1b24c 55%, #f6d47c); box-shadow: 0 10px 30px rgba(227,185,85,.32); }
+.it-btn.primary { color: #fff; background: var(--brand-grad); box-shadow: 0 10px 30px rgba(110, 100, 248, .38); }
 .it-btn.ghost { color: var(--text); border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.04); }
 .it-nums { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 40px 0 0; }
 .it-nums dt { font-size: 13px; color: var(--muted); font-weight: 600; }

@@ -13,6 +13,9 @@
   const IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const FONT = '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   const BASE = location.origin + location.pathname.replace(/[^/]*$/, "") + (window.DJ_ROOT || "");
+  // 브랜드 심볼 (공유 그림 바닥의 로고). 못 받으면 글자만
+  const SYM = new Image();
+  const symReady = new Promise(ok => { SYM.onload = SYM.onerror = () => ok(); SYM.src = BASE + "static/brand/symbol-96.png"; });
   const REGION = document.body.dataset.region || "";
   const W = 1200, H = 630;   // 링크 미리보기 그림 크기 (카카오톡·메신저 공통)
 
@@ -81,10 +84,12 @@
     for (let x = 12; x < W; x += 24) for (let y = 12; y < H; y += 24) ctx.fillRect(x, y, 1.6, 1.6);
     // 브랜드
     ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(0, H - 76, W, 1);
-    rr(ctx, 56, H - 56, 34, 34, 9); ctx.fillStyle = grad(ctx, 56, H - 56, 90, H - 22, ["#1d3a6b", "#0f2140"]); ctx.fill();
-    ctx.fillStyle = "#e3b955"; ctx.font = `900 20px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("D", 73, H - 32);
-    ctx.textAlign = "left"; ctx.fillStyle = "rgba(244,246,251,.92)"; ctx.font = `800 24px ${FONT}`;
-    ctx.fillText(`집감 · ${REGION}`, 102, H - 30);
+    if (SYM.naturalWidth) ctx.drawImage(SYM, 52, H - 60, 40, 40);
+    ctx.textAlign = "left"; ctx.fillStyle = "rgba(244,246,251,.95)"; ctx.font = `900 26px ${FONT}`;
+    ctx.fillText("집감", 100, H - 30);
+    const bw = ctx.measureText("집감").width;
+    ctx.fillStyle = "#a28cff"; ctx.beginPath(); ctx.arc(100 + bw + 7, H - 34, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(244,246,251,.6)"; ctx.font = `700 20px ${FONT}`; ctx.fillText(REGION, 100 + bw + 20, H - 31);
     ctx.textAlign = "right"; ctx.fillStyle = "rgba(244,246,251,.6)"; ctx.font = `600 20px ${FONT}`;
     ctx.fillText("실거래가·입지로 매긴 S~D 등급 카드", W - 56, H - 31);
     ctx.textAlign = "left";
@@ -296,7 +301,7 @@
     if (KEY) loadKakao();
     // 그림 카드 그리기 → 미리보기 → 카카오 서버에 미리 올려 두기 (누를 때 기다리지 않게)
     const me = cur;
-    me.ready = glyphs(o.title + o.desc + (o.glyphs || "") + REGION + "집감 · 실거래가·입지로 매긴 S~D 등급 카드 임장 코스 단지 비교 함께 보는 기록 노트 곳 개 항목 우세 앞섬 종합 지수 외 둘러보기 약 총 걸어서 차로 역까지 확인 밤 주차 자리 보기 부동산 호가 묻기 관심 사진 장 님의 우리 집 현장에서 적은 체크·메모를 함께 봐요")
+    me.ready = symReady.then(() => glyphs(o.title + o.desc + (o.glyphs || "") + REGION + "집감 · 실거래가·입지로 매긴 S~D 등급 카드 임장 코스 단지 비교 함께 보는 기록 노트 곳 개 항목 우세 앞섬 종합 지수 외 둘러보기 약 총 걸어서 차로 역까지 확인 밤 주차 자리 보기 부동산 호가 묻기 관심 사진 장 님의 우리 집 현장에서 적은 체크·메모를 함께 봐요"))
       .then(() => o.art())
       .then(cv => new Promise(res => cv.toBlob(b => res(b), "image/png")))
       .then(blob => {

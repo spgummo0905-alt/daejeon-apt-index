@@ -24,7 +24,8 @@
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
-<link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="{{ root }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="{{ root }}static/brand/favicon-96.png" type="image/png" sizes="96x96">
 <link rel="manifest" href="{{ root }}manifest.webmanifest">
 <link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
 <meta name="theme-color" content="#0f1b33">
@@ -76,7 +77,7 @@
 </svg>
 <header class="site">
   {# 브랜드 '집감'(집 + 감각) + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
-  <a class="brand" href="{{ root }}index.html" aria-label="집감 {{ region }} 첫 화면"><span class="brand-word">집<em>감</em></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
+  <a class="brand" href="{{ root }}index.html" aria-label="집감 {{ region }} 첫 화면"><img class="brand-sym" src="{{ root }}static/brand/symbol-96.png" width="30" height="30" alt=""><span class="brand-word">집감<i class="brand-dot" aria-hidden="true"></i></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
   {% if regions | length > 1 %}
   <div class="rg">
     <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="지역 바꾸기, 지금 {{ region }}">
@@ -167,6 +168,7 @@
 <footer>
   국토교통부 아파트 매매·분양권·전월세 실거래가 기준 ({{ meta.asof }}) · 단지 정보 공동주택관리정보시스템(K-apt) · 공급면적 건축물대장 · 위치 정보 카카오 로컬 ·{% if factors and factors | selectattr("osm_route", "defined") | list %} {{ transit.stop }} © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 기여자 ·{% endif %}
   광고 없음 · 공개 데이터만 사용 · 지수와 점수는 참고용이며 투자 권유가 아닙니다. · <a href="{{ root }}methodology.html">산출 방법</a> · <a href="{{ root }}intro.html">서비스 소개</a> · <a href="{{ root }}terms.html">이용약관</a>{% if account %} · <a href="{{ root }}privacy.html"><b>개인정보처리방침</b></a>{% endif %}
+  <p class="ft-brand"><img src="{{ root }}static/brand/symbol-96.png" width="22" height="22" alt=""><b>집감<i class="brand-dot" aria-hidden="true"></i></b><span>집 볼 때도 감이 필요하니까</span></p>
   <p class="ft-legal">© 2026 집감. 점수·등급·화면의 무단 복제와 자동 수집을 금지합니다.</p>
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">
