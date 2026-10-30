@@ -84,7 +84,7 @@
     rr(ctx, 56, H - 56, 34, 34, 9); ctx.fillStyle = grad(ctx, 56, H - 56, 90, H - 22, ["#1d3a6b", "#0f2140"]); ctx.fill();
     ctx.fillStyle = "#e3b955"; ctx.font = `900 20px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("D", 73, H - 32);
     ctx.textAlign = "left"; ctx.fillStyle = "rgba(244,246,251,.92)"; ctx.font = `800 24px ${FONT}`;
-    ctx.fillText(`${REGION} 아파트 지수`, 102, H - 30);
+    ctx.fillText(`집감 · ${REGION}`, 102, H - 30);
     ctx.textAlign = "right"; ctx.fillStyle = "rgba(244,246,251,.6)"; ctx.font = `600 20px ${FONT}`;
     ctx.fillText("실거래가·입지로 매긴 S~D 등급 카드", W - 56, H - 31);
     ctx.textAlign = "left";
@@ -296,7 +296,7 @@
     if (KEY) loadKakao();
     // 그림 카드 그리기 → 미리보기 → 카카오 서버에 미리 올려 두기 (누를 때 기다리지 않게)
     const me = cur;
-    me.ready = glyphs(o.title + o.desc + (o.glyphs || "") + REGION + "아파트 지수 실거래가·입지로 매긴 S~D 등급 카드 임장 코스 단지 비교 함께 보는 기록 노트 곳 개 항목 우세 앞섬 종합 지수 외 둘러보기 약 총 걸어서 차로 역까지 확인 밤 주차 자리 보기 부동산 호가 묻기 관심 사진 장 님의 우리 집 현장에서 적은 체크·메모를 함께 봐요")
+    me.ready = glyphs(o.title + o.desc + (o.glyphs || "") + REGION + "집감 · 실거래가·입지로 매긴 S~D 등급 카드 임장 코스 단지 비교 함께 보는 기록 노트 곳 개 항목 우세 앞섬 종합 지수 외 둘러보기 약 총 걸어서 차로 역까지 확인 밤 주차 자리 보기 부동산 호가 묻기 관심 사진 장 님의 우리 집 현장에서 적은 체크·메모를 함께 봐요")
       .then(() => o.art())
       .then(cv => new Promise(res => cv.toBlob(b => res(b), "image/png")))
       .then(blob => {

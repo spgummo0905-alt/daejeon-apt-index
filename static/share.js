@@ -22,7 +22,7 @@
     const here = [...all].filter(s => d.bySlug[s]), away = [...all].filter(s => !d.bySlug[s]);
     title.textContent = `${r.name}님의 임장 기록`;
     lead.textContent = `관심 단지 ${favs.length}곳 · 임장 노트 ${visits.length}곳 · 보기 전용이에요. 기록이 바뀌면 이 화면에도 바로 반영돼요.`;
-    document.title = `${r.name}님의 임장 기록 · ${document.body.dataset.region || ""} 아파트 지수`;
+    document.title = `${r.name}님의 임장 기록 · 집감`;
 
     // 1. 임장 노트 (다녀온 날 최근 순)
     const notes = visits.filter(x => d.bySlug[x.s]).sort((a, b) => (b.v.d || "").localeCompare(a.v.d || ""));

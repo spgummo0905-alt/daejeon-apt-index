@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}받은 임장 코스 · {{ region }} 아파트 지수{% endblock %}
-{% block og_title %}임장 코스를 받았어요 · {{ region }} 아파트 지수{% endblock %}
+{% block title %}받은 임장 코스 · 집감{% endblock %}
+{% block og_title %}임장 코스를 받았어요 · 집감{% endblock %}
 {% block description %}둘러볼 단지 순서와 지도, 구간마다 길찾기, 단지마다 현장 체크리스트까지. 눌러서 코스를 열어 보세요.{% endblock %}
 {% block og_image %}static/og/course.jpg{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
@@ -14,8 +14,8 @@
 </section>
 {% include "_course.html" %}
 <section class="rc-about" aria-labelledby="rc-about-title">
-  <p class="rc-kicker">{{ region }} 아파트 지수</p>
-  <h2 id="rc-about-title">이 코스는 아파트 지수로 짰어요</h2>
+  <p class="rc-kicker">집감 · {{ region }}</p>
+  <h2 id="rc-about-title">이 코스는 집감으로 짰어요</h2>
   <ul class="rc-why">
     <li><b>등급 카드</b><span>{{ region }} 아파트를 실거래가·입지로 평가해 S~D 등급으로. 단지 이름을 누르면 카드가 열려요.</span></li>
     <li><b>임장 코스</b><span>관심 단지를 가장 짧은 순서로 묶고, 구간마다 카카오맵 길찾기를 붙여요.</span></li>

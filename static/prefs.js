@@ -97,7 +97,7 @@
         keys.forEach(k => DJ.save(k, j.data[k]));   // 로그인했으면 계정에도 저장됨
         DJ.toast("기록을 되살렸어요", "화면을 새로 열어요.");
         setTimeout(() => location.reload(), 900);
-      }).catch(() => DJ.toast("되살리지 못했어요", "아파트 지수에서 내려받은 기록 파일인지 확인해 주세요."));
+      }).catch(() => DJ.toast("되살리지 못했어요", "집감에서 내려받은 기록 파일인지 확인해 주세요."));
     });
 
     // 새 소식 휴대폰 알림 (웹 푸시). 로그인했고 이 브라우저가 받을 수 있을 때만 보임.
@@ -203,7 +203,7 @@
   notes.querySelector("[data-nt-print]").addEventListener("click", () => DJ.data().then(d => {
     const sheet = el("section", "nt-print");
     sheet.id = "nt-print";
-    sheet.append(el("h2", "", "임장 노트"), el("p", "nt-print-sub", `${document.body.dataset.region || ""} 아파트 지수 · ${day(DJ.today())} 출력`));
+    sheet.append(el("h2", "", "임장 노트"), el("p", "nt-print-sub", `집감 ${document.body.dataset.region || ""} · ${day(DJ.today())} 출력`));
     rows(d).forEach(({ c, v, items }) => {
       const art = el("article", "nt-p");
       const [n, all] = DJ.visitDone(v, items);

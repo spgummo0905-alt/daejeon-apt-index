@@ -1,11 +1,21 @@
-"""앱 아이콘(홈 화면에 추가)을 favicon.svg 와 같은 모양(파란 바탕에 흰 막대 셋)으로 그립니다.
-한 번 돌려 static/icons/ 에 넣어 두면 됩니다: python scripts/make_icons.py"""
+"""앱 아이콘(홈 화면에 추가)을 '집감' 글자 로고로 그립니다: 남색 바탕에 '집'은 흰색, '감'은 금색.
+글꼴은 Pretendard(굵게)를 씁니다. 이 폴더에 PretendardVariable.ttf 를 두고 한 번 돌려 static/icons/ 에 넣어 두면 됩니다:
+python scripts/make_icons.py"""
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
-OUT = Path(__file__).resolve().parent.parent / "static" / "icons"
-BLUE, WHITE = (42, 120, 214), (255, 255, 255)
-BARS = [(7, 17, 4, 8), (14, 11, 4, 14), (21, 6, 4, 19)]   # favicon.svg 의 막대 (32 격자)
+HERE = Path(__file__).resolve().parent
+OUT = HERE.parent / "static" / "icons"
+NAVY, WHITE, GOLD = (19, 41, 75), (255, 255, 255), (232, 191, 90)
+
+
+def font(px: int):
+    f = ImageFont.truetype(str(HERE / "PretendardVariable.ttf"), px)
+    try:
+        f.set_variation_by_axes([900])
+    except Exception:   # 굵기 축이 없는 글꼴
+        pass
+    return f
 
 
 def draw(size: int, maskable: bool) -> Image.Image:
@@ -13,14 +23,20 @@ def draw(size: int, maskable: bool) -> Image.Image:
     big = size * s
     img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    if maskable:   # 안드로이드가 원·둥근 사각으로 자르므로 꽉 채우고 막대는 안쪽 80%에
-        d.rectangle([0, 0, big, big], fill=BLUE)
-        pad, unit = big * 0.1, big * 0.8 / 32
+    if maskable:   # 안드로이드가 원·둥근 사각으로 자르므로 꽉 채우고 글자는 안쪽에
+        d.rectangle([0, 0, big, big], fill=NAVY)
+        px = int(big * 0.27)
     else:
-        d.rounded_rectangle([0, 0, big - 1, big - 1], radius=big * 7 / 32, fill=BLUE)
-        pad, unit = 0, big / 32
-    for x, y, w, h in BARS:
-        d.rounded_rectangle([pad + x * unit, pad + y * unit, pad + (x + w) * unit, pad + (y + h) * unit], radius=unit, fill=WHITE)
+        d.rounded_rectangle([0, 0, big - 1, big - 1], radius=big * 0.22, fill=NAVY)
+        px = int(big * 0.34)
+    f = font(px)
+    w1, w2 = d.textlength("집", font=f), d.textlength("감", font=f)
+    gap = -px * 0.06
+    x = (big - (w1 + w2 + gap)) / 2
+    top, bottom = f.getbbox("집감")[1], f.getbbox("집감")[3]
+    y = (big - (bottom - top)) / 2 - top
+    d.text((x, y), "집", font=f, fill=WHITE)
+    d.text((x + w1 + gap, y), "감", font=f, fill=GOLD)
     return img.resize((size, size), Image.LANCZOS)
 
 
@@ -30,4 +46,5 @@ if __name__ == "__main__":
     draw(512, False).save(OUT / "icon-512.png")
     draw(512, True).save(OUT / "icon-maskable-512.png")
     draw(180, True).convert("RGB").save(OUT / "apple-touch-icon.png")   # 아이폰은 투명 없이 꽉 채운 그림
+    draw(64, False).save(OUT / "favicon-64.png")
     print("icons ->", OUT)

@@ -1430,7 +1430,7 @@
       apt: ["공유받은 단지 카드예요", `${region} 아파트의 실거래가와 입지, 가격 흐름을 정리한 S~D 등급 카드예요. 관심 단지에 저장해 두면 임장 코스로 묶어 볼 수 있어요.`],
       compare: ["공유받은 단지 비교예요", "항목별로 상대적으로 유리한 값에 표시돼요. 단지를 바꾸거나 추가해 직접 비교해 보세요."],
     };
-    const [title, sub] = KIND[page] || [`${region} 아파트 지수에 오신 걸 환영해요`, `${region} 아파트의 실거래가와 입지, 가격 흐름을 S~D 등급 카드로 정리했어요.`];
+    const [title, sub] = KIND[page] || [`집감에 오신 걸 환영해요`, `${region} 아파트의 실거래가와 입지, 가격 흐름을 S~D 등급 카드로 정리했어요.`];
     const box = el("aside", "welcome");
     box.setAttribute("aria-label", "처음 오셨나요");
     const mark = el("span", "welcome-mark", "D");
