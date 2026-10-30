@@ -393,6 +393,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   transit=_transit(cfg), regions=_regions(cfg), region_groups=region_groups(_regions(cfg)),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
+                  # 단지 화면 '한 달에 얼마' 계산 (pay.js): 조건으로 찾기와 같은 기준
+                  pay_rules={k: cfg.raw.get("finder", {}).get(s) for k, s in (("ltv", "ltv"), ("ltv_by", "ltv_by"), ("dsr", "dsr"),
+                             ("rate", "default_rate"), ("years", "default_years"), ("caps", "loan_caps"))},
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
