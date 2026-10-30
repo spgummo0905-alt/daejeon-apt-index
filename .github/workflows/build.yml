@@ -97,6 +97,15 @@ jobs:
           path: data/elev.json
           key: djdex-elev-${{ github.run_id }}
           restore-keys: djdex-elev-
+      # 소음 체크(OSM 큰길·철도 선과 단지별 거리)도 따로 캐시합니다 (선은 일주일에 한 번만 새로 받음)
+      - name: 소음 체크 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/noise.json
+            data/noise_lines.json
+          key: djdex-noise-${{ github.run_id }}
+          restore-keys: djdex-noise-
       # 서울 자료는 먼저 복원합니다. 실거래를 다 모았으면(data/seoul/READY) 대전·세종 지역 메뉴에 서울이 나오고
       # 아래에서 서울 사이트도 만듭니다.
       - name: 서울 수집 캐시 복원
@@ -150,6 +159,14 @@ jobs:
         with:
           path: data/elev.json
           key: djdex-elev-${{ github.run_id }}
+      - name: 소음 체크 캐시 저장
+        if: ${{ always() && hashFiles('data/noise_lines.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/noise.json
+            data/noise_lines.json
+          key: djdex-noise-${{ github.run_id }}
       # 세종은 대전 사이트 안 /sejong/ 에 만듭니다. 세종이 실패해도 대전은 배포합니다.
       # 캐시는 대전과 따로 둡니다 (대전 캐시의 경로 목록을 바꾸면 캐시를 못 찾아 처음부터 다시 받기 때문).
       - name: 세종 수집 캐시 복원

@@ -800,3 +800,26 @@ def test_pwa_manifest_icons_and_service_worker(tmp_path):
     assert 'rel="manifest" href="manifest.webmanifest"' in index and "apple-touch-icon" in index
     assert "data-install" in (out / "my.html").read_text(encoding="utf-8")
     assert 'navigator.serviceWorker.register(ROOT + "sw.js")' in (out / "static" / "app.js").read_text(encoding="utf-8")
+
+
+def test_noise_check_and_reconstruction_age(tmp_path):
+    # 소음 체크(OSM 큰길·철도까지 직선거리)와 재건축 연한(30년) 표시. 거리 계산은 선분까지 최단거리
+    from djdex import noise
+    lines = [{"kind": "trunk", "name": "한밭대로", "pts": [[36.35, 127.38], [36.36, 127.38]]},
+             {"kind": "rail", "name": "경부선", "pts": [[36.30, 127.40], [36.40, 127.40]]}]
+    m = noise.measure({"A": [36.355, 127.381], "B": [36.355, 127.399], "C": [36.6, 127.6]}, lines)
+    assert m["A"]["road"] == 90 and m["A"]["road_kind"] == "간선도로" and m["B"]["rail"] == 90 and m["C"] == {}
+    assert noise.level(m["A"])[0] == "near" and noise.level({"road": 300, "road_kind": "대로"})[0] == "far"
+    data = noise.parse({"elements": [{"type": "way", "tags": {"highway": "primary", "name": "계룡로"},
+                                      "geometry": [{"lat": 36.1, "lon": 127.1}, {"lat": 36.2, "lon": 127.2}]},
+                                     {"type": "way", "tags": {"highway": "primary", "tunnel": "yes"},
+                                      "geometry": [{"lat": 36.1, "lon": 127.1}, {"lat": 36.2, "lon": 127.2}]}]})
+    assert len(data) == 1 and data[0]["kind"] == "primary"
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    apts = [p.read_text(encoding="utf-8") for p in (out / "apt").glob("*.html")]
+    assert any('id="noise"' in h and "소음 체크" in h for h in apts)
+    assert any("재건축 연한" in h for h in apts)
+    pts = json.loads((out / "complexes.json").read_text(encoding="utf-8"))["complexes"]
+    assert any("nz" in c for c in pts)
+    assert '"noise", "큰길 쪽 동에서 소음 들어 보기' in (out / "static" / "app.js").read_text(encoding="utf-8")

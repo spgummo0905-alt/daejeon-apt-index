@@ -186,3 +186,20 @@ def hill(trades: pd.DataFrame, seed: int = 14) -> dict:
             pf[0], pf[8] = base, e
             out[cid].update(st=round(st, 1), pf=[round(v, 1) for v in pf])
     return out
+
+
+def noise(trades: pd.DataFrame, seed: int = 15) -> dict:
+    """데모용 가짜 소음 체크 자료 (noise.json 의 data 모양). 일곱에 하나는 비워 둠."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, cid in enumerate(sorted(trades["complex_id"].unique())):
+        if i % 7 == 6:
+            continue
+        row = {}
+        if rnd.random() < 0.85:
+            row.update(road=rnd.choice([35, 80, 140, 260, 520, 880]), road_kind=rnd.choice(["대로", "대로", "간선도로", "고속도로"]),
+                       road_name=rnd.choice(["계룡로", "한밭대로", "대덕대로", "호남고속도로"]))
+        if rnd.random() < 0.3:
+            row.update(rail=rnd.choice([90, 240, 610]), rail_name=rnd.choice(["경부선", "호남선"]))
+        out[cid] = row
+    return out

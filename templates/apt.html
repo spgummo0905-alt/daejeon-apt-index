@@ -50,7 +50,8 @@
   {% endif %}
   {# 관심 단지면 지난번 확인한 뒤 새 거래·시세 변화 (app.js 의 DJ.news) #}
   <a class="mc-news" href="#trades" data-watch-news hidden><b>지난번 확인 뒤</b><span data-watch-text></span></a>
-  <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
+  {% set age = (meta.asof[:4] | int) - c.build_year if c.build_year else none %}
+  <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}{% if age is not none and age >= 30 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한(30년) 충족" data-desc="준공 {{ age }}년 차로 재건축 연한(30년)을 넘었습니다. 연한은 재건축 진단을 신청할 수 있는 시기일 뿐, 사업 추진이나 가격을 뜻하지 않습니다.">재건축 연한 충족</button>{% elif age is not none and age >= 25 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한까지 {{ 30 - age }}년" data-desc="준공 {{ age }}년 차입니다. 재건축 연한은 30년이며, 연한은 재건축 진단을 신청할 수 있는 시기일 뿐 사업 추진을 뜻하지 않습니다.">재건축 연한까지 {{ 30 - age }}년</button>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
   <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<div class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></div>
@@ -310,6 +311,16 @@
       {% if hill.svg %}<figure class="hill-fig"><figcaption>{{ hill.name }} → 이 단지 땅 높이 (직선 {{ hill.dist }})</figcaption>{{ hill.svg }}</figure>{% endif %}
     </div>
     <p class="note">위성 지형 자료(30m 격자)로 계산한 추정치입니다. 고층 건물이 많은 곳은 실제보다 크게 나올 수 있으니, 유모차·장보기 동선이 중요하다면 임장 때 역에서 단지까지 직접 걸어 보세요.</p>
+  </div>
+  {% endif %}
+  {% if noise %}
+  {# 소음 체크: OSM 도로·철도까지 직선거리 (djdex/noise.py). 데시벨이 아니라 거리만 본 어림 #}
+  <div class="hill noise noise-{{ noise.cls }}" id="noise">
+    <h3 class="sub">소음 체크 <span class="hill-tag">{{ noise.label }}</span></h3>
+    <dl class="hill-kv">
+      {% for k, v in noise.rows %}<div><dt>{{ k }}</dt><dd><b>{{ v }}</b></dd></div>{% endfor %}
+    </dl>
+    <p class="note">단지 중심에서 잰 직선거리입니다. 방음벽·동 배치·층에 따라 실제 소음은 크게 다르니, 큰길 쪽 동은 낮과 밤에 직접 들어 보세요.</p>
   </div>
   {% endif %}
   {% if latlng %}

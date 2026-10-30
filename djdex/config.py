@@ -57,6 +57,16 @@ class Paths:
         return self.data / "elev.json"
 
     @property
+    def noise(self) -> Path:
+        """소음 체크: 단지에서 큰길·철도까지 거리 (noise.py 가 씀)"""
+        return self.data / "noise.json"
+
+    @property
+    def noise_lines(self) -> Path:
+        """소음 체크에 쓰는 OSM 도로·철도 선 (받지 못한 날 다시 씀)"""
+        return self.data / "noise_lines.json"
+
+    @property
     def osm_stops(self) -> Path:
         return self.data / "osm_stops.json"
 
