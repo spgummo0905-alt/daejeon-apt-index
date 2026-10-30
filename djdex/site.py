@@ -214,6 +214,34 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
+def write_pwa(out_dir: Path, cfg, version: str) -> None:
+    """앱처럼 쓰기: 홈 화면에 추가할 때의 이름·아이콘(manifest)과, 끊겨도 본 화면이 열리게 하는 서비스 워커(sw.js).
+    sw.js 는 사이트 맨 위에 있어야 그 아래 화면을 맡을 수 있습니다. 같은 주소 아래 다른 지역 폴더(sejong/ 등)는
+    그 지역 워커가 맡도록 빼 둡니다."""
+    import json
+    base = cfg.site.get("base_url", "")
+    other = []
+    for g in cfg.site.get("regions", []):
+        u = g.get("url", "")
+        if base and u.startswith(base) and u != base:
+            other.append(u[len(base):].strip("/"))
+    name = f"{cfg.region_name} 아파트 지수"
+    manifest = {
+        "name": name, "short_name": name.replace(" 아파트", ""), "lang": "ko",
+        "description": f"{cfg.region_name} 아파트 실거래가·입지 비교와 임장 기록",
+        "start_url": "index.html?skip=1", "scope": "./", "display": "standalone",
+        "background_color": "#f4f2ee", "theme_color": "#0f1b33",
+        "icons": [{"src": "static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+                  {"src": "static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+                  {"src": "static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
+    }
+    (out_dir / "manifest.webmanifest").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    sw = (ROOT / "static" / "sw.js").read_text(encoding="utf-8")
+    sw = sw.replace("__VERSION__", version).replace("__OTHER__", json.dumps(other))
+    (out_dir / "sw.js").write_text(sw, encoding="utf-8")
+    (out_dir / "static" / "sw.js").unlink(missing_ok=True)   # 원본은 사이트에 두지 않음 (맨 위 sw.js 만)
+
+
 def _account(cfg) -> dict | None:
     """카카오 로그인·기록 이어 보기 (Supabase). 주소와 공개용 키는 GitHub Secrets(환경 변수)에서,
     개인정보처리방침의 책임자·연락처는 설정 [account] 에서. 하나라도 없으면 로그인을 넣지 않습니다."""
@@ -250,6 +278,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         if f.is_file():
             h.update(f.read_bytes())
     env.globals["v"] = h.hexdigest()[:8]
+    write_pwa(out_dir, cfg, env.globals["v"])
 
     ref = cfg.metrics["reference_area"]
     years = cfg.metrics["cagr_years"]
