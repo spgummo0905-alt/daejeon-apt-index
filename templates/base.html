@@ -25,6 +25,10 @@
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="{{ root }}manifest.webmanifest">
+<link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f1b33">
+<meta name="apple-mobile-web-app-title" content="{{ region }} 아파트 지수">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
 {% block head_extra %}{% endblock %}

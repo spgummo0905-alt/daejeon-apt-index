@@ -93,6 +93,14 @@
   <div class="panel-head row-between"><h2>최근 본 단지</h2><button class="btn ghost" id="recent-clear" type="button" hidden>기록 지우기</button></div>
   <ul class="recent-list" id="recent"></ul>
 </section>
+{# 홈 화면에 추가: 현장에서 앱처럼 바로 열고, 데이터가 약해도 관심 단지·현장 모드가 열리게 (app.js pwa) #}
+<section class="panel install" data-install hidden>
+  <span class="install-ic" aria-hidden="true"><img src="static/icons/icon-192.png" alt="" width="44" height="44"></span>
+  <div class="install-copy"><b>현장에서 바로 열 수 있게 홈 화면에 추가</b>
+    <span>앱처럼 아이콘으로 열리고, 데이터가 약한 곳에서도 관심 단지와 현장 모드를 볼 수 있습니다.</span>
+    <span class="install-ios" data-install-ios>아이폰은 사파리 아래쪽 공유 버튼 → ‘홈 화면에 추가’를 눌러 주세요.</span></div>
+  <button type="button" class="btn primary" data-install-btn>홈 화면에 추가</button>
+</section>
 {% if account %}</div>{% endif %}
 {% endblock %}
 {% block scripts %}<script src="static/my.js?v={{ v }}"></script>

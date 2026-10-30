@@ -1508,7 +1508,38 @@
     });
   }
 
+  // ---------- 앱처럼 쓰기 (서비스 워커, 홈 화면에 추가) ----------
+  // 현장에서 데이터가 약해도 관심 단지·임장 코스 단지 화면과 현장 모드가 열리도록, 그 화면들을 미리 저장해 둡니다.
+  function pwa() {
+    if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return;
+    navigator.serviceWorker.register(ROOT + "sw.js").then(() => navigator.serviceWorker.ready).then(reg => {
+      if (DJ.locked()) return;
+      const slugs = new Set(DJ.favs());
+      try { Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")).forEach(k => slugs.add(k.slice(12))); } catch (e) { /* 저장소 없음 */ }
+      const course = load("course", {});
+      (Array.isArray(course.list) ? course.list : []).forEach(s => slugs.add(s));
+      const urls = [...slugs].map(s => new URL(ROOT + "apt/" + s + ".html", location.href).href);
+      if (urls.length && reg.active) reg.active.postMessage({ type: "precache", urls });
+    }).catch(() => {});
+    // 홈 화면에 추가: 안드로이드·PC 크롬은 버튼으로 바로, 아이폰 사파리는 공유 → '홈 화면에 추가' 안내
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    if (standalone) return;
+    let ask = null;
+    addEventListener("beforeinstallprompt", e => {
+      e.preventDefault(); ask = e;
+      document.querySelectorAll("[data-install]").forEach(box => { box.hidden = false; box.querySelector("[data-install-ios]").hidden = true; });
+    });
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/crios|fxios|kakaotalk|naver|instagram/i.test(navigator.userAgent))
+      document.querySelectorAll("[data-install]").forEach(box => { box.hidden = false; box.querySelector("[data-install-btn]").hidden = true; });
+    document.querySelectorAll("[data-install-btn]").forEach(b => b.addEventListener("click", () => {
+      if (!ask) return;
+      ask.prompt();
+      ask.userChoice.finally(() => { ask = null; document.querySelectorAll("[data-install]").forEach(box => { box.hidden = true; }); });
+    }));
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    pwa();
     welcome();
     courseButton();
     resume();

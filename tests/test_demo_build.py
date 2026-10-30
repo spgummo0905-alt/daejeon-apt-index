@@ -783,3 +783,20 @@ def test_visit_compare_and_monthly_payment(tmp_path):
     assert "이 단지 사려면 한 달에 얼마?" in pay and "static/pay.js" in pay and "&#34;dsr&#34;: 0.4" in pay
     js = (out / "static" / "pay.js").read_text(encoding="utf-8")
     assert "loan * r / (1 - Math.pow(1 + r, -n))" in js and "pay * 12 / DSR" in js
+
+
+def test_pwa_manifest_icons_and_service_worker(tmp_path):
+    # 앱처럼 쓰기: 지역마다 manifest·sw.js 를 사이트 맨 위에, 같은 주소 아래 다른 지역 폴더는 그 지역 워커가 맡게
+    from djdex import site
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    man = json.loads((out / "manifest.webmanifest").read_text(encoding="utf-8"))
+    assert man["display"] == "standalone" and man["start_url"] == "index.html?skip=1" and "아파트 지수" in man["name"]
+    for ic in man["icons"]:
+        assert (out / ic["src"]).exists()
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert "__VERSION__" not in sw and '"sejong"' in sw and "precache" in sw and not (out / "static" / "sw.js").exists()
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'rel="manifest" href="manifest.webmanifest"' in index and "apple-touch-icon" in index
+    assert "data-install" in (out / "my.html").read_text(encoding="utf-8")
+    assert 'navigator.serviceWorker.register(ROOT + "sw.js")' in (out / "static" / "app.js").read_text(encoding="utf-8")
