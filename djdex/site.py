@@ -215,6 +215,24 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
+def write_assetlinks(out_dir: Path, cfg) -> None:
+    """안드로이드 앱 소유 확인 파일 (/.well-known/assetlinks.json). 앱이 이 사이트의 주인이라는 증명이라
+    사이트 맨 위 주소(루트)에만 두고, 서명 지문(config.toml [app] android_sha256)이 있을 때만 만듭니다.
+    지문은 Play Console 의 '앱 서명 키 인증서'(스토어 배포)와 업로드 키(시험 설치)를 함께 적어요."""
+    import json
+    from urllib.parse import urlsplit
+    app = cfg.raw.get("app", {})
+    fps = [f.strip().upper() for f in app.get("android_sha256", []) if f.strip()]
+    if not fps or urlsplit(cfg.site.get("base_url", "")).path not in ("", "/"):
+        return
+    d = out_dir / ".well-known"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "assetlinks.json").write_text(json.dumps([{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {"namespace": "android_app", "package_name": app.get("android_package", "kr.jipgam.app"),
+                   "sha256_cert_fingerprints": fps}}], indent=1), encoding="utf-8")
+
+
 def write_pwa(out_dir: Path, cfg, version: str) -> None:
     """앱처럼 쓰기: 홈 화면에 추가할 때의 이름·아이콘(manifest)과, 끊겨도 본 화면이 열리게 하는 서비스 워커(sw.js).
     sw.js 는 사이트 맨 위에 있어야 그 아래 화면을 맡을 수 있습니다. 같은 주소 아래 다른 지역 폴더(sejong/ 등)는
@@ -236,6 +254,7 @@ def write_pwa(out_dir: Path, cfg, version: str) -> None:
                   {"src": "static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
                   {"src": "static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
     }
+    write_assetlinks(out_dir, cfg)
     (out_dir / "manifest.webmanifest").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     sw = (ROOT / "static" / "sw.js").read_text(encoding="utf-8")
     sw = sw.replace("__VERSION__", version).replace("__OTHER__", json.dumps(other))

@@ -1,0 +1,51 @@
+name: android
+
+# 안드로이드 앱(집감) 빌드 (수동 실행 또는 android/ 가 바뀔 때).
+# - 시험용 APK (debug): 폰에 바로 설치해 볼 수 있어요. 실행 결과 맨 아래 Artifacts 에서 받습니다.
+# - 스토어용 AAB (release): Secrets 에 업로드 키(ANDROID_KEYSTORE_BASE64 등)가 있을 때만 서명해서 만듭니다.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: 시험용 APK 만들기
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jipgam-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+      - name: 스토어용 AAB 만들기 (업로드 키가 있을 때만)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          if [ -z "$KS_B64" ]; then echo "업로드 키(ANDROID_KEYSTORE_BASE64)가 없어 스토어용 파일은 건너뜁니다"; exit 0; fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks"
+          gradle --no-daemon -p android bundleRelease
+          mkdir -p out && cp android/app/build/outputs/bundle/release/*.aab out/
+      - uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('out/*.aab') != '' }}
+        with:
+          name: jipgam-release-aab
+          path: out/*.aab
+          retention-days: 14
