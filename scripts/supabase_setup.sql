@@ -372,3 +372,72 @@ grant execute on function public.admin_set_setting(text, jsonb, boolean) to auth
 grant execute on function public.admin_set_plan(text, text, int, jsonb, boolean, int) to authenticated;
 grant execute on function public.admin_plans() to authenticated;
 grant execute on function public.admin_logs(int) to authenticated;
+
+-- ===== 관심 단지 새 소식 알림 (웹 푸시, scripts/push_send.py 가 매일 배포 뒤 보냄) =====
+--   push_subs  : 알림을 켠 기기 (회원당 10대까지). 본인은 함수로만 넣고 뺌
+--   push_state : 회원별로 마지막에 알린 관심 단지 상태 (보내는 쪽만 씀)
+--   push_keys  : 알림 키 한 쌍. 공개 키만 push_key() 로 읽고, 비공개 키는 보내는 쪽(secret 키)만
+create table if not exists public.push_subs (
+  endpoint   text        primary key check (char_length(endpoint) between 10 and 1000),
+  user_id    uuid        not null references auth.users (id) on delete cascade,
+  p256dh     text        not null check (char_length(p256dh) <= 200),
+  auth       text        not null check (char_length(auth) <= 100),
+  created_at timestamptz not null default now()
+);
+create index if not exists push_subs_user on public.push_subs (user_id);
+create table if not exists public.push_state (
+  user_id    uuid        primary key references auth.users (id) on delete cascade,
+  seen       jsonb       not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.push_keys (
+  id         int         primary key default 1 check (id = 1),
+  pub        text        not null,
+  priv       text        not null,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+alter table public.push_state enable row level security;
+alter table public.push_keys enable row level security;
+revoke all on public.push_subs, public.push_state, public.push_keys from anon, authenticated;
+
+create or replace function public.push_key()
+returns text language sql stable security definer set search_path = '' as $$
+  select pub from public.push_keys where id = 1
+$$;
+
+create or replace function public.push_sub_put(ep text, pk text, ak text)
+returns void language plpgsql security definer set search_path = '' as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '42501'; end if;
+  if ep !~ '^https://' or char_length(ep) > 1000 or char_length(pk) > 200 or char_length(ak) > 100 then raise exception 'bad endpoint'; end if;
+  insert into public.push_subs (endpoint, user_id, p256dh, auth) values (ep, uid, pk, ak)
+  on conflict on constraint push_subs_pkey do update set user_id = uid, p256dh = excluded.p256dh, auth = excluded.auth;
+  if (select count(*) from public.push_subs s where s.user_id = uid) > 10 then
+    delete from public.push_subs s where s.endpoint = (select s2.endpoint from public.push_subs s2 where s2.user_id = uid
+      order by s2.created_at limit 1);
+  end if;
+end $$;
+
+create or replace function public.push_sub_del(ep text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in' using errcode = '42501'; end if;
+  delete from public.push_subs s where s.endpoint = ep and s.user_id = auth.uid();
+end $$;
+
+-- 이 기기가 알림을 받고 있는지 (내 정보 화면의 스위치 상태)
+create or replace function public.push_sub_has(ep text)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.push_subs s where s.endpoint = ep and s.user_id = auth.uid())
+$$;
+
+revoke all on function public.push_key() from public;
+revoke all on function public.push_sub_put(text, text, text) from public, anon;
+revoke all on function public.push_sub_del(text) from public, anon;
+revoke all on function public.push_sub_has(text) from public, anon;
+grant execute on function public.push_key() to anon, authenticated;
+grant execute on function public.push_sub_put(text, text, text) to authenticated;
+grant execute on function public.push_sub_del(text) to authenticated;
+grant execute on function public.push_sub_has(text) to authenticated;

@@ -55,3 +55,23 @@ self.addEventListener("message", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(d.urls.slice(0, 40).map(u =>
     c.match(u).then(hit => hit || c.add(u).catch(() => {}))))));
 });
+
+// 관심 단지 새 소식 알림 (scripts/push_send.py 가 매일 배포 뒤 보냄). 누르면 그 단지 거래 목록이나 관심 화면 '새 소식'으로
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "관심 단지 새 소식", {
+    body: d.body || "", tag: d.tag || "djdex-news", renotify: true,
+    icon: SCOPE + "static/icons/icon-192.png", badge: SCOPE + "static/icons/icon-192.png",
+    data: { url: new URL(d.url || "my.html#news", self.registration.scope).href },
+  }));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    const open = list.find(c => c.url.startsWith(self.registration.scope));
+    if (open) return open.navigate(url).then(c => (c || open).focus()).catch(() => self.clients.openWindow(url));
+    return self.clients.openWindow(url);
+  }));
+});

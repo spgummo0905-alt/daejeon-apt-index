@@ -17,6 +17,10 @@
         <button type="button" class="seg-btn" data-v="300">300만</button><button type="button" class="seg-btn" data-v="500">500만</button>
         <button type="button" class="seg-btn" data-v="1000">1천만</button><button type="button" class="seg-btn" data-v="2000">2천만</button>
         <button type="button" class="seg-btn" data-v="0">안 받기</button></div></div>
+    {# 휴대폰 알림: 로그인했고 이 브라우저가 알림을 받을 수 있을 때만 보임 (prefs.js, 보내는 쪽은 scripts/push_send.py) #}
+    <div class="pf-row" data-push hidden><div class="pf-k"><b>새 소식 휴대폰 알림</b><small data-push-note>관심 단지에 새 거래나 위 기준만큼의 시세 변화가 생기면 하루 한 번 알려 드려요</small></div>
+      <div class="seg pf-seg" role="group" aria-label="새 소식 휴대폰 알림" data-push-seg>
+        <button type="button" class="seg-btn" data-push-v="on">받기</button><button type="button" class="seg-btn" data-push-v="off">안 받기</button></div></div>
     <div class="pf-row pf-col"><div class="pf-k"><b>내 현장 체크 항목</b><small>현장 모드와 임장 코스 체크리스트에 함께 나와요 (10개까지)</small></div>
       <ul class="pf-checks" data-pf-checks></ul>
       <form class="pf-add" data-pf-add><input type="text" maxlength="40" placeholder="예: 반려견 산책로, 학원 셔틀 정류장" aria-label="체크 항목 더하기">

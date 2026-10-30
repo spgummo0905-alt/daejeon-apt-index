@@ -100,6 +100,69 @@
       }).catch(() => DJ.toast("되살리지 못했어요", "아파트 지수에서 내려받은 기록 파일인지 확인해 주세요."));
     });
 
+    // 새 소식 휴대폰 알림 (웹 푸시). 로그인했고 이 브라우저가 받을 수 있을 때만 보임.
+    // 아이폰은 홈 화면에 추가한 앱에서만 받을 수 있어 그 안내를 먼저. 보내는 쪽은 매일 배포 뒤 scripts/push_send.py
+    const pushRow = box.querySelector("[data-push]");
+    if (pushRow) {
+      const seg = pushRow.querySelector("[data-push-seg]"), note = pushRow.querySelector("[data-push-note]");
+      const can = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+      const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+      const sb = () => DJ.sb && DJ.sync && DJ.sync.user;
+      const rpc = async (fn, body, signed) => DJ.sb.call("/rest/v1/rpc/" + fn, { method: "POST", body: body || {} }, signed ? await DJ.sb.token() : null);
+      const b64 = s => { const b = atob((s + "=".repeat((4 - s.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+      const paintPush = on => seg.querySelectorAll("[data-push-v]").forEach(b => {
+        const hit = (b.dataset.pushV === "on") === on;
+        b.classList.toggle("active", hit);
+        b.setAttribute("aria-pressed", String(hit));
+      });
+      const sub = () => navigator.serviceWorker.ready.then(r => r.pushManager.getSubscription());
+      let key = null;
+      async function initPush() {
+        if (!sb()) { pushRow.hidden = true; return; }
+        if (ios && !standalone && !can) {   // 아이폰 사파리: 홈 화면 앱에서만
+          pushRow.hidden = false; seg.hidden = true;
+          note.textContent = "아이폰은 공유 버튼 → ‘홈 화면에 추가’로 연 앱에서 켤 수 있어요";
+          return;
+        }
+        if (!can) return;
+        try { key = await rpc("push_key"); } catch (e) { key = null; }
+        if (!key) return;   // 보내는 쪽 준비 전 (scripts/supabase_setup.sql)
+        pushRow.hidden = false;
+        let on = false;
+        try { const s = await sub(); on = !!s && Notification.permission === "granted" && !!(await rpc("push_sub_has", { ep: s.endpoint }, true)); } catch (e) { /* 모름: 꺼진 것으로 */ }
+        paintPush(on);
+      }
+      seg.addEventListener("click", async e => {
+        const b = e.target.closest("[data-push-v]");
+        if (!b || seg.dataset.busy) return;
+        seg.dataset.busy = "1";
+        try {
+          if (b.dataset.pushV === "on") {
+            if (await Notification.requestPermission() !== "granted") {
+              DJ.toast("알림이 꺼져 있어요", "브라우저(또는 휴대폰) 설정에서 이 사이트 알림을 허용한 뒤 다시 눌러 주세요.");
+              paintPush(false);
+              return;
+            }
+            const reg = await navigator.serviceWorker.ready;
+            const s = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
+            const j = s.toJSON();
+            await rpc("push_sub_put", { ep: j.endpoint, pk: j.keys.p256dh, ak: j.keys.auth }, true);
+            paintPush(true);
+            DJ.toast("알림을 켰어요", "관심 단지에 새 소식이 생기면 하루 한 번 이 기기로 알려 드려요.");
+          } else {
+            const s = await sub();
+            if (s) { await rpc("push_sub_del", { ep: s.endpoint }, true).catch(() => {}); await s.unsubscribe(); }
+            paintPush(false);
+            DJ.toast("알림을 껐어요", "이 기기로는 더 보내지 않아요.");
+          }
+        } catch (err) {
+          DJ.toast("알림 설정을 바꾸지 못했어요", "잠시 뒤 다시 해 주세요.");
+        } finally { delete seg.dataset.busy; }
+      });
+      initPush();
+      document.addEventListener("dj:auth", initPush);
+    }
+
     document.addEventListener("dj:prefs", paintSegs);
     box.addEventListener("toggle", () => { if (box.open) { paintSegs(); drawChecks(); } });
     paintSegs();
