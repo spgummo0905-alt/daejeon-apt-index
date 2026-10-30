@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, noise, osm, reviews, school, site
+from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, movein, noise, osm, reviews, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -122,7 +122,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
-                     kinfo=None, supply=None, outside=None, hill=None, noise=None):
+                     kinfo=None, supply=None, outside=None, hill=None, noise=None, movein_rows=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -184,7 +184,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
                    macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo,
-                   supply=supply, outside=outside, hill=hill, noise=noise)
+                   supply=supply, outside=outside, hill=hill, noise=noise,
+                   movein_rows=movein_rows if movein_rows is not None else movein.load(cfg.paths.movein))
     return table, meta, n
 
 
@@ -356,6 +357,12 @@ def cmd_all(cfg, args) -> None:
                 osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
             except (ValueError, OSError) as e:  # 정류장을 못 받아도 사이트는 만듭니다 (그 항목만 빠짐)
                 print(f"::warning::OSM 정류장 수집 실패: {e}")
+    if os.environ.get("DATA_GO_KR_KEY"):   # 입주 예정 물량 (청약홈 분양 공고, 활용신청 전이면 건너뜀)
+        try:
+            movein.collect(os.environ["DATA_GO_KR_KEY"], cfg.region_name, list(cfg.districts.values()), cfg.paths.movein,
+                           addr_has=cfg.raw["region"].get("movein_addr", ""))
+        except (ValueError, OSError) as e:
+            print(f"::warning::입주 예정 물량 수집 실패, 이번에는 빼고 만듭니다: {e!r}")
     if cfg.paths.geo.exists():   # 소음 체크: 큰길·철도까지 거리 (키 없이, 못 받으면 지난번 선으로)
         try:
             noise.collect(json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.noise, cfg.paths.noise_lines)
@@ -392,7 +399,8 @@ def cmd_demo(cfg, args) -> None:
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
                                   rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades),
                                   supply=demo_mod.supply(trades), outside=demo_mod.outside(trades),
-                                  hill=demo_mod.hill(trades), noise=demo_mod.noise(trades))
+                                  hill=demo_mod.hill(trades), noise=demo_mod.noise(trades),
+                                  movein_rows=demo_mod.movein(cfg.districts))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 

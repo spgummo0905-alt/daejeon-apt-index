@@ -1458,6 +1458,23 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pay-row b { color: var(--text); font-variant-numeric: tabular-nums; text-align: right; }
 .pay-row.warn b { color: #c9302f; }
 .pay-note { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+/* 첫 화면 입주 예정 물량 */
+.mv-years { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.mv-y { padding: 12px; border-radius: 14px; background: var(--chip); display: grid; gap: 4px; }
+.mv-y span { font-size: 12.5px; color: var(--text-2); }
+.mv-y b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mv-y small { font-size: 12px; font-weight: 600; margin-left: 2px; color: var(--text-2); }
+.mv-table { width: 100%; font-size: 14px; }
+.mv-table th, .mv-table td { padding: 8px 6px; text-align: right; white-space: nowrap; }
+.mv-table th:first-child { text-align: left; }
+.mv-table td { position: relative; font-variant-numeric: tabular-nums; }
+.mv-bar { position: absolute; right: 6px; bottom: 3px; height: 3px; width: calc(var(--w) * 0.8); max-width: 80%; border-radius: 2px; background: var(--accent); opacity: .55; }
+.mv-soon { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.mv-soon li { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; grid-template-areas: "w n h" "w a h"; gap: 0 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.mv-when { grid-area: w; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+.mv-soon b { grid-area: n; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mv-soon .muted { grid-area: a; font-size: 12.5px; }
+.mv-hh { grid-area: h; font-weight: 750; font-variant-numeric: tabular-nums; }
 /* 다녀온 단지 나란히 비교 (관심 화면) */
 .vc-pick { margin: 4px 0 12px; }
 .vc-table td { white-space: pre-line; text-align: left; vertical-align: top; min-width: 9.5em; font-size: 13.5px; line-height: 1.5; }
@@ -3260,4 +3277,11 @@ a.notice-text { text-decoration: underline; text-underline-offset: 3px; }
   .ad-tabs button { padding: 8px 12px; font-size: 13.5px; }
   .ad-m-edit { grid-template-columns: minmax(0, 1fr); margin-left: 0; }
   .ad-logs li { flex-direction: column; gap: 2px; }
+}
+.mv-scroll { overflow-x: auto; }
+.mv-table th, .mv-table td { border: 0; border-bottom: 1px solid var(--border); }
+.mv-table tbody tr:last-child > * { border-bottom: 0; }
+@media (min-width: 900px) {
+  .mv-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .mv-h { margin-top: 0; }
 }

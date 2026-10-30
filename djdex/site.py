@@ -16,6 +16,7 @@ import shapely
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from . import movein as movein_mod
 from . import charts, heatmap, kapt, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
@@ -259,11 +260,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
           kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None,
-          hill: dict | None = None, noise: dict | None = None) -> int:
+          hill: dict | None = None, noise: dict | None = None, movein_rows: list | None = None) -> int:
     """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다.
     outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load).
     hill: 단지별 언덕 자료 {e, rf, st, pf} (elev.load).
-    noise: 단지별 큰길·철도까지 거리 {road, road_kind, road_name, rail, rail_name} (noise.load)."""
+    noise: 단지별 큰길·철도까지 거리 {road, road_kind, road_name, rail, rail_name} (noise.load).
+    movein_rows: 청약홈 분양 공고의 입주 예정 단지 (movein.load). 첫 화면 '입주 예정 물량'."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -445,7 +447,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
-        leaders=month["leaders"], pulse=month["pulse"],
+        leaders=month["leaders"], pulse=month["pulse"], movein=movein_mod.view(movein_rows or [], gus),
         hero_cards=sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])[:3],
         **common), encoding="utf-8")
     # 인트로: 처음 온 사람에게 한 번 보여 주는 소개 (첫 화면이 이리로 한 번 보냄). 등급 분포·1위 카드·뜨거운 동네는 실제 자료

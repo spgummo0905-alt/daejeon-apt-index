@@ -88,6 +88,7 @@
 <nav class="jump" data-spy aria-label="이 페이지 바로가기">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
   {% if board %}<a href="#heat">동네 온도</a>{% endif %}
+  {% if movein %}<a href="#movein">입주 물량</a>{% endif %}
   <a href="#world">{{ unit }}별 비교</a>
   {% if value_list %}<a href="#value">입지 대비 가격</a>{% endif %}
   <a href="#list">전체 목록</a>
@@ -193,6 +194,40 @@
     {% endif %}{% endfor %}
     <p class="hr-note muted">가격은 최근 6개월 변화율, 거래는 최근 3개월 건수를 1년 평균과 비교한 배수입니다. 순위는 두 값을 함께 반영합니다.</p>
   </div>
+</section>
+{% endif %}
+
+{# 입주 예정 물량: 청약홈 분양 공고의 입주 예정월·공급 세대수 (movein.py) #}
+{% if movein %}
+<section id="movein" class="panel mv">
+  <div class="panel-head">
+    <h2>입주 예정 물량</h2>
+    <p class="muted">{{ movein.from }} 이후 입주 예정인 분양 단지의 공급 세대수입니다. 입주가 몰리는 해와 {{ unit }}에는 전세·매매 가격이 흔들리기 쉽습니다.</p>
+  </div>
+  <div class="mv-years">
+    {% for y in movein.years %}<div class="mv-y"><span>{{ y }}년</span><b>{{ "{:,}".format(movein.total[loop.index0]) }}<small>세대</small></b></div>{% endfor %}
+  </div>
+  <div class="mv-body">
+  {% if movein.table %}
+  <div class="mv-scroll">
+  <table class="mv-table">
+    <thead><tr><th>{{ unit }}</th>{% for y in movein.years %}<th>{{ y }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for r in movein.table %}<tr><th><a href="#list" data-gu-jump="{{ r.area }}">{{ r.area | area }}</a></th>
+      {% for v in r.vals %}<td>{{ "{:,}".format(v) if v else "–" }}{% if v %}<i class="mv-bar" style="--w: {{ r.w[loop.index0] }}%"></i>{% endif %}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+  <div>
+  <h3 class="sub mv-h">다가오는 입주</h3>
+  <ol class="mv-soon">
+    {% for r in movein.soon %}<li><span class="mv-when">{{ r.when }}</span><b>{{ r.name }}</b><span class="muted">{{ r.area | area if r.area else "" }}</span><span class="mv-hh">{{ "{:,}".format(r.hh) }}세대</span></li>{% endfor %}
+  </ol>
+  </div>
+  </div>
+  <p class="note muted">일반분양 공고 기준이라 재건축·재개발 조합원 몫, 아직 공고하지 않은 단지, 임대 단지는 빠져 있어요. 입주 시기는 공사 일정에 따라 바뀔 수 있습니다.</p>
 </section>
 {% endif %}
 

@@ -764,7 +764,8 @@ def test_home_is_lighter_and_tops_live_on_rank(tmp_path):
     assert 'data-gu-view="sum"' in index and 'data-gu-panel="rank"' in index
     assert 'id="top"' not in index and "<h2>등급과 분포</h2>" not in index
     assert 'id="complex-table" data-lazy' in index
-    body = index[index.index("<tbody>"):index.index("</tbody>")]
+    tbl = index[index.index('id="complex-table"'):]
+    body = tbl[tbl.index("<tbody>"):tbl.index("</tbody>")]
     assert body.count("<tr") - body.count('data-small="1"') == 30
     rank = (out / "rank.html").read_text(encoding="utf-8")
     assert 'id="top"' in rank and "지수·수익률 순위" in rank and 'role="tab"' in rank
@@ -823,3 +824,29 @@ def test_noise_check_and_reconstruction_age(tmp_path):
     pts = json.loads((out / "complexes.json").read_text(encoding="utf-8"))["complexes"]
     assert any("nz" in c for c in pts)
     assert '"noise", "큰길 쪽 동에서 소음 들어 보기' in (out / "static" / "app.js").read_text(encoding="utf-8")
+
+
+def test_movein_supply_by_area(tmp_path):
+    # 입주 예정 물량: 청약홈 분양 공고 → 지역·구 거르기, 같은 단지 정정 공고는 하나로, 앞으로 3년 구별 합계
+    from datetime import date
+    from djdex import movein
+    rows = [
+        {"HOUSE_MANAGE_NO": "1", "HOUSE_NM": "유성 A", "HSSPLY_ADRES": "대전광역시 유성구 학하동 1", "TOT_SUPLY_HSHLDCO": "800",
+         "MVN_PREARNGE_YM": "202712", "SUBSCRPT_AREA_CODE_NM": "대전"},
+        {"HOUSE_MANAGE_NO": "1", "HOUSE_NM": "유성 A", "HSSPLY_ADRES": "대전광역시 유성구 학하동 1", "TOT_SUPLY_HSHLDCO": "820",
+         "MVN_PREARNGE_YM": "202712", "SUBSCRPT_AREA_CODE_NM": "대전"},
+        {"HOUSE_MANAGE_NO": "2", "HOUSE_NM": "서구 B", "HSSPLY_ADRES": "대전광역시 서구 도마동 2", "TOT_SUPLY_HSHLDCO": "1200",
+         "MVN_PREARNGE_YM": "202605", "SUBSCRPT_AREA_CODE_NM": "대전"},
+        {"HOUSE_MANAGE_NO": "3", "HOUSE_NM": "세종 C", "HSSPLY_ADRES": "세종특별자치시 어진동", "TOT_SUPLY_HSHLDCO": "500",
+         "MVN_PREARNGE_YM": "202712", "SUBSCRPT_AREA_CODE_NM": "세종"},
+    ]
+    gus = ["동구", "중구", "서구", "유성구", "대덕구"]
+    p = movein.parse(rows, "대전", gus)
+    assert [r["name"] for r in p] == ["서구 B", "유성 A"] and p[1]["hh"] == 820 and p[1]["area"] == "유성구"
+    v = movein.view(p, gus, today=date(2026, 10, 30))
+    assert v["years"] == [2026, 2027, 2028] and v["total"] == [0, 820, 0] and v["table"][0]["area"] == "유성구"
+    assert movein.view(p, gus, today=date(2029, 1, 1)) is None
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert 'id="movein"' in index and "입주 예정 물량" in index and 'href="#movein"' in index and "조합원 몫" in index

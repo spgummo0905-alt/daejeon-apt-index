@@ -57,6 +57,11 @@ class Paths:
         return self.data / "elev.json"
 
     @property
+    def movein(self) -> Path:
+        """입주 예정 물량: 청약홈 분양 공고의 입주 예정월·공급 세대수 (movein.py 가 씀)"""
+        return self.data / "movein.json"
+
+    @property
     def noise(self) -> Path:
         """소음 체크: 단지에서 큰길·철도까지 거리 (noise.py 가 씀)"""
         return self.data / "noise.json"
