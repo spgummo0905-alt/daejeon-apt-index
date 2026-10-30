@@ -13,7 +13,7 @@ movein_area = "충북"
 movein_addr = "청주"
 
 [site]
-base_url = "https://www.jipgam.kr/cheongju/"
+base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/cheongju/"
 # 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
 og_image = "static/og/cheongju.jpg"
 # 청주는 지하철이 없어 교통을 KTX 오송역·청주역까지 거리(서울·대전 출퇴근 기준)로 봅니다.

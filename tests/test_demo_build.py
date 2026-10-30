@@ -46,7 +46,7 @@ def test_share_tags_and_sitemap(tmp_path):
 
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
-    base = "https://www.jipgam.kr/"
+    base = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert f'<meta property="og:url" content="{base}apt/DEMO-0001.html">' in page
     assert f'<meta property="og:image" content="{base}static/og/daejeon.jpg">' in page
@@ -143,7 +143,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     stations = (out / "stations.html").read_text(encoding="utf-8")
     assert "BRT 정류장 주변" in stations and "지하철" not in stations
     robots = (out / "robots.txt").read_text(encoding="utf-8")
-    assert "jipgam.kr/sitemap.xml" in robots and "sejong/sitemap.xml" in robots
+    assert "daejeon-apt-index/sitemap.xml" in robots and "sejong/sitemap.xml" in robots
 
 
 def test_month_pages_built(tmp_path):
