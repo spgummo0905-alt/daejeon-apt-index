@@ -59,7 +59,7 @@ float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+
 const SKY_VS = `varying vec3 vDir; void main(){ vDir = position; vec4 p = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*p; gl_Position.z = gl_Position.w*.9999; }`;
 const SKY_FS = `
 precision highp float;
-uniform vec3 uTop,uMid,uBot,uSunDir,uSunCol,uCloudCol,uFlashCol; uniform float uStars,uMilky,uTime,uCloud,uFlash,uWind,uFog,uCity;
+uniform vec3 uTop,uMid,uBot,uSunDir,uSunCol,uCloudCol,uFlashCol; uniform float uStars,uMilky,uTime,uCloud,uFlash,uWind,uFog,uCity,uPhotoK; uniform sampler2D uPhoto;
 varying vec3 vDir;
 ${NOISE}
 void main(){
@@ -87,6 +87,11 @@ void main(){
   vec3 sky = col;
   sky += (vec3(1.)*st*1.3*hs + mwc*mw*uMilky*.55) * uStars * (1.-cov*.95);
   sky = mix(sky, ccol, cov*.88);
+  // 실제 사진 같은 노을 하늘 (정면 쪽 넓은 부분에 깔고 가장자리는 부드럽게 섞어요)
+  float paz = atan(d.x, -d.z), pel = asin(clamp(d.y,-1.,1.));
+  vec2 puv = vec2(.5 + paz/2.6, pel/1.15);
+  float pw = smoothstep(0.,.14,puv.x)*smoothstep(1.,.86,puv.x)*smoothstep(0.,.03,pel)*smoothstep(1.,.78,puv.y);
+  sky = mix(sky, texture2D(uPhoto, puv).rgb*1.05, pw*uPhotoK*(1.-cov*.5));
   sky += uFlashCol*uFlash*(.22+.9*exp(-abs(h)*3.));
   sky = mix(sky, uBot, uFog*smoothstep(.5,.0,h)*.6);
   sky += (h21(gl_FragCoord.xy)-.5)/200.;
@@ -281,9 +286,12 @@ export function start(host, cb, opt) {
 
   // ----- 하늘과 해·달 -----
   const skyU = { uTop: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uBot: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, -1, 0) }, uSunCol: { value: new THREE.Color() },
-    uCloudCol: { value: new THREE.Color() }, uFlashCol: { value: new THREE.Color() }, uStars: { value: 1 }, uMilky: { value: .4 }, uTime: { value: 0 }, uCloud: { value: 0 }, uFlash: { value: 0 }, uWind: { value: 1 }, uFog: { value: 0 }, uCity: { value: 1 } };
+    uCloudCol: { value: new THREE.Color() }, uFlashCol: { value: new THREE.Color() }, uStars: { value: 1 }, uMilky: { value: .4 }, uTime: { value: 0 }, uCloud: { value: 0 }, uFlash: { value: 0 }, uWind: { value: 1 }, uFog: { value: 0 }, uCity: { value: 1 }, uPhotoK: { value: 0 }, uPhoto: { value: null } };
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 48, 24), new THREE.ShaderMaterial({ vertexShader: SKY_VS, fragmentShader: SKY_FS, uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false }));
   sky.renderOrder = -10; scene.add(sky);
+  const texLoader = new THREE.TextureLoader(), bgUrl = n => new URL("./bg/" + n, import.meta.url).href;
+  const loadTex = n => { const t = texLoader.load(bgUrl(n)); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  skyU.uPhoto.value = loadTex("sky.webp");
   const moonU = { uLight: { value: new THREE.Vector3(0, 0, 1) }, uAlpha: { value: 1 } };
   const moon = new THREE.Mesh(new THREE.SphereGeometry(34, 40, 28), new THREE.ShaderMaterial({ uniforms: moonU, transparent: true, depthWrite: false, fog: false,
     vertexShader: "varying vec3 vN; varying vec3 vO; void main(){ vO=normal; vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
@@ -378,7 +386,7 @@ export function start(host, cb, opt) {
   signs.forEach(sg_ => { for (let k = 0; k < 2; k++) { const c = pick([[1, .25, .25], [.3, 1, .55], [.4, .65, 1], [1, .85, .3], [1, .4, .85]]); gAdd(sg_.x + rnd(-sg_.w / 3, sg_.w / 3), sg_.y - k * 2.2, sg_.z, c[0], c[1], c[2], 6.5, .85); } });
   // 만(바다)과 다리: 높은 곳에서 내려다보면 불꽃과 불빛이 물에 비쳐요
   const WATER_Y = -OURH + .4, BAY = { x: 430, z0: -330, z1: -1500 };
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(BAY.x * 2, BAY.z0 - BAY.z1), new THREE.ShaderMaterial({ depthWrite: false,
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(BAY.x * 2, BAY.z0 - BAY.z1), new THREE.ShaderMaterial({ depthWrite: false, transparent: true,
     uniforms: { uFogColor: bldU.uFogColor, uFogD: bldU.uFogD, uNight: bldU.uNight, uTime: bldU.uTime, uSkyBot: skyU.uBot, uSkyTop: skyU.uTop, uFlashCol: skyU.uFlashCol, uFlash: skyU.uFlash },
     vertexShader: "varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }",
     fragmentShader: `precision highp float; uniform vec3 uFogColor,uSkyBot,uSkyTop,uFlashCol; uniform float uFogD,uNight,uTime,uFlash; varying vec3 vW; ${NOISE}
@@ -386,15 +394,16 @@ export function start(host, cb, opt) {
         vec3 V = normalize(cameraPosition - vW); float fr = pow(1.-clamp(V.y,0.,1.), 2.3);
         vec2 q = vW.xz*.05; float w = vn(q+vec2(uTime*.04,uTime*.03))*.6 + vn(q*2.7-vec2(uTime*.05,0.))*.4;
         vec3 deep = vec3(.02,.035,.08) + uSkyTop*.12;
-        vec3 refl = mix(uSkyBot, uSkyTop, .6) * (.5 + .85*w);
+        vec3 refl = mix(uSkyBot, uSkyTop, .75) * (.22 + .4*w);
         vec3 col = mix(deep, refl, clamp(fr*1.15,0.,1.));
         float near = 1.-smoothstep(0.,420.,abs(vW.z+330.));
         float st = smoothstep(.55,.92, vn(vec2(vW.x*.14, vW.z*.018 + uTime*.07)));
-        col += vec3(1.,.72,.42)*st*uNight*(.1+.4*near);
+        col += vec3(1.,.72,.42)*st*uNight*(.03+.16*near);
         col += vec3(.5,.7,1.)*smoothstep(.72,1.,vn(vec2(vW.x*.25, vW.z*.05 - uTime*.2)))*.08*uNight;
+        col = mix(col, vec3(.035,.04,.075) + vec3(.05,.025,.015)*w, smoothstep(-700.,-1300., vW.z)*.9);   // 먼 곳은 배경 사진의 짙은 물빛으로 이어 붙임
         col += uFlashCol*uFlash*(.9*fr+.25)*1.3;
-        float dist = length(vW - cameraPosition); float ff = 1.-exp(-uFogD*uFogD*dist*dist*.55); col = mix(col, uFogColor, clamp(ff,0.,1.));
-        gl_FragColor = vec4(col,1.);
+        float dist = length(vW - cameraPosition); float ff = 1.-exp(-uFogD*uFogD*dist*dist*.4); col = mix(col, uFogColor*vec3(.38,.36,.55), clamp(ff,0.,1.));
+        gl_FragColor = vec4(col, smoothstep(-1520., -1250., vW.z) );
         #include <colorspace_fragment>
       }` }));
   water.rotation.x = -Math.PI / 2; water.position.set(0, WATER_Y, (BAY.z0 + BAY.z1) / 2); scene.add(water);
@@ -407,7 +416,9 @@ export function start(host, cb, opt) {
   const ridge = []; for (let x = -2800; x <= 2800; x += 70) ridge.push([x, 50 + 95 * (.5 + .5 * Math.sin(x * .0021 + 1)) + 70 * (.5 + .5 * Math.sin(x * .0057 + 2)) + rnd(0, 16)]);
   const hs = new THREE.Shape(); hs.moveTo(-2800, -6); ridge.forEach(([x, y]) => hs.lineTo(x, y)); hs.lineTo(2800, -6); hs.closePath();
   const hills = new THREE.Mesh(new THREE.ShapeGeometry(hs), hillMat); hills.position.set(0, -OURH, -1500); scene.add(hills);
-  [[-210, -930, 120, 46], [270, -1110, 160, 62], [-340, -1180, 90, 34]].forEach(([x, z, r, h]) => { const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 24), hillMat); m.scale.z = .7; m.position.set(x, -OURH + h / 2, z); scene.add(m); });
+  const BAYW = 2500, bayBoard = new THREE.Mesh(new THREE.PlaneGeometry(BAYW, BAYW * 460 / 2048), new THREE.MeshBasicMaterial({ map: loadTex("bay.webp"), transparent: true, depthWrite: false, fog: false }));
+  bayBoard.position.set(0, -OURH + BAYW * 460 / 2048 / 2 - 10, -2050); bayBoard.renderOrder = -5; scene.add(bayBoard);
+  hills.visible = false;
   for (let i = 0; i < 260; i++) gAdd(rnd(-2300, 2300), -OURH + rnd(1, 14), -1440 + rnd(-40, 40), 1, rnd(.6, .85), rnd(.35, .55), 5, rnd(.35, .75));   // 건너편 도시의 불빛
   // 광안대교 같은 현수교 (색이 천천히 바뀌는 조명)
   const BA = new THREE.Vector3(-300, 0, -352), BB = new THREE.Vector3(250, 0, -830), BY = -OURH + 16, bdir = BB.clone().sub(BA), BL = bdir.length(); bdir.normalize();
@@ -748,7 +759,7 @@ export function start(host, cb, opt) {
     set(skyU.uTop, p.top.map(v => v * (1 - cl * .25))); set(skyU.uMid, p.mid); set(skyU.uBot, p.bot); skyU.uMilky.value = milky * (1 - cl * .8) * (mode === "real" ? (sunAlt < -.2 ? 1 : 0) : 1);
     sunDirV.copy(dirOf(sunAlt, sunAz)); skyU.uSunDir.value.copy(sunDirV);
     const glow = clamp(1 - Math.abs(sunAlt + .02) / .18, 0, 1) * (1 - cl * .5); skyU.uSunCol.value.setRGB(1 * glow, .5 * glow, .22 * glow);
-    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCity.value = p.night * (1 - cl * .3); skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
+    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCity.value = p.night * (1 - cl * .3); skyU.uPhotoK.value = (mode === "twilight" || mode === "dusk") ? 1 : mode === "real" ? clamp((sunAlt + .22) * 6, 0, 1) * clamp(1 - sunAlt * 8, 0, 1) : 0; bayBoard.material.opacity = clamp((p.night - .25) * 3, 0, 1) * (1 - cl * .35); skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
     const cc = p.mid.map((v, j) => v * .55 + p.bot[j] * .35 + (p.night > .5 ? 14 : 30)); set(skyU.uCloudCol, cc.map(v => v * (1 - cl * .15)));
     const fogc = p.fog.map((v, j) => lerp(v, 150 + j * 10, w.fog * .55)); bldU.uFogColor.value.setRGB(fogc[0] / 255, fogc[1] / 255, fogc[2] / 255, THREE.SRGBColorSpace); scene.fog.color.copy(bldU.uFogColor.value);
     bldU.uFogD.value = .0011 * (1 + w.fog * 2.6 + w.rain * .8); scene.fog.density = bldU.uFogD.value * .95;
