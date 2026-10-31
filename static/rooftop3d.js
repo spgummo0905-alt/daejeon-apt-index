@@ -332,6 +332,7 @@ export function start(host, cb, opt) {
 
   // ----- 도시 -----
   const OURH = 55;   // 우리 옥상이 땅에서 올라온 높이(m)
+  const RX = 13, RZ = 10;   // 우리 옥상의 반폭·반깊이(m): 26m × 20m
   const city = [], towers = [];
   const R = mulberry(20241031);
   const ROAD_X = [-780, -660, -540, -420, -300, -180, -60, 60, 180, 300, 420, 540, 660, 780], ROAD_Z = [-300, -180, -60, 60, 180, 300, 420, 540, 660, 780];   // 격자 도로 (건물은 길을 비켜서)
@@ -452,32 +453,34 @@ export function start(host, cb, opt) {
   const roof = new THREE.Group(); scene.add(roof);
   const obstacles = [];   // 지나갈 수 없는 곳 (원)
   const floorMat = new THREE.MeshStandardMaterial({ map: texGrass(), roughness: 1, color: 0xd6dccf });   // 인조 잔디
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 12), floorMat); floor.rotation.x = -Math.PI / 2; roof.add(floor);
-  const bodyM = new THREE.Mesh(new THREE.BoxGeometry(16.6, OURH, 12.6), stdM(0x3a3f55, .95)); bodyM.position.y = -OURH / 2 - .02; roof.add(bodyM);
+  // 옥상을 넓게 (26m × 20m): 장애물은 가장자리로, 가운데와 앞쪽(하늘·야경 쪽)은 탁 트이게
+  floorMat.map.repeat.set(10, 8);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(RX * 2, RZ * 2), floorMat); floor.rotation.x = -Math.PI / 2; roof.add(floor);
+  const bodyM = new THREE.Mesh(new THREE.BoxGeometry(RX * 2 + .6, OURH, RZ * 2 + .6), stdM(0x3a3f55, .95)); bodyM.position.y = -OURH / 2 - .02; roof.add(bodyM);
   const parM = stdM(0x7c8196, .9), capM = stdM(0xa4a8b8, .8);
-  [[0, -5.85, 16.4, .3], [0, 5.85, 16.4, .3]].forEach(([x, z, w, d]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 1.05, d), parM); p.position.set(x, .52, z); roof.add(p); const c = new THREE.Mesh(new THREE.BoxGeometry(w + .1, .08, d + .16), capM); c.position.set(x, 1.07, z); roof.add(c); });
-  [[-7.85, 0], [7.85, 0]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(.3, 1.05, 12), parM); p.position.set(x, .52, z); roof.add(p); const c = new THREE.Mesh(new THREE.BoxGeometry(.4, .08, 12.1), capM); c.position.set(x, 1.07, z); roof.add(c); });
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(6.4, .08, 4.2), new THREE.MeshStandardMaterial({ map: texWood(), roughness: .85 })); deck.position.set(.4, .04, -.2); roof.add(deck);
+  [[0, -RZ + .15, RX * 2 + .4, .3], [0, RZ - .15, RX * 2 + .4, .3]].forEach(([x, z, w, d]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(w, 1.05, d), parM); p.position.set(x, .52, z); roof.add(p); const c = new THREE.Mesh(new THREE.BoxGeometry(w + .1, .08, d + .16), capM); c.position.set(x, 1.07, z); roof.add(c); });
+  [[-RX + .15, 0], [RX - .15, 0]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(.3, 1.05, RZ * 2), parM); p.position.set(x, .52, z); roof.add(p); const c = new THREE.Mesh(new THREE.BoxGeometry(.4, .08, RZ * 2 + .1), capM); c.position.set(x, 1.07, z); roof.add(c); });
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(9, .08, 6), new THREE.MeshStandardMaterial({ map: texWood(), roughness: .85 })); deck.position.set(.4, .04, -.2); roof.add(deck);
   // 계단실·물탱크·실외기
-  const stair = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.7, 2.4), stdM(0x6a7088, .9)); stair.position.set(-5.4, 1.35, 4.5); roof.add(stair); obstacles.push({ x: -5.4, z: 4.5, r: 2.3 });
-  const door = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.9), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); door.position.set(-5.4, 1, 3.31); roof.add(door);
-  const doorL = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: softTex(), color: 0xffb870, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false })); doorL.position.set(-5.4, 1.1, 3.4); roof.add(doorL);
-  const tank = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 2, 20), stdM(0x8a92a8, .6, .3)); tank.position.set(6.3, 2.2, 4.3); roof.add(tank); obstacles.push({ x: 6.3, z: 4.3, r: 1.1 });
-  for (const [lx, lz] of [[-.55, -.55], [.55, -.55], [-.55, .55], [.55, .55]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 1.2, 6), stdM(0x555b70)); l.position.set(6.3 + lx, .6, 4.3 + lz); roof.add(l); }
-  for (const [x, z] of [[2.2, 4.8], [3.6, 4.8]]) { const u = new THREE.Mesh(new THREE.BoxGeometry(1.2, .9, .8), stdM(0x9aa0b4, .6, .3)); u.position.set(x, .45, z); roof.add(u); const f = new THREE.Mesh(new THREE.CircleGeometry(.3, 16), stdM(0x333844)); f.position.set(x, .5, z - .41); f.rotation.y = Math.PI; roof.add(f); }
-  obstacles.push({ x: 2.9, z: 4.8, r: 1.3 });
+  const stair = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.7, 2.4), stdM(0x6a7088, .9)); stair.position.set(-RX + 2.3, 1.35, RZ - 1.6); roof.add(stair); obstacles.push({ x: -RX + 2.3, z: RZ - 1.6, r: 2.3 });
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.9), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); door.position.set(-RX + 2.3, 1, RZ - 2.79); roof.add(door);
+  const doorL = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: softTex(), color: 0xffb870, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false })); doorL.position.set(-RX + 2.3, 1.1, RZ - 2.7); roof.add(doorL);
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 2, 20), stdM(0x8a92a8, .6, .3)); tank.position.set(RX - 1.8, 2.2, RZ - 1.8); roof.add(tank); obstacles.push({ x: RX - 1.8, z: RZ - 1.8, r: 1.1 });
+  for (const [lx, lz] of [[-.55, -.55], [.55, -.55], [-.55, .55], [.55, .55]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 1.2, 6), stdM(0x555b70)); l.position.set(RX - 1.8 + lx, .6, RZ - 1.8 + lz); roof.add(l); }
+  for (const [x, z] of [[RX - 5.6, RZ - .9], [RX - 4.2, RZ - .9]]) { const u = new THREE.Mesh(new THREE.BoxGeometry(1.2, .9, .8), stdM(0x9aa0b4, .6, .3)); u.position.set(x, .45, z); roof.add(u); const f = new THREE.Mesh(new THREE.CircleGeometry(.3, 16), stdM(0x333844)); f.position.set(x, .5, z - .41); f.rotation.y = Math.PI; roof.add(f); }
+  obstacles.push({ x: RX - 4.9, z: RZ - .9, r: 1.3 });
   // 화분
   const potM = stdM(0xa0644a, .9), leaf = [stdM(0x2f7a45, .9), stdM(0x3f9a55, .9), stdM(0x276b3c, .9)];
   const plant = (x, z, s) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(.26 * s, .2 * s, .38 * s, 14), potM); p.position.set(x, .19 * s, z); roof.add(p);
     for (let i = 0; i < 6; i++) { const l = new THREE.Mesh(new THREE.SphereGeometry(.22 * s * rnd(.7, 1.1), 10, 8), pick(leaf)); l.position.set(x + rnd(-.18, .18) * s, (.55 + rnd(0, .45)) * s, z + rnd(-.18, .18) * s); l.scale.y = 1.2; roof.add(l); } obstacles.push({ x, z, r: .3 * s }); };
-  [[-7.1, -5.1, 1.5], [7.1, -5.1, 1.7], [-7.1, 0.4, 1.1], [7.1, 1.3, 1.2], [-3.3, -5.2, 1], [0.8, -5.2, 1.3], [4.1, -5.2, 1]].forEach(a => plant(...a));
+  [[-RX + .9, -RZ + .9, 1.5], [RX - .9, -RZ + .9, 1.7], [-RX + .9, 1.5, 1.1], [RX - .9, 2.5, 1.2], [-6, -RZ + .7, 1], [6.5, -RZ + .7, 1], [-RX + .9, -4, 1.2], [RX - .9, -3.5, 1], [0, RZ - .8, 1.3]].forEach(a => plant(...a));
   // 나무 울타리 (옥상달빛정원처럼 한쪽을 가려 아늑하게)
   const fenceTex = texWood(); fenceTex.repeat.set(1, 3);
   const fence = (x, z, len) => {
     const f = new THREE.Mesh(new THREE.BoxGeometry(.12, 1.7, len), new THREE.MeshStandardMaterial({ map: fenceTex, roughness: .9, color: 0xb98b58 })); f.position.set(x, .85, z); roof.add(f);
     const n = Math.round(len / 1.6); for (let k = 0; k <= n; k++) { const po = new THREE.Mesh(new THREE.BoxGeometry(.18, 1.85, .18), stdM(0x6f4a2a, .9)); po.position.set(x, .92, z + (k / n - .5) * len); roof.add(po); }
   };
-  fence(-7.15, -2.5, 4.2); fence(7.15, 3.6, 3.2);
+  fence(-RX + .85, 5, 4.2); fence(RX - .85, 5.6, 3.2);   // 뒤쪽 옆에만 (앞쪽 전망은 탁 트이게)
   // ----- 꾸미기: 텐트·돗자리·의자·랜턴·탁자 (눌러서 놓고, 눌러서 치워요) -----
   const LIM = { tent: 4, mat: 4, chair: 6, lantern: 6, table: 3 }, RAD = { tent: 1.1, mat: 0, chair: .36, lantern: .15, table: .5 }, NAME = { tent: "텐트", mat: "돗자리", chair: "의자", lantern: "랜턴", table: "탁자" };
   const items = [], TENT_C = [0x2f6f8f, 0xd9703a, 0x6b8e5a, 0x7d5fa8], MAT_T = [0xffffff, 0xa9d2ff, 0xffe08a, 0xc9f0c0], matTex = texPlaid();
@@ -515,7 +518,7 @@ export function start(host, cb, opt) {
   const itemList = () => items.map(i => ({ t: i.t, x: +i.x.toFixed(2), z: +i.z.toFixed(2), c: i.c }));
   function addItem(t, x, z, c, silent) {
     if (items.filter(i => i.t === t).length >= LIM[t]) { cb.say && cb.say("더 놓을 수 없어요", `${NAME[t]}는 ${LIM[t]}개까지예요`); return null; }
-    x = clamp(x, -6.9, 6.9); z = clamp(z, -4.8, 5);
+    x = clamp(x, -RX + 1.1, RX - 1.1); z = clamp(z, -RZ + 1.2, RZ - 1);
     if (!silent && RAD[t] > 0 && obstacles.some(o => Math.hypot(o.x - x, o.z - z) < o.r + RAD[t] - .05)) { cb.say && cb.say("여기에는 놓을 수 없어요", "빈 자리를 눌러 보세요"); return null; }
     const o = buildItem(t, c); o.g.position.set(x, 0, z); roof.add(o.g);
     const it = { t, x, z, c, g: o.g, sit: o.sit, parts: o.parts, lit: true, obs: RAD[t] > 0 ? { x, z, r: RAD[t] } : null }; o.g.userData.item = it; if (it.obs) obstacles.push(it.obs); items.push(it);
@@ -523,11 +526,11 @@ export function start(host, cb, opt) {
     return it;
   }
   function removeItem(it) { roof.remove(it.g); if (it.obs) obstacles.splice(obstacles.indexOf(it.obs), 1); items.splice(items.indexOf(it), 1); cb.layout && cb.layout(itemList()); }
-  const DEF_LAYOUT = [["tent", -5.3, -1.6, 0], ["tent", 1.4, -4.0, 1], ["mat", -.8, .9, 0], ["chair", -3.3, -3.7, 0], ["chair", -2.2, -3.7, 1], ["lantern", -4.0, -3.4, 0], ["lantern", 1.8, -.9, 0]];
+  const DEF_LAYOUT = [["tent", -9.5, -1.5, 0], ["tent", 9.4, 0.5, 1], ["mat", -1, 1.2, 0], ["chair", -3.2, -4.6, 0], ["chair", -1.9, -4.6, 1], ["lantern", -4.3, -4.3, 0], ["lantern", 1.6, .4, 0]];
   (Array.isArray(opt.layout) ? opt.layout.map(i => [i.t, i.x, i.z, i.c]) : DEF_LAYOUT).forEach(a => { if (LIM[a[0]]) addItem(a[0], a[1], a[2], a[3] || 0, true); });
   lampLights[0].position.set(-4.0, 1.2, -3.4);
   // 고기 굽는 자리
-  const GR = { x: 4.4, z: -1.6 }; obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
+  const GR = { x: 6.8, z: -2.4 }; obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
   const gStart = roof.children.length;
   const gtab = new THREE.Mesh(new THREE.BoxGeometry(1.7, .08, .8), stdM(0x3b4259, .6, .2)); gtab.position.set(GR.x, .72, GR.z + .02); roof.add(gtab);
   for (const [lx, lz] of [[-.78, -.32], [.78, -.32], [-.78, .34], [.78, .34]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .72, 6), stdM(0x2b3044, .5, .5)); l.position.set(GR.x + lx, .36, GR.z + lz); roof.add(l); }
@@ -544,7 +547,7 @@ export function start(host, cb, opt) {
     roof.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x2a2f45 })));
     for (let i = 1; i < 30; i += 1) { const p = pts[i]; bulbPos.push(p.x, p.y - .05, p.z); const c = [[255, 210, 140], [255, 180, 130], [200, 220, 255]][i % 3]; bulbCol.push(c[0] / 255, c[1] / 255, c[2] / 255); }
   };
-  strand(-4.7, -7.5, 7.5, 2.75, .55); strand(1.6, -7.5, 7.5, 2.9, .6);
+  strand(-RZ + .6, -RX + .6, RX - .6, 2.6, .5); strand(RZ - .5, -RX + 4.6, RX - 6.8, 3.1, .5);   // 뒤쪽 가장자리 (카메라 바로 앞에 걸리지 않게)
   const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), bulbPos.length / 3);
   const bc = new THREE.Color(); for (let i = 0; i < bulbPos.length / 3; i++) { m4.makeTranslation(bulbPos[i * 3], bulbPos[i * 3 + 1], bulbPos[i * 3 + 2]); bulbs.setMatrixAt(i, m4); bulbs.setColorAt(i, bc.setRGB(bulbCol[i * 3], bulbCol[i * 3 + 1], bulbCol[i * 3 + 2])); }
   roof.add(bulbs);
@@ -556,7 +559,7 @@ export function start(host, cb, opt) {
   for (const [x, y, z] of [[-2.4, 2.35, -4.7], [1.3, 2.4, -4.7], [4.8, 2.3, -4.7]]) { const l = new THREE.Mesh(new THREE.SphereGeometry(.2, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffd9a8 })); l.scale.y = 1.25; l.position.set(x, y, z); roof.add(l);
     const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb070, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.set(1.5, 1.5, 1); gl.position.copy(l.position); roof.add(gl); }
   // 반딧불
-  const FF = 16, ffs = Array.from({ length: FF }, () => ({ x: rnd(-7, 7), y: rnd(.4, 2.2), z: rnd(-5, 5), p: rnd(0, TAU), s: rnd(.3, .8) }));
+  const FF = 22, ffs = Array.from({ length: FF }, () => ({ x: rnd(-RX + 1, RX - 1), y: rnd(.4, 2.2), z: rnd(-RZ + 1, RZ - 1), p: rnd(0, TAU), s: rnd(.3, .8) }));
   for (let i = 0; i < FF; i++) { rg.attributes.aCol.setXYZ(nBulb + i, .8, 1, .45); rg.attributes.aSize.setX(nBulb + i, .22); }
   // 그림자 막(불판 아래)
   const flameSm = mkPoints(160, smokeMat); const fsg = flameSm.geometry; const smoke = Array.from({ length: 160 }, () => ({ l: 0, m: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, s: 1 }));
@@ -585,7 +588,7 @@ export function start(host, cb, opt) {
   let bubbleT = 0;
   const emote = e => { bubble.material.map = texEmoji(e); bubble.material.needsUpdate = true; bubble.visible = true; bubbleT = 2.2; bubble.position.set(0, 2.15, 0); };
   let target = null, sitSpot = null, eatT = 0, cheerT = 0, waveT = 0, afterWalk = null;
-  const pushOut = p => { for (const o of obstacles) { const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz), m = o.r + .28; if (d < m) { const k = m / (d || 1e-3); p.x = o.x + dx * k; p.z = o.z + dz * k; } } p.x = clamp(p.x, -6.9, 6.9); p.z = clamp(p.z, -4.9, 5.1); return p; };
+  const pushOut = p => { for (const o of obstacles) { const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz), m = o.r + .28; if (d < m) { const k = m / (d || 1e-3); p.x = o.x + dx * k; p.z = o.z + dz * k; } } p.x = clamp(p.x, -RX + 1.1, RX - 1.1); p.z = clamp(p.z, -RZ + 1.1, RZ - .9); return p; };
   const walkTo = (x, z, then, sit) => { target = pushOut({ x, z }); if (sit) { target.x = x; target.z = z; } sitSpot = sit || null; afterWalk = then || null; me.pose = "idle"; };
   let sittingOn = null;
   let inTent = null, focus = null, fcs = 0, focusItem = null, lookDev = false;
@@ -799,10 +802,10 @@ export function start(host, cb, opt) {
       const P = makePerson({ hood: HOODS[hashStr(id) % HOODS.length] }); roof.add(P.g);
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel(String(st.n || "이웃").slice(0, 12)), transparent: true, depthWrite: false })); tag.scale.set(1.2, .3, 1); tag.position.set(0, 1.75, 0); P.g.add(tag);
       const bub = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false })); bub.scale.set(.5, .5, 1); bub.visible = false; P.g.add(bub);
-      P.g.position.set(nv(st.x, -6.9, 6.9), 0, nv(st.z, -4.9, 5.1)); p = { P, bub, bt: 0, tx: P.g.position.x, tz: P.g.position.z, ty: 0, pose: "idle", yaw: Math.PI, last: time }; peers.set(id, p);
+      P.g.position.set(nv(st.x, -RX + 1.1, RX - 1.1), 0, nv(st.z, -RZ + 1.1, RZ - .9)); p = { P, bub, bt: 0, tx: P.g.position.x, tz: P.g.position.z, ty: 0, pose: "idle", yaw: Math.PI, last: time }; peers.set(id, p);
       cb.peerCount && cb.peerCount(peers.size);
     }
-    p.tx = nv(st.x, -6.9, 6.9); p.tz = nv(st.z, -4.9, 5.1); p.ty = nv(st.y, 0, 1); p.yaw = nv(st.yaw, -7, 7, Math.PI); p.pose = POSES.has(st.pose) ? st.pose : "idle"; p.P.seat = nv(st.seat, 0, .5); p.last = time;
+    p.tx = nv(st.x, -RX + 1.1, RX - 1.1); p.tz = nv(st.z, -RZ + 1.1, RZ - .9); p.ty = nv(st.y, 0, 1); p.yaw = nv(st.yaw, -7, 7, Math.PI); p.pose = POSES.has(st.pose) ? st.pose : "idle"; p.P.seat = nv(st.seat, 0, .5); p.last = time;
   }
   function removePeer(id) { const p = peers.get(id); if (!p) return; roof.remove(p.P.g); peers.delete(id); cb.peerCount && cb.peerCount(peers.size); }
   function peerEmote(id, e) {
@@ -1024,7 +1027,7 @@ export function start(host, cb, opt) {
     const sitting = me.pose === "sit", lying = me.pose === "lie", cy = (lying ? 1.0 : sitting ? 1.7 : 2.25) + (reduced ? 0 : Math.sin(time * .5) * .02);
     if (lying) lookT = Math.max(lookT, .95);
     const bx = mePos.x, bz = mePos.z;
-    const wantPos = new THREE.Vector3(clamp(bx + camDist * Math.sin(yaw), -7.6, 7.6), cy, clamp(bz + camDist * Math.cos(yaw), -6.2, 6.6));
+    const wantPos = new THREE.Vector3(clamp(bx + camDist * Math.sin(yaw), -RX + .4, RX - .4), cy, clamp(bz + camDist * Math.cos(yaw), -RZ - .2, RZ - 1.4));
     aer += ((view === "aerial" ? 1 : 0) - aer) * Math.min(1, dt * 1.1); const ae = aer * aer * (3 - 2 * aer), oa = time * .018 + yaw * .8;
     if (ae > .002) wantPos.lerp(aerPos.set(Math.sin(oa) * 34, 236, 190 + Math.cos(oa) * 8), ae);
     const mini = focus === "grill"; if (mini !== miniBg.m.visible) { miniBg.m.visible = miniBg.gl.visible = mini;
