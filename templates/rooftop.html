@@ -45,58 +45,63 @@
   <p class="roof-hint" data-roof-hint>오늘도 수고했어요. 잠깐 쉬어가세요.</p>
   <p class="roof-count" data-roof-count hidden><span data-roof-countt></span><button type="button" class="roof-count-reset" data-roof-starreset aria-label="센 별 처음부터 다시 세기">↺ 처음부터</button></p>
 
+  <div class="roof-joy" data-roof-joy aria-hidden="true"><i></i></div>
   <div class="roof-bottom">
     <button type="button" class="roof-btn roof-stand" data-roof-stand hidden>🙂 일어나기</button>
-    <div class="roof-sub" data-roof-sub="fire" hidden>
-      <button type="button" class="roof-btn fw" data-roof-fire>한 발</button>
-      <button type="button" class="roof-btn fw" data-roof-show>한바탕 쇼</button>
+    <div class="roof-sub roof-sheet2 roof-grid roof-grid2" data-roof-sub="fire" hidden>
+      <button type="button" class="roof-btn fw" data-roof-fire><i aria-hidden="true">한</i><span>발</span></button>
+      <button type="button" class="roof-btn fw" data-roof-show><i aria-hidden="true">한바탕</i><span>쇼</span></button>
     </div>
-    <div class="roof-sub" data-roof-sub="grill" hidden>
-      <button type="button" class="roof-btn" data-roof-food="pork">🥓 삼겹살</button>
-      <button type="button" class="roof-btn" data-roof-food="mix">🍤 모둠 구이 <small>새우·버섯·옥수수</small></button>
+    <div class="roof-sub roof-sheet2 roof-grid roof-grid2" data-roof-sub="grill" hidden>
+      <button type="button" class="roof-btn" data-roof-food="pork"><i aria-hidden="true">🥓</i><span>삼겹살</span></button>
+      <button type="button" class="roof-btn" data-roof-food="mix"><i aria-hidden="true">🍤</i><span>모둠 구이 <small>새우·버섯·옥수수</small></span></button>
     </div>
-    <div class="roof-sub" data-roof-sub="deco" hidden>
-      <div class="roof-decorow" role="group" aria-label="배치 바꾸기">
-        <button type="button" class="roof-btn fw" data-roof-deco="edit" aria-pressed="false">✋ 옮기기·돌리기</button>
-        <button type="button" class="roof-btn" data-roof-deco="remove" aria-pressed="false">🧹 치우기</button>
-        <button type="button" class="roof-btn" data-roof-resetlayout>↺ 기본 옥탑방</button>
+    <div class="roof-sub roof-sheet2" data-roof-sub="deco" hidden>
+      <div class="roof-tabs" role="tablist" aria-label="꾸미기 종류">
+        <button type="button" role="tab" data-roof-tab="okt" aria-selected="true">🛋 옥탑</button>
+        <button type="button" role="tab" data-roof-tab="camp" aria-selected="false">🏕 캠핑</button>
+        <button type="button" role="tab" data-roof-tab="pets" aria-selected="false">🐾 동물</button>
+        <button type="button" role="tab" data-roof-tab="edit" aria-selected="false">✋ 배치</button>
       </div>
-      <div class="roof-decorow" role="group" aria-label="옥탑 가구 놓기">
-        <span class="roof-pets-h">🛋 옥탑</span>
-        <button type="button" class="roof-btn" data-roof-deco="sofa" aria-pressed="false">🛋 소파</button>
-        <button type="button" class="roof-btn" data-roof-deco="beanbag" aria-pressed="false">🫘 빈백</button>
-        <button type="button" class="roof-btn" data-roof-deco="rug" aria-pressed="false">🟫 러그</button>
-        <button type="button" class="roof-btn" data-roof-deco="screen" aria-pressed="false">🎬 빔 스크린</button>
-        <button type="button" class="roof-btn" data-roof-deco="lamp" aria-pressed="false">💡 스탠드</button>
-        <button type="button" class="roof-btn" data-roof-deco="table" aria-pressed="false">☕ 탁자</button>
+      <div class="roof-decorow roof-grid" data-roof-pane="edit" hidden role="group" aria-label="배치 바꾸기">
+        <button type="button" class="roof-btn fw" data-roof-deco="edit" aria-pressed="false"><i aria-hidden="true">✋</i><span>옮기기·돌리기</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="remove" aria-pressed="false"><i aria-hidden="true">🧹</i><span>치우기</span></button>
+        <button type="button" class="roof-btn" data-roof-resetlayout><i aria-hidden="true">↺</i><span>기본 옥탑방</span></button>
       </div>
-      <div class="roof-decorow" role="group" aria-label="캠핑 소품 놓기">
-        <span class="roof-pets-h">🏕 캠핑</span>
-        <button type="button" class="roof-btn" data-roof-deco="canopy" aria-pressed="false">⛱ 타프</button>
-        <button type="button" class="roof-btn" data-roof-deco="tent" aria-pressed="false">⛺ 텐트</button>
-        <button type="button" class="roof-btn" data-roof-deco="mat" aria-pressed="false">🧺 돗자리</button>
-        <button type="button" class="roof-btn" data-roof-deco="chair" aria-pressed="false">🪑 의자</button>
-        <button type="button" class="roof-btn" data-roof-deco="lantern" aria-pressed="false">🏮 랜턴</button>
-        <button type="button" class="roof-btn" data-roof-deco="cooler" aria-pressed="false">🧊 아이스박스</button>
-        <button type="button" class="roof-btn" data-roof-deco="firepit" aria-pressed="false">🔥 화로</button>
-        <button type="button" class="roof-btn" data-roof-deco="pouf" aria-pressed="false">🟤 방석</button>
+      <div class="roof-decorow roof-grid" data-roof-pane="okt" role="group" aria-label="옥탑 가구 놓기">
+        <button type="button" class="roof-btn" data-roof-deco="sofa" aria-pressed="false"><i aria-hidden="true">🛋</i><span>소파</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="beanbag" aria-pressed="false"><i aria-hidden="true">🫘</i><span>빈백</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="rug" aria-pressed="false"><i aria-hidden="true">🟫</i><span>러그</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="screen" aria-pressed="false"><i aria-hidden="true">🎬</i><span>빔 스크린</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="lamp" aria-pressed="false"><i aria-hidden="true">💡</i><span>스탠드</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="table" aria-pressed="false"><i aria-hidden="true">☕</i><span>탁자</span></button>
       </div>
-      <div class="roof-pets" role="group" aria-label="함께하는 동물 (눌러서 꺼내고 넣어요)">
-        <span class="roof-pets-h">🐾 동물</span>
-        <button type="button" class="roof-btn" data-roof-pet="dog" aria-pressed="true">🐶 강아지</button>
-        <button type="button" class="roof-btn" data-roof-pet="cat" aria-pressed="true">🐱 고양이</button>
-        <button type="button" class="roof-btn" data-roof-pet="cham" aria-pressed="false">🦎 카멜레온</button>
-        <button type="button" class="roof-btn" data-roof-pet="frog" aria-pressed="false">🐸 개구리</button>
-        <button type="button" class="roof-btn" data-roof-pet="parrot" aria-pressed="false">🦜 앵무새</button>
+      <div class="roof-decorow roof-grid" data-roof-pane="camp" hidden role="group" aria-label="캠핑 소품 놓기">
+        <button type="button" class="roof-btn" data-roof-deco="canopy" aria-pressed="false"><i aria-hidden="true">⛱</i><span>타프</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="tent" aria-pressed="false"><i aria-hidden="true">⛺</i><span>텐트</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="mat" aria-pressed="false"><i aria-hidden="true">🧺</i><span>돗자리</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="chair" aria-pressed="false"><i aria-hidden="true">🪑</i><span>의자</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="lantern" aria-pressed="false"><i aria-hidden="true">🏮</i><span>랜턴</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="cooler" aria-pressed="false"><i aria-hidden="true">🧊</i><span>아이스박스</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="firepit" aria-pressed="false"><i aria-hidden="true">🔥</i><span>화로</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="pouf" aria-pressed="false"><i aria-hidden="true">🟤</i><span>방석</span></button>
+        <button type="button" class="roof-btn" data-roof-deco="bench" aria-pressed="false"><i aria-hidden="true">🪵</i><span>벤치</span></button>
+      </div>
+      <div class="roof-pets roof-grid" data-roof-pane="pets" hidden role="group" aria-label="함께하는 동물 (눌러서 꺼내고 넣어요)">
+        <button type="button" class="roof-btn" data-roof-pet="dog" aria-pressed="true"><i aria-hidden="true">🐶</i><span>강아지</span></button>
+        <button type="button" class="roof-btn" data-roof-pet="cat" aria-pressed="true"><i aria-hidden="true">🐱</i><span>고양이</span></button>
+        <button type="button" class="roof-btn" data-roof-pet="cham" aria-pressed="false"><i aria-hidden="true">🦎</i><span>카멜레온</span></button>
+        <button type="button" class="roof-btn" data-roof-pet="frog" aria-pressed="false"><i aria-hidden="true">🐸</i><span>개구리</span></button>
+        <button type="button" class="roof-btn" data-roof-pet="parrot" aria-pressed="false"><i aria-hidden="true">🦜</i><span>앵무새</span></button>
       </div>
     </div>
-    <div class="roof-sub" data-roof-sub="sky" hidden>
-      <button type="button" class="roof-btn" data-roof-stars aria-pressed="false">⭐ 별 세기</button>
-      <button type="button" class="roof-btn" data-roof-open="wish">🏮 소원 빌기</button>
-      <button type="button" class="roof-btn" data-roof-lie>🛌 누워서 보기</button>
-      <button type="button" class="roof-btn" data-roof-spin aria-pressed="false">🌀 천천히 둘러보기</button>
-      <button type="button" class="roof-btn" data-roof-sit>🪑 앉기</button>
-      <button type="button" class="roof-btn" data-roof-tent>⛺ 텐트 들어가기</button>
+    <div class="roof-sub roof-sheet2 roof-grid" data-roof-sub="sky" hidden>
+      <button type="button" class="roof-btn" data-roof-stars aria-pressed="false"><i aria-hidden="true">⭐</i><span>별 세기</span></button>
+      <button type="button" class="roof-btn" data-roof-open="wish"><i aria-hidden="true">🏮</i><span>소원 빌기</span></button>
+      <button type="button" class="roof-btn" data-roof-lie><i aria-hidden="true">🛌</i><span>누워서 보기</span></button>
+      <button type="button" class="roof-btn" data-roof-spin aria-pressed="false"><i aria-hidden="true">🌀</i><span>천천히 둘러보기</span></button>
+      <button type="button" class="roof-btn" data-roof-sit><i aria-hidden="true">🪑</i><span>앉기</span></button>
+      <button type="button" class="roof-btn" data-roof-tent><i aria-hidden="true">⛺</i><span>텐트 들어가기</span></button>
     </div>
     <div class="roof-tray" role="group" aria-label="옥상에서 하기">
       <button type="button" class="roof-dock" data-roof-menu="fire" aria-expanded="false"><i aria-hidden="true">🎆</i><span>불꽃</span></button>
@@ -122,14 +127,16 @@
   <div class="roof-modal" data-roof-modal="room" hidden>
     <div class="roof-card" role="dialog" aria-label="함께 있기">
       <div class="roof-sheet-head"><b>함께 있기</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
-      <p class="roof-note" data-roof-roomstat>혼자 있어요.</p>
-      <p class="roof-note">서버에 들어가면 같은 서버에 있는 사람들과 한 옥상에서 불꽃을 보고, 함께 꾸미고, 이모지로 인사해요. 말은 주고받지 않아요. 내 닉네임과 위치만 잠깐 보이고 저장되지 않아요.</p>
-      <ul class="roof-list roof-servers" data-roof-servers aria-label="서버 현황"></ul>
-      <ul class="roof-list" data-roof-members></ul>
+      <p class="roof-room-stat" data-roof-roomstat>혼자 있어요.</p>
+      <p class="rs-h">서버</p>
+      <ul class="roof-servers" data-roof-servers aria-label="서버 현황"></ul>
+      <p class="rs-h">지금 같이 있는 사람</p>
+      <ul class="roof-members" data-roof-members></ul>
+      <p class="roof-note">같은 서버 사람들과 한 옥상에서 불꽃을 보고, 함께 꾸미고, 이모지로 인사해요. 말은 주고받지 않고, 닉네임과 위치는 저장되지 않아요.</p>
       <div class="rs-chips">
-        <button type="button" class="roof-btn fw" data-roof-join="auto">사람 있는 서버로 바로 들어가기</button>
-        <button type="button" class="roof-btn" data-roof-join="friend">친구 방 만들어 초대하기</button>
-        <button type="button" class="roof-btn" data-roof-join="off" hidden>혼자 있기</button>
+        <button type="button" class="roof-btn fw roof-wide" data-roof-join="auto">⚡ 사람 있는 서버로 바로 들어가기</button>
+        <button type="button" class="roof-btn" data-roof-join="friend">💌 친구 방 만들기</button>
+        <button type="button" class="roof-btn" data-roof-join="off" hidden>🚪 혼자 있기</button>
       </div>
     </div>
   </div>
