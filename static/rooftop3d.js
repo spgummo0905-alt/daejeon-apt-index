@@ -472,12 +472,12 @@ export function start(host, cb, opt) {
   const fabric = c => new THREE.MeshStandardMaterial({ color: c, roughness: .92, side: THREE.DoubleSide });
   const glowSprite = (c, sc, op, y, z) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false })); sp.scale.set(sc, sc, 1); sp.position.set(0, y, z || 0); return sp; };
   function buildItem(t, c) {
-    const g = new THREE.Group(); let sit = null;
+    const g = new THREE.Group(); let sit = null, parts = null;
     if (t === "tent") {
       const body = new THREE.Mesh(new THREE.SphereGeometry(1.2, 24, 14, 0, TAU, 0, Math.PI / 2), fabric(TENT_C[c % 4])); body.scale.set(1, .85, 1.1); g.add(body);
       const door = new THREE.Mesh(new THREE.CircleGeometry(.5, 18), new THREE.MeshBasicMaterial({ color: 0x14182a })); door.scale.set(.85, 1.1, 1); door.position.set(0, .42, 1.2); g.add(door);
       const rim = new THREE.Mesh(new THREE.TorusGeometry(1.2, .035, 6, 32), stdM(0xe9e6dc, .8)); rim.rotation.x = Math.PI / 2; rim.scale.set(1, 1.1, 1); rim.position.y = .02; g.add(rim);
-      g.add(glowSprite(0xffb870, 1.9, .42, .5, 1.3)); g.scale.setScalar(.85); sit = { dx: 0, dz: 1.45, y: 0 };
+      const tg = glowSprite(0xffb870, 1.9, .42, .5, 1.3); g.add(tg); g.scale.setScalar(.85); sit = { dx: 0, dz: 1.45, y: 0 }; parts = { body, glow: tg };
     } else if (t === "mat") {
       const m = new THREE.Mesh(new THREE.BoxGeometry(2.4, .03, 1.8), new THREE.MeshStandardMaterial({ map: matTex, color: MAT_T[c % 4], roughness: 1 })); m.position.y = .1; g.add(m); sit = { dx: 0, dz: 0, y: .1 };
     } else if (t === "chair") {
@@ -489,13 +489,13 @@ export function start(host, cb, opt) {
     } else if (t === "lantern") {
       const b = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .2, 12), new THREE.MeshBasicMaterial({ color: 0xffd89a })); b.position.y = .13; g.add(b);
       const cap = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, .03, 12), stdM(0x2a2f40, .6)); cap.position.y = .245; g.add(cap);
-      g.add(glowSprite(0xffb870, 1.6, .55, .3));
+      const lg = glowSprite(0xffb870, 1.6, .55, .3); g.add(lg); parts = { bulb: b, glow: lg };
     } else {
       const top = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .05, 22), stdM(0xb98b58, .8)); top.position.y = .5; g.add(top);
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(.05, .12, .48, 10), stdM(0x59627c, .6)); leg.position.y = .25; g.add(leg);
       [[.14, .1], [-.16, -.08]].forEach(([x, z]) => { const cup = new THREE.Mesh(new THREE.CylinderGeometry(.045, .035, .09, 10), stdM(0xf2efe6, .5)); cup.position.set(x, .575, z); g.add(cup); });
     }
-    return { g, sit };
+    return { g, sit, parts };
   }
   const itemList = () => items.map(i => ({ t: i.t, x: +i.x.toFixed(2), z: +i.z.toFixed(2), c: i.c }));
   function addItem(t, x, z, c, silent) {
@@ -503,7 +503,7 @@ export function start(host, cb, opt) {
     x = clamp(x, -6.9, 6.9); z = clamp(z, -4.8, 5);
     if (!silent && RAD[t] > 0 && obstacles.some(o => Math.hypot(o.x - x, o.z - z) < o.r + RAD[t] - .05)) { cb.say && cb.say("여기에는 놓을 수 없어요", "빈 자리를 눌러 보세요"); return null; }
     const o = buildItem(t, c); o.g.position.set(x, 0, z); roof.add(o.g);
-    const it = { t, x, z, c, g: o.g, sit: o.sit, obs: RAD[t] > 0 ? { x, z, r: RAD[t] } : null }; o.g.userData.item = it; if (it.obs) obstacles.push(it.obs); items.push(it);
+    const it = { t, x, z, c, g: o.g, sit: o.sit, parts: o.parts, lit: true, obs: RAD[t] > 0 ? { x, z, r: RAD[t] } : null }; o.g.userData.item = it; if (it.obs) obstacles.push(it.obs); items.push(it);
     if (!silent) cb.layout && cb.layout(itemList());
     return it;
   }
@@ -571,9 +571,22 @@ export function start(host, cb, opt) {
   const pushOut = p => { for (const o of obstacles) { const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz), m = o.r + .28; if (d < m) { const k = m / (d || 1e-3); p.x = o.x + dx * k; p.z = o.z + dz * k; } } p.x = clamp(p.x, -6.9, 6.9); p.z = clamp(p.z, -4.9, 5.1); return p; };
   const walkTo = (x, z, then, sit) => { target = pushOut({ x, z }); if (sit) { target.x = x; target.z = z; } sitSpot = sit || null; afterWalk = then || null; me.pose = "idle"; };
   let sittingOn = null;
-  const standUp = () => { if (me.pose === "sit" || me.pose === "lie") { me.pose = "idle"; me.g.position.y = 0; me.seat = 0; sittingOn = null; lookT = .22; } };
+  let inTent = null;
+  const standUp = () => { if (inTent) { const q = pushOut({ x: inTent.x, z: inTent.z + 1.5 }); me.g.position.set(q.x, 0, q.z); inTent = null; me.pose = "idle"; me.seat = 0; lookT = .22; emote("☀️"); return; }
+    if (me.pose === "sit" || me.pose === "lie") { me.pose = "idle"; me.g.position.y = 0; me.seat = 0; sittingOn = null; lookT = .22; } };
   const sitOn = it => { standUp(); const q = it.sit; walkTo(it.x + q.dx, it.z + q.dz, () => { me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; me.yaw = Math.PI; sittingOn = it; emote("😌"); }, true); };
   const lieOn = it => { me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .32, it.z + .65); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); };
+  // ----- 소품 동작: 소품을 눌러 앉기·눕기·텐트 들어가기·차 마시기·랜턴 켜고 끄기 -----
+  const itemActions = it => ({ tent: [{ id: "enter", label: "들어가기" }, { id: "sit", label: "앞에 앉기" }], mat: [{ id: "sit", label: "앉기" }, { id: "lie", label: "눕기" }],
+    chair: [{ id: "sit", label: "앉기" }], lantern: [{ id: "toggle", label: it.lit ? "끄기" : "켜기" }], table: [{ id: "tea", label: "차 마시기" }] }[it.t] || []);
+  function doAction(it, id) {
+    standUp();
+    if (id === "sit") sitOn(it);
+    else if (id === "lie") { standUp(); walkTo(it.x, it.z + .65, () => lieOn(it), true); }
+    else if (id === "enter") walkTo(it.x, it.z + 1.45, () => { inTent = it; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .16, it.z + .5); lookT = .9; emote("🌙"); cb.say && cb.say("텐트 안이에요", "지붕이 비쳐서 밤하늘이 보여요. 아무 데나 누르면 나가요"); cb.lie && cb.lie(); }, true);
+    else if (id === "tea") walkTo(it.x + .95, it.z + .1, () => { me.yaw = -Math.PI / 2; me.pose = "eat"; eatT = 3.2; emote("☕"); cb.say && cb.say("차를 마셔요", "따뜻한 한 잔 ☕"); });
+    else if (id === "toggle") { it.lit = !it.lit; const pp = it.parts; if (pp) { pp.glow.visible = it.lit; pp.bulb.material.color.setHex(it.lit ? 0xffd89a : 0x3a3f50); } emote(it.lit ? "💡" : "🌙"); }
+  }
   const lieDown = () => { const m = items.filter(i => i.t === "mat").sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
     if (!m) { cb.say && cb.say("돗자리가 없어요", "꾸미기에서 돗자리를 펴 보세요"); return; } standUp(); walkTo(m.x, m.z + .65, () => lieOn(m), true); };
   let placing = null, removing = false, colorIdx = 0, view = "ground", aer = 0;
@@ -806,8 +819,11 @@ export function start(host, cb, opt) {
     if (hitI && aer < .5) { let o = hitI.object; while (o && !o.userData.item) o = o.parent; const it = o && o.userData.item;
       if (it && removing) { removeItem(it); emote("🧹"); return; }
       if (it && !placing) {
-        if (it.t === "mat") { if (me.pose === "sit" && sittingOn === it) lieOn(it); else sitOn(it); return; }
-        if (it.t === "chair" || it.t === "tent") { sitOn(it); return; } } }
+        const acts = itemActions(it); if (!acts.length) return;
+        if (acts.length === 1) { doAction(it, acts[0].id); return; }
+        const v = it.g.position.clone(); v.y += 1.1; v.project(camera);
+        if (cb.menu) cb.menu({ x: (v.x * .5 + .5) * r.width, y: (-v.y * .5 + .5) * r.height }, acts, aid => doAction(it, aid)); else doAction(it, acts[0].id);
+        return; } }
     const d = ray.ray.direction;
     const pt = new THREE.Vector3(); const onFloor = d.y < -.01 && ray.ray.intersectPlane(floorPlane, pt) && Math.abs(pt.x) < 8 && Math.abs(pt.z) < 6;
     if (aer > .5) { aimShell(new THREE.Vector3(d.x, Math.max(d.y, .18), d.z).normalize()); cb.fire && cb.fire(); return; }
@@ -947,6 +963,7 @@ export function start(host, cb, opt) {
     for (let i = 0; i < 160; i++) { const p = smoke[i]; if (p.l > 0) { p.l -= dt; p.x += (p.vx + Math.sin(time * .8 + i) * .05) * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
       fsg.attributes.position.setXYZ(i, p.x, p.y, p.z); const k = Math.max(0, p.l / (p.m || 1)); fsg.attributes.aSize.setX(i, p.l > 0 ? p.s * (1.8 - k) : 0); fsg.attributes.aAlpha.setX(i, p.l > 0 ? (p.a || .1) * k : 0); const t = p.t || [.8, .8, .9]; fsg.attributes.aCol.setXYZ(i, t[0], t[1], t[2]); }
     fsg.attributes.position.needsUpdate = fsg.attributes.aSize.needsUpdate = fsg.attributes.aAlpha.needsUpdate = fsg.attributes.aCol.needsUpdate = true; flameSm.position.set(0, 0, 0);
+    items.forEach(it => { if (it.t === "tent" && it.parts) { const want = inTent === it ? .2 : 1, m = it.parts.body.material; m.transparent = true; m.opacity += (want - m.opacity) * Math.min(1, dt * 4); it.parts.glow.material.opacity = (inTent === it ? .9 : .42) * (it.lit ? 1 : 1); } });
     // 먹을거리
     foods.forEach(f => { f.c[f.down] += dt / 12; if (f.flip > 0) f.flip = Math.max(0, f.flip - dt * 2.4); const up = 1 - f.down, col = colorAt(f.kind, f.c[up]); f.m.color.setRGB(col[0], col[1], col[2]);
       f.g.position.y = slotPos(f.slot).y + Math.sin(f.flip * Math.PI) * .35; f.g.rotation.x = f.flip * Math.PI; if (burnt(f) && Math.random() < dt * 8) addSmoke(f.g.position.x, 1.15, f.g.position.z, 0, .5, 0, .3, .2, 2, [.35, .35, .4]); });

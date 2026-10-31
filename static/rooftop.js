@@ -87,89 +87,29 @@
     Object.entries(A.layers).forEach(([k, L]) => L.set(st.sound && st.on.amb && st.amb.includes(k)));
   }
   // 환경음 층: 켜질 때 처음 한 번만 만들고, 이후엔 크기만 올리고 내림
-  const LAYERS = {
-    cricket(c, out) {   // 귀뚜라미: 높은 소리를 빠르게 끊어 울리고, 느리게 쉬었다 울어요
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      [[4300, 26, 1.9, -.6], [4650, 31, 2.3, .1], [5100, 24, 1.55, .65], [3900, 28, 2.7, -.2]].forEach(([f, pf, gf, pan], i) => {
-        const o = c.createOscillator(), a1 = c.createGain(), a2 = c.createGain(), p = panner(pan), lv = c.createGain();
-        o.frequency.value = f; a1.gain.value = .5; a2.gain.value = .5; lv.gain.value = .02;
-        const l1 = c.createOscillator(), l1g = c.createGain(); l1.frequency.value = pf; l1g.gain.value = .5; l1.connect(l1g).connect(a1.gain); l1.start();
-        const l2 = c.createOscillator(), l2g = c.createGain(); l2.type = "triangle"; l2.frequency.value = gf; l2g.gain.value = .5; l2.connect(l2g).connect(a2.gain); l2.start(c.currentTime + i * .37);
-        o.connect(a1).connect(a2).connect(lv).connect(p).connect(g); o.start();
-      });
-      return g;
-    },
-    bug(c, out) {   // 풀벌레: 낮고 부드러운 찌르르
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      [[2500, 13, .6, -.5], [3050, 17, .85, .5], [2800, 11, .45, 0]].forEach(([f, pf, gf, pan], i) => {
-        const o = c.createOscillator(), a1 = c.createGain(), a2 = c.createGain(), p = panner(pan), lv = c.createGain(); o.type = "triangle";
-        o.frequency.value = f; a1.gain.value = .5; a2.gain.value = .5; lv.gain.value = .018;
-        const l1 = c.createOscillator(), l1g = c.createGain(); l1.frequency.value = pf; l1g.gain.value = .5; l1.connect(l1g).connect(a1.gain); l1.start();
-        const l2 = c.createOscillator(), l2g = c.createGain(); l2.frequency.value = gf; l2g.gain.value = .5; l2.connect(l2g).connect(a2.gain); l2.start(c.currentTime + i * .5);
-        o.connect(a1).connect(a2).connect(lv).connect(p).connect(g); o.start();
-      });
-      return g;
-    },
-    wind(c, out) {
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      const s = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), wg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 520; wg.gain.value = .3;
-      const lf = c.createOscillator(), lfg = c.createGain(); lf.frequency.value = .08; lfg.gain.value = 220; lf.connect(lfg).connect(lp.frequency); lf.start();
-      const lf2 = c.createOscillator(), lg2 = c.createGain(); lf2.frequency.value = .13; lg2.gain.value = .12; lf2.connect(lg2).connect(wg.gain); lf2.start();
-      s.connect(lp).connect(wg).connect(g); s.start();
-      const w2 = noiseSrc(A.white, true), bp = c.createBiquadFilter(), g2 = c.createGain(); bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 6; g2.gain.value = .012;
-      const lf3 = c.createOscillator(), lg3 = c.createGain(); lf3.frequency.value = .06; lg3.gain.value = .01; lf3.connect(lg3).connect(g2.gain); lf3.start();
-      w2.connect(bp).connect(g2).connect(g); w2.start();
-      return g;
-    },
-    city(c, out) {   // 먼 도시: 낮은 웅웅거림과 가끔 지나가는 차
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      const s = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), hg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 240; hg.gain.value = .32; s.connect(lp).connect(hg).connect(g); s.start();
-      let tm = 0; const car = () => { if (!A.layers.city || !A.layers.city.on) { tm = setTimeout(car, 4000); return; }
-        const t = c.currentTime, n = noiseSrc(A.white, true), bp = c.createBiquadFilter(), cg = c.createGain(), p = panner(rnd(-.9, .9)); bp.type = "bandpass"; bp.Q.value = 1.4;
-        const dir = Math.random() < .5 ? 1 : -1; bp.frequency.setValueAtTime(380, t); bp.frequency.linearRampToValueAtTime(760, t + 1.6); bp.frequency.linearRampToValueAtTime(420, t + 3.4);
-        if (p.pan) { p.pan.setValueAtTime(-.8 * dir, t); p.pan.linearRampToValueAtTime(.8 * dir, t + 3.4); }
-        cg.gain.setValueAtTime(0, t); cg.gain.linearRampToValueAtTime(.05, t + 1.5); cg.gain.linearRampToValueAtTime(0, t + 3.4);
-        n.connect(bp).connect(cg).connect(p).connect(g); n.start(t); n.stop(t + 3.6); tm = setTimeout(car, rnd(5000, 13000)); };
-      tm = setTimeout(car, 3000);
-      return g;
-    },
-    rain(c, out) {
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      const s = noiseSrc(A.white, true), hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), rg = c.createGain(); hp.type = "highpass"; hp.frequency.value = 1400; lp.type = "lowpass"; lp.frequency.value = 7500; rg.gain.value = .11;
-      s.connect(hp).connect(lp).connect(rg).connect(g); s.start();
-      const b = noiseSrc(A.brown, true), bl = c.createBiquadFilter(), bg = c.createGain(); bl.type = "lowpass"; bl.frequency.value = 600; bg.gain.value = .1; b.connect(bl).connect(bg).connect(g); b.start();
-      return g;
-    },
-    chime(c, out) {   // 풍경: 가끔 맑은 소리가 한 번씩
-      const g = c.createGain(); g.gain.value = 0; g.connect(out); g.connect(A.send);
-      const notes = [523.25, 587.33, 659.25, 783.99, 880, 1046.5]; let tm = 0;
-      const ring = () => { if (!A.layers.chime || !A.layers.chime.on) { tm = setTimeout(ring, 3000); return; }
-        const t = c.currentTime, f = notes[(Math.random() * notes.length) | 0], p = panner(rnd(-.7, .7));
-        [[1, .05], [2.76, .018], [5.4, .007]].forEach(([m, a]) => { const o = c.createOscillator(), e = c.createGain(); o.type = "sine"; o.frequency.value = f * m; e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(a, t + .005); e.gain.exponentialRampToValueAtTime(.0003, t + 3.2 / m ** .4); o.connect(e).connect(p).connect(g); o.start(t); o.stop(t + 3.4); });
-        tm = setTimeout(ring, rnd(2600, 8000)); };
-      tm = setTimeout(ring, 1500);
-      return g;
-    },
-    fire(c, out) {   // 숯불: 낮은 불 소리와 톡톡 튀는 소리
-      const g = c.createGain(); g.gain.value = 0; g.connect(out);
-      const b = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), bg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 260; bg.gain.value = .26; b.connect(lp).connect(bg).connect(g); b.start();
-      let tm = 0; const pop = () => { if (!A.layers.fire || !A.layers.fire.on) { tm = setTimeout(pop, 2000); return; }
-        const t = c.currentTime, n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(), p = panner(rnd(-.3, .3)); bp.type = "bandpass"; bp.frequency.value = rnd(1800, 4200); bp.Q.value = 1.2;
-        e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(rnd(.03, .1), t + .002); e.gain.exponentialRampToValueAtTime(.0005, t + rnd(.02, .07));
-        n.connect(bp).connect(e).connect(p).connect(g); n.start(t, rnd(0, 1.5), .1); tm = setTimeout(pop, rnd(90, 700)); };
-      tm = setTimeout(pop, 500);
-      return g;
-    },
-  };
+  // 환경음: 실제 녹음(위키미디어 커먼즈 자유 이용, static/sounds)을 이음새 없이 반복. 처음 켤 때 받아 와요
+  const LVL = { cricket: .8, katydid: .55, frog: .6, cicada: .4, wind: .9, rain: .85, chime: .7, fire: .8, city: .65, water: .75 };
+  const BUF = {}, SOUND_DIR = "static/sounds/";
+  const loadBuf = f => (BUF[f] || (BUF[f] = fetch(SOUND_DIR + f).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => A.c.decodeAudioData(b)).catch(() => null)));
+  let MAN = null; const manifest = () => (MAN || (MAN = fetch(SOUND_DIR + "manifest.json").then(r => r.json()).catch(() => ({ near: [], far: [], oneshots: {} }))));
   function ensureLayer(k) {
-    if (A.layers[k] || !LAYERS[k]) return;
-    const node = LAYERS[k](A.c, A.buses.amb), L = { on: false, set(on) { L.on = on; node.gain.setTargetAtTime(on ? 1 : 0, A.c.currentTime, 1.1); } };
+    if (A.layers[k] || !LVL[k]) return;
+    const L = { on: false, node: null, busy: false,
+      set(on) { L.on = on; const t = A.c.currentTime;
+        if (on && !L.node && !L.busy) { L.busy = true; loadBuf(k + ".mp3").then(buf => { L.busy = false; if (!buf) return;
+          const src = A.c.createBufferSource(); src.buffer = buf; src.loop = true; const g = A.c.createGain(); g.gain.value = 0; src.connect(g).connect(A.buses.amb); if (k === "chime") g.connect(A.send); src.start(0, Math.random() * buf.duration * .5);
+          L.node = g; g.gain.setTargetAtTime(L.on ? LVL[k] : 0, A.c.currentTime, 1.6); }); }
+        else if (L.node) L.node.gain.setTargetAtTime(on ? LVL[k] : 0, t, on ? 1.6 : 1.1); } };
     A.layers[k] = L;
   }
   const ready = () => A.c && st.sound && A.c.state !== "closed";
   // 불꽃: 쏘는 소리 → (빛이 먼저, 소리는 조금 뒤에) 쾅 하고 터지는 소리와 넓게 퍼지는 울림
   const out = (pan, dest, wet) => { const p = panner(pan), g = A.c.createGain(); g.gain.value = 1; p.connect(dest); g.connect(p); if (wet) { const w = A.c.createGain(); w.gain.value = wet; g.connect(w); w.connect(A.send); } return g; };
   function env(g, t, a, pk, d) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + a); g.gain.exponentialRampToValueAtTime(.0004, t + a + d); }
+  function playSample(file, o) {
+    loadBuf(file).then(buf => { if (!buf || !ready()) return; const c = A.c, src = c.createBufferSource(), g = c.createGain(), dst = out(o.pan, A.buses[o.bus], o.wet);
+      src.buffer = buf; src.playbackRate.value = o.rate || 1; g.gain.value = o.gain; src.connect(g).connect(dst); src.start(Math.max(c.currentTime, o.at || 0)); });
+  }
   const SND = {
     launch(i) {
       if (!ready() || !st.on.fw) return;
@@ -178,30 +118,21 @@
       env(e, t, .15, .1, 1.5); n.connect(bp).connect(e).connect(o); n.start(t, rnd(0, 1), 1.8);
       const w = c.createOscillator(), we = c.createGain(); w.type = "sine"; w.frequency.setValueAtTime(760, t); w.frequency.exponentialRampToValueAtTime(2300, t + 1.4); env(we, t, .3, .014, 1.2); w.connect(we).connect(o); w.start(t); w.stop(t + 1.8);
     },
-    burst(i) {
+    burst(i) {   // 실제 불꽃 녹음에서 한 발씩 골라, 거리만큼 늦게 들리게 하고 넓게 울리게 해요
       if (!ready() || !st.on.fw) return;
-      const c = A.c, k = i.kind, big = i.big, sz = clamp(i.size, .7, 1.8), far = clamp(i.dist / 600, .5, 1.2), t = c.currentTime + clamp(i.dist / 650, .3, .95) + rnd(0, .05);
-      const o = out(i.pan, A.buses.fw, big ? 1.2 : .9), g = (v) => v * sz / far ** .6;
-      const thump = (at, pk, f0 = 105, f1 = 32, d = 1.0) => { const os = c.createOscillator(), e = c.createGain(); os.type = "sine"; os.frequency.setValueAtTime(f0, at); os.frequency.exponentialRampToValueAtTime(f1, at + .55); env(e, at, .006, pk, d); os.connect(e).connect(o); os.start(at); os.stop(at + d + .2); };
-      const crack = (at, pk, f = 2400, q = .8, d = .22) => { const n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), hp = c.createBiquadFilter(), e = c.createGain(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q; hp.type = "highpass"; hp.frequency.value = 500; env(e, at, .002, pk, d); n.connect(bp).connect(hp).connect(e).connect(o); n.start(at, rnd(0, 1), d + .1); };
-      const rumble = (at, pk, d = 1.9, f = 360) => { const n = noiseSrc(A.brown, false), lp = c.createBiquadFilter(), e = c.createGain(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f, at); lp.frequency.exponentialRampToValueAtTime(90, at + d); env(e, at, .02, pk, d); n.connect(lp).connect(e).connect(o); n.start(at, rnd(0, 1.5), d + .2); };
-      const shimmer = (at, pk, d = 2.6) => { const n = noiseSrc(A.white, false), hp = c.createBiquadFilter(), e = c.createGain(); hp.type = "highpass"; hp.frequency.value = 5200; env(e, at, .2, pk, d); n.connect(hp).connect(e).connect(o); n.start(at, rnd(0, 1), d + .3); };
-      const clicks = (at, n, span, pk) => { for (let q = 0; q < n; q++) { const tt = at + Math.random() * span, nn = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(), p = out(rnd(-.8, .8) + i.pan * .3, A.buses.fw, .5);
-        bp.type = "bandpass"; bp.frequency.value = rnd(2200, 5200); bp.Q.value = 1.5; env(e, tt, .001, pk * rnd(.4, 1), rnd(.015, .045)); nn.connect(bp).connect(e).connect(p); nn.start(tt, rnd(0, 1.5), .06); } };
-      thump(t, g(big ? 1.0 : .72), big ? 92 : 112, big ? 28 : 34, big ? 1.3 : .95);
-      crack(t, g(.42), 2200, .7, big ? .32 : .22); rumble(t + .02, g(big ? .62 : .46), big ? 2.6 : 1.9);
-      if (k === "willow" || k === "chrys" || k === "palm") shimmer(t + .12, g(.07), 3.2);
-      if (k === "crackle") { clicks(t + .15, 46, 1.6, g(.3)); crack(t, g(.28), 3200, .8, .15); }
-      if (k === "crossette") { [.38, .46, .53].forEach(d => crack(t + d, g(.22), 2800, .8, .14)); }
-      if (k === "double") { thump(t + .26, g(.55), 120, 40, .8); crack(t + .26, g(.3), 2600, .8, .18); rumble(t + .28, g(.36), 1.6, 300); }
-      if (k === "ring" || k === "saturn" || k === "heart") shimmer(t + .1, g(.04), 1.6);
-      if (big) { crack(t + .05, g(.3), 1400, .5, .4); }
+      manifest().then(M => {
+        const c = A.c, near = i.dist < 520 || i.big, list = (near ? M.near : M.far) && (near ? M.near : M.far).length ? (near ? M.near : M.far) : M.near; if (!list || !list.length) return;
+        const f = list[(Math.random() * list.length) | 0], at = c.currentTime + clamp(i.dist / 650, .3, .95), sz = clamp(i.size, .7, 1.8);
+        playSample(f, { pan: i.pan, gain: clamp(.5 * sz * (near ? 1 : .8), .25, 1), rate: rnd(.9, 1.08) * (i.big ? .94 : 1), wet: i.big ? 1.1 : .8, bus: "fw", at });
+        if (i.kind === "double") playSample(list[(Math.random() * list.length) | 0], { pan: i.pan, gain: .4 * sz, rate: rnd(.95, 1.1), wet: .8, bus: "fw", at: at + .28 });
+        const os = c.createOscillator(), e = c.createGain(), o = out(i.pan, A.buses.fw, .6); os.type = "sine"; os.frequency.setValueAtTime(i.big ? 70 : 85, at); os.frequency.exponentialRampToValueAtTime(30, at + .6);   // 가슴을 울리는 낮은 울림만 살짝 더해요
+        env(e, at, .01, .16 * sz, .9); os.connect(e).connect(o); os.start(at); os.stop(at + 1.2);
+      });
     },
     sizzle(n) { if (!A.sizz) return; A.sizz.gain.setTargetAtTime(Math.min(.07, n * .02), A.c.currentTime, .3); },
     eat() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(0, A.buses.fx, .1); for (let i = 0; i < 3; i++) { const n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(); bp.type = "bandpass"; bp.frequency.value = 1700 + i * 300; bp.Q.value = 2; env(e, t + i * .13, .002, .22, .05); n.connect(bp).connect(e).connect(o); n.start(t + i * .13, i * .2, .1); } },
-    meow() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(.1, A.buses.fx, .15), os = c.createOscillator(), e = c.createGain(), bp = c.createBiquadFilter(), vb = c.createOscillator(), vg = c.createGain();
-      os.type = "sawtooth"; os.frequency.setValueAtTime(560, t); os.frequency.linearRampToValueAtTime(900, t + .16); os.frequency.linearRampToValueAtTime(620, t + .5); vb.frequency.value = 22; vg.gain.value = 12; vb.connect(vg).connect(os.frequency);
-      bp.type = "bandpass"; bp.frequency.value = 1300; bp.Q.value = 1.6; env(e, t, .06, .1, .5); os.connect(bp).connect(e).connect(o); os.start(t); vb.start(t); os.stop(t + .7); vb.stop(t + .7); },
+    meow() { if (!ready() || !st.on.fx) return; manifest().then(M => { const names = Object.values(M.oneshots || {}); if (names.length) playSample(names[(Math.random() * names.length) | 0], { pan: .1, gain: .75, rate: rnd(.96, 1.04), wet: .15, bus: "fx" }); });
+      loadBuf("purr.mp3").then(buf => { if (!buf || !ready()) return; const c = A.c, t = c.currentTime, s2 = c.createBufferSource(), g = c.createGain(); s2.buffer = buf; s2.loop = true; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.55, t + .5); g.gain.setTargetAtTime(0, t + 2.6, .6); s2.connect(g).connect(A.buses.fx); s2.start(t); s2.stop(t + 5); }); },
     star(n) { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(rnd(-.4, .4), A.buses.fx, .8), f = [523.25, 587.33, 659.25, 783.99, 880][n % 5] * (n % 10 >= 5 ? 2 : 1);
       [[1, .07], [2, .02], [3.01, .008]].forEach(([m, a]) => { const os = c.createOscillator(), e = c.createGain(); os.type = "sine"; os.frequency.value = f * m; env(e, t, .01, a, 1.8 / m ** .3); os.connect(e).connect(o); os.start(t); os.stop(t + 2); }); },
     wish() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(0, A.buses.fx, 1);
@@ -240,7 +171,15 @@
   $$("[data-roof-vol]").forEach(r => r.addEventListener("change", saveSt));
   $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); }));
   $$("[data-roof-q]").forEach(b => b.addEventListener("click", () => { st.q = b.dataset.roofQ; saveSt(); paintSettings(); if (api) api.setQuality(st.q === "auto" ? (matchMedia("(pointer: coarse)").matches ? "mid" : "high") : st.q); }));
-  const openModal = k => { $$("[data-roof-modal]").forEach(m => { m.hidden = m.dataset.roofModal !== k; }); const m = $(`[data-roof-modal="${k}"]`); if (m) { paintSettings(); const f = m.querySelector("textarea, button.rs-sw, button"); setTimeout(() => f && f.focus(), 30); } };
+  let creditsDone = false;
+  function paintCredits() {   // 설정 '정보'에 쓴 녹음의 저작자와 라이선스를 보여 줘요
+    if (creditsDone) return; creditsDone = true;
+    fetch("static/sounds/credits.json").then(r => r.json()).then(c => {
+      const NAMES = { cricket: "귀뚜라미", katydid: "풀벌레", frog: "개구리", cicada: "매미", wind: "바람", rain: "빗소리", chime: "풍경", fire: "숯불", city: "도시", water: "물소리", purr: "고양이 가르릉", meow1: "고양이 울음", meow2: "고양이 울음", silv2: "불꽃", silv3: "불꽃", piece: "불꽃", nijm: "불꽃", far1: "먼 불꽃", far2: "먼 불꽃", far4: "먼 불꽃" };
+      $("[data-roof-credits]").replaceChildren(...Object.entries(c).map(([k, v]) => { const li = document.createElement("li"), a = document.createElement("a"); a.href = v.page; a.target = "_blank"; a.rel = "noopener"; a.textContent = (NAMES[k] || k) + " · " + (v.author || "작자 미상") + " · " + v.license; li.append(a); return li; }));
+    }).catch(() => { creditsDone = false; });
+  }
+  const openModal = k => { $$("[data-roof-modal]").forEach(m => { m.hidden = m.dataset.roofModal !== k; }); const m = $(`[data-roof-modal="${k}"]`); if (m) { paintSettings(); if (k === "set") paintCredits(); const f = m.querySelector("textarea, button.rs-sw, button"); setTimeout(() => f && f.focus(), 30); } };
   const closeModal = () => $$("[data-roof-modal]").forEach(m => { m.hidden = true; });
   $$("[data-roof-open]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.roofOpen)));
   $$("[data-roof-mclose]").forEach(b => b.addEventListener("click", closeModal));
@@ -416,6 +355,7 @@
 
   // ---------- 3D 장면 시작 ----------
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
+  let actEl = null; const closeAct = () => { if (actEl) { actEl.remove(); actEl = null; } };
   const cb = {
     burst: SND.burst, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name) => { SND.eat(); bump("bbq"); say("맛있게 먹었어요", name + " 😋"); },
     cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
@@ -426,6 +366,12 @@
       if (n === 10) hint("별을 열 개 세었어요. 이제 소원을 빌어 볼까요?");
     },
     moved: s => { if (net) net.sendPos(s); }, fwOut: p => { if (net) net.send("fw", p); }, peerCount: () => paintNet(),
+    menu: (pos, acts, pick) => {   // 소품을 누르면 그 옆에 할 수 있는 동작이 떠요
+      closeAct(); const el = document.createElement("div"); el.className = "roof-act"; el.setAttribute("role", "menu");
+      acts.forEach(x => { const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn"; b.textContent = x.label; b.addEventListener("click", ev => { ev.stopPropagation(); closeAct(); pick(x.id); }); el.append(b); });
+      box.append(el); const w = el.offsetWidth, h = el.offsetHeight; el.style.left = clamp(pos.x - w / 2, 8, box.clientWidth - w - 8) + "px"; el.style.top = clamp(pos.y - h - 14, 70, box.clientHeight - h - 130) + "px";
+      actEl = el; setTimeout(() => document.addEventListener("pointerdown", closeAct, { once: true }), 0);
+    },
     layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
