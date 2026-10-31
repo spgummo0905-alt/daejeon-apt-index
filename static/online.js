@@ -18,5 +18,10 @@
   window.addEventListener("pagehide", leave);
   setTimeout(join, 2500);   // 화면이 먼저 뜬 뒤에 붙어요
   const DJ = (window.DJ = window.DJ || {});
-  DJ.online = { count: () => n, onChange: f => { subs.push(f); f(n); }, vid: () => id };
+  // 오늘 다녀간 사람: 어느 화면이든 사이트를 열면 하루 하나의 번호를 기록 보관함에 알리고 오늘 수를 받아요 ('지금'과 같은 기준: 사이트 전체)
+  let today = 0; const tsubs = [];
+  const ping = () => { if (!(DJ.sb && DJ.sb.call)) return; DJ.sb.call("/rest/v1/rpc/roof_visit", { method: "POST", body: { vid: id } })
+    .then(v => { if (+v > 0) { today = +v; tsubs.forEach(f => f(today)); } }).catch(() => { /* 보관함이 없으면 '오늘'은 숨김 */ }); };
+  setTimeout(ping, 3000); setInterval(ping, 5 * 60e3);
+  DJ.online = { count: () => n, onChange: f => { subs.push(f); f(n); }, vid: () => id, today: () => today, onToday: f => { tsubs.push(f); if (today) f(today); } };
 })();

@@ -293,9 +293,7 @@
     const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
     $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
   };
-  // 오늘 다녀간 사람: 브라우저마다 하루 하나의 무작위 번호를 기록 보관함에 한 번 알리고 그 수를 받아요 (못 받으면 '오늘'은 숨겨요)
-  const loadToday = () => { const vid = window.DJ && DJ.online && DJ.online.vid && DJ.online.vid(); if (!vid || !(window.DJ && DJ.sb)) return;
-    DJ.sb.call("/rest/v1/rpc/roof_visit", { method: "POST", body: { vid } }).then(n => { if (Number.isFinite(+n) && +n > 0) { todayN = +n; stat(); } }).catch(() => { /* 보관함이 아직 없으면 '지금'만 */ }); };
+  const loadToday = () => { if (window.DJ && DJ.online && DJ.online.onToday && !loadToday.on) { loadToday.on = true; DJ.online.onToday(v => { todayN = v; stat(); }); } };   // '오늘'은 사이트 전체 기준 (online.js)
   setTimeout(loadToday, 3000); setInterval(loadToday, 5 * 60e3); setInterval(() => { try { stat(); } catch (e) { /* 준비 전 */ } }, 20e3);
   if (window.DJ && DJ.online) DJ.online.onChange(() => { try { stat(); } catch (e) { /* 아직 준비 전 */ } });
   const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
