@@ -17,7 +17,7 @@ def test_rooftop_page_and_entrances(tmp_path):
     assert 'href="rooftop.html"' in (out / "index.html").read_text(encoding="utf-8")      # 첫 화면 아래 줄
     assert 'href="rooftop.html"' in (out / "compare.html").read_text(encoding="utf-8")    # 바닥글 (메뉴에는 없음)
     assert 'top-nav' in page and '<a href="rooftop.html">' not in page.split('<nav class="top-nav">')[1].split("</nav>")[0]
-    assert "rooftop.html" in (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://www.jipgam.kr/rooftop</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 
 def test_rooftop_script_is_valid_and_gentle():

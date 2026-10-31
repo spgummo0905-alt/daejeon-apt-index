@@ -38,6 +38,8 @@ self.addEventListener("fetch", e => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then(hit => hit ||
+      // 주소창엔 .html 이 없어서, 저장해 둔 .html 쪽도 찾아봄
+      caches.match(url.pathname.endsWith("/") ? url.pathname + "index.html" : url.pathname + ".html", { ignoreSearch: true })).then(hit => hit ||
       new Response(OFFLINE, { headers: { "Content-Type": "text/html; charset=utf-8" } }))));
     return;
   }
