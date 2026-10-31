@@ -101,9 +101,9 @@ void main(){
 
 const BLD_VS = `
 attribute vec3 aSize; attribute vec4 aTint; attribute float aId;
-varying vec3 vL; varying vec3 vN; varying vec3 vW; varying vec4 vT; varying vec3 vO; varying float vSY; varying float vId;
+varying vec3 vL; varying vec3 vN; varying vec3 vW; varying vec4 vT; varying vec3 vO; varying float vSY; varying float vId; varying vec3 vS;
 void main(){
-  vL = position*aSize; vO = normal; vSY = aSize.y; vT = aTint; vId = aId;
+  vL = position*aSize; vO = normal; vSY = aSize.y; vT = aTint; vId = aId; vS = aSize;
   vec4 wp = modelMatrix*instanceMatrix*vec4(position,1.); vW = wp.xyz;
   vN = normalize(mat3(modelMatrix)*mat3(instanceMatrix)*normal);
   gl_Position = projectionMatrix*viewMatrix*wp;
@@ -111,7 +111,7 @@ void main(){
 const BLD_FS = `
 precision highp float;
 uniform vec3 uFogColor,uLightDir,uLightCol,uAmb,uFlash; uniform float uFogD,uNight,uTime;
-varying vec3 vL; varying vec3 vN; varying vec3 vW; varying vec4 vT; varying vec3 vO; varying float vSY; varying float vId;
+varying vec3 vL; varying vec3 vN; varying vec3 vW; varying vec4 vT; varying vec3 vO; varying float vSY; varying float vId; varying vec3 vS;
 ${NOISE}
 void main(){
   vec3 n = normalize(vN); float roof = step(.5,abs(vO.y));
@@ -119,18 +119,45 @@ void main(){
   vec3 col = vT.rgb*(uAmb*.5 + uLightCol*dif*.45);
   vec3 em = vec3(0.);
   if(roof < .5){
-    float along = abs(vO.x)>.5 ? vL.z : vL.x; float hh = vL.y + vSY*.5;
-    vec2 q = vec2(along/2.7, hh/3.2); vec2 cell = floor(q); vec2 f = fract(q);
-    float win = step(.2,f.x)*step(f.x,.8)*step(.26,f.y)*step(f.y,.74);
+    bool sideX = abs(vO.x) > .5; float along = sideX ? vL.z : vL.x, W = sideX ? vS.z : vS.x; float hh = vL.y + vSY*.5;
+    bool apt = (vS.z < 17. || vS.x < 17.) && vSY > 36. && !sideX == (vS.x > vS.z);   // 판상형 아파트의 긴 면: 발코니
+    float cw = apt ? 3.1 : 2.7, chh = apt ? 2.85 : 3.2;
+    vec2 q = vec2((along + W*.5)/cw, hh/chh); vec2 cell = floor(q); vec2 f = fract(q);
+    float top = vSY - 1.4;                                   // 옥상 난간 띠
+    float pil = apt ? step(mod(cell.x, 4.), .5) : step(mod(cell.x, 5.), .5)*step(18., W);   // 세대·기둥 사이 벽
+    float win = apt ? step(.1,f.x)*step(f.x,.9)*step(.3,f.y)*step(f.y,.94) : step(.18,f.x)*step(f.x,.82)*step(.26,f.y)*step(f.y,.76);
+    win *= (1.-pil)*step(hh, top)*step(apt ? 2.9 : 4.4, hh);
     float r = h21(cell + vId*7.13 + floor(uTime/45. + h21(cell+vId)*6.)*.37);
     float lit = step(vT.a, r)*win;
-    float r2 = h21(cell*1.7+vId);
+    float r2 = h21(cell*1.7+vId), r3 = h21(cell*2.3+vId*.7);
     vec3 wc = r2<.68 ? vec3(1.,.72,.38) : (r2<.9 ? vec3(1.,.88,.66) : vec3(.55,.72,1.));
-    wc *= (.55 + .6*h21(cell+3.3)) * (r2>.86 ? (.8+.2*sin(uTime*7.+vId)) : 1.);
+    float fx = apt ? (f.x-.1)/.8 : (f.x-.18)/.64, fy = apt ? (f.y-.3)/.64 : (f.y-.26)/.5;
+    float inner = mix(.78, 1.12, fy);                                                     // 방 안 불빛은 위가 조금 밝게
+    if(r3 < .32) inner *= .5 + .5*smoothstep(.05,.2,abs(fx-.5));                           // 가운데 커튼
+    else if(r3 < .48) inner *= .72 + .28*step(.45, fract(fy*7.));                           // 블라인드
+    wc *= inner * (.55 + .6*h21(cell+3.3)) * (r2>.86 ? (.8+.2*sin(uTime*7.+vId)) : 1.);
     em = wc*lit*(uNight*1.3 + .07);
-    col = mix(col, col*.45 + vec3(.012,.018,.03) + uFogColor*.10, win*(1.-lit));   // 불 꺼진 유리
-    col *= 1. - .22*step(f.y,.06);                                                // 층 구분선
+    col = mix(col, col*.45 + vec3(.012,.018,.03) + uFogColor*.10, win*(1.-lit));         // 불 꺼진 유리
+    if(apt){
+      float slab = step(f.y,.09)*step(2.9,hh)*step(hh,top);                               // 발코니 바닥판
+      float rail = step(.09,f.y)*step(f.y,.3)*step(2.9,hh)*step(hh,top)*(1.-pil);          // 난간
+      col = mix(col, vT.rgb*(uAmb*.62 + uLightCol*dif*.5) + vec3(.02), slab);
+      col = mix(col, col*.62, rail*(.55 + .45*step(.5, fract(along*3.))));
+      em *= 1. - rail*.55;                                                                  // 난간 너머로 불빛
+    } else {
+      col *= 1. - .22*step(f.y,.06)*step(hh,top);                                           // 층 구분선
+      col = mix(col, col*1.12 + vec3(.01), pil*step(hh,top));                                // 기둥 띠
+      float shop = step(hh, 4.2)*step(.6, hh)*step(vSY, 60.)*step(.25, h21(vec2(vId,2.)));  // 1층 상가 불빛
+      vec3 sc = h21(vec2(vId,5.)) < .5 ? vec3(1.,.8,.5) : vec3(.8,.9,1.);
+      em += sc*shop*(.5 + .5*step(.12, fract(along/4.)))*uNight*.9;
+    }
     col *= .86 + .14*h21(vec2(floor(along*1.3), floor(hh*.7)));
+    float cap = step(top, hh);                                                               // 난간 띠·윗선
+    col = mix(col, vT.rgb*(uAmb*.7 + uLightCol*dif*.55) + vec3(.015), cap*.85);
+    col *= 1. - .25*step(vSY-.25, hh);
+    float ed = W*.5 - abs(along);                                                            // 모서리·바닥 그늘
+    col *= (.74 + .26*smoothstep(0., 2.5, ed)) * (.62 + .38*smoothstep(0., 9., hh));
+    em *= .8 + .2*smoothstep(0., 1.2, ed);
   } else {
     col = vT.rgb*.1 + vec3(.012,.008,.014) + vec3(.008)*h21(floor(vW.xz*.7));
   }
@@ -384,6 +411,13 @@ export function start(host, cb, opt) {
   let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 14000) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
   const crowns = []; towers.forEach((t, i) => { for (let k = 0; k < 4; k++) { const a = k / 4 * TAU; crowns.push({ x: t.x + Math.cos(a) * 12, y: t.y - 2 - (i % 3) * 6, z: t.z + Math.sin(a) * 12, h: i * .07 + k * .05 }); } });
   const beacons = towers.map(t => ({ i: gAdd(t.x, t.y, t.z, 1, .12, .1, 9, .9), ph: rnd(0, TAU) }));
+  // 옥상 위 물탱크·기계실 (건물 윤곽이 살아나요) + 높은 건물 꼭대기 붉은 항공등 (다 같이 천천히 깜빡)
+  { const rb = []; city.forEach(b => { const dist = Math.hypot(b.x, b.z); if (dist > 760 || b.h < 18 || dist < 30) return; const n = b.h > 60 ? 2 : (Math.random() < .7 ? 1 : 0); for (let k = 0; k < n; k++) rb.push(b);
+      if (b.h > 75 && dist < 1100 && Math.random() < .55) { const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw); [[-1, -1], [1, 1]].forEach(([sx, sz]) => { const ox = sx * b.w * .45, oz = sz * b.d * .45; beacons.push({ i: gAdd(b.x + ox * cy - oz * sy, b.h - OURH + .6, b.z + ox * sy + oz * cy, 1, .1, .08, 5.5, .9), ph: 0 }); }); } });
+    const rbm = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x262b3e, roughness: .95 }), Math.max(1, rb.length));
+    rb.forEach((b, i) => { const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw), w = b.w * rnd(.14, .3), d = b.d * rnd(.2, .42), h = rnd(2.2, 5.2), ox = rnd(-.3, .3) * b.w, oz = rnd(-.25, .25) * b.d;
+      e3.set(0, b.yaw, 0); q.setFromEuler(e3); v3.set(b.x + ox * cy - oz * sy, b.h - OURH + h / 2, b.z + ox * sy + oz * cy); s3.set(w, h, d); m4.compose(v3, q, s3); rbm.setMatrixAt(i, m4); });
+    rbm.count = rb.length; scene.add(rbm); }
   const roadMat = new THREE.MeshBasicMaterial({ color: 0x7a4418, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }), roadGroup = new THREE.Group(); scene.add(roadGroup);
   const cars = [];   // 도로를 따라 흐르는 차량 불빛과 가로등
   const road = (cx, cz, ux, uz, len) => {
@@ -861,14 +895,14 @@ export function start(host, cb, opt) {
   rainGeo.setAttribute("position", new THREE.BufferAttribute(rp, 3)); const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xaac4ff, transparent: true, opacity: .0, depthWrite: false })); rain.frustumCulled = false; scene.add(rain);
 
   // ----- 카메라와 입력 -----
-  let yaw = 0, lookUp = .22, yawT = 0, lookT = .22, camDist = 5.8;
+  let yaw = 0, lookUp = .22, yawT = 0, lookT = .22, camDist = 5.8, autoSpin = 0;
   const fPos = new THREE.Vector3(), fTgt = new THREE.Vector3(), aerPos = new THREE.Vector3(), aerTgt = new THREE.Vector3(), camPos = new THREE.Vector3(0, 2.4, 6), camTgt = new THREE.Vector3(0, 2, -20);
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const pointers = new Map(); let dragD = 0, downAt = 0;
   el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragD = 0; downAt = performance.now(); });
   el.addEventListener("pointermove", e => { const p = pointers.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; dragD += Math.abs(dx) + Math.abs(dy);
     if (focus && focus !== "sky") return;
-    if (dragD > 8) { const lim = focus === "sky" ? .55 : 1.35; yawT = clamp(yawT - dx * .0042, -lim, lim); lookT = clamp(lookT + dy * .0035, -.04, .85); } });
+    if (dragD > 8) { autoSpin = 0; yawT -= dx * .0042; lookT = clamp(lookT + dy * .0035, -.04, .85); } });   // 좌우는 360도 끝없이
   const up = e => { const p = pointers.get(e.pointerId); pointers.delete(e.pointerId); if (!p || e.type === "pointercancel") return; if (dragD < 9 && performance.now() - downAt < 600) tap(e.clientX, e.clientY); };
   el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
   el.addEventListener("wheel", e => { e.preventDefault(); camDist = clamp(camDist + e.deltaY * .003, 3, 7); }, { passive: false });
@@ -976,7 +1010,8 @@ export function start(host, cb, opt) {
       if (seq.t >= 0 && !seq.started) { seq.started = true; seq.from = { x: mePos.x, z: mePos.z }; me.pose = seq.pose; me.seat = seq.seat; if (seq.yaw != null) me.yaw = seq.yaw; }
       if (seq.started) { const k = clamp(seq.t / seq.dur, 0, 1), e = k * k * (3 - 2 * k); mePos.x = lerp(seq.from.x, seq.to.x, e); mePos.z = lerp(seq.from.z, seq.to.z, e); if (k >= 1) { const dn = seq.done; seq = null; dn && dn(); } }
     }
-    if (keys.has("q")) yawT = clamp(yawT - dt * 1.6, -1.35, 1.35); if (keys.has("e")) yawT = clamp(yawT + dt * 1.6, -1.35, 1.35);
+    if (keys.has("q")) { yawT -= dt * 1.6; autoSpin = 0; } if (keys.has("e")) { yawT += dt * 1.6; autoSpin = 0; }
+    if (autoSpin && !focus && aer < .5) yawT += dt * .09 * autoSpin;   // 천천히 둘러보기
     if (keys.has("r")) lookT = clamp(lookT + dt * .9, -.04, .95); if (keys.has("f")) lookT = clamp(lookT - dt * .9, -.04, .95);
     const kx = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0), kz = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
     if ((kx || kz) && aer < .5 && !focus) {
@@ -1046,9 +1081,9 @@ export function start(host, cb, opt) {
     camTgt.set(camPos.x + fx * 40, camPos.y + lookUp * 40 - .6, camPos.z + fz * 40);
     if (ae > .002) camTgt.lerp(aerTgt.set(Math.cos(oa) * 60, -6, -600), ae);
     if (fe > .002 && focus) camTgt.lerp(fTgt, fe);
-    { const dev = !focus && (lookT > .5 || Math.abs(yawT) > .5); if (dev !== lookDev) { lookDev = dev; cb.look && cb.look(dev); } }
+    { const yd = Math.abs(((yawT % TAU) + TAU * 1.5) % TAU - Math.PI), dev = !focus && !autoSpin && (lookT > .5 || yd > .5); if (dev !== lookDev) { lookDev = dev; cb.look && cb.look(dev); } }
     camera.lookAt(camTgt);
-    sky.position.copy(camera.position); moon.rotation.y = 0; updMeteors(dt);
+    sky.position.copy(camera.position); moon.rotation.y = 0; updMeteors(dt); updPlane(dt, time);
     // 불판 불빛·연기
     const fl = 1 + Math.sin(time * 11) * .12 + Math.sin(time * 23) * .08; coalLight.intensity = (6 + 6 * bldU.uNight.value) * fl; coalsM.color.setRGB(1, .38 + .12 * Math.sin(time * 5), .12);
     if (!reduced && Math.random() < (.5 + foods.length * .7) * dt * 10) addSmoke(GR.x + rnd(-.5, .5), 1.1, GR.z + rnd(-.2, .2), rnd(-.08, .12), rnd(.35, .6), rnd(-.05, .05), mini ? rnd(.09, .16) : rnd(.22, .4), mini ? .07 : .12 + Math.min(.12, foods.length * .03), rnd(2.6, 4), mini ? [1, .72, .5] : [.82, .84, .9]);
@@ -1072,7 +1107,7 @@ export function start(host, cb, opt) {
     for (let i = 0; i < FF; i++) { const f = ffs[i]; f.p += dt * f.s; rg.attributes.position.setXYZ(nBulb + i, f.x + Math.sin(f.p * 1.3) * .8, f.y + Math.sin(f.p * .9) * .3, f.z + Math.cos(f.p) * .8); rg.attributes.aAlpha.setX(nBulb + i, bldU.uNight.value > .5 ? Math.max(0, Math.sin(f.p * 2.1)) * .8 : 0); }
     rg.attributes.position.needsUpdate = rg.attributes.aAlpha.needsUpdate = true;
     cars.forEach(c => { c.s += c.v * dt; if (c.s > c.len / 2) c.s -= c.len; if (c.s < -c.len / 2) c.s += c.len; const o = c.i * 3; gposArr[o] = c.cx + c.ux * c.s; gposArr[o + 1] = c.y; gposArr[o + 2] = c.cz + c.uz * c.s; });
-    beacons.forEach(b => { galArr[b.i] = .35 + .65 * Math.max(0, Math.sin(time * 1.5 + b.ph)) ; });
+    beacons.forEach(b => { galArr[b.i] = b.ph ? .35 + .65 * Math.max(0, Math.sin(time * 1.5 + b.ph)) : .12 + .88 * Math.pow(Math.max(0, Math.sin(time * 1.2)), 6); });
     gpos.needsUpdate = gal.needsUpdate = true; glowPts.visible = bldU.uNight.value > .08;
     // 별똥별과 별 세기 효과
     for (let i = flare.length - 1; i >= 0; i--) { const f = flare[i]; f.t += dt; if (f.t > 2.2) flare.splice(i, 1); }
@@ -1126,6 +1161,18 @@ export function start(host, cb, opt) {
   let netT = 0, lastNet = "", lastNetT = 0, fpActive = 0, nextAuto = 0, nextCascade = 14, cascadeT = 0; const tmpC = new THREE.Color();
 
   // ----- 바깥에 내주는 것 -----
+  // ----- 비행기: 가끔 하늘을 천천히 가로지르는 항공등 (흰 섬광 + 빨강·초록) -----
+  const plane = { t: -rnd(6, 16), dur: 0, a: new THREE.Vector3(), b: new THREE.Vector3(), p: new THREE.Vector3(), side: new THREE.Vector3(),
+    sp: [0xffffff, 0xff3a2a, 0x3aff6a].map(c => { const s_ = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); s_.visible = false; scene.add(s_); return s_; }) };
+  const updPlane = (dt, t) => {
+    plane.t += dt; if (plane.t < 0) return;
+    if (!plane.dur) { const ang = rnd(0, TAU), alt = rnd(240, 380), r = 1350, turn = rnd(-.5, .5);
+      plane.a.set(Math.cos(ang) * r, alt, Math.sin(ang) * r - 250); plane.b.set(-Math.cos(ang + turn) * r, alt + rnd(-30, 30), -Math.sin(ang + turn) * r - 250); plane.dur = rnd(75, 120); plane.t = 0; }
+    const k = plane.t / plane.dur; if (k >= 1) { plane.dur = 0; plane.t = -rnd(30, 70); plane.sp.forEach(s_ => { s_.visible = false; }); return; }
+    plane.p.lerpVectors(plane.a, plane.b, k); plane.side.subVectors(plane.b, plane.a).normalize().cross(v3.set(0, 1, 0)).multiplyScalar(5);
+    const strobe = (t % 1.3) < .07 ? 1 : 0, nav = .55 + .45 * Math.sin(t * 3), fade = Math.min(1, k * 10, (1 - k) * 10);
+    [[plane.p, 9, strobe], [plane.p.clone().add(plane.side), 6, nav], [plane.p.clone().sub(plane.side), 6, nav]].forEach(([pp, sz, a], i) => { const s_ = plane.sp[i]; s_.visible = true; s_.position.copy(pp); s_.scale.set(sz, sz, 1); s_.material.opacity = a * fade * (.4 + .6 * bldU.uNight.value); });
+  };
   // ----- 별똥별: 누워서 보다가 지나가는 별똥별을 눌러 잡아요 -----
   const MET_N = 9, metSp = Array.from({ length: MET_N }, (_, i) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xcfe0ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, fog: false })); sp.renderOrder = 20; sp.visible = false; scene.add(sp); return sp; });
   let meteor = null, meteorOn = false, meteorT = 1.5, meteorN = 0; const mDir = new THREE.Vector3(), mScr = new THREE.Vector3();
@@ -1153,7 +1200,7 @@ export function start(host, cb, opt) {
     setPeer, removePeer, peerEmote, remoteShell, emote, peerCount: () => peers.size, EMO,
     setDeco(m) { placing = m && m !== "remove" ? m : null; removing = m === "remove"; return m; }, lie: lieDown,
     setView(v) { view = v; S.override = v === "aerial" ? "twilight" : null; applySky(); cb.view && cb.view(v); }, getView: () => view, itemCount: () => items.length,
-    setFocus, getFocus: () => focus, resetView() { yawT = 0; lookT = .22; },
+    setFocus, getFocus: () => focus, resetView() { yawT = Math.round(yawT / TAU) * TAU; lookT = .22; autoSpin = 0; }, setSpin(on) { autoSpin = on ? 1 : 0; if (on) lookT = Math.min(lookT, .3); return !!autoSpin; }, getSpin: () => !!autoSpin,
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
     setStars(arr) { counted = new Set(arr || []); paintStars(); paintLines(); sg.attributes.aSize.needsUpdate = sg.attributes.aCol.needsUpdate = sg.attributes.aAlpha.needsUpdate = true; },
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },

@@ -231,6 +231,9 @@
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
   $("[data-roof-stand]").addEventListener("click", () => { if (api) api.stand(); });
+  // 천천히 둘러보기: 화면이 360도로 아주 천천히 돌아가요 (물멍·불멍처럼). 화면을 끌면 멈춰요
+  const spinBtn = $("[data-roof-spin]");
+  spinBtn.addEventListener("click", () => { if (!api) return; const on = api.setSpin(!api.getSpin()); spinBtn.setAttribute("aria-pressed", String(on)); closeSubs(); if (on) hint("천천히 한 바퀴 둘러봐요. 화면을 끌면 멈춰요."); });
   // 옥상은 화면에 꼭 맞게 (머리글 아래부터 화면 끝까지): 아래 버튼이 접혀 보이지 않던 것 고침
   const fitRoof = () => { const top = Math.max(0, box.getBoundingClientRect().top + window.scrollY); box.style.setProperty("--roof-top", top + "px"); };
   fitRoof(); addEventListener("resize", fitRoof); addEventListener("load", fitRoof);
@@ -411,7 +414,7 @@
       if (id === "grill") { closeSubs(); $("[data-roof-sub=grill]").hidden = false; }
       if (!id) { closeSubs(); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); if (counting) { counting = false; paintCount(); } }
     },
-    look: dev => { $("[data-roof-reset]").hidden = !dev; },
+    look: dev => { $("[data-roof-reset]").hidden = !dev; if (api) spinBtn.setAttribute("aria-pressed", String(api.getSpin())); },
     seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { try { if (sessionStorage.getItem("djdex:roofq")) return; sessionStorage.setItem("djdex:roofq", "1"); } catch (e) { /* 그냥 보여 줌 */ } hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
