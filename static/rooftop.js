@@ -266,7 +266,7 @@
   const sel = $("[data-roof-town]"), statEl = $("[data-roof-stat]");
   let town = null, wxLine = "";
   const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
-  const stat = () => { const on = window.DJ && DJ.online && DJ.online.count() > 1 ? `지금 ${DJ.online.count()}명 접속` : ""; statEl.textContent = [town && town.line, wxLine, on].filter(Boolean).join(" · "); };
+  const stat = () => { const on = window.DJ && DJ.online && DJ.online.count() > 1 ? `지금 ${DJ.online.count()}명 접속` : ""; statEl.textContent = [wxLine, on].filter(Boolean).join(" · "); };
   if (window.DJ && DJ.online) DJ.online.onChange(() => { try { stat(); } catch (e) { /* 아직 준비 전 */ } });
   const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
   // 기상청 격자 (공식 변환식. scripts/weather_fetch.py 의 grid 와 같아요)
