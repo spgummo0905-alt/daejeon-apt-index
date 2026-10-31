@@ -101,3 +101,9 @@ def test_rooftop_oktap_furniture_and_edit():
     assert "rotateItem" in js3 and "moveItem" in js3 and "옥탑 301" in js3              # 옮기기·돌리기, 옥탑방 건물
     page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
     assert 'data-roof-deco="edit"' in page and "data-roof-resetlayout" in page
+
+
+def test_rooftop_first_visit_tour():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert "startTour" in js and "st.tour" in js and "data-roof-tour" in page and "data-roof-tourre" in page   # 처음 한 번 안내, 설정에서 다시 보기

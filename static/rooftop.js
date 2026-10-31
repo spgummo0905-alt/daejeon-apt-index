@@ -229,6 +229,30 @@
   $$("[data-roof-deco]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : deco === "edit" ? "옮기거나 돌릴 가구를 눌러 보세요. 다시 누르면 끝나요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
+  // ---------- 처음 방문 안내 (한 번만, 설정에서 다시 볼 수 있어요) ----------
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const TOUR = [
+    { a: "🌙", t: "집감 옥상에 오신 걸 환영해요", d: "도시 야경이 보이는 옥탑방 캠핑 공간이에요. 잠깐 쉬어 가세요." },
+    { a: touch ? "🕹" : "⌨️", t: "걷고 둘러보기", d: touch ? "바닥을 누르면 그쪽으로 걸어가요. 왼쪽 아래 패드를 밀어도 걸을 수 있어요. 화면을 끌면 360도로 둘러보고, 두 손가락으로 가까이·멀리 볼 수 있어요." : "바닥을 누르거나 W A S D·방향키로 걸어요. 화면을 끌면 360도로 둘러보고, 휠로 가까이·멀리 볼 수 있어요.", el: null },
+    { a: "🎆", t: "불꽃놀이와 고기 굽기", d: "하늘을 누르면 불꽃이 터져요. 🍖 굽기에서는 고기를 뒤집어 가며 노릇하게 구워 먹어요.", el: '[data-roof-menu="fire"]' },
+    { a: "⛺", t: "꾸미기와 동물 친구", d: "의자·소파·타프·화로를 놓고, 옮기고, 돌릴 수 있어요. 강아지·고양이·앵무새도 꺼내 보세요. 가구를 누르면 앉기·눕기 같은 동작이 나와요.", el: '[data-roof-menu="deco"]' },
+    { a: "✨", t: "쉬기와 함께 있기", d: "🌙 쉬기에서 별 세기·누워서 보기·소원 빌기를 해요. 위쪽 👥 함께를 누르면 다른 사람과 같은 서버 옥상에 있을 수 있어요.", el: '[data-roof-menu="sky"]' },
+  ];
+  let tourI = 0;
+  const tourEl = $("[data-roof-tour]");
+  function paintTour() {
+    const s_ = TOUR[tourI];
+    $("[data-roof-tourart]").textContent = s_.a; $("[data-roof-tourt]").textContent = s_.t; $("[data-roof-tourd]").textContent = s_.d; $("[data-roof-tourstep]").textContent = `${tourI + 1} / ${TOUR.length}`;
+    $("[data-roof-tourdots]").replaceChildren(...TOUR.map((_, i) => { const d = document.createElement("i"); if (i === tourI) d.className = "on"; return d; }));
+    $("[data-roof-tournext]").textContent = tourI === TOUR.length - 1 ? "시작하기" : "다음";
+    $$(".roof-spot").forEach(e => e.classList.remove("roof-spot")); if (s_.el) { const t = $(s_.el); if (t) t.classList.add("roof-spot"); }
+  }
+  function startTour() { tourI = 0; tourEl.hidden = false; box.classList.add("touring"); paintTour(); $("[data-roof-tournext]").focus(); }
+  function endTour() { tourEl.hidden = true; box.classList.remove("touring"); $$(".roof-spot").forEach(e => e.classList.remove("roof-spot")); st.tour = 1; saveSt(); hint("편하게 쉬어 가세요 🌙"); }
+  $("[data-roof-tournext]").addEventListener("click", () => { if (tourI < TOUR.length - 1) { tourI++; paintTour(); } else endTour(); });
+  $("[data-roof-tourskip]").addEventListener("click", endTour);
+  $("[data-roof-tourre]").addEventListener("click", () => { closeModal(); startTour(); });
+  document.addEventListener("keydown", e => { if (tourEl.hidden) return; if (e.key === "Escape") endTour(); else if (e.key === "ArrowRight" || e.key === "Enter") $("[data-roof-tournext]").click(); });
   // 꾸미기 탭: 옥탑·캠핑·동물·배치
   $$("[data-roof-tab]").forEach(t => t.addEventListener("click", () => { const k = t.dataset.roofTab;
     $$("[data-roof-tab]").forEach(x => x.setAttribute("aria-selected", String(x === t))); $$("[data-roof-pane]").forEach(p => { p.hidden = p.dataset.roofPane !== k; }); }));
@@ -497,7 +521,7 @@
       else if (canNet && st.net) setTimeout(() => joinRoom(st.srv ? "srv" : "auto", st.srv), 2500);
       new ResizeObserver(() => api.resize()).observe(box);
     } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
-    setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
+    if (!st.tour) setTimeout(() => startTour(), 1200); else setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
   }
   // 정각 불꽃놀이: 열어 둔 동안 정각이 되면 한바탕
   let lastHour = "";
