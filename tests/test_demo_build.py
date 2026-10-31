@@ -53,7 +53,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "brand" / "favicon-48.png").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 8  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 9  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 집감 옥상, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001.html</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page

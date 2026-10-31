@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}집감 옥상 · 잠깐 쉬어가는 곳{% endblock %}
+{% block description %}밤 옥상에서 불꽃놀이를 보고 고기를 구우며 잠깐 쉬어가세요. 내가 고른 동네의 야경과 함께요.{% endblock %}
+{% block body %}
+{# 집감 옥상: 쉬어가는 1인용 공간 (rooftop.js). 임장 도구가 아니라 다시 열고 싶어지는 즐길 거리라서 메뉴에는 넣지 않고
+   첫 화면 아래 줄과 바닥글에서만 이어요. 소리는 기본 꺼짐, 불빛은 번쩍이지 않게 은은하게. #}
+<section class="roof" id="roof" aria-label="집감 옥상">
+  <canvas class="roof-cv" aria-hidden="true"></canvas>
+  <p class="sr-only">밤 옥상 장면입니다. 하늘을 누르면 불꽃이 터지고, 아래 버튼으로 불판에 고기를 올려 구울 수 있어요.</p>
+
+  <div class="roof-top">
+    <label class="roof-town">
+      <span class="sr-only">야경으로 볼 동네</span>
+      <select data-roof-town aria-label="야경으로 볼 동네"></select>
+    </label>
+    <p class="roof-stat" data-roof-stat aria-live="polite"></p>
+    <div class="roof-tools">
+      <button type="button" class="roof-btn" data-roof-sound aria-pressed="false">소리 꺼짐</button>
+      <button type="button" class="roof-btn" data-roof-photo>사진 저장</button>
+    </div>
+  </div>
+
+  <p class="roof-hint" data-roof-hint>오늘도 수고했어요. 잠깐 쉬어가세요.</p>
+
+  <div class="roof-bottom">
+    <button type="button" class="roof-mission" data-roof-mission aria-expanded="false">오늘의 미션 <b data-roof-mcount>0/3</b></button>
+    <div class="roof-tray" role="group" aria-label="옥상에서 하기">
+      <button type="button" class="roof-btn fw" data-roof-fire>🎆 불꽃놀이</button>
+      <button type="button" class="roof-btn" data-roof-food="pork">🥓 삼겹살</button>
+      <button type="button" class="roof-btn" data-roof-food="shrimp">🦐 새우</button>
+      <button type="button" class="roof-btn" data-roof-food="mushroom">🍄 버섯</button>
+      <button type="button" class="roof-btn" data-roof-food="corn">🌽 옥수수</button>
+    </div>
+  </div>
+
+  <div class="roof-sheet" data-roof-sheet hidden role="dialog" aria-label="오늘의 옥상 미션">
+    <div class="roof-sheet-head"><b>오늘의 옥상 미션</b><button type="button" class="roof-x" data-roof-close aria-label="닫기">×</button></div>
+    <p class="roof-rank" data-roof-rank></p>
+    <ul class="roof-list" data-roof-list></ul>
+    <p class="roof-note">미션은 매일 새로 바뀌어요. 못 해도 괜찮아요, 쉬러 온 곳이니까요.</p>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="static/rooftop.js?v={{ v }}"></script>{% endblock %}
