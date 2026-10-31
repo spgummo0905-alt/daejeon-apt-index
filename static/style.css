@@ -3318,6 +3318,7 @@ body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data
 .roof-cv { position: absolute; inset: 0; display: block; touch-action: manipulation; cursor: pointer; }
 .roof-top { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; pointer-events: none; }
 .roof-top > * { pointer-events: auto; }
+.roof-town[hidden] { display: none; }
 .roof-town select { appearance: none; border: 1px solid rgba(255,255,255,.18); background: rgba(10,16,34,.62); color: #f4f6fb; font: inherit; font-size: 14px; font-weight: 700;
   padding: 7px 28px 7px 12px; border-radius: 999px; backdrop-filter: blur(6px); cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, #cfd6ea 50%), linear-gradient(135deg, #cfd6ea 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
