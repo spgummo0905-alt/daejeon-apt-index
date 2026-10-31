@@ -3428,3 +3428,14 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-credits a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .roof-act { position: absolute; z-index: 4; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(12,18,40,.82); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
 .roof-act .roof-btn { background: rgba(255,255,255,.08); }
+
+/* 옥상: 동작 중에는 그 동작만 (미니게임처럼) */
+.roof-focus { position: absolute; left: 50%; top: 100px; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border-radius: 999px; max-width: calc(100% - 24px);
+  background: rgba(12,18,40,.78); border: 1px solid rgba(255,214,120,.45); color: #ffe6a0; font-size: 13.5px; font-weight: 700; backdrop-filter: blur(8px); white-space: nowrap; }
+.roof-focus[hidden] { display: none; }
+.roof-focus .roof-btn { padding: 7px 14px; background: rgba(255,255,255,.14); }
+.roof-reset { position: absolute; right: 12px; bottom: 150px; z-index: 3; }
+.roof-reset[hidden] { display: none; }
+.roof[data-focus] .roof-tray, .roof[data-focus] .roof-mission, .roof[data-focus] .roof-emo, .roof[data-focus] .roof-tools, .roof[data-focus] .roof-town { display: none; }
+.roof[data-focus="sky"] .roof-count { display: block; top: 148px; }
+@media (max-width: 560px) { .roof-focus { top: 112px; font-size: 12.5px; } .roof[data-focus="sky"] .roof-count { top: 160px; } }

@@ -191,8 +191,11 @@
   function hint(t) { hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
   const subs = $$("[data-roof-sub]");
   const closeSubs = () => { subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); };
+  $("[data-roof-exit]").addEventListener("click", () => { if (api) api.setFocus(null); });
+  $("[data-roof-reset]").addEventListener("click", () => { if (api) { api.resetView(); $("[data-roof-reset]").hidden = true; } });
   $$("[data-roof-menu]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofMenu, el = $(`[data-roof-sub="${k}"]`), open = el.hidden;
+    if (k === "grill" && api) { api.setFocus(open ? "grill" : null); return; }
     subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false"));
     if (open) { el.hidden = false; b.setAttribute("aria-expanded", "true"); }
   }));
@@ -223,7 +226,7 @@
   // 별 세기
   const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
   const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; cntEl.textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
-  starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setCounting(counting); paintCount(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
+  starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setFocus(counting ? "sky" : null); paintCount(); closeSubs(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
   // 소원
   const wt = $("[data-roof-wishtext]"), wlog = $("[data-roof-wishlog]");
   const paintWish = () => { wlog.textContent = st.wishes.length ? `지금까지 띄운 소원 ${st.wishes.length}개` : ""; };
@@ -372,6 +375,13 @@
       box.append(el); const w = el.offsetWidth, h = el.offsetHeight; el.style.left = clamp(pos.x - w / 2, 8, box.clientWidth - w - 8) + "px"; el.style.top = clamp(pos.y - h - 14, 70, box.clientHeight - h - 130) + "px";
       actEl = el; setTimeout(() => document.addEventListener("pointerdown", closeAct, { once: true }), 0);
     },
+    focus: id => {   // 동작을 시작하면 그 동작만 보이게: 아래 버튼은 숨기고 '그만하기'만 남겨요
+      const NAMES = { grill: "🍖 고기 굽는 중 · 익으면 눌러서 먹어요", sky: "⭐ 별 세기 · 별을 눌러 보세요", lie: "🛌 누워서 밤하늘 보는 중", tent: "⛺ 텐트 안에서 쉬는 중", table: "☕ 차 마시는 중" };
+      box.dataset.focus = id || ""; $("[data-roof-focus]").hidden = !id; $("[data-roof-focust]").textContent = NAMES[id] || "";
+      if (id === "grill") { closeSubs(); $("[data-roof-sub=grill]").hidden = false; }
+      if (!id) { closeSubs(); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); if (counting) { counting = false; paintCount(); } }
+    },
+    look: dev => { $("[data-roof-reset]").hidden = !dev; },
     layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
