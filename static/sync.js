@@ -303,7 +303,7 @@
   DJ.login = async function () {
     const v = b64url(crypto.getRandomValues(new Uint8Array(32)));
     const ch = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)));
-    const back = location.origin + location.pathname + location.search;
+    const back = location.origin + (window.DJ_PATH || location.pathname) + location.search;
     ls.set(PKCE, { v, hash: location.hash || (document.body.dataset.page === "my" ? "#account" : "") });
     location.assign(`${API}/auth/v1/authorize?provider=${encodeURIComponent(C.provider || "kakao")}&redirect_to=${encodeURIComponent(back)}` +
       `&code_challenge=${ch}&code_challenge_method=s256`);
@@ -461,7 +461,7 @@
     pop.querySelectorAll(".ap-me, .ap-links a").forEach(a => a.addEventListener("click", e => {
       close(false);
       // 같은 화면 칸으로 갈 땐 직접 (주소가 같으면 브라우저가 움직이지 않음). 접힌 칸은 펼침
-      const u = new URL(a.href), t = u.pathname === location.pathname && document.getElementById(u.hash.slice(1));
+      const u = new URL(a.href), t = u.pathname === (window.DJ_PATH || location.pathname) && document.getElementById(u.hash.slice(1));
       if (!t) return;
       e.preventDefault();
       history.replaceState(null, "", u.hash);

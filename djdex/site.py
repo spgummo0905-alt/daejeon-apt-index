@@ -1235,7 +1235,8 @@ def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[s
     from xml.sax.saxutils import escape as xml_escape
 
     today = date.today().isoformat()
-    entries = [("", "1.0"), ("methodology.html", "0.3")] + [(p, "0.5" if "/" not in p else "0.7") for p in apt_paths]
+    clean = lambda p: p[:-5] if p.endswith(".html") else p      # 주소는 .html 없이 (canonical 과 같게)
+    entries = [("", "1.0"), ("methodology", "0.3")] + [(clean(p), "0.5" if "/" not in p else "0.7") for p in apt_paths]
     urls = "".join(
         f"<url><loc>{xml_escape(base + path)}</loc><lastmod>{today}</lastmod><priority>{pri}</priority></url>\n"
         for path, pri in entries)

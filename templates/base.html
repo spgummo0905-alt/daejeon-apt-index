@@ -6,14 +6,17 @@
 <title>{% block title %}집감 · {{ region }} 아파트 실거래가·입지 비교{% endblock %}</title>
 <meta name="description" content="{% block description %}{{ region }} 아파트를 실거래가, 입지점수, 실질수익률로 비교합니다.{% endblock %}">
 {% set base = site.base_url %}
+{# 주소창엔 .html 없이 (예: /rooftop). 파일 이름은 그대로라 예전 .html 링크도 계속 열려요 #}
+{% set cpath = '' if page_path == 'index.html' else (page_path[:-5] if page_path.endswith('.html') else page_path) %}
+<script>(function(){var p=location.pathname,q=/\/$|\.html$/.test(p)?p:p+".html";window.DJ_PATH=q;var c=q.replace(/(^|\/)index\.html$/,"$1").replace(/\.html$/,"");if(c!==p&&location.protocol==="https:")try{history.replaceState(history.state,"",c+location.search+location.hash)}catch(e){}})();</script>
 {% if base %}
-<link rel="canonical" href="{{ base }}{{ page_path }}">
+<link rel="canonical" href="{{ base }}{{ cpath }}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="집감">
 <meta property="og:locale" content="ko_KR">
 <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
 <meta property="og:description" content="{{ self.description() }}">
-<meta property="og:url" content="{{ base }}{{ page_path }}">
+<meta property="og:url" content="{{ base }}{{ cpath }}">
 <meta property="og:image" content="{{ base }}{% block og_image %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endblock %}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">

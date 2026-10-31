@@ -935,7 +935,7 @@
     const apt = document.querySelector("[data-apt]");
     if (apt) {
       const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade, n: apt.dataset.name, i: apt.dataset.score,
-        p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
+        p: apt.dataset.price, r: apt.dataset.region, u: window.DJ_PATH || location.pathname };
       // 관심 단지 새 소식용 지금 상태 (거래 수·마지막 거래·84㎡ 시세)
       const now = { s: c.s, tc: +apt.dataset.tc || 0, ld: apt.dataset.ld || "", lp: apt.dataset.lp || "", lr: +apt.dataset.lr || 0,
         p: +apt.dataset.p || 0, h: apt.dataset.high === "1" };
@@ -1269,7 +1269,7 @@
     const base = new URL(ROOT || "./", location.href).pathname;
     const narrow = matchMedia("(max-width: 720px)");
     let back = null;
-    const items = () => DJ.recent().filter(r => r.n && r.u && r.u !== location.pathname).slice(0, 8);
+    const items = () => DJ.recent().filter(r => r.n && r.u && r.u !== (window.DJ_PATH || location.pathname)).slice(0, 8);
     function paint() {
       const list = items();
       dock.hidden = !list.length;
