@@ -1,0 +1,41 @@
+name: weather
+
+# 옥상 화면용 날씨: 기상청 초단기실황·예보를 30분마다 받아 weather-data 가지의 weather.json 한 장으로 올립니다
+# (사이트는 raw.githubusercontent.com 에서 읽어요. 매번 한 커밋짜리로 덮어써서 기록이 쌓이지 않아요)
+on:
+  schedule:
+    - cron: "12,42 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weather
+  cancel-in-progress: false
+
+jobs:
+  weather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 기상청 날씨 받기
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python scripts/weather_fetch.py "$RUNNER_TEMP/weather.json"
+      - name: weather-data 가지에 올리기
+        run: |
+          if [ ! -s "$RUNNER_TEMP/weather.json" ]; then echo "올릴 자료가 없어요"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan weather-tmp
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp "$RUNNER_TEMP/weather.json" weather.json
+          git add weather.json
+          git commit -qm "weather $(date -u +%FT%TZ)"
+          git push -f origin weather-tmp:weather-data

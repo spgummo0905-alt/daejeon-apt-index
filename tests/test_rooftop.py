@@ -26,7 +26,8 @@ def test_rooftop_script_is_valid_and_gentle():
     subprocess.run(["node", "--check", str(ROOT / "static" / "rooftop.js")], check=True)
     assert "prefers-reduced-motion" in js and "visibilitychange" in js        # 움직임 줄이기, 숨겨진 탭 멈춤
     assert "sound: false" in js and "setTargetAtTime" in js                  # 소리 기본 꺼짐, 부드러운 켜짐
-    assert "open-meteo" in js and "rooftop3d.js" in js                       # 날씨는 실패해도 그냥 열림, 장면은 따로 불러옴
+    assert "weather-data/weather.json" in js and "rooftop3d.js" in js         # 날씨는 기상청 자료 파일에서, 실패해도 그냥 열림
+    assert "open-meteo" not in js.lower()
 
 
 def test_rooftop_3d_scene_and_vendor():
@@ -38,3 +39,13 @@ def test_rooftop_3d_scene_and_vendor():
     assert "addItem" in js3 and "aerial" in js3 and "lieDown" in js3                                       # 꾸미기, 야경 보기, 누워서 보기
     assert (ROOT / "static" / "vendor" / "three.module.min.js").stat().st_size > 400_000
     assert (ROOT / "static" / "vendor" / "three.LICENSE").exists()
+
+
+def test_weather_grid_matches_kma_examples():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("weather_fetch", ROOT / "scripts" / "weather_fetch.py")
+    w = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(w)
+    assert w.grid(37.5665, 126.9780) == (60, 127)     # 서울 시청 (기상청 격자 공식 예시)
+    assert w.grid(36.3504, 127.3845) == (67, 100)     # 대전
+    assert w.grid(35.1796, 129.0756) == (98, 76)      # 부산
