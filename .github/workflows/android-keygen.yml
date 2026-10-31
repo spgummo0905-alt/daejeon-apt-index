@@ -1,0 +1,42 @@
+name: android-keygen
+
+# 안드로이드 앱 업로드 키 만들기 (수동 실행, 한 번만).
+# 키 파일과 비밀번호는 이 안에서 만들어 저장소 Secrets 4개(ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)에 바로 넣고, 로그·화면·파일 어디에도 남기지 않습니다.
+# 필요한 것: Secrets 의 SECRETS_PAT (이 저장소 한 곳에 'Secrets: 읽기·쓰기' 권한만 준 fine-grained 토큰). 끝나면 지우세요.
+# 이미 키가 있으면 덮어쓰지 않고 멈춥니다 (키를 잃으면 스토어 업데이트가 막히기 때문).
+on:
+  workflow_dispatch:
+
+jobs:
+  keygen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: 키 만들고 Secrets 에 넣기
+        env:
+          GH_TOKEN: ${{ secrets.SECRETS_PAT }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then echo "Secrets 에 SECRETS_PAT 가 없습니다."; exit 1; fi
+          if gh secret list --repo "$REPO" | grep -q '^ANDROID_KEYSTORE_BASE64'; then
+            echo "이미 업로드 키가 있어 새로 만들지 않습니다. (덮어쓰면 스토어 업데이트를 못 올릴 수 있어요)"; exit 1
+          fi
+          PW=$(openssl rand -hex 20)
+          echo "::add-mask::$PW"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/upload.jks" -storetype PKCS12 -alias upload \
+            -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PW" -keypass "$PW" \
+            -dname "CN=Jipgam, O=Jipgam, C=KR" >/dev/null 2>&1
+          base64 -w0 "$RUNNER_TEMP/upload.jks" | gh secret set ANDROID_KEYSTORE_BASE64 --repo "$REPO"
+          printf %s "$PW" | gh secret set ANDROID_KEYSTORE_PASSWORD --repo "$REPO"
+          printf %s "$PW" | gh secret set ANDROID_KEY_PASSWORD --repo "$REPO"
+          printf %s "upload" | gh secret set ANDROID_KEY_ALIAS --repo "$REPO"
+          echo "Secrets 4개를 만들었습니다."
+          echo "업로드 키 SHA-256 지문 (공개 정보라 적어 둡니다):"
+          keytool -list -v -keystore "$RUNNER_TEMP/upload.jks" -alias upload -storepass "$PW" 2>/dev/null | grep 'SHA256:'
+          rm -f "$RUNNER_TEMP/upload.jks"
