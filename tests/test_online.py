@@ -32,3 +32,8 @@ def test_online_count_api(tmp_path):
 def test_online_wired_into_pages_with_account(tmp_path):
     src = (ROOT / "templates" / "base.html").read_text(encoding="utf-8")
     assert "static/online.js" in src and "data-online" in src
+
+
+def test_online_json_job_exists():
+    assert (ROOT / "scripts" / "online_fetch.py").exists() and (ROOT / ".github" / "workflows" / "online.yml").exists()
+    assert "online-data" in (ROOT / ".github" / "workflows" / "online.yml").read_text(encoding="utf-8")
