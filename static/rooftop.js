@@ -231,6 +231,15 @@
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
   $("[data-roof-stand]").addEventListener("click", () => { if (api) api.stand(); });
+  // 함께하는 동물: 눌러서 꺼내고 넣어요 (저장돼요)
+  const PET_NAME = { dog: "강아지", cat: "고양이", cham: "카멜레온", frog: "개구리", parrot: "앵무새" };
+  const paintPets = () => { const on = st.pets || ["dog", "cat"]; $$("[data-roof-pet]").forEach(b => b.setAttribute("aria-pressed", String(on.includes(b.dataset.roofPet)))); };
+  $$("[data-roof-pet]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.roofPet, on = new Set(st.pets || ["dog", "cat"]), add = !on.has(k); if (add) on.add(k); else on.delete(k);
+    st.pets = [...on]; saveSt(); paintPets(); if (api) api.setPets(st.pets);
+    const n = PET_NAME[k], jong = (n.charCodeAt(n.length - 1) - 0xac00) % 28 > 0;   /* 받침 있으면 이/은 */
+    hint(add ? `${n}${jong ? "이" : "가"} 나왔어요. 눌러 보세요.` : `${n}${jong ? "은" : "는"} 쉬러 갔어요.`); }));
+  paintPets();
   // 천천히 둘러보기: 화면이 360도로 아주 천천히 돌아가요 (물멍·불멍처럼). 화면을 끌면 멈춰요
   const spinBtn = $("[data-roof-spin]");
   spinBtn.addEventListener("click", () => { if (!api) return; const on = api.setSpin(!api.getSpin()); spinBtn.setAttribute("aria-pressed", String(on)); closeSubs(); if (on) hint("천천히 한 바퀴 둘러봐요. 화면을 끌면 멈춰요."); });
@@ -448,7 +457,7 @@
     if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
     try {
       const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
-      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 40, layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
+      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 40, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
       api.setSky(st.sky);
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");

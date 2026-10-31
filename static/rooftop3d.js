@@ -323,6 +323,47 @@ function makeDog() {
   return { g, body: bodyG, head, tail, legs, ears, tongue, mode: "sit", t: 0, yaw: 0, hop: 0, ph: Math.random() * 6 };
 }
 
+// 카멜레온: 길쭉한 몸, 돌돌 말린 꼬리, 따로 도는 둥근 눈, 천천히 바뀌는 몸 색
+function makeChameleon() {
+  const g = new THREE.Group(), skin = new THREE.MeshStandardMaterial({ color: 0x5fbf4a, roughness: .55 }), belly = new THREE.MeshStandardMaterial({ color: 0xc9e27a, roughness: .6 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(.07, 14, 10), skin); body.scale.set(.8, .95, 2.1); body.position.y = .1; g.add(body);
+  const crest = new THREE.Mesh(new THREE.BoxGeometry(.012, .03, .24), skin); crest.position.set(0, .17, 0); g.add(crest);
+  const head = new THREE.Group(); head.position.set(0, .12, .15); g.add(head);
+  const hd = new THREE.Mesh(new THREE.ConeGeometry(.055, .12, 10), skin); hd.rotation.x = Math.PI / 2; head.add(hd);
+  const casque = new THREE.Mesh(new THREE.ConeGeometry(.035, .07, 8), skin); casque.position.set(0, .045, -.02); casque.rotation.x = -.6; head.add(casque);
+  const eyes = [-1, 1].map(sx => { const E = new THREE.Group(); E.position.set(sx * .042, .012, -.005); head.add(E);
+    E.add(new THREE.Mesh(new THREE.SphereGeometry(.024, 10, 8), skin)); const pu = new THREE.Mesh(new THREE.SphereGeometry(.009, 8, 6), new THREE.MeshBasicMaterial({ color: 0x111111 })); pu.position.set(sx * .016, 0, .014); E.add(pu); return E; });
+  const tail = new THREE.Group(); tail.position.set(0, .09, -.14); g.add(tail);
+  for (let i = 0; i < 9; i++) { const a = i * .55, r = .07 * (1 - i / 11); const t = new THREE.Mesh(new THREE.SphereGeometry(.022 * (1 - i / 12), 8, 6), skin); t.position.set(0, -Math.sin(a) * r + (i ? 0 : 0), -Math.cos(a) * r * .9 - i * .006); tail.add(t); }
+  const legs = [[-.06, .07], [.06, .07], [-.06, -.07], [.06, -.07]].map(([x, z]) => { const l = new THREE.Mesh(new THREE.CapsuleGeometry(.014, .06, 3, 6), skin); l.position.set(x, .05, z); l.rotation.z = x > 0 ? -.5 : .5; g.add(l); return l; });
+  const bl = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), belly); bl.scale.set(.8, .5, 1.8); bl.position.y = .075; g.add(bl);
+  const tongue = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, 1, 6), new THREE.MeshStandardMaterial({ color: 0xf07a8a })); tongue.rotation.x = Math.PI / 2; tongue.visible = false; head.add(tongue);
+  return { g, skin, head, eyes, tail, legs, tongue, mode: "sit", t: 0, yaw: 0, hue: .3, flick: 0 };
+}
+// 개구리: 납작한 몸, 툭 튀어나온 눈, 볼록이는 목주머니, 폴짝
+function makeFrog() {
+  const g = new THREE.Group(), skin = new THREE.MeshStandardMaterial({ color: 0x4f9e3a, roughness: .45 }), pale = new THREE.MeshStandardMaterial({ color: 0xe6e3a8, roughness: .6 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(.09, 14, 10), skin); body.scale.set(1.1, .7, 1.2); body.position.y = .065; g.add(body);
+  const throat = new THREE.Mesh(new THREE.SphereGeometry(.045, 10, 8), pale); throat.position.set(0, .04, .075); g.add(throat);
+  [-1, 1].forEach(sx => { const e = new THREE.Mesh(new THREE.SphereGeometry(.032, 10, 8), skin); e.position.set(sx * .05, .12, .05); g.add(e);
+    const w = new THREE.Mesh(new THREE.SphereGeometry(.02, 8, 6), new THREE.MeshBasicMaterial({ color: 0xf2e9a0 })); w.position.set(sx * .055, .128, .072); g.add(w);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(.011, 8, 6), new THREE.MeshBasicMaterial({ color: 0x111111 })); pu.position.set(sx * .057, .13, .088); g.add(pu);
+    const leg = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 6), skin); leg.scale.set(.7, .5, 1.4); leg.position.set(sx * .085, .025, -.04); g.add(leg); });
+  const spots = new THREE.MeshStandardMaterial({ color: 0x2f6d26, roughness: .5 }); for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(.015, 6, 5), spots); sp.position.set(rnd(-.05, .05), .118, rnd(-.07, .03)); sp.scale.y = .4; g.add(sp); }
+  return { g, body, throat, mode: "sit", t: rnd(1, 3), yaw: 0, hop: 0, from: new THREE.Vector3(), to: new THREE.Vector3() };
+}
+// 앵무새: 초록 몸·빨간 머리·파란 날개, 난간에 앉았다가 가끔 한 바퀴 날아요
+function makeParrot() {
+  const g = new THREE.Group(), green = new THREE.MeshStandardMaterial({ color: 0x2fb35a, roughness: .5 }), red = new THREE.MeshStandardMaterial({ color: 0xe8392f, roughness: .5 }), blue = new THREE.MeshStandardMaterial({ color: 0x2f6be8, roughness: .5 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), green); body.scale.set(.9, 1.25, .95); body.position.y = .1; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.05, 12, 10), red); head.position.set(0, .2, .02); g.add(head);
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(.02, .045, 8), new THREE.MeshStandardMaterial({ color: 0xf2e6c8, roughness: .4 })); beak.position.set(0, .19, .07); beak.rotation.x = Math.PI / 2 + .5; g.add(beak);
+  [-1, 1].forEach(sx => { const e = new THREE.Mesh(new THREE.SphereGeometry(.009, 6, 5), new THREE.MeshBasicMaterial({ color: 0x111111 })); e.position.set(sx * .035, .21, .04); g.add(e); });
+  const wings = [-1, 1].map(sx => { const W = new THREE.Group(); W.position.set(sx * .06, .14, 0); g.add(W); const w = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), blue); w.scale.set(.35, 1, 1.4); w.position.set(sx * .015, -.03, -.02); W.add(w); return W; });
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(.025, .18, 6), red); tail.position.set(0, .03, -.09); tail.rotation.x = -2.2; g.add(tail);
+  return { g, wings, mode: "perch", t: rnd(8, 16), yaw: 0, fly: 0, c: new THREE.Vector3(), perch: new THREE.Vector3() };
+}
+
 // =====================================================================================
 export function start(host, cb, opt) {
   opt = opt || {};
@@ -643,7 +684,13 @@ export function start(host, cb, opt) {
   // ----- 나(아바타)와 고양이 -----
   const me = makePerson({ hood: opt.hood || 0x7b5cf8 }); roof.add(me.g); me.g.position.set(0, 0, 1.0); me.yaw = Math.PI;
   const cat = makeCat(); roof.add(cat.g); cat.g.position.set(1.8, 0, 1.6);
-  const dog = makeDog(); roof.add(dog.g); dog.g.position.set(-1.0, 0, -.1); dog.g.rotation.y = dog.yaw = .35;   // 흰 강아지
+  const cham = makeChameleon(); cham.g.scale.setScalar(1.8); roof.add(cham.g); cham.g.position.set(1.5, 0, -.4);
+  const frog = makeFrog(); frog.g.scale.setScalar(1.7); roof.add(frog.g); frog.g.position.set(-1.9, 0, -1.4); frog.yaw = .3;
+  const parrot = makeParrot(); parrot.g.scale.setScalar(1.25); roof.add(parrot.g); parrot.perch.set(.2, 1.33, 1); parrot.g.position.copy(parrot.perch);
+  // 함께하는 동물: 골라서 꺼내고 넣어요 (기본은 강아지·고양이)
+  const PETS = { dog: null, cat: null, cham, frog, parrot };
+  const setPets = list => { const on = new Set(list || ["dog", "cat"]); Object.entries(PETS).forEach(([k, p]) => { const o = k === "dog" ? dog : k === "cat" ? cat : p; o.g.visible = on.has(k); }); };
+  const dog = makeDog(); roof.add(dog.g); dog.g.position.set(-1.0, 0, -.1); dog.g.rotation.y = dog.yaw = .35; PETS.dog = dog; PETS.cat = cat; setPets(opt.pets);   // 흰 강아지
   const tagSpr = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel("나 · " + (opt.nick || "고요한 구름")), transparent: true, depthWrite: false })); tagSpr.scale.set(1.3, .33, 1); tagSpr.position.set(0, 1.78, 0); me.g.add(tagSpr);
   const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false })); bubble.scale.set(.5, .5, 1); bubble.visible = false; me.g.add(bubble);
   let bubbleT = 0;
@@ -938,7 +985,7 @@ export function start(host, cb, opt) {
   const up = e => { const p = pointers.get(e.pointerId); pointers.delete(e.pointerId); if (!p || e.type === "pointercancel") return; if (dragD < 9 && performance.now() - downAt < 600) tap(e.clientX, e.clientY); };
   el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
   el.addEventListener("wheel", e => { e.preventDefault(); camDist = clamp(camDist + e.deltaY * .003, 3, 7); }, { passive: false });
-  const personTargets = () => [me.g, cat.g, dog.g, ...neighbors.map(n => n.g)];
+  const personTargets = () => [me.g, ...[cat, dog, cham, frog, parrot].filter(p => p.g.visible).map(p => p.g), ...neighbors.map(n => n.g)];
   function tap(cx, cy) {
     const r = el.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
     if (focus) {   // 하는 동안은 그 동작만 눌러져요 (미니게임처럼)
@@ -949,8 +996,11 @@ export function start(host, cb, opt) {
     }
     const hitF = ray.intersectObjects(foodGroup.children, true)[0]; if (hitF) { const f = hitF.object.userData.foodRef; if (f) { tapFood(f); return; } }
     const hitP = ray.intersectObjects(personTargets(), true)[0];
-    if (hitP) { let o = hitP.object; while (o && o !== cat.g && o !== dog.g && o !== me.g && !neighbors.some(n => n.g === o)) o = o.parent;
-      if (o === cat.g) { petCat(); return; } if (o === dog.g) { petDog(); return; } if (o === me.g) { waveT = 1.8; emote("👋"); return; }
+    if (hitP) { let o = hitP.object; while (o && o !== cat.g && o !== dog.g && o !== cham.g && o !== frog.g && o !== parrot.g && o !== me.g && !neighbors.some(n => n.g === o)) o = o.parent;
+      if (o === cat.g) { petCat(); return; } if (o === dog.g) { petDog(); return; }
+      if (o === cham.g) { cham.mode = "show"; cham.t = 3; cham.flick = .5; emote("🦎"); cb.pet && cb.pet("cham"); return; }
+      if (o === frog.g) { frog.t = 0; frog.big = 3; emote("🐸"); cb.pet && cb.pet("frog"); return; }
+      if (o === parrot.g) { if (parrot.mode === "perch") { parrot.mode = "fly"; parrot.fly = 0; parrot.c.set(mePos.x, 3.2, mePos.z - 1); } emote("🦜"); cb.pet && cb.pet("parrot"); return; } if (o === me.g) { waveT = 1.8; emote("👋"); return; }
       const n = neighbors.find(n => n.g === o); if (n) { n.waveT = 3; n.pose = "wave"; emote("👋"); cb.neighbor && cb.neighbor(); return; } }
     const hitI = ray.intersectObjects(items.map(i => i.g), true)[0];
     if (hitI && aer < .5) { let o = hitI.object; while (o && !o.userData.item) o = o.parent; const it = o && o.userData.item;
@@ -1081,7 +1131,7 @@ export function start(host, cb, opt) {
       else if (n.nextWave < 0) { n.nextWave = rnd(10, 26); n.pose = "wave"; n.waveT = 2.4; n.yaw = Math.atan2(camera.position.x - n.g.getWorldPosition(v3).x, camera.position.z - v3.z) ; }
       animPerson(n, dt, time + n.ph, false); });
     // 강아지: 나를 졸졸 따라오고(고양이 반대편), 앉아서 고개를 갸웃, 쓰다듬으면 폴짝
-    { dog.t -= dt; const dd = Math.hypot(mePos.x - dog.g.position.x, mePos.z - dog.g.position.z);
+    if (dog.g.visible) { dog.t -= dt; const dd = Math.hypot(mePos.x - dog.g.position.x, mePos.z - dog.g.position.z);
       if (dog.mode === "happy") { dog.hop += dt; if (dog.t <= 0) dog.mode = "sit"; }
       else if (dog.mode !== "walk" && dd > 1.9 && Math.random() < dt * 1.4) { dog.mode = "walk"; dog.dest = pushOut({ x: mePos.x - rnd(.8, 1.3), z: mePos.z + rnd(.4, 1.2) }); }
       let moving_ = false;
@@ -1098,14 +1148,44 @@ export function start(host, cb, opt) {
       dog.ears.forEach((E, i) => { E.rotation.z = (i ? -1 : 1) * (moving_ || dog.mode === "happy" ? .25 + Math.sin(tt * 13) * .15 : .1); });
       dog.tongue.visible = dog.mode === "happy" || moving_ || (Math.sin(tt * .3) > .4);
       dog.body.scale.y = 1 + Math.sin(tt * (dog.tongue.visible ? 9 : 2)) * .015; }   // 헥헥
+    // 카멜레온: 느릿느릿, 눈은 따로따로 굴리고 몸 색이 천천히 바뀌어요 (누르면 무지개 + 혀)
+    if (cham.g.visible) { const c_ = cham; c_.t -= dt; const dd = Math.hypot(mePos.x - c_.g.position.x, mePos.z - c_.g.position.z);
+      if (c_.mode === "show") { c_.hue = (c_.hue + dt * .5) % 1; if (c_.t <= 0) c_.mode = "sit"; } else c_.hue = .3 + Math.sin(time * .07) * .12;
+      c_.skin.color.setHSL(c_.hue, .6, .45); let mv = false;
+      if (c_.mode === "sit" && dd > 3.2 && Math.random() < dt * .3) { c_.mode = "walk"; c_.dest = pushOut({ x: mePos.x + rnd(1, 2), z: mePos.z + rnd(-1.5, .5) }); }
+      if (c_.mode === "walk") { const dx = c_.dest.x - c_.g.position.x, dz = c_.dest.z - c_.g.position.z, d = Math.hypot(dx, dz); if (d < .1) c_.mode = "sit"; else { const sp = Math.min(d, .35 * dt); c_.g.position.x += dx / d * sp; c_.g.position.z += dz / d * sp; c_.yaw = Math.atan2(dx, dz); mv = true; } }
+      c_.g.rotation.y += (((c_.yaw - c_.g.rotation.y + Math.PI * 3) % TAU) - Math.PI) * Math.min(1, dt * 2);
+      c_.eyes[0].rotation.y = Math.sin(time * .9) * .8; c_.eyes[1].rotation.y = Math.sin(time * .63 + 2) * .8; c_.eyes[0].rotation.x = Math.sin(time * .7) * .4;
+      c_.legs.forEach((l, i) => { l.rotation.x = mv ? Math.sin(time * 4 + (i % 3 ? 0 : Math.PI)) * .5 : 0; });
+      c_.tail.rotation.x = Math.sin(time * .8) * .08;
+      if (c_.flick > 0) { c_.flick -= dt; const k = Math.sin(Math.min(1, (.5 - c_.flick) / .5) * Math.PI); c_.tongue.visible = k > .02; c_.tongue.scale.y = .02 + k * .35; c_.tongue.position.z = .06 + k * .17; } else c_.tongue.visible = false; }
+    // 개구리: 앉아서 목을 볼록볼록, 가끔 폴짝 (누르면 크게 폴짝)
+    if (frog.g.visible) { const f_ = frog; f_.t -= dt; f_.throat.scale.setScalar(1 + Math.max(0, Math.sin(time * 5)) * .35);
+      if (f_.mode === "sit" && f_.t <= 0) { const far = Math.hypot(mePos.x - f_.g.position.x, mePos.z - f_.g.position.z) > 3.5, big = f_.big || 1;
+        const tgt = pushOut(far ? { x: f_.g.position.x + (mePos.x - f_.g.position.x) * .35, z: f_.g.position.z + (mePos.z - f_.g.position.z) * .35 } : { x: f_.g.position.x + rnd(-.8, .8) * big, z: f_.g.position.z + rnd(-.8, .8) * big });
+        f_.from.copy(f_.g.position); f_.to.set(tgt.x, 0, tgt.z); f_.mode = "hop"; f_.hop = 0; f_.yaw = Math.atan2(tgt.x - f_.from.x, tgt.z - f_.from.z); f_.hh = .25 * big; f_.big = 0; }
+      if (f_.mode === "hop") { f_.hop += dt * 1.8; const k = Math.min(1, f_.hop); f_.g.position.lerpVectors(f_.from, f_.to, k); f_.g.position.y = Math.sin(k * Math.PI) * f_.hh; f_.body.scale.z = 1.2 + Math.sin(k * Math.PI) * .25;
+        if (k >= 1) { f_.mode = "sit"; f_.t = rnd(3, 8); f_.g.position.y = 0; } }
+      f_.g.rotation.y += (((f_.yaw - f_.g.rotation.y + Math.PI * 3) % TAU) - Math.PI) * Math.min(1, dt * 8); }
+    // 앵무새: 앞 난간에 앉아 있다가 가끔(또는 누르면) 내 머리 위를 한 바퀴 날고 돌아와요
+    if (parrot.g.visible) { const p_ = parrot; p_.t -= dt;
+      if (p_.mode === "perch") { const onMe = me.pose !== "sit" && me.pose !== "lie" && !inTent, ry = me.g.rotation.y;
+        if (onMe) p_.perch.set(mePos.x + Math.cos(ry) * .2, 1.33, mePos.z - Math.sin(ry) * .2); else if (p_.perch.y > 1.2) p_.perch.set(clamp(mePos.x + 1, -RX + 1, RX - 1), 1.12, -RZ + .15);
+        p_.g.position.lerp(p_.perch, Math.min(1, dt * (onMe ? 10 : 3))); p_.g.rotation.y = (onMe ? ry : Math.PI) + Math.sin(time * .6) * .5; p_.wings.forEach((W, i) => { W.rotation.z = (i ? -1 : 1) * .05; });
+        p_.g.position.y = p_.perch.y + Math.abs(Math.sin(time * 1.3)) * .01; if (p_.t <= 0) { p_.mode = "fly"; p_.fly = 0; p_.c.set(mePos.x, 3.2, mePos.z - 1); } }
+      else { p_.fly += dt / 7; const a = p_.fly * TAU, r = 3.2; const x = p_.c.x + Math.sin(a) * r, z = p_.c.z - Math.cos(a) * r + r * 0, y = p_.c.y + Math.sin(a * 2) * .4;
+        const k = Math.min(1, p_.fly * 6, (1 - p_.fly) * 6), tgt = v3.set(x, y, z).lerp(p_.perch, 1 - k); p_.g.position.lerp(tgt, Math.min(1, dt * 5));
+        p_.g.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); p_.wings.forEach((W, i) => { W.rotation.z = (i ? -1 : 1) * (.2 + Math.sin(time * 26) * .9); });
+        if (p_.fly >= 1) { p_.mode = "perch"; p_.t = rnd(18, 34); } } }
     // 고양이
+    if (cat.g.visible) {
     cat.t -= dt; const cd = Math.hypot(mePos.x - cat.g.position.x, mePos.z - cat.g.position.z);
     if (cat.mode === "purr") { if (cat.t <= 0) cat.mode = "sit"; }
     else if (cat.mode !== "walk" && cd > 2.6 && Math.random() < dt * .6) { cat.mode = "walk"; cat.dest = pushOut({ x: mePos.x + rnd(-1.4, 1.4), z: mePos.z + rnd(.3, 1.5) }); }
     if (cat.mode === "walk") { const dx = cat.dest.x - cat.g.position.x, dz = cat.dest.z - cat.g.position.z, d = Math.hypot(dx, dz); if (d < .1) cat.mode = "sit"; else { const s = Math.min(d, 1.5 * dt); cat.g.position.x += dx / d * s; cat.g.position.z += dz / d * s; cat.yaw = Math.atan2(dx, dz); cat.g.position.y = Math.abs(Math.sin(time * 9)) * .04; } } else cat.g.position.y = 0;
     cat.g.rotation.y += (((cat.yaw - cat.g.rotation.y + Math.PI * 3) % TAU) - Math.PI) * Math.min(1, dt * 6);
     cat.tail.rotation.y = Math.sin(time * (cat.mode === "purr" ? 5 : 1.8)) * .5; cat.head.rotation.x = cat.mode === "purr" ? .15 : Math.sin(time * .8) * .04;
-    cat.body.scale.y = 1.05 + Math.sin(time * (cat.mode === "purr" ? 6 : 1.5)) * .02;
+    cat.body.scale.y = 1.05 + Math.sin(time * (cat.mode === "purr" ? 6 : 1.5)) * .02; }
     for (let i = heartList.length - 1; i >= 0; i--) { const h = heartList[i]; h.t += dt; if (h.t < 0) { h.s.visible = false; continue; } h.s.visible = true; h.s.position.y += dt * .5; h.s.material.opacity = Math.max(0, 1 - h.t / 1.6); if (h.t > 1.6) { hearts.remove(h.s); heartList.splice(i, 1); } }
     // 카메라
     yaw += (yawT - yaw) * Math.min(1, dt * 6); lookUp += (lookT - lookUp) * Math.min(1, dt * 6);
@@ -1260,7 +1340,7 @@ export function start(host, cb, opt) {
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
     setStars(arr) { counted = new Set(arr || []); paintStars(); paintLines(); sg.attributes.aSize.needsUpdate = sg.attributes.aCol.needsUpdate = sg.attributes.aAlpha.needsUpdate = true; },
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },
-    wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
+    wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, setPets, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     snapshot() { draw(); return el; },
