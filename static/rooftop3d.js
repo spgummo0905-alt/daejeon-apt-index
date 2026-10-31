@@ -111,7 +111,7 @@ ${NOISE}
 void main(){
   vec3 n = normalize(vN); float roof = step(.5,abs(vO.y));
   float dif = max(dot(n,uLightDir),0.);
-  vec3 col = vT.rgb*(uAmb + uLightCol*dif);
+  vec3 col = vT.rgb*(uAmb*.5 + uLightCol*dif*.45);
   vec3 em = vec3(0.);
   if(roof < .5){
     float along = abs(vO.x)>.5 ? vL.z : vL.x; float hh = vL.y + vSY*.5;
@@ -127,7 +127,7 @@ void main(){
     col *= 1. - .22*step(f.y,.06);                                                // 층 구분선
     col *= .86 + .14*h21(vec2(floor(along*1.3), floor(hh*.7)));
   } else {
-    col = vT.rgb*.26 + vec3(.022,.014,.02) + vec3(.012)*h21(floor(vW.xz*.7));
+    col = vT.rgb*.1 + vec3(.012,.008,.014) + vec3(.008)*h21(floor(vW.xz*.7));
   }
   col += em;
   col += uFlash*(.35 + .65*max(n.y*.5+.5,0.))*(roof<.5?.7:.5);
@@ -336,8 +336,8 @@ export function start(host, cb, opt) {
     const tc = pick([[.36, .38, .58], [.52, .36, .34], [.32, .46, .52], [.46, .38, .58]]), t = .55 + R() * .3; addB(x, z, 12 + R() * 28, 12 + R() * 22, hh, Math.floor(R() * 4) * Math.PI / 2 + (R() - .5) * .3, tc.map(v => v * t), .38 + R() * .24);
   }
   for (let k = 0; k < 24; k++) {   // 도심 고층 (남쪽 멀리)
-    const x = (k % 2 ? 1 : -1) * (440 + R() * 380), z = -360 - R() * 380, hh = 110 + Math.pow(R(), 1.4) * 190;   // 만 양쪽 해안의 고층
-    addB(x, z, 28 + R() * 20, 28 + R() * 16, hh, (R() - .5) * .3, [.26, .40, .62], .58 + R() * .12); towers.push({ x, y: hh - OURH + 2, z });
+    const x = (k % 2 ? 1 : -1) * (440 + R() * 300), z = -350 - R() * 300, hh = 140 + Math.pow(R(), 1.3) * 230;   // 만 양쪽 해안의 고층
+    addB(x, z, 28 + R() * 20, 28 + R() * 16, hh, (R() - .5) * .3, [.26, .40, .62], .58 + R() * .12); towers.push({ x, y: hh - OURH + 2, z, w: 28 + R() * 20 });
   }
   const signs = [];   // 가까운 동네: 벽돌색 낮은 건물과 간판 불빛
   for (let k = 0; k < 24; k++) {
@@ -360,6 +360,7 @@ export function start(host, cb, opt) {
   const ground = new THREE.Mesh(new THREE.CircleGeometry(2600, 6), new THREE.MeshBasicMaterial({ color: 0x080a14, fog: true })); ground.rotation.x = -Math.PI / 2; ground.position.y = -OURH - 1; scene.add(ground);
   const glowPts = mkPoints(14000, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
   let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 14000) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
+  const crowns = []; towers.forEach((t, i) => { for (let k = 0; k < 4; k++) { const a = k / 4 * TAU; crowns.push({ x: t.x + Math.cos(a) * 12, y: t.y - 2 - (i % 3) * 6, z: t.z + Math.sin(a) * 12, h: i * .07 + k * .05 }); } });
   const beacons = towers.map(t => ({ i: gAdd(t.x, t.y, t.z, 1, .12, .1, 9, .9), ph: rnd(0, TAU) }));
   const roadMat = new THREE.MeshBasicMaterial({ color: 0x7a4418, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }), roadGroup = new THREE.Group(); scene.add(roadGroup);
   const cars = [];   // 도로를 따라 흐르는 차량 불빛과 가로등
@@ -373,6 +374,7 @@ export function start(host, cb, opt) {
   };
   ROAD_X.forEach(x => { if (Math.abs(x) < 430) road(x, (900 - 330) / 2, 0, 1, 1230); else road(x, -50, 0, 1, 1900); });
   ROAD_Z.forEach(z => { if (z < -330) { road(-765, z, 1, 0, 670); road(765, z, 1, 0, 670); } else road(0, z, 1, 0, 2200); });
+  const crownIdx = crowns.map(c => ({ i: gAdd(c.x, c.y, c.z, 1, .8, .5, 14, .9), h: c.h }));
   signs.forEach(sg_ => { for (let k = 0; k < 2; k++) { const c = pick([[1, .25, .25], [.3, 1, .55], [.4, .65, 1], [1, .85, .3], [1, .4, .85]]); gAdd(sg_.x + rnd(-sg_.w / 3, sg_.w / 3), sg_.y - k * 2.2, sg_.z, c[0], c[1], c[2], 6.5, .85); } });
   // 만(바다)과 다리: 높은 곳에서 내려다보면 불꽃과 불빛이 물에 비쳐요
   const WATER_Y = -OURH + .4, BAY = { x: 430, z0: -330, z1: -1500 };
@@ -819,12 +821,42 @@ export function start(host, cb, opt) {
   });
   window.addEventListener("keyup", e => { let k = e.key.toLowerCase(); k = KEYMAP[k] || k; keys.delete(k); if (k === "shift") keys.delete("shift"); });
   window.addEventListener("blur", () => keys.clear());
+  // ----- 번짐(블룸): 불빛이 은은하게 번져서 사진 같은 야경이 돼요 (가볍게 쓰려면 화질 '가볍게'에서는 꺼요) -----
+  const post = (() => {
+    const HF = { type: THREE.HalfFloatType };
+    const main = new THREE.WebGLRenderTarget(4, 4, Object.assign({ depthBuffer: true, samples: mobile ? 0 : 4 }, HF));
+    const mk = () => new THREE.WebGLRenderTarget(4, 4, Object.assign({ depthBuffer: false }, HF)), a1 = mk(), b1 = mk(), a2 = mk(), b2 = mk();
+    const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)), ps = new THREE.Scene(); ps.add(quad);
+    const vs = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }";
+    const U = () => ({ t: { value: null }, b1: { value: null }, b2: { value: null }, dir: { value: new THREE.Vector2() }, th: { value: .6 }, k: { value: .8 } });
+    const mat = fs => new THREE.ShaderMaterial({ vertexShader: vs, fragmentShader: "precision highp float; varying vec2 vUv; uniform sampler2D t,b1,b2; uniform vec2 dir; uniform float th,k;\n" + fs, depthTest: false, depthWrite: false, uniforms: U() });
+    const bright = mat("void main(){ vec3 c = texture2D(t,vUv).rgb; float l = max(max(c.r,c.g),c.b); gl_FragColor = vec4(c*smoothstep(th,th+.45,l),1.); }");
+    const blur = mat("void main(){ vec3 c = texture2D(t,vUv).rgb*.227; vec2 o1 = dir*1.3846, o2 = dir*3.2308; c += (texture2D(t,vUv+o1).rgb + texture2D(t,vUv-o1).rgb)*.3162 + (texture2D(t,vUv+o2).rgb + texture2D(t,vUv-o2).rgb)*.0703; gl_FragColor = vec4(c,1.); }");
+    const comp = mat("void main(){ vec3 c = texture2D(t,vUv).rgb + (texture2D(b1,vUv).rgb*.75 + texture2D(b2,vUv).rgb*1.0)*k; gl_FragColor = vec4(c,1.);\n #include <colorspace_fragment>\n }");
+    const pass = (m, from, to) => { m.uniforms.t.value = from.texture; quad.material = m; renderer.setRenderTarget(to); renderer.render(ps, cam); };
+    return {
+      size(w, h) { main.setSize(w, h); [[a1, b1, 4], [a2, b2, 8]].forEach(([a, b, d]) => { const ww = Math.max(2, Math.floor(w / d)), hh = Math.max(2, Math.floor(h / d)); a.setSize(ww, hh); b.setSize(ww, hh); }); },
+      render(k) {
+        renderer.setRenderTarget(main); renderer.render(scene, camera);
+        bright.uniforms.th.value = .6; pass(bright, main, a1);
+        blur.uniforms.dir.value.set(1 / a1.width, 0); pass(blur, a1, b1); blur.uniforms.dir.value.set(0, 1 / a1.height); pass(blur, b1, a1);
+        bright.uniforms.th.value = -2; pass(bright, a1, a2);
+        blur.uniforms.dir.value.set(1 / a2.width, 0); pass(blur, a2, b2); blur.uniforms.dir.value.set(0, 1 / a2.height); pass(blur, b2, a2);
+        comp.uniforms.b1.value = a1.texture; comp.uniforms.b2.value = a2.texture; comp.uniforms.k.value = k;
+        pass(comp, main, null);
+      },
+    };
+  })();
+  const bloomOn = () => quality !== "low";
+  const draw = () => { if (bloomOn()) post.render(.55 + .55 * bldU.uNight.value); else renderer.render(scene, camera); };
+
   // ----- 크기·품질 -----
   function resize() {
     const r = host.getBoundingClientRect(); W = Math.max(280, Math.round(r.width)); H = Math.max(360, Math.round(r.height));
     const pr = Math.min(window.devicePixelRatio || 1, quality === "high" ? 2 : quality === "mid" ? 1.6 : 1.1);
     renderer.setPixelRatio(pr); renderer.setSize(W, H, false); el.style.width = W + "px"; el.style.height = H + "px";
     camera.aspect = W / H; camera.fov = W / H < .8 ? 72 : 62; camera.setViewOffset(W, H, 0, Math.round(H * .08), W, H); camera.updateProjectionMatrix();
+    post.size(renderer.domElement.width, renderer.domElement.height);
     const sc = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)); addGlow.uniforms.uScale.value = sc; smokeMat.uniforms.uScale.value = sc; mirMat.uniforms.uScale.value = sc;
   }
 
@@ -891,11 +923,11 @@ export function start(host, cb, opt) {
     const bx = mePos.x, bz = mePos.z;
     const wantPos = new THREE.Vector3(clamp(bx + camDist * Math.sin(yaw), -7.6, 7.6), cy, clamp(bz + camDist * Math.cos(yaw), -6.2, 6.6));
     aer += ((view === "aerial" ? 1 : 0) - aer) * Math.min(1, dt * 1.1); const ae = aer * aer * (3 - 2 * aer), oa = time * .018 + yaw * .8;
-    if (ae > .002) wantPos.lerp(aerPos.set(Math.sin(oa) * 34, 196, 150 + Math.cos(oa) * 8), ae);
+    if (ae > .002) wantPos.lerp(aerPos.set(Math.sin(oa) * 34, 236, 190 + Math.cos(oa) * 8), ae);
     camPos.lerp(wantPos, Math.min(1, dt * (ae > .002 ? 1.7 : 4))); camera.position.copy(camPos);
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
     camTgt.set(camPos.x + fx * 40, camPos.y + lookUp * 40 - .6, camPos.z + fz * 40);
-    if (ae > .002) camTgt.lerp(aerTgt.set(Math.cos(oa) * 60, -26, -560), ae);
+    if (ae > .002) camTgt.lerp(aerTgt.set(Math.cos(oa) * 60, -6, -600), ae);
     camera.lookAt(camTgt);
     sky.position.copy(camera.position); moon.rotation.y = 0;
     // 불판 불빛·연기
@@ -922,6 +954,7 @@ export function start(host, cb, opt) {
       if (r0 < .4) later(280, () => autoShell(pick(KINDS), rnd(1.2, 1.7), true)); if (r0 < .18) later(620, () => autoShell(pick(KINDS), rnd(1.2, 1.7), true));
       if (time > nextCascade && quality !== "low") { nextCascade = time + rnd(36, 62); cascadeT = 7; } }
     if (cascadeT > 0) { cascadeT -= dt; for (let j = 0; j < (quality === "high" ? 16 : 9); j++) { const p = bAt(.06 + j * .035, rnd(-6, 6)); spark(p.x, BY + 3, p.z, rnd(-4, 4), rnd(20, 36), rnd(-4, 4), [255, 205, 115], 2.6, rnd(1.3, 2.3), 1.1, 13, 2); } }
+    crownIdx.forEach(b => { const c = tmpC.setHSL((b.h + time * .03) % 1, .8, .6); gcolArr[b.i * 3] = c.r; gcolArr[b.i * 3 + 1] = c.g; gcolArr[b.i * 3 + 2] = c.b; });
     if (aer > .05 || frameN % 4 === 0) bridgeLights.forEach(b => { const c = tmpC.setHSL((b.h + time * .035) % 1, .85, .56); gcolArr[b.i * 3] = c.r; gcolArr[b.i * 3 + 1] = c.g; gcolArr[b.i * 3 + 2] = c.b; }); gcol.needsUpdate = true;
     // 로켓
     for (let i = rockets.length - 1; i >= 0; i--) {
@@ -960,7 +993,7 @@ export function start(host, cb, opt) {
     // 비
     const rr = S.weather.rain; rain.material.opacity = rr * .45; if (rr > .02) { rain.position.set(camera.position.x, camera.position.y - 6, camera.position.z); for (let i = 0; i < RN; i++) { let y = rp[i * 6 + 1] - dt * 16 * (.8 + rr); if (y < -2) y += 20; rp[i * 6 + 1] = y; rp[i * 6 + 4] = y - .5; } rainGeo.attributes.position.needsUpdate = true; }
     if (frameN % 600 === 1) applySky();
-    renderer.render(scene, camera);
+    draw();
     fpsT += dt; fpsN++; if (fpsT > 3) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; if (fps < 26 && quality !== "low") { quality = quality === "high" ? "mid" : "low"; resize(); cb.quality && cb.quality(quality); } }
   }
   let netT = 0, lastNet = "", lastNetT = 0, fpActive = 0, nextAuto = 0, nextCascade = 14, cascadeT = 0; const tmpC = new THREE.Color();
@@ -979,7 +1012,7 @@ export function start(host, cb, opt) {
     wave() { waveT = 1.8; emote("👋"); }, setQuality(q) { quality = q; resize(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
-    snapshot() { renderer.render(scene, camera); return el; },
+    snapshot() { draw(); return el; },
     dispose() { running = false; renderer.dispose(); el.remove(); },
   };
   updGlowStatic(); resize(); applySky();
