@@ -7,6 +7,8 @@ import math
 import os
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -15,7 +17,7 @@ import numpy as np
 SR = 32000
 OUT = sys.argv[1] if len(sys.argv) > 1 else "static/sounds"
 API = "https://commons.wikimedia.org/w/api.php"
-UA = {"User-Agent": "jipgam-sounds-build/1.0 (https://www.jipgam.kr)"}
+UA = {"User-Agent": "jipgam-sounds-build/1.0 (https://www.jipgam.kr; t0mango@gmail.com) python-urllib"}
 
 # (이름, 파일 제목, 시작 초, 길이 초, 겹치는 초, 목표 소리 크기)
 LOOPS = [
@@ -45,9 +47,17 @@ FIREWORKS = [
 
 
 def get(url, binary=False):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120) as r:
-        d = r.read()
-    return d if binary else json.loads(d.decode("utf-8"))
+    """위키미디어는 요청이 잦으면 429 를 줘서, 천천히 받고 막히면 기다렸다가 다시 해요"""
+    for k in range(7):
+        try:
+            time.sleep(1.5)
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120) as r:
+                d = r.read()
+            return d if binary else json.loads(d.decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 503) or k == 6:
+                raise
+            time.sleep(15 * (k + 1))
 
 
 def info(title):
