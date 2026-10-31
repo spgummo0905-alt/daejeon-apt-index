@@ -15,6 +15,7 @@
     </label>
     <p class="roof-stat" data-roof-stat aria-live="polite"></p>
     <div class="roof-tools">
+      <button type="button" class="roof-btn" data-roof-open="room" data-roof-roombtn hidden aria-label="함께 있기">👥 <b data-roof-pc>함께</b></button>
       <button type="button" class="roof-btn" data-roof-open="set" aria-label="옥상 설정">설정</button>
       <button type="button" class="roof-btn" data-roof-photo>사진 저장</button>
     </div>
@@ -60,6 +61,25 @@
     <p class="roof-rank" data-roof-rank></p>
     <ul class="roof-list" data-roof-list></ul>
     <p class="roof-note">미션은 매일 새로 바뀌어요. 못 해도 괜찮아요, 쉬러 온 곳이니까요.</p>
+  </div>
+
+  <div class="roof-emo" data-roof-emobar hidden role="group" aria-label="이모지 인사">
+    <button type="button" data-roof-emo="👋" aria-label="손 흔들기">👋</button><button type="button" data-roof-emo="❤️" aria-label="하트">❤️</button><button type="button" data-roof-emo="😂" aria-label="웃음">😂</button>
+    <button type="button" data-roof-emo="👏" aria-label="박수">👏</button><button type="button" data-roof-emo="🙏" aria-label="감사">🙏</button><button type="button" data-roof-emo="🎆" aria-label="불꽃">🎆</button>
+  </div>
+
+  <div class="roof-modal" data-roof-modal="room" hidden>
+    <div class="roof-card" role="dialog" aria-label="함께 있기">
+      <div class="roof-sheet-head"><b>함께 있기</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
+      <p class="roof-note" data-roof-roomstat>혼자 있어요.</p>
+      <p class="roof-note">같은 동네 옥상에서 다른 사람들과 함께 불꽃을 보고 이모지로 인사해요. 말은 주고받지 않아요. 내 닉네임과 위치만 잠깐 보이고 저장되지 않아요.</p>
+      <ul class="roof-list" data-roof-members></ul>
+      <div class="rs-chips">
+        <button type="button" class="roof-btn fw" data-roof-join="auto">이 동네 옥상에서 함께 있기</button>
+        <button type="button" class="roof-btn" data-roof-join="friend">친구 방 만들어 초대하기</button>
+        <button type="button" class="roof-btn" data-roof-join="off" hidden>혼자 있기</button>
+      </div>
+    </div>
   </div>
 
   <div class="roof-modal" data-roof-modal="wish" hidden>
@@ -132,4 +152,4 @@
   </div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/rooftop.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}<script src="static/rooftop-net.js?v={{ v }}"></script><script src="static/rooftop.js?v={{ v }}"></script>{% endblock %}

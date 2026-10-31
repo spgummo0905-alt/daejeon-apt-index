@@ -3415,3 +3415,12 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof[data-view="aerial"] [data-roof-menu], .roof[data-view="aerial"] .roof-mission, .roof[data-view="aerial"] [data-roof-sub], .roof[data-view="aerial"] .roof-count { display: none; }
 .roof-tray .roof-btn { padding: 8px 10px; font-size: 12.5px; }
 .roof-tray { gap: 5px; }
+
+/* 옥상: 함께 있기 */
+.roof-btn[hidden] { display: none; }
+.roof-emo { position: absolute; right: 10px; top: 46%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 3; }
+.roof-emo[hidden] { display: none; }
+.roof-emo button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(10,16,34,.62); font-size: 21px; line-height: 1; cursor: pointer; backdrop-filter: blur(6px); }
+.roof-emo button:active { transform: scale(.9); }
+.roof-emo button:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
+.roof[data-view="aerial"] .roof-emo { display: none; }

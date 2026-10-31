@@ -640,15 +640,24 @@ export function start(host, cb, opt) {
     rockets.push({ x: bx, y: -OURH + 2, z: bz, tx, ty, tz, v: rnd(105, 130), c: c || pick(FW_COLORS), kind: kind || pick(KINDS), size: size || rnd(.85, 1.2), t: 0 });
     if (!quiet && cb.launch) cb.launch({ pan: clamp(bx / Math.max(120, Math.abs(bz) * .9), -1, 1) });
   }
-  const aimShell = (dir, kind, size) => {   // 화면을 눌러 쏘기: 바라본 방향 멀리에서
+  const aimShell = (dir) => {   // 화면을 눌러 쏘기: 바라본 방향 멀리에서 (같은 방 사람들에게도 보내요)
     const h = Math.hypot(dir.x, dir.z) || 1, dist = rnd(380, 520), x = camera.position.x + dir.x / h * dist, z = camera.position.z + dir.z / h * dist;
-    launch(x, clamp(camera.position.y + dir.y / h * dist, 55, 250), z, kind, null, size);
+    const y = clamp(camera.position.y + dir.y / h * dist, 55, 250), kind = pick(KINDS), ci = (Math.random() * FW_COLORS.length) | 0, size = +rnd(.85, 1.2).toFixed(2);
+    launch(x, y, z, kind, FW_COLORS[ci], size);
+    cb.fwOut && cb.fwOut({ x: Math.round(x), y: Math.round(y), z: Math.round(z), k: kind, c: ci, s: size });
+  };
+  const remoteShell = p => {   // 같은 방 사람이 쏜 불꽃 (받은 값은 범위를 다시 맞춰서)
+    if (!p || !KINDS.includes(p.k)) return;
+    const n = (v, a, b) => (Number.isFinite(+v) ? clamp(+v, a, b) : 0);
+    launch(n(p.x, -1200, 1200), n(p.y, -60, 300), n(p.z, -1400, 1200), p.k, FW_COLORS[(n(p.c, 0, FW_COLORS.length - 1)) | 0], n(p.s, .7, 1.9));
   };
   const autoShell = (kind, size, low) => { const a = -Math.PI / 2 + rnd(-.5, .5), dist = rnd(420, 760); launch(Math.cos(a) * dist, low ? rnd(10, 175) : rnd(70, 230), Math.sin(a) * dist, kind, null, size); };
-  const show = () => {   // 한바탕: 점점 커지다 마지막에 한꺼번에
+  const show = (seed) => {   // 한바탕: 점점 커지다 마지막에 한꺼번에. 같은 seed 면 누가 열어도 같은 순서 (정각 쇼를 함께 봐요)
     cb.showStart && cb.showStart();
-    let t = 0; for (let i = 0; i < 34; i++) { t += i < 20 ? rnd(1100, 1900) : rnd(380, 800); later(t, () => autoShell(pick(KINDS), i > 26 ? rnd(1.2, 1.5) : rnd(.9, 1.2))); }
-    for (let i = 0; i < 10; i++) later(t + 1500 + i * 190, () => autoShell(pick(KINDS), rnd(1.3, 1.7)));
+    const R = seed != null ? mulberry(seed >>> 0) : Math.random, r = (a, b) => a + R() * (b - a), pk = a => a[(R() * a.length) | 0];
+    const shell = size => { const a = -Math.PI / 2 + r(-.6, .6), dist = r(360, 600); return [Math.cos(a) * dist, r(70, 230), Math.sin(a) * dist, pk(KINDS), pk(FW_COLORS), size]; };
+    let t = 0; for (let i = 0; i < 34; i++) { t += i < 20 ? r(1100, 1900) : r(380, 800); const a = shell(i > 26 ? r(1.2, 1.5) : r(.9, 1.2)); later(t, () => launch(...a)); }
+    for (let i = 0; i < 10; i++) { const a = shell(r(1.3, 1.7)); later(t + 1500 + i * 190, () => launch(...a)); }
     later(t + 6000, () => cb.showEnd && cb.showEnd());
     return t / 1000 + 8;
   };
@@ -685,6 +694,28 @@ export function start(host, cb, opt) {
     else { f.down = 1 - f.down; f.flip = 1; }
   };
 
+  // ----- 함께 있는 사람들 (rooftop-net.js 가 보내 주는 상태를 그려요. 이모지 인사만, 말은 없어요) -----
+  const EMO = ["👋", "❤️", "😂", "👏", "🙏", "🎆"], HOODS = [0xe86a6a, 0x4fb08a, 0xf0b040, 0x6a8ae8, 0xb06ae8, 0x40b8c8, 0xe88ab0, 0x8ab040], PEER_MAX = 7;
+  const POSES = new Set(["idle", "walk", "sit", "lie", "wave", "cheer", "eat", "watch"]), peers = new Map(), emoTex = {};
+  const nv = (v, a, b, d) => (Number.isFinite(+v) ? clamp(+v, a, b) : d || 0);
+  function setPeer(id, st) {
+    let p = peers.get(id);
+    if (!p) {
+      if (peers.size >= PEER_MAX) return;
+      const P = makePerson({ hood: HOODS[hashStr(id) % HOODS.length] }); roof.add(P.g);
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel(String(st.n || "이웃").slice(0, 12)), transparent: true, depthWrite: false })); tag.scale.set(1.2, .3, 1); tag.position.set(0, 1.75, 0); P.g.add(tag);
+      const bub = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false })); bub.scale.set(.5, .5, 1); bub.visible = false; P.g.add(bub);
+      P.g.position.set(nv(st.x, -6.9, 6.9), 0, nv(st.z, -4.9, 5.1)); p = { P, bub, bt: 0, tx: P.g.position.x, tz: P.g.position.z, ty: 0, pose: "idle", yaw: Math.PI, last: time }; peers.set(id, p);
+      cb.peerCount && cb.peerCount(peers.size);
+    }
+    p.tx = nv(st.x, -6.9, 6.9); p.tz = nv(st.z, -4.9, 5.1); p.ty = nv(st.y, 0, 1); p.yaw = nv(st.yaw, -7, 7, Math.PI); p.pose = POSES.has(st.pose) ? st.pose : "idle"; p.P.seat = nv(st.seat, 0, .5); p.last = time;
+  }
+  function removePeer(id) { const p = peers.get(id); if (!p) return; roof.remove(p.P.g); peers.delete(id); cb.peerCount && cb.peerCount(peers.size); }
+  function peerEmote(id, e) {
+    const p = peers.get(id); if (!p || !EMO.includes(e)) return;
+    p.bub.material.map = emoTex[e] || (emoTex[e] = texEmoji(e)); p.bub.material.needsUpdate = true; p.bub.visible = true; p.bt = 2.4; p.bub.position.set(0, 2.1, 0);
+    if (e === "👋") p.wave = 1.6;
+  }
   // ----- 고양이 -----
   const hearts = new THREE.Group(); roof.add(hearts); const heartList = [];
   const petCat = () => {
@@ -801,6 +832,17 @@ export function start(host, cb, opt) {
     else if (!moving && me.pose === "idle" && (rockets.length || fpActive > 80)) me.pose = "watch";
     else if (!moving && me.pose === "watch" && !rockets.length && fpActive < 30) me.pose = "idle";
     animPerson(me, dt, time, moving);
+    netT -= dt; if (netT <= 0) { netT = .2; const ps = { x: +mePos.x.toFixed(2), z: +mePos.z.toFixed(2), y: +mePos.y.toFixed(2), yaw: +me.yaw.toFixed(2), pose: moving ? "walk" : me.pose, seat: +me.seat.toFixed(2) }, key = JSON.stringify(ps);
+      if (key !== lastNet || time - lastNetT > 4) { lastNet = key; lastNetT = time; cb.moved && cb.moved(ps); } }
+    const gone = []; peers.forEach((p, id) => {
+      const g = p.P.g, dx = p.tx - g.position.x, dz = p.tz - g.position.z, d = Math.hypot(dx, dz), mv = d > .05 && p.pose !== "sit" && p.pose !== "lie";
+      if (d > .02) { const sp = Math.min(d, 3.2 * dt); g.position.x += dx / d * sp; g.position.z += dz / d * sp; }
+      g.position.y += (p.ty - g.position.y) * Math.min(1, dt * 8); if (mv && d > .25) p.P.yaw = Math.atan2(dx, dz); else if (!mv) p.P.yaw = p.yaw;
+      if (p.wave > 0) { p.wave -= dt; p.P.pose = "wave"; } else p.P.pose = p.pose;
+      animPerson(p.P, dt, time + p.P.ph, mv);
+      if (p.bt > 0) { p.bt -= dt; p.bub.position.y = 2.1 + (2.4 - p.bt) * .1; p.bub.material.opacity = Math.min(1, p.bt * 2); if (p.bt <= 0) p.bub.visible = false; }
+      if (time - p.last > 25) gone.push(id);
+    }); gone.forEach(removePeer);
     if (bubbleT > 0) { bubbleT -= dt; bubble.position.y = 2.15 + (2.2 - bubbleT) * .12; bubble.material.opacity = Math.min(1, bubbleT * 2); if (bubbleT <= 0) bubble.visible = false; }
     // 이웃
     neighbors.forEach(n => { n.nextWave -= dt; if (n.waveT > 0) { n.waveT -= dt; if (n.waveT <= 0) { n.pose = n.base; n.yaw = Math.PI; } }
@@ -894,13 +936,14 @@ export function start(host, cb, opt) {
     renderer.render(scene, camera);
     fpsT += dt; fpsN++; if (fpsT > 3) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; if (fps < 26 && quality !== "low") { quality = quality === "high" ? "mid" : "low"; resize(); cb.quality && cb.quality(quality); } }
   }
-  let fpActive = 0, nextAuto = 0, nextCascade = 14, cascadeT = 0; const tmpC = new THREE.Color();
+  let netT = 0, lastNet = "", lastNetT = 0, fpActive = 0, nextAuto = 0, nextCascade = 14, cascadeT = 0; const tmpC = new THREE.Color();
 
   // ----- 바깥에 내주는 것 -----
   const api = {
-    el, resize, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show,
+    el, resize, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
     setSky(m) { S.mode = m; applySky(); }, setWeather(w) { Object.assign(S.weather, w); applySky(); },
     setPlace(lat, lon) { S.lat = lat; S.lon = lon; applySky(); },
+    setPeer, removePeer, peerEmote, remoteShell, emote, peerCount: () => peers.size, EMO,
     setDeco(m) { placing = m && m !== "remove" ? m : null; removing = m === "remove"; return m; }, lie: lieDown,
     setView(v) { view = v; S.override = v === "aerial" ? "twilight" : null; applySky(); cb.view && cb.view(v); }, getView: () => view, itemCount: () => items.length,
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
