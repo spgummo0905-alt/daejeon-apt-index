@@ -266,10 +266,25 @@
   });
 
   // ---------- 동네·날씨 ----------
-  const sel = $("[data-roof-town]"), statEl = $("[data-roof-stat]");
+  const sel = $("[data-roof-town]");
   let town = null, wxLine = "";
   const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
-  const stat = () => { const on = window.DJ && DJ.online && DJ.online.count() > 1 ? `지금 ${DJ.online.count()}명 접속` : ""; statEl.textContent = [wxLine, on].filter(Boolean).join(" · "); };
+  // 위쪽 현황: 지금·오늘 몇 명, 지금 시간대와 날씨, 옥상에 머문 시간 (누구나 한눈에)
+  let todayN = 0, lastFw = -1e9; const arrived = Date.now();
+  const kstHour = () => new Date(Date.now() + 9 * 3600e3).getUTCHours();
+  const when = h => h < 5 ? ["🌌", "새벽"] : h < 8 ? ["🌅", "아침"] : h < 17 ? ["☀️", "낮"] : h < 19 ? ["🌇", "저녁"] : ["🌙", "밤"];
+  const stat = () => {
+    const now = window.DJ && DJ.online ? Math.max(1, DJ.online.count()) : 1;
+    $("[data-roof-now]").textContent = now.toLocaleString(); $("[data-roof-today]").textContent = Math.max(todayN, now).toLocaleString();
+    const [ic, w] = when(kstHour()); $("[data-roof-when]").textContent = `${ic} ${w}${wxLine ? " · " + wxLine : ""}`;
+    const f = box.dataset.focus, spin = api && api.getSpin && api.getSpin(), mins = Math.floor((Date.now() - arrived) / 60e3);
+    const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
+    $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
+  };
+  const ONLINE_URL = "https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/online-data/online.json";
+  const loadToday = () => fetch(ONLINE_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
+    const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); if (j && j.d === day && j.t) { todayN = j.t; stat(); } }).catch(() => { /* 못 받아도 '지금'은 보여요 */ });
+  loadToday(); setInterval(loadToday, 5 * 60e3); setInterval(() => { try { stat(); } catch (e) { /* 준비 전 */ } }, 20e3);
   if (window.DJ && DJ.online) DJ.online.onChange(() => { try { stat(); } catch (e) { /* 아직 준비 전 */ } });
   const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
   // 기상청 격자 (공식 변환식. scripts/weather_fetch.py 의 grid 와 같아요)
@@ -354,7 +369,11 @@
     $("[data-roof-members]").replaceChildren(...[st.nick + " (나)", ...names.map(x => x.n)].map(t => { const li = document.createElement("li"); li.innerHTML = "<span>•</span><b></b><i></i>"; li.querySelector("b").textContent = t; return li; }));
     $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; });
   }
-  function leaveRoom() { if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; }
+  // 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
+  let roomDeco = { v: 0, l: null }, helloT = 0;
+  const sendDeco = () => { if (net && net.isOpen()) net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick }); };
+  function leaveRoom() { const was = !!net; if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
+    if (was && roomDeco.v && api) { api.setLayout(st.layout); } roomDeco = { v: 0, l: null }; }
   function joinRoom(mode, code) {
     if (!canNet || !api) return;
     leaveRoom(); roomMode = mode;
@@ -368,9 +387,15 @@
         if (mode === "auto" && list.length >= 8 && autoK < 12) { autoK++; joinRoom("auto"); }   // 한 방은 8명까지, 가득 차면 다음 번호 방
       },
       leave: id => { api.removePeer(id); },
-      event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b); },
+      event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b);
+        else if (ev === "hello") sendDeco();   // 새로 온 사람에게 지금 방의 꾸미기를 알려 줘요
+        else if (ev === "roomDeco" && Array.isArray(b.l) && +b.v > roomDeco.v) { const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
+          if (!first || b.by) hint(first ? `${String(b.by || "누군가").slice(0, 12)}님의 옥상이에요. 함께 꾸며 보세요.` : `${String(b.by || "누군가").slice(0, 12)}님이 옥상을 꾸몄어요.`); } },
     });
     st.net = mode === "auto"; saveSt(); paintNet("연결하는 중…");
+    // 들어가면 '안녕'을 보내 방의 꾸미기를 받아요. 아무도 답이 없으면 내 꾸미기가 이 방의 꾸미기가 돼요
+    clearTimeout(helloT); helloT = setTimeout(function hi(k) { if (!net) return; if (!net.isOpen()) { helloT = setTimeout(() => hi(k), 800); return; }
+      net.send("hello", {}); helloT = setTimeout(() => { if (net && !roomDeco.v) { roomDeco = { v: 1 + Math.random(), l: api.getLayout() }; sendDeco(); /* 아주 작은 번호: 먼저 있던 방의 꾸미기나 누가 새로 꾸민 게 항상 이겨요 */ } }, 2500); }, 900);
   }
   $$("[data-roof-join]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofJoin;
@@ -390,7 +415,7 @@
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
   let actEl = null; const closeAct = () => { if (actEl) { actEl.remove(); actEl = null; } };
   const cb = {
-    burst: SND.burst, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name, pts) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN += pts || 1; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = pts === 2 ? name + " 완벽하게 구웠어요! ✨ (+2)" : name + " 맛있게 먹었어요 😋 (+1)"; } else say("맛있게 먹었어요", name + " 😋"); },
+    burst: (...a) => { lastFw = Date.now(); return SND.burst(...a); }, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name, pts) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN += pts || 1; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = pts === 2 ? name + " 완벽하게 구웠어요! ✨ (+2)" : name + " 맛있게 먹었어요 😋 (+1)"; } else say("맛있게 먹었어요", name + " 😋"); },
     cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
     neighbor: () => { hint("이웃도 손을 흔들어 줘요 👋"); },
     starCounted: (n, idx) => {
@@ -409,13 +434,13 @@
     focus: id => {   // 동작을 시작하면 그 동작만 보이게: 아래 버튼은 숨기고 '그만하기'만 남겨요
       const NAMES = { grill: "🍖 고기 굽는 중 · 익으면 눌러서 먹어요", sky: "⭐ 별 세기 · 별을 눌러 보세요", lie: "🛌 누워서 밤하늘 보는 중", tent: "⛺ 텐트 안에서 쉬는 중", table: "☕ 차 마시는 중" };
       if (id === "grill") { miniN = 0; $("[data-roof-minin]").textContent = "0"; $("[data-roof-minih]").textContent = "고기를 올려 보세요"; }
-      if (id) box.dataset.focus = id; else delete box.dataset.focus; if (id) closeSheet();   // 빈 값으로 남기면 아래 버튼이 계속 숨어 버려요
+      if (id) box.dataset.focus = id; else delete box.dataset.focus; try { stat(); } catch (e) { /* 준비 전 */ } if (id) closeSheet();   // 빈 값으로 남기면 아래 버튼이 계속 숨어 버려요
       $("[data-roof-lietools]").hidden = !(id === "lie" || id === "tent"); if (id !== "lie" && id !== "tent" && id !== "sky") stopLie(); else if (id === "sky") stopLie(true); $("[data-roof-mini]").hidden = id !== "grill"; $("[data-roof-focus]").hidden = !id || id === "grill"; $("[data-roof-focust]").textContent = NAMES[id] || "";
       if (id === "grill") { closeSubs(); $("[data-roof-sub=grill]").hidden = false; }
       if (!id) { closeSubs(); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); if (counting) { counting = false; paintCount(); } }
     },
     look: dev => { $("[data-roof-reset]").hidden = !dev; if (api) spinBtn.setAttribute("aria-pressed", String(api.getSpin())); },
-    seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
+    seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { if (net && roomDeco.v) { roomDeco = { v: Date.now(), l }; sendDeco(); } else { st.layout = l; saveSt(); } }, /* 방에서는 함께 꾸미기, 혼자일 땐 내 옥상에 저장 */ lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { try { if (sessionStorage.getItem("djdex:roofq")) return; sessionStorage.setItem("djdex:roofq", "1"); } catch (e) { /* 그냥 보여 줌 */ } hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
   };
