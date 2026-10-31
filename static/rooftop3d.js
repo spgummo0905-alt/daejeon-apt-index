@@ -801,6 +801,17 @@ export function start(host, cb, opt) {
   }
   let counting = false;
 
+  // ----- 키보드 (컴퓨터): WASD·방향키로 걷기, Shift 달리기, Q·E 둘러보기, R·F 위아래, 스페이스 불꽃 -----
+  const keys = new Set(), KEYMAP = { arrowup: "w", arrowdown: "s", arrowleft: "a", arrowright: "d" };
+  const typing = () => { const a = document.activeElement; return (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || !!host.querySelector(".roof-modal:not([hidden])"); };
+  window.addEventListener("keydown", e => {
+    if (typing() || e.ctrlKey || e.metaKey || e.altKey) return;
+    let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
+    if ("wasdqerf ".includes(k) && k.length === 1) { e.preventDefault(); if (k === " ") { if (!e.repeat && aer < .5) { aimShell(new THREE.Vector3(Math.sin(yaw) * -.2 - Math.sin(yaw), .28, -Math.cos(yaw)).normalize()); cb.fire && cb.fire(); } return; } keys.add(k); }
+    if (k === "shift") keys.add("shift");
+  });
+  window.addEventListener("keyup", e => { let k = e.key.toLowerCase(); k = KEYMAP[k] || k; keys.delete(k); if (k === "shift") keys.delete("shift"); });
+  window.addEventListener("blur", () => keys.clear());
   // ----- 크기·품질 -----
   function resize() {
     const r = host.getBoundingClientRect(); W = Math.max(280, Math.round(r.width)); H = Math.max(360, Math.round(r.height));
@@ -820,7 +831,16 @@ export function start(host, cb, opt) {
     skyU.uTime.value = time; bldU.uTime.value = time;
     // 아바타 이동
     let moving = false;
-    if (target) {
+    if (keys.has("q")) yawT = clamp(yawT - dt * 1.6, -1.35, 1.35); if (keys.has("e")) yawT = clamp(yawT + dt * 1.6, -1.35, 1.35);
+    if (keys.has("r")) lookT = clamp(lookT + dt * .9, -.04, .95); if (keys.has("f")) lookT = clamp(lookT - dt * .9, -.04, .95);
+    const kx = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0), kz = (keys.has("s") ? 1 : 0) - (keys.has("w") ? 1 : 0);
+    if ((kx || kz) && aer < .5) {
+      if (me.pose === "sit" || me.pose === "lie") standUp(); target = null; afterWalk = null; sitSpot = null;
+      const l = Math.hypot(kx, kz), fx0 = -Math.sin(yaw), fz0 = -Math.cos(yaw), rx0 = Math.cos(yaw), rz0 = -Math.sin(yaw);
+      const vx = (rx0 * kx - fx0 * kz) / l, vz = (rz0 * kx - fz0 * kz) / l, sp = (keys.has("shift") ? 4.4 : 2.7) * dt;
+      const q = pushOut({ x: mePos.x + vx * sp, z: mePos.z + vz * sp }); mePos.x = q.x; mePos.z = q.z; me.yaw = Math.atan2(vx, vz); moving = true; if (me.pose !== "eat") me.pose = "idle";
+    }
+    if (target && !moving) {
       const dx = target.x - mePos.x, dz = target.z - mePos.z, d = Math.hypot(dx, dz);
       if (d < .08) { mePos.x = target.x; mePos.z = target.z; target = null; const f = afterWalk; afterWalk = null; sitSpot = null; if (f) f(); else me.yaw = Math.PI; }
       else { const sp = Math.min(d, 2.5 * dt); mePos.x += dx / d * sp; mePos.z += dz / d * sp; me.yaw = Math.atan2(dx, dz); moving = true; if (me.pose !== "walk") me.pose = "idle"; }
