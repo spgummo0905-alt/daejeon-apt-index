@@ -3563,3 +3563,25 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-joy i { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 4px 14px rgba(0,0,0,.35); pointer-events: none; }
 .roof-joy:not(.on) i { transition: transform .18s ease-out; }
 .roof:has(.roof-sub:not([hidden])) .roof-joy { display: none; }
+
+/* 처음 방문 안내 */
+.roof-tour { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 20px; background: rgba(4,8,20,.42); }
+.roof-tour[hidden] { display: none; }
+.roof-tour-card { width: min(360px, 100%); padding: 22px 20px 16px; border-radius: 24px; text-align: center; color: #f4f6fb;
+  background: linear-gradient(180deg, rgba(30,36,70,.96), rgba(16,20,40,.96)); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 24px 60px rgba(0,0,0,.5); animation: roofUp .28s ease-out; }
+.roof-tour-art { font-size: 44px; line-height: 1; margin-bottom: 8px; }
+.roof-tour-step { margin: 0; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: rgba(255,214,140,.85); }
+.roof-tour-t { margin: 6px 0 8px; font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+.roof-tour-d { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: rgba(244,246,251,.82); word-break: keep-all; }
+.roof-tour-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.roof-tour-dots i { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); transition: width .2s; }
+.roof-tour-dots i.on { width: 18px; background: #ffd58a; }
+.roof-tour-btns { display: flex; gap: 8px; }
+.roof-tour-btns .roof-btn { flex: 1; justify-content: center; padding: 11px 12px; font-size: 14px; }
+.roof.touring .roof-tour { pointer-events: auto; }
+.roof-spot { position: relative; z-index: 9; box-shadow: 0 0 0 3px #ffd58a, 0 0 24px 6px rgba(255,213,138,.55) !important; border-radius: 16px; animation: roofSpot 1.4s ease-in-out infinite; }
+@keyframes roofSpot { 50% { box-shadow: 0 0 0 3px #ffd58a, 0 0 34px 10px rgba(255,213,138,.35); } }
+.roof.touring .roof-bottom { z-index: 9; }
+.roof.touring .roof-tray { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .roof-spot { animation: none; } .roof-tour-card { animation: none; } }
+.roof.touring .roof-hint, .roof.touring .roof-joy { display: none; }
