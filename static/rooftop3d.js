@@ -59,7 +59,7 @@ float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+
 const SKY_VS = `varying vec3 vDir; void main(){ vDir = position; vec4 p = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*p; gl_Position.z = gl_Position.w*.9999; }`;
 const SKY_FS = `
 precision highp float;
-uniform vec3 uTop,uMid,uBot,uSunDir,uSunCol,uCloudCol,uFlashCol; uniform float uStars,uMilky,uTime,uCloud,uFlash,uWind,uFog;
+uniform vec3 uTop,uMid,uBot,uSunDir,uSunCol,uCloudCol,uFlashCol; uniform float uStars,uMilky,uTime,uCloud,uFlash,uWind,uFog,uCity;
 varying vec3 vDir;
 ${NOISE}
 void main(){
@@ -67,6 +67,7 @@ void main(){
   vec3 col = mix(uBot, uMid, smoothstep(-.02,.16,h)); col = mix(col, uTop, smoothstep(.1,.8,h));
   float sg = max(dot(d,uSunDir),0.); col += uSunCol*(pow(sg,40.)*.9 + pow(sg,6.)*.35 + pow(sg,2.)*.08);
   float hz = exp(-abs(h)*7.); col += uBot*.25*hz;
+  col += vec3(1.,.52,.24)*.2*uCity*exp(-max(h,0.)*9.);   // 도시 불빛이 하늘 아래를 따뜻하게 물들여요
   // 별
   vec3 sp = d*150.; vec3 ip = floor(sp); vec3 fp = fract(sp)-.5;
   float rr = h31(ip); vec3 off = vec3(h31(ip+3.1),h31(ip+7.7),h31(ip+1.9))-.5;
@@ -119,14 +120,14 @@ void main(){
     float r = h21(cell + vId*7.13 + floor(uTime/45. + h21(cell+vId)*6.)*.37);
     float lit = step(vT.a, r)*win;
     float r2 = h21(cell*1.7+vId);
-    vec3 wc = r2<.62 ? vec3(1.,.74,.42) : (r2<.86 ? vec3(.82,.9,1.) : vec3(.5,.7,1.));
+    vec3 wc = r2<.68 ? vec3(1.,.72,.38) : (r2<.9 ? vec3(1.,.88,.66) : vec3(.55,.72,1.));
     wc *= (.55 + .6*h21(cell+3.3)) * (r2>.86 ? (.8+.2*sin(uTime*7.+vId)) : 1.);
-    em = wc*lit*(uNight*.9 + .07);
+    em = wc*lit*(uNight*1.3 + .07);
     col = mix(col, col*.45 + vec3(.012,.018,.03) + uFogColor*.10, win*(1.-lit));   // 불 꺼진 유리
     col *= 1. - .22*step(f.y,.06);                                                // 층 구분선
     col *= .86 + .14*h21(vec2(floor(along*1.3), floor(hh*.7)));
   } else {
-    col *= .5; col += vec3(.012)*h21(floor(vW.xz*.7));
+    col = vT.rgb*.26 + vec3(.022,.014,.02) + vec3(.012)*h21(floor(vW.xz*.7));
   }
   col += em;
   col += uFlash*(.35 + .65*max(n.y*.5+.5,0.))*(roof<.5?.7:.5);
@@ -280,7 +281,7 @@ export function start(host, cb, opt) {
 
   // ----- 하늘과 해·달 -----
   const skyU = { uTop: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uBot: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, -1, 0) }, uSunCol: { value: new THREE.Color() },
-    uCloudCol: { value: new THREE.Color() }, uFlashCol: { value: new THREE.Color() }, uStars: { value: 1 }, uMilky: { value: .4 }, uTime: { value: 0 }, uCloud: { value: 0 }, uFlash: { value: 0 }, uWind: { value: 1 }, uFog: { value: 0 } };
+    uCloudCol: { value: new THREE.Color() }, uFlashCol: { value: new THREE.Color() }, uStars: { value: 1 }, uMilky: { value: .4 }, uTime: { value: 0 }, uCloud: { value: 0 }, uFlash: { value: 0 }, uWind: { value: 1 }, uFog: { value: 0 }, uCity: { value: 1 } };
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 48, 24), new THREE.ShaderMaterial({ vertexShader: SKY_VS, fragmentShader: SKY_FS, uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false }));
   sky.renderOrder = -10; scene.add(sky);
   const moonU = { uLight: { value: new THREE.Vector3(0, 0, 1) }, uAlpha: { value: 1 } };
@@ -312,7 +313,8 @@ export function start(host, cb, opt) {
   const OURH = 55;   // 우리 옥상이 땅에서 올라온 높이(m)
   const city = [], towers = [];
   const R = mulberry(20241031);
-  const addB = (x, z, w, d, hgt, yaw, tint, thr) => { if (z < -330 && Math.abs(x) < 430) return; city.push({ x, z, w, d, h: hgt, yaw, tint, thr }); };
+  const ROAD_X = [-780, -660, -540, -420, -300, -180, -60, 60, 180, 300, 420, 540, 660, 780], ROAD_Z = [-300, -180, -60, 60, 180, 300, 420, 540, 660, 780];   // 격자 도로 (건물은 길을 비켜서)
+  const addB = (x, z, w, d, hgt, yaw, tint, thr) => { if (z < -330 && Math.abs(x) < 430) return; if (ROAD_X.some(r => Math.abs(x - r) < 16) || ROAD_Z.some(r => Math.abs(z - r) < 16)) return; city.push({ x, z, w, d, h: hgt, yaw, tint, thr }); };
   const topOK = (dist, hgt) => { const top = hgt - OURH; return dist < 90 ? top <= -12 : dist < 220 ? top <= 12 : true; };
   const fwd = () => (R() < .72 ? (-Math.PI / 2 + (R() - .5) * 2.7) : R() * TAU);   // 대부분 앞쪽(남쪽)
   for (let k = 0; k < 40; k++) {   // 아파트 단지
@@ -323,7 +325,7 @@ export function start(host, cb, opt) {
       const x = cx + ox * cy - oz * sy, z = cz + ox * sy + oz * cy, hh = hgt * (.8 + R() * .35);
       if (Math.abs(x) < 24 && Math.abs(z) < 22) continue;
       if (!topOK(Math.hypot(x, z), hh)) continue;
-      addB(x, z, 46 + R() * 8, 14, hh, yaw, [.78, .74, .68].map(v => v * (.85 + R() * .25)), .42 + R() * .22 * warm);
+      addB(x, z, 46 + R() * 8, 14, hh, yaw, pick([[.30, .33, .54], [.36, .30, .50], [.28, .38, .52]]).map(v => v * (.6 + R() * .25)), .30 + R() * .2 * warm);
     }
   }
   for (let k = 0; k < 520; k++) {   // 저층·중층 건물
@@ -331,18 +333,18 @@ export function start(host, cb, opt) {
     if (Math.abs(x) < 24 && Math.abs(z) < 22) continue;
     const hh = 10 + Math.pow(R(), 2.2) * 70;
     if (!topOK(dist, hh)) continue;
-    const t = .55 + R() * .3; addB(x, z, 12 + R() * 28, 12 + R() * 22, hh, Math.floor(R() * 4) * Math.PI / 2 + (R() - .5) * .3, [t, t * .97, t * .92], .5 + R() * .3);
+    const tc = pick([[.36, .38, .58], [.52, .36, .34], [.32, .46, .52], [.46, .38, .58]]), t = .55 + R() * .3; addB(x, z, 12 + R() * 28, 12 + R() * 22, hh, Math.floor(R() * 4) * Math.PI / 2 + (R() - .5) * .3, tc.map(v => v * t), .38 + R() * .24);
   }
   for (let k = 0; k < 24; k++) {   // 도심 고층 (남쪽 멀리)
     const x = (k % 2 ? 1 : -1) * (440 + R() * 380), z = -360 - R() * 380, hh = 110 + Math.pow(R(), 1.4) * 190;   // 만 양쪽 해안의 고층
-    addB(x, z, 28 + R() * 20, 28 + R() * 16, hh, (R() - .5) * .3, [.5, .58, .7], .66 + R() * .1); towers.push({ x, y: hh - OURH + 2, z });
+    addB(x, z, 28 + R() * 20, 28 + R() * 16, hh, (R() - .5) * .3, [.26, .40, .62], .58 + R() * .12); towers.push({ x, y: hh - OURH + 2, z });
   }
   const signs = [];   // 가까운 동네: 벽돌색 낮은 건물과 간판 불빛
   for (let k = 0; k < 24; k++) {
     const a = -Math.PI / 2 + rnd(-1.2, 1.2), dist = rnd(27, 58), x = Math.cos(a) * dist, z = Math.sin(a) * dist;
     if ((Math.abs(x) < 24 && Math.abs(z) < 22) || Math.hypot(x + 33, z + 48) < 17 || Math.hypot(x - 31, z + 66) < 19) continue;
     const hh = OURH - rnd(7, 21), w = rnd(9, 17), d = rnd(9, 15), t = .5 + Math.random() * .22;
-    addB(x, z, w, d, hh, 0, [t * 1.05, t * .78, t * .68], .36 + Math.random() * .2); signs.push({ x, y: hh - OURH - rnd(3, 13), z: z + d / 2 + .4, w });
+    addB(x, z, w, d, hh, 0, [t * .8, t * .52, t * .44], .28 + Math.random() * .2); signs.push({ x, y: hh - OURH - rnd(3, 13), z: z + d / 2 + .4, w });
   }
   const NB = city.length, bgeo = new THREE.BoxGeometry(1, 1, 1);
   const sizeA = new Float32Array(NB * 3), tintA = new Float32Array(NB * 4), idA = new Float32Array(NB);
@@ -356,16 +358,21 @@ export function start(host, cb, opt) {
   bld.frustumCulled = false; scene.add(bld);
   // 땅(멀리 어둡게)과 도로 불빛, 고층 위 붉은 점멸등
   const ground = new THREE.Mesh(new THREE.CircleGeometry(2600, 6), new THREE.MeshBasicMaterial({ color: 0x080a14, fog: true })); ground.rotation.x = -Math.PI / 2; ground.position.y = -OURH - 1; scene.add(ground);
-  const glowPts = mkPoints(3400, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
-  let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 3400) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
+  const glowPts = mkPoints(14000, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
+  let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 14000) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
   const beacons = towers.map(t => ({ i: gAdd(t.x, t.y, t.z, 1, .12, .1, 9, .9), ph: rnd(0, TAU) }));
-  const cars = []; for (let k = 0; k < 7; k++) {   // 다리·도로를 달리는 차 불빛
-    const a = -Math.PI / 2 + (k - 3) * .38 + rnd(-.1, .1), dist = 220 + rnd(0, 500), cx = Math.cos(a) * dist, cz = Math.sin(a) * dist, ang = a + Math.PI / 2 + rnd(-.3, .3);
-    if (cz < -330 && Math.abs(cx) < 500) continue;
-    const ux = Math.cos(ang), uz = Math.sin(ang), len = 520, y = -OURH + 2.5 + rnd(0, 14);
-    for (let i = 0; i < 70; i++) { const s = rnd(-.5, .5) * len, dirn = Math.random() < .5 ? 1 : -1; cars.push({ ux, uz, cx, cz, y, s, v: dirn * rnd(10, 26), len, i: gAdd(0, 0, 0, dirn > 0 ? 1 : 1, dirn > 0 ? .95 : .2, dirn > 0 ? .8 : .15, 3.4, .75) }); }
-    for (let i = 0; i < 30; i++) { const s = (i / 29 - .5) * len; gAdd(cx + ux * s, y + 6, cz + uz * s, 1, .72, .38, 5, .6); }   // 가로등
-  }
+  const roadMat = new THREE.MeshBasicMaterial({ color: 0x7a4418, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }), roadGroup = new THREE.Group(); scene.add(roadGroup);
+  const cars = [];   // 도로를 따라 흐르는 차량 불빛과 가로등
+  const road = (cx, cz, ux, uz, len) => {
+    const y = -OURH + 1.6;
+    const rib = new THREE.Mesh(new THREE.PlaneGeometry(len, 11), roadMat); rib.rotation.x = -Math.PI / 2; rib.rotation.z = Math.atan2(uz, ux) * -1 + 0; rib.position.set(cx, -OURH + .35, cz); roadGroup.add(rib);
+    const nl = Math.round(len / 11);
+    for (let i = 0; i < nl; i++) for (const side of [-6.5, 6.5]) { const s = (i / nl - .5) * len; gAdd(cx + ux * s + uz * side, y + 7, cz + uz * s - ux * side, 1, .74, .4, 6, .85); }
+    const n = Math.max(6, Math.round(len / 24));
+    for (let i = 0; i < n; i++) { const dirn = i % 2 ? 1 : -1, lane = dirn * 3.2; cars.push({ ux, uz, cx: cx + uz * lane, cz: cz - ux * lane, y, s: rnd(-.5, .5) * len, v: dirn * rnd(8, 21), len, i: gAdd(0, 0, 0, 1, dirn > 0 ? .93 : .16, dirn > 0 ? .75 : .1, 5.4, .95) }); }
+  };
+  ROAD_X.forEach(x => { if (Math.abs(x) < 430) road(x, (900 - 330) / 2, 0, 1, 1230); else road(x, -50, 0, 1, 1900); });
+  ROAD_Z.forEach(z => { if (z < -330) { road(-765, z, 1, 0, 670); road(765, z, 1, 0, 670); } else road(0, z, 1, 0, 2200); });
   signs.forEach(sg_ => { for (let k = 0; k < 2; k++) { const c = pick([[1, .25, .25], [.3, 1, .55], [.4, .65, 1], [1, .85, .3], [1, .4, .85]]); gAdd(sg_.x + rnd(-sg_.w / 3, sg_.w / 3), sg_.y - k * 2.2, sg_.z, c[0], c[1], c[2], 6.5, .85); } });
   // 만(바다)과 다리: 높은 곳에서 내려다보면 불꽃과 불빛이 물에 비쳐요
   const WATER_Y = -OURH + .4, BAY = { x: 430, z0: -330, z1: -1500 };
@@ -739,18 +746,18 @@ export function start(host, cb, opt) {
     set(skyU.uTop, p.top.map(v => v * (1 - cl * .25))); set(skyU.uMid, p.mid); set(skyU.uBot, p.bot); skyU.uMilky.value = milky * (1 - cl * .8) * (mode === "real" ? (sunAlt < -.2 ? 1 : 0) : 1);
     sunDirV.copy(dirOf(sunAlt, sunAz)); skyU.uSunDir.value.copy(sunDirV);
     const glow = clamp(1 - Math.abs(sunAlt + .02) / .18, 0, 1) * (1 - cl * .5); skyU.uSunCol.value.setRGB(1 * glow, .5 * glow, .22 * glow);
-    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
+    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCity.value = p.night * (1 - cl * .3); skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
     const cc = p.mid.map((v, j) => v * .55 + p.bot[j] * .35 + (p.night > .5 ? 14 : 30)); set(skyU.uCloudCol, cc.map(v => v * (1 - cl * .15)));
     const fogc = p.fog.map((v, j) => lerp(v, 150 + j * 10, w.fog * .55)); bldU.uFogColor.value.setRGB(fogc[0] / 255, fogc[1] / 255, fogc[2] / 255, THREE.SRGBColorSpace); scene.fog.color.copy(bldU.uFogColor.value);
     bldU.uFogD.value = .0011 * (1 + w.fog * 2.6 + w.rain * .8); scene.fog.density = bldU.uFogD.value * .95;
-    bldU.uAmb.value.setRGB(...p.amb); bldU.uNight.value = p.night * (1 - w.rain * .1);
+    bldU.uAmb.value.setRGB(...p.amb.map(v => v * (.45 + .55 * clamp(sunAlt * 3, 0, 1)))); bldU.uNight.value = p.night * (1 - w.rain * .1);
     const moonUp = mAlt > -.05, ml = dirOf(Math.max(mAlt, -.05), mAz);
     moon.visible = moonHalo.visible = moonUp && mode !== "galaxy"; hillMat.color.copy(bldU.uFogColor.value).multiplyScalar(.5); moon.position.copy(ml).multiplyScalar(1100); moonHalo.position.copy(ml).multiplyScalar(1090);
     moonU.uLight.value.set(Math.sin(phase * TAU), 0, -Math.cos(phase * TAU)); moonU.uAlpha.value = clamp(1 - cl * .7 - p.night * 0, 0, 1) * (p.night > .3 ? 1 : .5);
     moonHalo.material.opacity = .3 * p.night * (1 - cl * .7);
     const lightDir = sunAlt > -.08 ? sunDirV : ml; bldU.uLightDir.value.copy(lightDir);
-    const moonLight = p.night * (.14 + .22 * Math.abs(Math.sin(phase * Math.PI))) * (moonUp ? 1 : .2), dayLight = clamp(sunAlt * 2.2 + .35, 0, 1);
-    bldU.uLightCol.value.setRGB(moonLight * .7 + dayLight * .9, moonLight * .8 + dayLight * .85, moonLight + dayLight * .75);
+    const moonLight = p.night * (.14 + .22 * Math.abs(Math.sin(phase * Math.PI))) * (moonUp ? 1 : .2), dayLight = clamp(sunAlt * 2.4 + .1, 0, 1);
+    bldU.uLightCol.value.setRGB(moonLight * .42 + dayLight * .9, moonLight * .5 + dayLight * .85, moonLight * .8 + dayLight * .75);
     hemi.color.setRGB(p.amb[0] * 1.1 + .06, p.amb[1] * 1.1 + .07, p.amb[2] * 1.1 + .1); hemi.intensity = 1.0 + dayLight * 1.2; hemi.groundColor.setRGB(.08, .08, .12);
     dirL.color.copy(bldU.uLightCol.value).multiplyScalar(1.6); dirL.intensity = 1.1 + dayLight * 1.4; dirL.position.copy(lightDir).multiplyScalar(30);
     renderer.setClearColor(new THREE.Color().setRGB(p.bot[0] / 255, p.bot[1] / 255, p.bot[2] / 255, THREE.SRGBColorSpace));
@@ -884,11 +891,11 @@ export function start(host, cb, opt) {
     const bx = mePos.x, bz = mePos.z;
     const wantPos = new THREE.Vector3(clamp(bx + camDist * Math.sin(yaw), -7.6, 7.6), cy, clamp(bz + camDist * Math.cos(yaw), -6.2, 6.6));
     aer += ((view === "aerial" ? 1 : 0) - aer) * Math.min(1, dt * 1.1); const ae = aer * aer * (3 - 2 * aer), oa = time * .018 + yaw * .8;
-    if (ae > .002) wantPos.lerp(aerPos.set(Math.sin(oa) * 34, 172, 118 + Math.cos(oa) * 8), ae);
+    if (ae > .002) wantPos.lerp(aerPos.set(Math.sin(oa) * 34, 196, 150 + Math.cos(oa) * 8), ae);
     camPos.lerp(wantPos, Math.min(1, dt * (ae > .002 ? 1.7 : 4))); camera.position.copy(camPos);
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
     camTgt.set(camPos.x + fx * 40, camPos.y + lookUp * 40 - .6, camPos.z + fz * 40);
-    if (ae > .002) camTgt.lerp(aerTgt.set(Math.cos(oa) * 60, -8, -560), ae);
+    if (ae > .002) camTgt.lerp(aerTgt.set(Math.cos(oa) * 60, -26, -560), ae);
     camera.lookAt(camTgt);
     sky.position.copy(camera.position); moon.rotation.y = 0;
     // 불판 불빛·연기
