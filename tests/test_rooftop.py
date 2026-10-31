@@ -85,3 +85,10 @@ def test_rooftop_has_own_share_image(tmp_path):
 def test_rooftop_has_white_dog():
     js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
     assert "function makeDog" in js3 and "petDog" in js3 and "dog.g" in js3      # 흰 강아지: 따라다니고, 누르면 폴짝
+
+
+def test_rooftop_pets_can_be_chosen():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert all(f in js3 for f in ("function makeChameleon", "function makeFrog", "function makeParrot", "setPets"))
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert all(f'data-roof-pet="{k}"' in page for k in ("dog", "cat", "cham", "frog", "parrot"))   # 꾸미기에서 골라 꺼내고 넣기

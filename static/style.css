@@ -3389,6 +3389,9 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-nogl[hidden] { display: none; }
 .roof-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .roof-sub[hidden] { display: none; }
+.roof-pets { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding-top: 6px; margin-top: 2px; border-top: 1px solid rgba(255,255,255,.1); }
+.roof-pets-h { font-size: 12px; font-weight: 700; color: rgba(244,246,251,.7); margin-right: 2px; }
+.roof-pets .roof-btn[aria-pressed="false"] { opacity: .62; }
 .roof-count { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); margin: 0; padding: 7px 14px; border-radius: 999px; background: rgba(10,16,34,.66); border: 1px solid rgba(255,214,120,.4);
   color: #ffe6a0; font-size: 13.5px; font-weight: 700; pointer-events: none; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
 .roof-count-reset { pointer-events: auto; border: 1px solid rgba(255,214,120,.45); background: rgba(255,255,255,.1); color: #ffe6a0; font: inherit; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
