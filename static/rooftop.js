@@ -228,7 +228,10 @@
   const paintDeco = () => $$("[data-roof-deco]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.roofDeco === deco)));
   $$("[data-roof-deco]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
-    if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
+    if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : deco === "edit" ? "옮기거나 돌릴 가구를 눌러 보세요. 다시 누르면 끝나요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
+  // 기본 옥탑방으로 되돌리기 (내가 꾸민 배치는 지워져요)
+  $("[data-roof-resetlayout]").addEventListener("click", () => { if (!api || !confirm("기본 옥탑방 배치로 되돌릴까요? 지금 꾸민 배치는 사라져요.")) return;
+    api.setLayout(null); const l = api.getLayout(); if (cb.layout) cb.layout(l); hint("기본 옥탑방으로 되돌렸어요."); });
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
   $("[data-roof-stand]").addEventListener("click", () => { if (api) api.stand(); });
   // 함께하는 동물: 눌러서 꺼내고 넣어요 (저장돼요)

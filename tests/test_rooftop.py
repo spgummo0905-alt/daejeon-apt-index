@@ -92,3 +92,12 @@ def test_rooftop_pets_can_be_chosen():
     assert all(f in js3 for f in ("function makeChameleon", "function makeFrog", "function makeParrot", "setPets"))
     page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
     assert all(f'data-roof-pet="{k}"' in page for k in ("dog", "cat", "cham", "frog", "parrot"))   # 꾸미기에서 골라 꺼내고 넣기
+
+
+def test_rooftop_oktap_furniture_and_edit():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    for t in ("sofa", "beanbag", "rug", "screen", "cooler", "lamp", "canopy", "pouf", "firepit"):
+        assert f't === "{t}"' in js3                                                     # 옥탑·캠핑 가구
+    assert "rotateItem" in js3 and "moveItem" in js3 and "옥탑 301" in js3              # 옮기기·돌리기, 옥탑방 건물
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert 'data-roof-deco="edit"' in page and "data-roof-resetlayout" in page
