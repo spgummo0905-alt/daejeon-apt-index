@@ -63,3 +63,11 @@ def test_real_recordings_and_photo_backdrops_ship_with_credits():
     assert (ROOT / "static" / "bg" / "sky.webp").exists() and (ROOT / "static" / "bg" / "bay.webp").exists()
     js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
     assert "playSample" in js and "static/sounds/" in js
+
+
+def test_rooftop_focus_mode_and_natural_sitting():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "setFocus" in js3 and '"grill"' in js3 and '"sky"' in js3 and '"tent"' in js3        # 동작 중 시점 고정
+    assert "crawl" in js3 and "knee" in js3 and "slide(" in js3                                  # 무릎, 텐트 기어들기, 천천히 앉기
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert "data-roof-exit" in page and "data-roof-reset" in page                                # 그만하기, 시점 돌아가기
