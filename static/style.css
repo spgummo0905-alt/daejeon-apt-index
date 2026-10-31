@@ -3424,3 +3424,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-emo button:active { transform: scale(.9); }
 .roof-emo button:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
 .roof[data-view="aerial"] .roof-emo { display: none; }
+.roof-credits { margin: 8px 0; padding-left: 18px; font-size: 12px; line-height: 1.7; color: rgba(244,246,251,.62); }
+.roof-credits a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.roof-act { position: absolute; z-index: 4; display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(12,18,40,.82); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.roof-act .roof-btn { background: rgba(255,255,255,.08); }

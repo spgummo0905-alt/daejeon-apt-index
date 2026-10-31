@@ -49,3 +49,17 @@ def test_weather_grid_matches_kma_examples():
     assert w.grid(37.5665, 126.9780) == (60, 127)     # 서울 시청 (기상청 격자 공식 예시)
     assert w.grid(36.3504, 127.3845) == (67, 100)     # 대전
     assert w.grid(35.1796, 129.0756) == (98, 76)      # 부산
+
+
+def test_real_recordings_and_photo_backdrops_ship_with_credits():
+    import json
+    snd = ROOT / "static" / "sounds"
+    man = json.loads((snd / "manifest.json").read_text(encoding="utf-8"))
+    cred = json.loads((snd / "credits.json").read_text(encoding="utf-8"))
+    assert {"cricket", "wind", "rain", "chime", "fire"} <= set(man["loops"]) and len(man["near"]) >= 8 and man["oneshots"]
+    for f in [*man["loops"].values(), *man["near"], *man["oneshots"].values()]:
+        assert (snd / f).stat().st_size > 2000, f                                  # 비어 있지 않은 실제 소리 파일
+    assert all(v["license"] and v["page"].startswith("https://commons.wikimedia.org/") for v in cred.values())   # 저작자·라이선스 표기
+    assert (ROOT / "static" / "bg" / "sky.webp").exists() and (ROOT / "static" / "bg" / "bay.webp").exists()
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    assert "playSample" in js and "static/sounds/" in js
