@@ -153,6 +153,7 @@
     $$("[data-roof-amb]").forEach(b => b.setAttribute("aria-pressed", String(st.amb.includes(b.dataset.roofAmb))));
     $$("[data-roof-sky]").forEach(b => b.setAttribute("aria-pressed", String(st.sky === b.dataset.roofSky)));
     $$("[data-roof-q]").forEach(b => b.setAttribute("aria-pressed", String(st.q === b.dataset.roofQ)));
+    { const gl = $("[data-roof-glow]"); gl.value = st.glow ?? 40; $("[data-roof-glowv]").textContent = gl.value + "%"; }
     $$("[data-roof-vol]").forEach(r => { r.value = st.vol[r.dataset.roofVol]; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = st.vol[r.dataset.roofVol] + "%"; });
   }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
@@ -167,6 +168,7 @@
     else if (!st.sound && st.amb.includes(k)) { setSound(true); }
     paintSettings();
   }));
+  $("[data-roof-glow]").addEventListener("input", e => { st.glow = +e.target.value; $("[data-roof-glowv]").textContent = e.target.value + "%"; if (api) api.setGlow(st.glow); saveSt(); });
   $$("[data-roof-vol]").forEach(r => r.addEventListener("input", () => { st.vol[r.dataset.roofVol] = +r.value; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = r.value + "%"; applyGains(); }));
   $$("[data-roof-vol]").forEach(r => r.addEventListener("change", saveSt));
   $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); }));
@@ -241,7 +243,8 @@
   $("[data-roof-close]").addEventListener("click", () => { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); });
   // 별 세기
   const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
-  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; cntEl.textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
+  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; $("[data-roof-starreset]").hidden = !n; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
+  $("[data-roof-starreset]").addEventListener("click", () => { st.stars = { d: today, idx: [] }; saveSt(); if (api) api.setStars([]); paintCount(); hint("센 별을 지우고 처음부터 다시 세어요."); });
   starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setFocus(counting ? "sky" : null); paintCount(); closeSubs(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
   // 소원
   const wt = $("[data-roof-wishtext]"), wlog = $("[data-roof-wishlog]");
@@ -410,7 +413,7 @@
     if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
     try {
       const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
-      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
+      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 40, layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
       api.setSky(st.sky);
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");

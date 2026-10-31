@@ -35,7 +35,7 @@
   </div>
   <button type="button" class="roof-btn roof-reset" data-roof-reset hidden>🧭 시점 돌아가기</button>
   <p class="roof-hint" data-roof-hint>오늘도 수고했어요. 잠깐 쉬어가세요.</p>
-  <p class="roof-count" data-roof-count hidden></p>
+  <p class="roof-count" data-roof-count hidden><span data-roof-countt></span><button type="button" class="roof-count-reset" data-roof-starreset aria-label="센 별 처음부터 다시 세기">↺ 처음부터</button></p>
 
   <div class="roof-bottom">
     <button type="button" class="roof-mission" data-roof-mission aria-expanded="false">오늘의 미션 <b data-roof-mcount>0/4</b></button>
@@ -154,6 +154,9 @@
         <button type="button" class="rs-sw" data-roof-wx role="switch" aria-checked="true" aria-label="실제 날씨 반영"><i></i></button></div>
       <div class="rs-main"><div><b>정각 불꽃놀이</b><span>옥상을 열어 두면 정각마다 쇼가 시작돼요</span></div>
         <button type="button" class="rs-sw" data-roof-hour role="switch" aria-checked="true" aria-label="정각 불꽃놀이"><i></i></button></div>
+      <p class="rs-h">빛번짐</p>
+      <div class="rs-row"><div><b>빛 번짐 정도</b><span>불빛과 달 주변이 번지는 정도를 조절해요</span></div>
+        <label class="rs-vol"><input type="range" min="0" max="100" data-roof-glow aria-label="빛번짐 정도"><i data-roof-glowv></i></label></div>
       <p class="rs-h">화질</p>
       <div class="rs-chips">
         <button type="button" class="roof-chip" data-roof-q="auto">자동</button>
