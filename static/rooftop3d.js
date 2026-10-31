@@ -944,7 +944,9 @@ export function start(host, cb, opt) {
     };
   })();
   const bloomOn = () => quality !== "low";
-  const draw = () => { if (bloomOn()) post.render(.55 + .55 * bldU.uNight.value); else renderer.render(scene, camera); };
+  let glowK = (opt.glow ?? 40) / 100; const applyGlow = () => { addGlow.uniforms.uMul.value = .4 + glowK; };   // 빛번짐 정도 (설정에서 조절)
+  applyGlow();
+  const draw = () => { if (bloomOn()) post.render((.55 + .55 * bldU.uNight.value) * glowK * 1.6); else renderer.render(scene, camera); };
 
   // ----- 크기·품질 -----
   function resize() {
@@ -1152,7 +1154,7 @@ export function start(host, cb, opt) {
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
     setStars(arr) { counted = new Set(arr || []); paintStars(); paintLines(); sg.attributes.aSize.needsUpdate = sg.attributes.aCol.needsUpdate = sg.attributes.aAlpha.needsUpdate = true; },
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },
-    wave() { waveT = 1.8; emote("👋"); }, setQuality(q) { quality = q; resize(); },
+    wave() { waveT = 1.8; emote("👋"); }, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     snapshot() { draw(); return el; },
