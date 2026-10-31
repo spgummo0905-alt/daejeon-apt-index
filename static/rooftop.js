@@ -230,16 +230,21 @@
     const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
+  $("[data-roof-stand]").addEventListener("click", () => { if (api) api.stand(); });
+  // 옥상은 화면에 꼭 맞게 (머리글 아래부터 화면 끝까지): 아래 버튼이 접혀 보이지 않던 것 고침
+  const fitRoof = () => { const top = Math.max(0, box.getBoundingClientRect().top + window.scrollY); box.style.setProperty("--roof-top", top + "px"); };
+  fitRoof(); addEventListener("resize", fitRoof); addEventListener("load", fitRoof);
   $("[data-roof-sit]").addEventListener("click", () => { if (api) { api.sitNearest(); closeSubs(); } });
   $("[data-roof-tent]").addEventListener("click", () => { if (api) { api.enterNearest(); closeSubs(); } });
   // 야경 보기: 높은 곳으로 올라가 도시를 내려다봐요
   const viewBtn = $("[data-roof-view]");
   viewBtn.addEventListener("click", () => {
     if (!api) return; const up = api.getView() !== "aerial"; closeSubs(); api.setView(up ? "aerial" : "ground");
-    viewBtn.setAttribute("aria-pressed", String(up)); viewBtn.textContent = up ? "🏠 내려가기" : "🌃 야경"; box.dataset.view = up ? "aerial" : "ground";
+    viewBtn.setAttribute("aria-pressed", String(up)); viewBtn.querySelector("i").textContent = up ? "🏠" : "🌃"; $("[data-roof-viewt]").textContent = up ? "내려가기" : "야경"; closeSheet(); box.dataset.view = up ? "aerial" : "ground";
     if (up) hint("높은 곳에서 본 야경이에요. 화면을 끌면 방향이 바뀌고, 눌러서 불꽃도 쏠 수 있어요.");
   });
   const sheet = $("[data-roof-sheet]"), mb = $("[data-roof-mission]");
+  function closeSheet() { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); }
   mb.addEventListener("click", () => { sheet.hidden = !sheet.hidden; mb.setAttribute("aria-expanded", String(!sheet.hidden)); });
   $("[data-roof-close]").addEventListener("click", () => { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); });
   // 별 세기
@@ -294,7 +299,7 @@
     const cs = byGu[gu] || []; if (!cs.length) { town = null; stat(); return; }
     const ps = cs.map(c => c.p).filter(Boolean).sort((a, b) => a - b), med = ps.length ? ps[ps.length >> 1] : 0, trades = cs.reduce((s, c) => s + (c.tc || 0), 0);
     const ll = cs.filter(c => c.la && c.ln), la = ll.reduce((s, c) => s + c.la, 0) / (ll.length || 1), ln = ll.reduce((s, c) => s + c.ln, 0) / (ll.length || 1);
-    town = { gu, la: la || 36.35, ln: ln || 127.38, line: `${gu} · 단지 ${cs.length.toLocaleString()}곳${med ? " · 84㎡ 중간 " + eok(med) : ""}${trades ? " · 거래 " + trades.toLocaleString() + "건" : ""}` };
+    town = { gu, la: la || 36.35, ln: ln || 127.38, line: gu };   // 쉬는 곳이라 부동산 숫자는 빼고 동네·날씨·접속만
     st.town = gu; saveSt(); stat();
     if (api) { api.setPlace(town.la, town.ln); loadWeather(); }
   }
@@ -401,15 +406,15 @@
     focus: id => {   // 동작을 시작하면 그 동작만 보이게: 아래 버튼은 숨기고 '그만하기'만 남겨요
       const NAMES = { grill: "🍖 고기 굽는 중 · 익으면 눌러서 먹어요", sky: "⭐ 별 세기 · 별을 눌러 보세요", lie: "🛌 누워서 밤하늘 보는 중", tent: "⛺ 텐트 안에서 쉬는 중", table: "☕ 차 마시는 중" };
       if (id === "grill") { miniN = 0; $("[data-roof-minin]").textContent = "0"; $("[data-roof-minih]").textContent = "고기를 올려 보세요"; }
-      if (id) box.dataset.focus = id; else delete box.dataset.focus;   // 빈 값으로 남기면 아래 버튼이 계속 숨어 버려요
+      if (id) box.dataset.focus = id; else delete box.dataset.focus; if (id) closeSheet();   // 빈 값으로 남기면 아래 버튼이 계속 숨어 버려요
       $("[data-roof-lietools]").hidden = !(id === "lie" || id === "tent"); if (id !== "lie" && id !== "tent" && id !== "sky") stopLie(); else if (id === "sky") stopLie(true); $("[data-roof-mini]").hidden = id !== "grill"; $("[data-roof-focus]").hidden = !id || id === "grill"; $("[data-roof-focust]").textContent = NAMES[id] || "";
       if (id === "grill") { closeSubs(); $("[data-roof-sub=grill]").hidden = false; }
       if (!id) { closeSubs(); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); if (counting) { counting = false; paintCount(); } }
     },
     look: dev => { $("[data-roof-reset]").hidden = !dev; },
-    meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
+    seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
-    sky: () => { }, quality: q => { hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
+    sky: () => { }, quality: q => { try { if (sessionStorage.getItem("djdex:roofq")) return; sessionStorage.setItem("djdex:roofq", "1"); } catch (e) { /* 그냥 보여 줌 */ } hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
   };
   async function boot() {
     if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
