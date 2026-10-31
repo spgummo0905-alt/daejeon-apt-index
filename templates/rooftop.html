@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}집감 옥상 · 잠깐 쉬어가는 곳{% endblock %}
-{% block description %}밤 옥상에서 불꽃놀이를 보고 고기를 구우며 잠깐 쉬어가세요. 내가 고른 동네의 야경과 함께요.{% endblock %}
+{% block description %}지금 이 시각의 하늘과 도시가 보이는 옥상에서 불꽃놀이를 보고 별을 세고 소원을 띄우며 잠깐 쉬어가세요.{% endblock %}
 {% block body %}
-{# 집감 옥상: 쉬어가는 1인용 공간 (rooftop.js). 임장 도구가 아니라 다시 열고 싶어지는 즐길 거리라서 메뉴에는 넣지 않고
+{# 집감 옥상: 쉬어가는 3D 공간 (rooftop.js 가 화면·소리·기록, rooftop3d.js 가 장면). 임장 도구가 아니라 다시 열고 싶어지는 곳이라 메뉴에는 넣지 않고
    첫 화면 아래 줄과 바닥글에서만 이어요. 소리는 기본 꺼짐, 불빛은 번쩍이지 않게 은은하게. #}
 <section class="roof" id="roof" aria-label="집감 옥상">
-  <canvas class="roof-cv" aria-hidden="true"></canvas>
-  <p class="sr-only">밤 옥상 장면입니다. 하늘을 누르면 불꽃이 터지고, 아래 버튼으로 불판에 고기를 올려 구울 수 있어요.</p>
+  <p class="sr-only">밤하늘과 도시가 보이는 3차원 옥상입니다. 바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터지고, 아래 버튼으로 불꽃놀이·고기 굽기·별 세기·소원 빌기를 할 수 있어요. 화면을 끌면 둘러볼 수 있어요.</p>
+  <p class="roof-nogl" data-roof-nogl hidden>이 기기에서는 3D 옥상을 열 수 없어요. 다른 브라우저나 기기에서 열어 주세요.</p>
 
   <div class="roof-top">
     <label class="roof-town">
@@ -15,21 +15,43 @@
     </label>
     <p class="roof-stat" data-roof-stat aria-live="polite"></p>
     <div class="roof-tools">
-      <button type="button" class="roof-btn" data-roof-sound aria-pressed="false">소리 꺼짐</button>
+      <button type="button" class="roof-btn" data-roof-open="set" aria-label="옥상 설정">설정</button>
       <button type="button" class="roof-btn" data-roof-photo>사진 저장</button>
     </div>
   </div>
 
   <p class="roof-hint" data-roof-hint>오늘도 수고했어요. 잠깐 쉬어가세요.</p>
+  <p class="roof-count" data-roof-count hidden></p>
 
   <div class="roof-bottom">
-    <button type="button" class="roof-mission" data-roof-mission aria-expanded="false">오늘의 미션 <b data-roof-mcount>0/3</b></button>
-    <div class="roof-tray" role="group" aria-label="옥상에서 하기">
-      <button type="button" class="roof-btn fw" data-roof-fire>🎆 불꽃놀이</button>
+    <button type="button" class="roof-mission" data-roof-mission aria-expanded="false">오늘의 미션 <b data-roof-mcount>0/4</b></button>
+    <div class="roof-sub" data-roof-sub="fire" hidden>
+      <button type="button" class="roof-btn fw" data-roof-fire>한 발</button>
+      <button type="button" class="roof-btn fw" data-roof-show>한바탕 쇼</button>
+    </div>
+    <div class="roof-sub" data-roof-sub="grill" hidden>
       <button type="button" class="roof-btn" data-roof-food="pork">🥓 삼겹살</button>
-      <button type="button" class="roof-btn" data-roof-food="shrimp">🦐 새우</button>
-      <button type="button" class="roof-btn" data-roof-food="mushroom">🍄 버섯</button>
-      <button type="button" class="roof-btn" data-roof-food="corn">🌽 옥수수</button>
+      <button type="button" class="roof-btn" data-roof-food="mix">🍤 모둠 구이 <small>새우·버섯·옥수수</small></button>
+    </div>
+    <div class="roof-sub" data-roof-sub="deco" hidden>
+      <button type="button" class="roof-btn" data-roof-deco="tent" aria-pressed="false">⛺ 텐트</button>
+      <button type="button" class="roof-btn" data-roof-deco="mat" aria-pressed="false">🧺 돗자리</button>
+      <button type="button" class="roof-btn" data-roof-deco="chair" aria-pressed="false">🪑 의자</button>
+      <button type="button" class="roof-btn" data-roof-deco="lantern" aria-pressed="false">🏮 랜턴</button>
+      <button type="button" class="roof-btn" data-roof-deco="table" aria-pressed="false">☕ 탁자</button>
+      <button type="button" class="roof-btn" data-roof-deco="remove" aria-pressed="false">🧹 치우기</button>
+    </div>
+    <div class="roof-sub" data-roof-sub="sky" hidden>
+      <button type="button" class="roof-btn" data-roof-stars aria-pressed="false">⭐ 별 세기</button>
+      <button type="button" class="roof-btn" data-roof-open="wish">🏮 소원 빌기</button>
+      <button type="button" class="roof-btn" data-roof-lie>🛌 누워서 보기</button>
+    </div>
+    <div class="roof-tray" role="group" aria-label="옥상에서 하기">
+      <button type="button" class="roof-btn fw" data-roof-menu="fire" aria-expanded="false">🎆 불꽃</button>
+      <button type="button" class="roof-btn" data-roof-menu="grill" aria-expanded="false">🍖 굽기</button>
+      <button type="button" class="roof-btn" data-roof-menu="deco" aria-expanded="false">⛺ 꾸미기</button>
+      <button type="button" class="roof-btn" data-roof-menu="sky" aria-expanded="false">🌙 밤하늘</button>
+      <button type="button" class="roof-btn vw" data-roof-view aria-pressed="false">🌃 야경</button>
     </div>
   </div>
 
@@ -38,6 +60,75 @@
     <p class="roof-rank" data-roof-rank></p>
     <ul class="roof-list" data-roof-list></ul>
     <p class="roof-note">미션은 매일 새로 바뀌어요. 못 해도 괜찮아요, 쉬러 온 곳이니까요.</p>
+  </div>
+
+  <div class="roof-modal" data-roof-modal="wish" hidden>
+    <div class="roof-card roof-wish" role="dialog" aria-label="소원 빌기">
+      <div class="roof-sheet-head"><b>소원 빌기</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
+      <p class="roof-note">짧게 적어 보세요. 풍등이 되어 밤하늘로 떠올라요. (최대 36자)</p>
+      <textarea maxlength="36" rows="2" data-roof-wishtext placeholder="예: 좋은 집에서 편안히 지내길"></textarea>
+      <div class="roof-row"><span class="roof-note" data-roof-wishlog></span><button type="button" class="roof-btn fw" data-roof-wishgo>풍등 띄우기</button></div>
+    </div>
+  </div>
+
+  <div class="roof-modal" data-roof-modal="set" hidden>
+    <div class="roof-card roof-set" role="dialog" aria-label="옥상 설정">
+      <div class="roof-sheet-head"><b>설정</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
+
+      <div class="rs-main"><div><b>내가 듣는 소리</b><span>소리는 이 기기에서 만들어요. 나에게만 들려요.</span></div>
+        <button type="button" class="rs-sw" data-roof-sound role="switch" aria-checked="false" aria-label="소리"><i></i></button></div>
+
+      <div class="rs-card">
+        <div class="rs-row"><div><b>환경음</b><span>옥상에서 들릴 법한 소리를 골라요</span></div>
+          <button type="button" class="rs-pill" data-roof-bus="amb" aria-pressed="true">켜짐</button></div>
+        <div class="rs-chips">
+          <button type="button" class="roof-chip" data-roof-amb="cricket">귀뚜라미</button>
+          <button type="button" class="roof-chip" data-roof-amb="bug">풀벌레</button>
+          <button type="button" class="roof-chip" data-roof-amb="wind">바람</button>
+          <button type="button" class="roof-chip" data-roof-amb="city">도시</button>
+          <button type="button" class="roof-chip" data-roof-amb="rain">빗소리</button>
+          <button type="button" class="roof-chip" data-roof-amb="chime">풍경</button>
+          <button type="button" class="roof-chip" data-roof-amb="fire">숯불</button>
+        </div>
+        <label class="rs-vol"><input type="range" min="0" max="100" data-roof-vol="amb" aria-label="환경음 크기"><i data-roof-volv="amb"></i></label>
+      </div>
+      <div class="rs-card">
+        <div class="rs-row"><div><b>불꽃놀이</b><span>쏘는 소리, 웅장하게 터지는 소리, 넓게 퍼지는 울림</span></div>
+          <button type="button" class="rs-pill" data-roof-bus="fw" aria-pressed="true">켜짐</button></div>
+        <label class="rs-vol"><input type="range" min="0" max="100" data-roof-vol="fw" aria-label="불꽃놀이 소리 크기"><i data-roof-volv="fw"></i></label>
+      </div>
+      <div class="rs-card">
+        <div class="rs-row"><div><b>효과음</b><span>고기 굽는 소리, 고양이, 별 세기, 소원</span></div>
+          <button type="button" class="rs-pill" data-roof-bus="fx" aria-pressed="true">켜짐</button></div>
+        <label class="rs-vol"><input type="range" min="0" max="100" data-roof-vol="fx" aria-label="효과음 크기"><i data-roof-volv="fx"></i></label>
+      </div>
+      <div class="rs-main"><div><b>백그라운드 재생</b><span>다른 화면으로 가도 소리가 이어져요</span></div>
+        <button type="button" class="rs-sw" data-roof-bg role="switch" aria-checked="false" aria-label="백그라운드 재생"><i></i></button></div>
+
+      <p class="rs-h">하늘</p>
+      <div class="rs-chips">
+        <button type="button" class="roof-chip" data-roof-sky="real">지금 하늘</button>
+        <button type="button" class="roof-chip" data-roof-sky="dusk">노을</button>
+        <button type="button" class="roof-chip" data-roof-sky="night">맑은 밤</button>
+        <button type="button" class="roof-chip" data-roof-sky="galaxy">은하수</button>
+      </div>
+      <div class="rs-main"><div><b>실제 날씨 반영</b><span>구름·비·안개·바람을 그 동네 지금 날씨로 (Open-Meteo)</span></div>
+        <button type="button" class="rs-sw" data-roof-wx role="switch" aria-checked="true" aria-label="실제 날씨 반영"><i></i></button></div>
+      <div class="rs-main"><div><b>정각 불꽃놀이</b><span>옥상을 열어 두면 정각마다 쇼가 시작돼요</span></div>
+        <button type="button" class="rs-sw" data-roof-hour role="switch" aria-checked="true" aria-label="정각 불꽃놀이"><i></i></button></div>
+      <p class="rs-h">화질</p>
+      <div class="rs-chips">
+        <button type="button" class="roof-chip" data-roof-q="auto">자동</button>
+        <button type="button" class="roof-chip" data-roof-q="high">선명하게</button>
+        <button type="button" class="roof-chip" data-roof-q="mid">보통</button>
+        <button type="button" class="roof-chip" data-roof-q="low">가볍게</button>
+      </div>
+
+      <details class="rs-det"><summary>조작 방법</summary>
+        <ul><li>바닥을 누르면 그쪽으로 걸어가요. 매트·의자를 누르면 앉아요.</li><li>화면을 끌면 둘러봐요. 위로 끌면 하늘이 더 보여요.</li><li>하늘을 누르면 불꽃이 터져요. ‘별 세기’를 켜면 별을 눌러 셀 수 있어요.</li><li>고양이를 누르면 쓰다듬어요. 이웃 옥상 사람들에게도 손을 흔들어 보세요.</li></ul></details>
+      <details class="rs-det"><summary>정보</summary>
+        <p>소리는 모두 이 기기에서 만들어 내는 소리예요. 날씨는 Open-Meteo(CC BY 4.0), 달 모양과 해·달 위치는 날짜와 시각으로 계산해요. 3D는 three.js(MIT)를 써요.</p></details>
+    </div>
   </div>
 </section>
 {% endblock %}

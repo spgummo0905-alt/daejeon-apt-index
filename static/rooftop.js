@@ -1,48 +1,44 @@
-// 집감 옥상: 밤 옥상에서 불꽃놀이를 보고 고기를 구우며 쉬어가는 1인용 공간.
-// - 캔버스 한 장에 그림 (그림 파일 없음), 소리는 브라우저에서 만들고 기본은 꺼짐
-// - 야경은 내가 고른 동네의 이름으로 정한 모양이고, 그 동네 숫자 한 줄을 하늘에 띄움
-// - 오늘의 미션 3개·연속 방문·칭호는 이 기기(로그인하면 계정)에 저장 (djdex:roof)
+// 집감 옥상: 쉬어가는 3D 공간의 화면·소리·기록. 장면은 rooftop3d.js (three.js) 가 그립니다.
+// - 소리는 브라우저에서 만들고 기본은 꺼짐 (환경음·불꽃·효과음을 따로 고르고 조절)
+// - 하늘은 지금 시각·달 모양을 계산해서, 날씨는 그 동네 좌표로 Open-Meteo 에서 받아 반영 (실패해도 그냥 맑게)
+// - 오늘의 미션·연속 방문·칭호·별 세기·소원은 이 기기(로그인하면 계정)에 저장 (djdex:roof)
 (function () {
   const box = document.getElementById("roof");
   if (!box) return;
-  const cv = box.querySelector(".roof-cv"), ctx = cv.getContext("2d");
-  const $ = s => box.querySelector(s);
-  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!CanvasRenderingContext2D.prototype.roundRect) {   // 옛 브라우저용 둥근 사각형
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-      r = Math.min(r, w / 2, h / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
-      this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
-    };
-  }
-  const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[(Math.random() * a.length) | 0];
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const PAL = ["#ffd8a8", "#ffb3c7", "#a9d6ff", "#c9b6ff", "#fff3b0", "#b8f0d0"];
+  const $ = s => box.querySelector(s), $$ = s => [...box.querySelectorAll(s)];
+  const calmMQ = matchMedia("(prefers-reduced-motion: reduce)");
+  const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const say = (t, s) => (DJ.toast ? DJ.toast(t, s) : 0);
+  let api = null;
 
-  // ---------- 기록: 오늘의 미션, 연속 방문, 칭호 ----------
+  // ---------- 기록 ----------
   const MISSIONS = [
     { k: "fw", n: 3, t: "불꽃놀이 3번 즐기기" },
     { k: "bbq", n: 2, t: "고기 2점 맛있게 먹기" },
-    { k: "wish", n: 1, t: "별똥별에 소원 빌기" },
+    { k: "star", n: 5, t: "별 5개 세기" },
+    { k: "wish", n: 1, t: "소원 풍등 띄우기" },
   ];
   const TITLES = [[30, "옥상 주인"], [14, "옥상 지킴이"], [5, "옥상 단골"], [0, "옥상 새내기"]];
+  const ADJ = ["고요한", "포근한", "느긋한", "다정한", "반짝이는", "든든한", "말랑한", "은은한"], NOUN = ["구름", "달빛", "별", "바람", "노을", "온기", "새벽", "솜사탕"];
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  let st = Object.assign({ last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, wish: 0 }, done: "", sound: false, town: "" }, DJ.load("roof", {}));
+  const DEF = { last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, star: 0, wish: 0 }, done: "", sound: false, town: "", nick: "",
+    sky: "night", wx: true, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
+    stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null };
+  let st = Object.assign({}, DEF, DJ.load("roof", {}));
+  st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
+  if (!st.nick) st.nick = ADJ[(Math.random() * ADJ.length) | 0] + " " + NOUN[(Math.random() * NOUN.length) | 0];
   const today = ymd(new Date()), yd = new Date(); yd.setDate(yd.getDate() - 1);
-  if (st.last !== today) {
-    st.streak = st.last === ymd(yd) ? st.streak + 1 : 1;
-    st.days += 1; st.last = today; st.m = { fw: 0, bbq: 0, wish: 0 };
-    DJ.save("roof", st);
-  }
+  if (st.last !== today) { st.streak = st.last === ymd(yd) ? st.streak + 1 : 1; st.days += 1; st.last = today; st.m = Object.assign({}, DEF.m); }
+  if (st.stars.d !== today) st.stars = { d: today, idx: [] };
+  DJ.save("roof", st);
   const saveSt = () => DJ.save("roof", st);
   const doneCount = () => MISSIONS.filter(m => st.m[m.k] >= m.n).length;
   function paintMissions() {
     $("[data-roof-mcount]").textContent = `${doneCount()}/${MISSIONS.length}`;
     const title = TITLES.find(t => st.days >= t[0])[1];
-    $("[data-roof-rank]").textContent = `${title} · 연속 ${st.streak}일째 · 함께한 날 ${st.days}일`;
-    const ul = $("[data-roof-list]");
-    ul.replaceChildren(...MISSIONS.map(m => {
-      const li = document.createElement("li"), v = Math.min(st.m[m.k], m.n);
+    $("[data-roof-rank]").textContent = `${title} · 연속 ${st.streak}일째 · 함께한 날 ${st.days}일 · 센 별 ${st.starTotal}개`;
+    $("[data-roof-list]").replaceChildren(...MISSIONS.map(m => {
+      const li = document.createElement("li"), v = Math.min(st.m[m.k] || 0, m.n);
       li.className = v >= m.n ? "ok" : "";
       li.innerHTML = `<span>${v >= m.n ? "✓" : "○"}</span><b></b><i>${v}/${m.n}</i>`;
       li.querySelector("b").textContent = m.t;
@@ -50,318 +46,300 @@
     }));
   }
   function bump(k) {
-    const m = MISSIONS.find(x => x.k === k), before = st.m[k];
-    st.m[k] = before + 1;
-    saveSt(); paintMissions();
+    const m = MISSIONS.find(x => x.k === k), before = st.m[k] || 0;
+    st.m[k] = before + 1; saveSt(); paintMissions();
     if (before + 1 === m.n) say("미션 완료", m.t);
-    if (doneCount() === MISSIONS.length && st.done !== today) {   // 오늘 미션을 모두 끝내면 한 번 큰 불꽃
-      st.done = today; saveSt();
-      say("오늘의 옥상 미션 완료", "푹 쉬세요. 내일 또 와요.");
-      for (let i = 0; i < 5; i++) setTimeout(() => launch(rnd(.2, .8) * W, rnd(.12, .34) * H, true), 600 + i * 520);
+    if (doneCount() === MISSIONS.length && st.done !== today) {
+      st.done = today; saveSt(); say("오늘의 옥상 미션 완료", "푹 쉬세요. 내일 또 와요.");
+      if (api) api.show();
     }
   }
 
-  // ---------- 장면 ----------
-  let W = 0, H = 0, dpr = 1, bg = null, seed = 1, town = null;
-  const stars = [], smoke = [], rockets = [], parts = [], foods = [];
-  let shoot = null, nextShoot = performance.now() + rnd(14000, 26000);
-  const hash = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-  const mulberry = a => () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  let bottomH = 90;   // 아래 버튼 줄 높이: 불판은 그 바로 위에 놓음
-  const floorY = () => Math.min(H * 0.74, H - bottomH - 110), horizon = () => floorY() - 4;
-  const grill = () => { const w = Math.min(W * 0.62, 330), h = Math.min(H * 0.05, 30); return { x: (W - w) / 2, w, y: H - bottomH - h - 26, h }; };
-
-  function drawStatic() {
-    bg = document.createElement("canvas"); bg.width = W * dpr; bg.height = H * dpr;
-    const g = bg.getContext("2d"); g.scale(dpr, dpr);
-    const sky = g.createLinearGradient(0, 0, 0, floorY());
-    sky.addColorStop(0, "#070d1f"); sky.addColorStop(.6, "#15244a"); sky.addColorStop(1, "#33355f");
-    g.fillStyle = sky; g.fillRect(0, 0, W, H);
-    // 달
-    const mr = Math.min(W, H) * 0.052, mx = W * 0.8, my = H * 0.14;
-    const glow = g.createRadialGradient(mx, my, mr * .6, mx, my, mr * 4);
-    glow.addColorStop(0, "rgba(255,240,200,.28)"); glow.addColorStop(1, "rgba(255,240,200,0)");
-    g.fillStyle = glow; g.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
-    g.fillStyle = "#fff3d6"; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
-    g.fillStyle = "rgba(220,200,160,.35)";
-    [[-.3, -.2, .22], [.25, .15, .16], [-.1, .4, .12]].forEach(([a, b, r]) => { g.beginPath(); g.arc(mx + a * mr, my + b * mr, r * mr, 0, TAU); g.fill(); });
-    // 동네 이름으로 정한 스카이라인 (두 겹)
-    const R = mulberry(seed);
-    [[0.55, "#1a2548", .5, .18, 22], [1, "#0d1430", .8, .3, 30]].forEach(([k, col, lit, tall, minW], layer) => {
-      let x = -10;
-      while (x < W + 10) {
-        const bw = minW + R() * 44 * (W < 500 ? .6 : 1), bh = H * (0.08 + R() * tall) * (layer ? 1 : .85);
-        const y = horizon() - bh;
-        g.fillStyle = col; g.fillRect(x, y, bw, horizon() - y + 4);
-        if (R() < .25) g.fillRect(x + bw * .4, y - H * .03, 2, H * .03);   // 안테나
-        for (let wy = y + 8; wy < horizon() - 6; wy += 11) for (let wx = x + 5; wx < x + bw - 6; wx += 9) {
-          if (R() < (town ? clamp(0.18 + town.lit * .5, .15, .6) : .3) * lit) { g.fillStyle = R() < .8 ? "rgba(255,214,140,.75)" : "rgba(170,205,255,.7)"; g.fillRect(wx, wy, 3.2, 4.6); }
-        }
-        x += bw + R() * 6;
-      }
-    });
-    // 옥상 바닥과 난간
-    const fl = g.createLinearGradient(0, floorY(), 0, H);
-    fl.addColorStop(0, "#232c47"); fl.addColorStop(1, "#0d1222");
-    g.fillStyle = fl; g.fillRect(0, floorY(), W, H - floorY());
-    g.fillStyle = "#2f3a5c"; g.fillRect(0, floorY() - 7, W, 9);
-    g.fillStyle = "rgba(255,255,255,.07)"; g.fillRect(0, floorY() - 7, W, 1.5);
-    g.strokeStyle = "rgba(255,255,255,.05)"; g.lineWidth = 1;
-    for (let i = 1; i < 9; i++) { const yy = floorY() + (H - floorY()) * (i / 9) ** 1.6; g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke(); }
-    // 줄조명 기둥과 전선
-    g.strokeStyle = "#394567"; g.lineWidth = 3;
-    [W * .06, W * .94].forEach(px => { g.beginPath(); g.moveTo(px, floorY() - 6); g.lineTo(px, H * .43); g.stroke(); });
-    g.strokeStyle = "rgba(180,190,220,.5)"; g.lineWidth = 1.4; g.beginPath(); g.moveTo(W * .06, H * .43); g.quadraticCurveTo(W * .5, H * .64, W * .94, H * .43); g.stroke();
-    // 불판 몸체
-    const gr = grill();
-    g.fillStyle = "#1a1e2c"; g.fillRect(gr.x + 10, gr.y + gr.h, 6, H * .05); g.fillRect(gr.x + gr.w - 16, gr.y + gr.h, 6, H * .05);
-    g.fillStyle = "#222737"; g.beginPath(); g.roundRect(gr.x, gr.y, gr.w, gr.h, 8); g.fill();
-  }
-
-  function resize() {
-    const r = box.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = Math.max(280, Math.round(r.width)); H = Math.max(420, Math.round(r.height));
-    bottomH = $(".roof-bottom").offsetHeight || 90;
-    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
-    stars.length = 0;
-    for (let i = 0; i < Math.round(W * H / 5200); i++) stars.push({ x: Math.random() * W, y: Math.random() * horizon() * .9, r: rnd(.4, 1.5), p: rnd(0, TAU), s: rnd(.6, 1.8) });
-    drawStatic();
-  }
-
-  // ---------- 불꽃 ----------
-  function launch(tx, ty, free) {
-    if (rockets.length > 6) return;
-    rockets.push({ x: tx + rnd(-30, 30), y: H * .72, tx, ty, v: rnd(5.2, 6.6), c: pick(PAL), free });
-    sndBoom(false);
-  }
-  function burst(x, y, c) {
-    const kind = pick(["peony", "ring", "willow", "heart"]), n = calm ? 38 : kind === "willow" ? 70 : 90, c2 = pick(PAL);
-    for (let i = 0; i < n; i++) {
-      let a = (i / n) * TAU, sp = rnd(1.2, 3.1);
-      if (kind === "ring") sp = 2.8;
-      if (kind === "heart") { const t = a; const hx = 16 * Math.sin(t) ** 3, hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); parts.push({ x, y, vx: hx * .14, vy: hy * .14, life: 0, max: rnd(60, 80), c, s: 1.7, g: .018, willow: false }); continue; }
-      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0, max: kind === "willow" ? rnd(85, 120) : rnd(50, 80), c: i % 3 ? c : c2, s: rnd(1.2, 2), g: kind === "willow" ? .035 : .028, willow: kind === "willow" });
-    }
-    sndBoom(true);
-  }
-
-  // ---------- 고기 굽기 ----------
-  const FOOD = {
-    pork: { name: "삼겹살", w: 58, h: 22 }, shrimp: { name: "새우", w: 46, h: 26 },
-    mushroom: { name: "버섯", w: 40, h: 30 }, corn: { name: "옥수수", w: 54, h: 22 },
-  };
-  function slotX(i) { const g = grill(); return g.x + g.w * (i + .5) / 4; }
-  function addFood(kind) {
-    const used = new Set(foods.map(f => f.slot)), slot = [0, 1, 2, 3].find(i => !used.has(i));
-    if (slot === undefined) return say("불판이 가득 찼어요", "먹거나 치우고 올려 보세요");
-    foods.push({ kind, slot, c: [0, 0], down: 0, t: 0, flip: 0 });
-    hint("뒤집어 가며 노릇하게 구워 보세요. 다 익으면 눌러서 먹어요.");
-    sndSizz();
-  }
-  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
-  const CK = { pork: [[238, 160, 170], [216, 150, 96], [120, 70, 40], [34, 26, 24]], shrimp: [[210, 190, 190], [240, 120, 70], [200, 80, 40], [40, 28, 24]],
-    mushroom: [[214, 196, 170], [190, 150, 100], [130, 90, 56], [36, 28, 22]], corn: [[250, 228, 130], [248, 205, 70], [200, 140, 40], [48, 34, 22]] };
-  function colorAt(kind, v) {
-    const k = CK[kind], p = clamp(v, 0, 1.3) / 1.3 * 3, i = Math.min(2, Math.floor(p));
-    return mix(k[i], k[i + 1], p - i);
-  }
-  const ready = f => Math.min(f.c[0], f.c[1]) >= .55 && Math.max(f.c[0], f.c[1]) <= 1.05;
-  const burnt = f => Math.max(f.c[0], f.c[1]) > 1.15;
-  function tapFood(f) {
-    if (ready(f)) {
-      foods.splice(foods.indexOf(f), 1);
-      for (let i = 0; i < 14; i++) smoke.push({ x: slotX(f.slot), y: grill().y - 12, vx: rnd(-.5, .5), vy: rnd(-1.1, -.3), a: .5, r: rnd(2, 4), life: 0, max: 40, warm: true });
-      bump("bbq"); say("맛있게 먹었어요", FOOD[f.kind].name + " 😋");
-    } else if (burnt(f)) {
-      foods.splice(foods.indexOf(f), 1); say("조금 탔어요", "괜찮아요, 다시 구워 봐요");
-    } else { f.down = 1 - f.down; f.flip = 1; }
-  }
-  function drawFood(f, now) {
-    const sp = FOOD[f.kind], x = slotX(f.slot), gr = grill(), up = 1 - f.down;
-    const col = colorAt(f.kind, f.c[up]), y = gr.y - sp.h * .55 - (f.flip > 0 ? Math.sin(f.flip * Math.PI) * 26 : 0);
-    ctx.save(); ctx.translate(x, y);
-    if (f.flip > 0) ctx.scale(1, Math.cos(f.flip * Math.PI) * .9 + .1);
-    ctx.fillStyle = `rgb(${col})`; ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    if (f.kind === "shrimp") { ctx.ellipse(0, 0, sp.w / 2, sp.h / 2, -.25, 0, TAU); }
-    else if (f.kind === "mushroom") { ctx.arc(0, 4, sp.w / 2, Math.PI, TAU); ctx.lineTo(sp.w / 2, 4); ctx.closePath(); }
-    else if (f.kind === "corn") { ctx.roundRect(-sp.w / 2, -sp.h / 2, sp.w, sp.h, 11); }
-    else { ctx.roundRect(-sp.w / 2, -sp.h / 2, sp.w, sp.h, 5); }
-    ctx.fill(); ctx.stroke();
-    if (f.kind === "pork") { ctx.fillStyle = "rgba(255,240,235,.35)"; for (let i = -1; i <= 1; i++) ctx.fillRect(-sp.w / 2 + 6, i * 6 - 1, sp.w - 12, 3); }
-    if (f.kind === "corn") { ctx.fillStyle = "rgba(255,255,255,.18)"; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.arc(i * 9, 0, 2.4, 0, TAU); ctx.fill(); } }
-    ctx.restore();
-    if (ready(f)) {   // 다 익으면 은은한 금빛 테두리
-      ctx.save(); ctx.globalAlpha = .45 + .25 * Math.sin(now / 260); ctx.strokeStyle = "#ffe6a0"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(x, y, sp.w * .62, 0, TAU); ctx.stroke(); ctx.restore();
-    }
-    if (burnt(f)) { ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.font = "700 11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("탔어요", x, y - sp.h - 8); }
-  }
-
-  // ---------- 소리 (기본 꺼짐, 아주 부드럽게) ----------
-  const snd = { c: null, master: null, sizz: null, noise: null };
+  // ---------- 소리 ----------
+  const A = { c: null, master: null, buses: {}, verb: null, send: null, white: null, brown: null, layers: {}, sizz: null };
+  const vol = k => Math.pow(clamp(st.vol[k], 0, 100) / 100, 1.6);
   function initAudio() {
-    if (snd.c) return true;
-    const A = window.AudioContext || window.webkitAudioContext; if (!A) return false;
-    const c = snd.c = new A(); snd.master = c.createGain(); snd.master.gain.value = 0; snd.master.connect(c.destination);
-    const nb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = nb.getChannelData(0); let last = 0;
-    for (let i = 0; i < d.length; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; }   // 갈색 소음 = 바람
-    const wb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), wd = wb.getChannelData(0);
-    for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
-    snd.noise = wb;
-    const wind = c.createBufferSource(); wind.buffer = nb; wind.loop = true;
-    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420;
-    const wg = c.createGain(); wg.gain.value = .2; wind.connect(lp).connect(wg).connect(snd.master); wind.start();
-    const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = .09; lg.gain.value = .08; lfo.connect(lg).connect(wg.gain); lfo.start();
-    [110, 164.81, 277.18].forEach((f, i) => {   // 잔잔한 울림 (A 계열 화음)
-      const o = c.createOscillator(), g = c.createGain(); o.type = "sine"; o.frequency.value = f; g.gain.value = .014 - i * .002;
-      const l2 = c.createOscillator(), lg2 = c.createGain(); l2.frequency.value = .05 + i * .03; lg2.gain.value = .006; l2.connect(lg2).connect(g.gain); l2.start();
-      o.connect(g).connect(snd.master); o.start();
-    });
-    const sz = c.createBufferSource(); sz.buffer = wb; sz.loop = true;
-    const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 4200;
-    snd.sizz = c.createGain(); snd.sizz.gain.value = 0; sz.connect(hp).connect(snd.sizz).connect(snd.master); sz.start();
+    if (A.c) return true;
+    const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return false;
+    const c = A.c = new Ctx();
+    A.master = c.createGain(); A.master.gain.value = 0;
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 5; comp.attack.value = .004; comp.release.value = .25;
+    A.master.connect(comp); comp.connect(c.destination);
+    ["amb", "fw", "fx"].forEach(k => { const g = c.createGain(); g.gain.value = 0; g.connect(A.master); A.buses[k] = g; });
+    const len = Math.floor(c.sampleRate * 3.4), ir = c.createBuffer(2, len, c.sampleRate);   // 넓게 울리는 공간 (불꽃 소리가 멀리 퍼지게)
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let p = 0; for (let i = 0; i < len; i++) { const n = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4); p = p * .55 + n * .45; d[i] = p; } }
+    A.verb = c.createConvolver(); A.verb.buffer = ir; const vg = c.createGain(); vg.gain.value = .9; A.verb.connect(vg); vg.connect(A.master);
+    A.send = c.createGain(); A.send.gain.value = 1; A.send.connect(A.verb);
+    const nb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; A.white = nb;
+    const bb = c.createBuffer(1, c.sampleRate * 4, c.sampleRate), bd = bb.getChannelData(0); let last = 0; for (let i = 0; i < bd.length; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; bd[i] = last * 3.4; } A.brown = bb;
+    const sz = c.createBufferSource(); sz.buffer = A.white; sz.loop = true; const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 4200;
+    A.sizz = c.createGain(); A.sizz.gain.value = 0; sz.connect(hp).connect(A.sizz).connect(A.buses.fx); sz.start();
     return true;
   }
+  const noiseSrc = (buf, loop) => { const s = A.c.createBufferSource(); s.buffer = buf; s.loop = !!loop; return s; };
+  const panner = p => { const c = A.c; if (c.createStereoPanner) { const n = c.createStereoPanner(); n.pan.value = clamp(p || 0, -1, 1); return n; } return c.createGain(); };
+  function applyGains() {
+    if (!A.c) return;
+    const t = A.c.currentTime;
+    A.master.gain.setTargetAtTime(st.sound ? .9 : 0, t, .5);
+    ["amb", "fw", "fx"].forEach(k => A.buses[k].gain.setTargetAtTime(st.on[k] ? vol(k) : 0, t, .15));
+    Object.entries(A.layers).forEach(([k, L]) => L.set(st.sound && st.on.amb && st.amb.includes(k)));
+  }
+  // 환경음 층: 켜질 때 처음 한 번만 만들고, 이후엔 크기만 올리고 내림
+  const LAYERS = {
+    cricket(c, out) {   // 귀뚜라미: 높은 소리를 빠르게 끊어 울리고, 느리게 쉬었다 울어요
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      [[4300, 26, 1.9, -.6], [4650, 31, 2.3, .1], [5100, 24, 1.55, .65], [3900, 28, 2.7, -.2]].forEach(([f, pf, gf, pan], i) => {
+        const o = c.createOscillator(), a1 = c.createGain(), a2 = c.createGain(), p = panner(pan), lv = c.createGain();
+        o.frequency.value = f; a1.gain.value = .5; a2.gain.value = .5; lv.gain.value = .02;
+        const l1 = c.createOscillator(), l1g = c.createGain(); l1.frequency.value = pf; l1g.gain.value = .5; l1.connect(l1g).connect(a1.gain); l1.start();
+        const l2 = c.createOscillator(), l2g = c.createGain(); l2.type = "triangle"; l2.frequency.value = gf; l2g.gain.value = .5; l2.connect(l2g).connect(a2.gain); l2.start(c.currentTime + i * .37);
+        o.connect(a1).connect(a2).connect(lv).connect(p).connect(g); o.start();
+      });
+      return g;
+    },
+    bug(c, out) {   // 풀벌레: 낮고 부드러운 찌르르
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      [[2500, 13, .6, -.5], [3050, 17, .85, .5], [2800, 11, .45, 0]].forEach(([f, pf, gf, pan], i) => {
+        const o = c.createOscillator(), a1 = c.createGain(), a2 = c.createGain(), p = panner(pan), lv = c.createGain(); o.type = "triangle";
+        o.frequency.value = f; a1.gain.value = .5; a2.gain.value = .5; lv.gain.value = .018;
+        const l1 = c.createOscillator(), l1g = c.createGain(); l1.frequency.value = pf; l1g.gain.value = .5; l1.connect(l1g).connect(a1.gain); l1.start();
+        const l2 = c.createOscillator(), l2g = c.createGain(); l2.frequency.value = gf; l2g.gain.value = .5; l2.connect(l2g).connect(a2.gain); l2.start(c.currentTime + i * .5);
+        o.connect(a1).connect(a2).connect(lv).connect(p).connect(g); o.start();
+      });
+      return g;
+    },
+    wind(c, out) {
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      const s = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), wg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 520; wg.gain.value = .3;
+      const lf = c.createOscillator(), lfg = c.createGain(); lf.frequency.value = .08; lfg.gain.value = 220; lf.connect(lfg).connect(lp.frequency); lf.start();
+      const lf2 = c.createOscillator(), lg2 = c.createGain(); lf2.frequency.value = .13; lg2.gain.value = .12; lf2.connect(lg2).connect(wg.gain); lf2.start();
+      s.connect(lp).connect(wg).connect(g); s.start();
+      const w2 = noiseSrc(A.white, true), bp = c.createBiquadFilter(), g2 = c.createGain(); bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 6; g2.gain.value = .012;
+      const lf3 = c.createOscillator(), lg3 = c.createGain(); lf3.frequency.value = .06; lg3.gain.value = .01; lf3.connect(lg3).connect(g2.gain); lf3.start();
+      w2.connect(bp).connect(g2).connect(g); w2.start();
+      return g;
+    },
+    city(c, out) {   // 먼 도시: 낮은 웅웅거림과 가끔 지나가는 차
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      const s = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), hg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 240; hg.gain.value = .32; s.connect(lp).connect(hg).connect(g); s.start();
+      let tm = 0; const car = () => { if (!A.layers.city || !A.layers.city.on) { tm = setTimeout(car, 4000); return; }
+        const t = c.currentTime, n = noiseSrc(A.white, true), bp = c.createBiquadFilter(), cg = c.createGain(), p = panner(rnd(-.9, .9)); bp.type = "bandpass"; bp.Q.value = 1.4;
+        const dir = Math.random() < .5 ? 1 : -1; bp.frequency.setValueAtTime(380, t); bp.frequency.linearRampToValueAtTime(760, t + 1.6); bp.frequency.linearRampToValueAtTime(420, t + 3.4);
+        if (p.pan) { p.pan.setValueAtTime(-.8 * dir, t); p.pan.linearRampToValueAtTime(.8 * dir, t + 3.4); }
+        cg.gain.setValueAtTime(0, t); cg.gain.linearRampToValueAtTime(.05, t + 1.5); cg.gain.linearRampToValueAtTime(0, t + 3.4);
+        n.connect(bp).connect(cg).connect(p).connect(g); n.start(t); n.stop(t + 3.6); tm = setTimeout(car, rnd(5000, 13000)); };
+      tm = setTimeout(car, 3000);
+      return g;
+    },
+    rain(c, out) {
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      const s = noiseSrc(A.white, true), hp = c.createBiquadFilter(), lp = c.createBiquadFilter(), rg = c.createGain(); hp.type = "highpass"; hp.frequency.value = 1400; lp.type = "lowpass"; lp.frequency.value = 7500; rg.gain.value = .11;
+      s.connect(hp).connect(lp).connect(rg).connect(g); s.start();
+      const b = noiseSrc(A.brown, true), bl = c.createBiquadFilter(), bg = c.createGain(); bl.type = "lowpass"; bl.frequency.value = 600; bg.gain.value = .1; b.connect(bl).connect(bg).connect(g); b.start();
+      return g;
+    },
+    chime(c, out) {   // 풍경: 가끔 맑은 소리가 한 번씩
+      const g = c.createGain(); g.gain.value = 0; g.connect(out); g.connect(A.send);
+      const notes = [523.25, 587.33, 659.25, 783.99, 880, 1046.5]; let tm = 0;
+      const ring = () => { if (!A.layers.chime || !A.layers.chime.on) { tm = setTimeout(ring, 3000); return; }
+        const t = c.currentTime, f = notes[(Math.random() * notes.length) | 0], p = panner(rnd(-.7, .7));
+        [[1, .05], [2.76, .018], [5.4, .007]].forEach(([m, a]) => { const o = c.createOscillator(), e = c.createGain(); o.type = "sine"; o.frequency.value = f * m; e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(a, t + .005); e.gain.exponentialRampToValueAtTime(.0003, t + 3.2 / m ** .4); o.connect(e).connect(p).connect(g); o.start(t); o.stop(t + 3.4); });
+        tm = setTimeout(ring, rnd(2600, 8000)); };
+      tm = setTimeout(ring, 1500);
+      return g;
+    },
+    fire(c, out) {   // 숯불: 낮은 불 소리와 톡톡 튀는 소리
+      const g = c.createGain(); g.gain.value = 0; g.connect(out);
+      const b = noiseSrc(A.brown, true), lp = c.createBiquadFilter(), bg = c.createGain(); lp.type = "lowpass"; lp.frequency.value = 260; bg.gain.value = .26; b.connect(lp).connect(bg).connect(g); b.start();
+      let tm = 0; const pop = () => { if (!A.layers.fire || !A.layers.fire.on) { tm = setTimeout(pop, 2000); return; }
+        const t = c.currentTime, n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(), p = panner(rnd(-.3, .3)); bp.type = "bandpass"; bp.frequency.value = rnd(1800, 4200); bp.Q.value = 1.2;
+        e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(rnd(.03, .1), t + .002); e.gain.exponentialRampToValueAtTime(.0005, t + rnd(.02, .07));
+        n.connect(bp).connect(e).connect(p).connect(g); n.start(t, rnd(0, 1.5), .1); tm = setTimeout(pop, rnd(90, 700)); };
+      tm = setTimeout(pop, 500);
+      return g;
+    },
+  };
+  function ensureLayer(k) {
+    if (A.layers[k] || !LAYERS[k]) return;
+    const node = LAYERS[k](A.c, A.buses.amb), L = { on: false, set(on) { L.on = on; node.gain.setTargetAtTime(on ? 1 : 0, A.c.currentTime, 1.1); } };
+    A.layers[k] = L;
+  }
+  const ready = () => A.c && st.sound && A.c.state !== "closed";
+  // 불꽃: 쏘는 소리 → (빛이 먼저, 소리는 조금 뒤에) 쾅 하고 터지는 소리와 넓게 퍼지는 울림
+  const out = (pan, dest, wet) => { const p = panner(pan), g = A.c.createGain(); g.gain.value = 1; p.connect(dest); g.connect(p); if (wet) { const w = A.c.createGain(); w.gain.value = wet; g.connect(w); w.connect(A.send); } return g; };
+  function env(g, t, a, pk, d) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + a); g.gain.exponentialRampToValueAtTime(.0004, t + a + d); }
+  const SND = {
+    launch(i) {
+      if (!ready() || !st.on.fw) return;
+      const c = A.c, t = c.currentTime, o = out(i.pan, A.buses.fw, .25);
+      const n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(); bp.type = "bandpass"; bp.Q.value = 1.1; bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(2600, t + 1.5);
+      env(e, t, .15, .1, 1.5); n.connect(bp).connect(e).connect(o); n.start(t, rnd(0, 1), 1.8);
+      const w = c.createOscillator(), we = c.createGain(); w.type = "sine"; w.frequency.setValueAtTime(760, t); w.frequency.exponentialRampToValueAtTime(2300, t + 1.4); env(we, t, .3, .014, 1.2); w.connect(we).connect(o); w.start(t); w.stop(t + 1.8);
+    },
+    burst(i) {
+      if (!ready() || !st.on.fw) return;
+      const c = A.c, k = i.kind, big = i.big, sz = clamp(i.size, .7, 1.8), far = clamp(i.dist / 600, .5, 1.2), t = c.currentTime + clamp(i.dist / 650, .3, .95) + rnd(0, .05);
+      const o = out(i.pan, A.buses.fw, big ? 1.2 : .9), g = (v) => v * sz / far ** .6;
+      const thump = (at, pk, f0 = 105, f1 = 32, d = 1.0) => { const os = c.createOscillator(), e = c.createGain(); os.type = "sine"; os.frequency.setValueAtTime(f0, at); os.frequency.exponentialRampToValueAtTime(f1, at + .55); env(e, at, .006, pk, d); os.connect(e).connect(o); os.start(at); os.stop(at + d + .2); };
+      const crack = (at, pk, f = 2400, q = .8, d = .22) => { const n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), hp = c.createBiquadFilter(), e = c.createGain(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q; hp.type = "highpass"; hp.frequency.value = 500; env(e, at, .002, pk, d); n.connect(bp).connect(hp).connect(e).connect(o); n.start(at, rnd(0, 1), d + .1); };
+      const rumble = (at, pk, d = 1.9, f = 360) => { const n = noiseSrc(A.brown, false), lp = c.createBiquadFilter(), e = c.createGain(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f, at); lp.frequency.exponentialRampToValueAtTime(90, at + d); env(e, at, .02, pk, d); n.connect(lp).connect(e).connect(o); n.start(at, rnd(0, 1.5), d + .2); };
+      const shimmer = (at, pk, d = 2.6) => { const n = noiseSrc(A.white, false), hp = c.createBiquadFilter(), e = c.createGain(); hp.type = "highpass"; hp.frequency.value = 5200; env(e, at, .2, pk, d); n.connect(hp).connect(e).connect(o); n.start(at, rnd(0, 1), d + .3); };
+      const clicks = (at, n, span, pk) => { for (let q = 0; q < n; q++) { const tt = at + Math.random() * span, nn = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(), p = out(rnd(-.8, .8) + i.pan * .3, A.buses.fw, .5);
+        bp.type = "bandpass"; bp.frequency.value = rnd(2200, 5200); bp.Q.value = 1.5; env(e, tt, .001, pk * rnd(.4, 1), rnd(.015, .045)); nn.connect(bp).connect(e).connect(p); nn.start(tt, rnd(0, 1.5), .06); } };
+      thump(t, g(big ? 1.0 : .72), big ? 92 : 112, big ? 28 : 34, big ? 1.3 : .95);
+      crack(t, g(.42), 2200, .7, big ? .32 : .22); rumble(t + .02, g(big ? .62 : .46), big ? 2.6 : 1.9);
+      if (k === "willow" || k === "chrys" || k === "palm") shimmer(t + .12, g(.07), 3.2);
+      if (k === "crackle") { clicks(t + .15, 46, 1.6, g(.3)); crack(t, g(.28), 3200, .8, .15); }
+      if (k === "crossette") { [.38, .46, .53].forEach(d => crack(t + d, g(.22), 2800, .8, .14)); }
+      if (k === "double") { thump(t + .26, g(.55), 120, 40, .8); crack(t + .26, g(.3), 2600, .8, .18); rumble(t + .28, g(.36), 1.6, 300); }
+      if (k === "ring" || k === "saturn" || k === "heart") shimmer(t + .1, g(.04), 1.6);
+      if (big) { crack(t + .05, g(.3), 1400, .5, .4); }
+    },
+    sizzle(n) { if (!A.sizz) return; A.sizz.gain.setTargetAtTime(Math.min(.07, n * .02), A.c.currentTime, .3); },
+    eat() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(0, A.buses.fx, .1); for (let i = 0; i < 3; i++) { const n = noiseSrc(A.white, false), bp = c.createBiquadFilter(), e = c.createGain(); bp.type = "bandpass"; bp.frequency.value = 1700 + i * 300; bp.Q.value = 2; env(e, t + i * .13, .002, .22, .05); n.connect(bp).connect(e).connect(o); n.start(t + i * .13, i * .2, .1); } },
+    meow() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(.1, A.buses.fx, .15), os = c.createOscillator(), e = c.createGain(), bp = c.createBiquadFilter(), vb = c.createOscillator(), vg = c.createGain();
+      os.type = "sawtooth"; os.frequency.setValueAtTime(560, t); os.frequency.linearRampToValueAtTime(900, t + .16); os.frequency.linearRampToValueAtTime(620, t + .5); vb.frequency.value = 22; vg.gain.value = 12; vb.connect(vg).connect(os.frequency);
+      bp.type = "bandpass"; bp.frequency.value = 1300; bp.Q.value = 1.6; env(e, t, .06, .1, .5); os.connect(bp).connect(e).connect(o); os.start(t); vb.start(t); os.stop(t + .7); vb.stop(t + .7); },
+    star(n) { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(rnd(-.4, .4), A.buses.fx, .8), f = [523.25, 587.33, 659.25, 783.99, 880][n % 5] * (n % 10 >= 5 ? 2 : 1);
+      [[1, .07], [2, .02], [3.01, .008]].forEach(([m, a]) => { const os = c.createOscillator(), e = c.createGain(); os.type = "sine"; os.frequency.value = f * m; env(e, t, .01, a, 1.8 / m ** .3); os.connect(e).connect(o); os.start(t); os.stop(t + 2); }); },
+    wish() { if (!ready() || !st.on.fx) return; const c = A.c, t = c.currentTime, o = out(0, A.buses.fx, 1);
+      [392, 523.25, 659.25, 783.99].forEach((f, i) => { const os = c.createOscillator(), e = c.createGain(); os.type = "sine"; os.frequency.value = f; env(e, t + i * .22, .05, .045, 2.2); os.connect(e).connect(o); os.start(t + i * .22); os.stop(t + 3); }); },
+  };
   function setSound(on) {
     st.sound = on; saveSt();
-    const b = $("[data-roof-sound]"); b.textContent = on ? "소리 켜짐" : "소리 꺼짐"; b.setAttribute("aria-pressed", String(on));
-    if (!initAudio()) return;
-    snd.c.resume(); snd.master.gain.setTargetAtTime(on ? .7 : 0, snd.c.currentTime, .5); sndSizz();
-  }
-  function sndBoom(big) {
-    if (!st.sound || !snd.c) return;
-    const c = snd.c, t = c.currentTime, o = c.createOscillator(), g = c.createGain();
-    o.type = "sine"; o.frequency.setValueAtTime(big ? 80 : 150, t); o.frequency.exponentialRampToValueAtTime(big ? 38 : 90, t + .5);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(big ? .07 : .025, t + .03); g.gain.exponentialRampToValueAtTime(.0008, t + (big ? .9 : .35));
-    o.connect(g).connect(snd.master); o.start(t); o.stop(t + 1);
-    if (big) {
-      const s = c.createBufferSource(); s.buffer = snd.noise; const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2200; bp.Q.value = .7;
-      const g2 = c.createGain(); g2.gain.setValueAtTime(0, t + .05); g2.gain.linearRampToValueAtTime(.02, t + .1); g2.gain.exponentialRampToValueAtTime(.0005, t + .7);
-      s.connect(bp).connect(g2).connect(snd.master); s.start(t + .05, rnd(0, 1), .8);
-    }
-  }
-  function sndSizz() { if (!st.sound || !snd.sizz) return; snd.sizz.gain.setTargetAtTime(Math.min(.05, foods.length * .016), snd.c.currentTime, .25); }
-
-  // ---------- 그리기 ----------
-  const hintEl = $("[data-roof-hint]");
-  let hintT = 0;
-  function hint(t) { hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
-
-  let last = performance.now(), run = true;
-  function frame(now) {
-    if (!run) return;
-    const dt = Math.min(48, now - last) / 16.67; last = now;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.drawImage(bg, 0, 0, W, H);
-    // 별
-    ctx.fillStyle = "#fff";
-    stars.forEach(s => { ctx.globalAlpha = .35 + .5 * Math.abs(Math.sin(now / 1100 * s.s + s.p)); ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.fill(); });
-    ctx.globalAlpha = 1;
-    // 별똥별
-    if (!shoot && now > nextShoot && !calm) { shoot = { x: rnd(W * .15, W * .7), y: rnd(H * .06, H * .2), t: 0 }; hint("별똥별이 지나가요. 눌러서 소원을 빌어 보세요."); }
-    if (shoot) {
-      shoot.t += dt; const k = shoot.t / 130, sx = shoot.x + k * W * .28, sy = shoot.y + k * H * .16;
-      const gr = ctx.createLinearGradient(sx, sy, sx - 80, sy - 30); gr.addColorStop(0, "rgba(255,255,255,.95)"); gr.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.strokeStyle = gr; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - 80, sy - 30); ctx.stroke();
-      shoot.px = sx; shoot.py = sy;
-      if (k >= 1) { shoot = null; nextShoot = now + rnd(20000, 38000); }
-    }
-    // 줄조명
-    for (let i = 0; i <= 22; i++) {
-      const t = i / 22, x = W * .06 + (W * .88) * t, y = (1 - t) * (1 - t) * H * .43 + 2 * (1 - t) * t * H * .64 + t * t * H * .43;
-      const c = ["255,214,140", "255,184,150", "190,215,255"][i % 3], p = .55 + .35 * Math.sin(now / 900 + i * .9);
-      const gl = ctx.createRadialGradient(x, y + 5, 0, x, y + 5, 14); gl.addColorStop(0, `rgba(${c},${.55 * p})`); gl.addColorStop(1, `rgba(${c},0)`);
-      ctx.fillStyle = gl; ctx.fillRect(x - 14, y - 9, 28, 28);
-      ctx.fillStyle = `rgba(${c},${.6 + .4 * p})`; ctx.beginPath(); ctx.arc(x, y + 5, 2.6, 0, TAU); ctx.fill();
-    }
-    // 불꽃
-    ctx.globalCompositeOperation = "lighter";
-    for (let i = rockets.length - 1; i >= 0; i--) {
-      const r = rockets[i]; r.y -= r.v * dt; r.v *= Math.pow(.992, dt);
-      ctx.fillStyle = r.c; ctx.globalAlpha = .9; ctx.beginPath(); ctx.arc(r.x, r.y, 2, 0, TAU); ctx.fill();
-      ctx.globalAlpha = .25; ctx.fillRect(r.x - 1, r.y, 2, 16);
-      if (r.y <= r.ty || r.v < 1.1) { burst(r.x, r.y, r.c); rockets.splice(i, 1); }
-    }
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const p = parts[i]; p.life += dt;
-      if (p.life >= p.max) { parts.splice(i, 1); continue; }
-      const px = p.x, py = p.y; p.vx *= Math.pow(.985, dt); p.vy = p.vy * Math.pow(.985, dt) + p.g * dt * 4; p.x += p.vx * dt; p.y += p.vy * dt;
-      const a = (1 - p.life / p.max) ** 1.5;
-      ctx.globalAlpha = a * .85; ctx.strokeStyle = p.c; ctx.lineWidth = p.s; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(p.x, p.y); ctx.stroke();
-    }
-    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
-    // 불판 숯불과 연기
-    const gr = grill();
-    const glow = ctx.createRadialGradient(W / 2, gr.y + gr.h * .5, 4, W / 2, gr.y + gr.h * .5, gr.w * .7);
-    glow.addColorStop(0, `rgba(255,120,50,${.22 + .06 * Math.sin(now / 400)})`); glow.addColorStop(1, "rgba(255,120,50,0)");
-    ctx.fillStyle = glow; ctx.fillRect(gr.x - 40, gr.y - gr.h * 2, gr.w + 80, gr.h * 6);
-    ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = 1.5;
-    for (let i = 0; i <= 12; i++) { const gx = gr.x + 6 + (gr.w - 12) * i / 12; ctx.beginPath(); ctx.moveTo(gx, gr.y - 2); ctx.lineTo(gx, gr.y + 3); ctx.stroke(); }
-    ctx.fillStyle = "rgba(255,150,70,.55)";
-    for (let i = 0; i < 18; i++) { const cx = gr.x + 12 + (gr.w - 24) * (i + .5) / 18; ctx.globalAlpha = .45 + .4 * Math.sin(now / 330 + i * 1.7); ctx.fillRect(cx - 4, gr.y + gr.h - 7, 8, 4); }
-    ctx.globalAlpha = 1;
-    if (!calm && Math.random() < (.12 + foods.length * .1) * dt) smoke.push({ x: gr.x + rnd(.1, .9) * gr.w, y: gr.y - 6, vx: rnd(-.12, .12), vy: rnd(-.5, -.25), a: .1 + Math.min(.12, foods.length * .03), r: rnd(5, 9), life: 0, max: rnd(120, 190) });
-    for (let i = smoke.length - 1; i >= 0; i--) {
-      const s = smoke[i]; s.life += dt; if (s.life >= s.max) { smoke.splice(i, 1); continue; }
-      s.x += (s.vx + Math.sin(now / 700 + i) * .12) * dt; s.y += s.vy * dt; s.r += .05 * dt;
-      ctx.fillStyle = s.warm ? `rgba(255,200,130,${s.a * (1 - s.life / s.max)})` : `rgba(210,215,230,${s.a * (1 - s.life / s.max)})`;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.fill();
-    }
-    // 음식 익히기
-    foods.forEach(f => {
-      f.c[f.down] += dt * 16.67 / 12000;
-      if (f.flip > 0) f.flip = Math.max(0, f.flip - dt * .06);
-      drawFood(f, now);
-    });
-    requestAnimationFrame(frame);
+    if (on && !initAudio()) { st.sound = false; say("이 기기에서는 소리를 낼 수 없어요", ""); return paintSettings(); }
+    if (A.c) { if (on) { A.c.resume(); st.amb.forEach(ensureLayer); } applyGains(); if (!on) setTimeout(() => { if (!st.sound && A.c) A.c.suspend(); }, 1200); }
+    paintSettings();
   }
 
-  // ---------- 누르기 ----------
-  cv.addEventListener("pointerdown", e => {
-    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-    if (shoot && shoot.px && Math.hypot(x - shoot.px, y - shoot.py) < 46) {   // 별똥별 소원
-      shoot = null; nextShoot = performance.now() + rnd(20000, 38000);
-      for (let i = 0; i < 16; i++) parts.push({ x, y, vx: rnd(-1.6, 1.6), vy: rnd(-1.6, 1.6), life: 0, max: 60, c: "#fff3b0", s: 1.6, g: .006, willow: false });
-      bump("wish"); say("소원을 빌었어요 ✨", "좋은 집, 좋은 하루가 되길"); return;
-    }
-    const f = foods.find(f => Math.abs(x - slotX(f.slot)) < 34 && Math.abs(y - (grill().y - 14)) < 34);
-    if (f) { tapFood(f); sndSizz(); return; }
-    if (y < floorY() - 14) { launch(x, clamp(y, H * .08, H * .5), false); bump("fw"); }
-  });
-  $("[data-roof-fire]").addEventListener("click", () => { launch(rnd(.2, .8) * W, rnd(.12, .4) * H, false); bump("fw"); });
-  box.querySelectorAll("[data-roof-food]").forEach(b => b.addEventListener("click", () => addFood(b.dataset.roofFood)));
+  // ---------- 설정 창 ----------
+  const sw = (el, on) => { el.setAttribute("aria-checked", String(!!on)); };
+  function paintSettings() {
+    sw($("[data-roof-sound]"), st.sound); sw($("[data-roof-bg]"), st.bg); sw($("[data-roof-wx]"), st.wx); sw($("[data-roof-hour]"), st.hour);
+    $$("[data-roof-bus]").forEach(b => { const on = st.on[b.dataset.roofBus]; b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "켜짐" : "멈춤"; });
+    $$("[data-roof-amb]").forEach(b => b.setAttribute("aria-pressed", String(st.amb.includes(b.dataset.roofAmb))));
+    $$("[data-roof-sky]").forEach(b => b.setAttribute("aria-pressed", String(st.sky === b.dataset.roofSky)));
+    $$("[data-roof-q]").forEach(b => b.setAttribute("aria-pressed", String(st.q === b.dataset.roofQ)));
+    $$("[data-roof-vol]").forEach(r => { r.value = st.vol[r.dataset.roofVol]; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = st.vol[r.dataset.roofVol] + "%"; });
+  }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
+  $("[data-roof-bg]").addEventListener("click", () => { st.bg = !st.bg; saveSt(); paintSettings(); });
+  $("[data-roof-wx]").addEventListener("click", () => { st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .15, rain: 0, fog: 0, wind: 1 }); stat(); } });
+  $("[data-roof-hour]").addEventListener("click", () => { st.hour = !st.hour; saveSt(); paintSettings(); });
+  $$("[data-roof-bus]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.roofBus; st.on[k] = !st.on[k]; saveSt(); applyGains(); paintSettings(); }));
+  $$("[data-roof-amb]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.roofAmb, i = st.amb.indexOf(k); if (i >= 0) st.amb.splice(i, 1); else st.amb.push(k); saveSt();
+    if (st.sound && !st.on.amb) { st.on.amb = true; }
+    if (A.c && st.sound) { ensureLayer(k); applyGains(); }
+    else if (!st.sound && st.amb.includes(k)) { setSound(true); }
+    paintSettings();
+  }));
+  $$("[data-roof-vol]").forEach(r => r.addEventListener("input", () => { st.vol[r.dataset.roofVol] = +r.value; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = r.value + "%"; applyGains(); }));
+  $$("[data-roof-vol]").forEach(r => r.addEventListener("change", saveSt));
+  $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); }));
+  $$("[data-roof-q]").forEach(b => b.addEventListener("click", () => { st.q = b.dataset.roofQ; saveSt(); paintSettings(); if (api) api.setQuality(st.q === "auto" ? (matchMedia("(pointer: coarse)").matches ? "mid" : "high") : st.q); }));
+  const openModal = k => { $$("[data-roof-modal]").forEach(m => { m.hidden = m.dataset.roofModal !== k; }); const m = $(`[data-roof-modal="${k}"]`); if (m) { paintSettings(); const f = m.querySelector("textarea, button.rs-sw, button"); setTimeout(() => f && f.focus(), 30); } };
+  const closeModal = () => $$("[data-roof-modal]").forEach(m => { m.hidden = true; });
+  $$("[data-roof-open]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.roofOpen)));
+  $$("[data-roof-mclose]").forEach(b => b.addEventListener("click", closeModal));
+  $$("[data-roof-modal]").forEach(m => m.addEventListener("pointerdown", e => { if (e.target === m) closeModal(); }));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+  // ---------- 아래 버튼 ----------
+  const hintEl = $("[data-roof-hint]"); let hintT = 0;
+  function hint(t) { hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
+  const subs = $$("[data-roof-sub]");
+  const closeSubs = () => { subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); };
+  $$("[data-roof-menu]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.roofMenu, el = $(`[data-roof-sub="${k}"]`), open = el.hidden;
+    subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false"));
+    if (open) { el.hidden = false; b.setAttribute("aria-expanded", "true"); }
+  }));
+  
+  $("[data-roof-fire]").addEventListener("click", () => { if (api) { api.fire(); bump("fw"); } });
+  $("[data-roof-show]").addEventListener("click", () => { if (api) { const sec = api.show(); closeSubs(); hint("한바탕 쇼가 시작돼요. 고개를 들어 보세요."); bump("fw"); } });
+  $$("[data-roof-food]").forEach(b => b.addEventListener("click", () => {
+    if (!api) return; const k = b.dataset.roofFood;
+    if (k === "mix") ["shrimp", "mushroom", "corn"].forEach(x => api.addFood(x)); else api.addFood(k);   // 새우·버섯·옥수수는 모둠으로 한 번에
+  }));
+  // 꾸미기: 고른 것을 바닥에 눌러 놓고, 치우기는 놓인 것을 눌러 치워요
+  let deco = null;
+  const paintDeco = () => $$("[data-roof-deco]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.roofDeco === deco)));
+  $$("[data-roof-deco]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
+    if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
+  $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
+  // 야경 보기: 높은 곳으로 올라가 도시를 내려다봐요
+  const viewBtn = $("[data-roof-view]");
+  viewBtn.addEventListener("click", () => {
+    if (!api) return; const up = api.getView() !== "aerial"; closeSubs(); api.setView(up ? "aerial" : "ground");
+    viewBtn.setAttribute("aria-pressed", String(up)); viewBtn.textContent = up ? "🏠 내려가기" : "🌃 야경"; box.dataset.view = up ? "aerial" : "ground";
+    if (up) hint("높은 곳에서 본 야경이에요. 화면을 끌면 방향이 바뀌고, 눌러서 불꽃도 쏠 수 있어요.");
+  });
   const sheet = $("[data-roof-sheet]"), mb = $("[data-roof-mission]");
   mb.addEventListener("click", () => { sheet.hidden = !sheet.hidden; mb.setAttribute("aria-expanded", String(!sheet.hidden)); });
   $("[data-roof-close]").addEventListener("click", () => { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); });
+  // 별 세기
+  const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
+  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; cntEl.textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
+  starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setCounting(counting); paintCount(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
+  // 소원
+  const wt = $("[data-roof-wishtext]"), wlog = $("[data-roof-wishlog]");
+  const paintWish = () => { wlog.textContent = st.wishes.length ? `지금까지 띄운 소원 ${st.wishes.length}개` : ""; };
+  $("[data-roof-wishgo]").addEventListener("click", () => {
+    const t = wt.value.trim(); if (!t) { wt.focus(); return; }
+    st.wishes.push({ t, d: today }); st.wishes = st.wishes.slice(-30); saveSt(); wt.value = ""; closeModal(); paintWish();
+    if (api) api.wish(t); SND.wish(); bump("wish"); say("풍등을 띄웠어요 🏮", "소원이 하늘로 올라가요");
+  });
 
-  // ---------- 동네 고르기와 한 줄 ----------
+  // ---------- 동네·날씨 ----------
   const sel = $("[data-roof-town]"), statEl = $("[data-roof-stat]");
+  let town = null, wxLine = "";
   const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
-  function setTown(gu, byGu) {
-    const cs = byGu[gu] || []; if (!cs.length) { town = null; statEl.textContent = ""; seed = hash("집감"); drawStatic(); return; }
-    const ps = cs.map(c => c.p).filter(Boolean).sort((a, b) => a - b), med = ps.length ? ps[ps.length >> 1] : 0;
-    const trades = cs.reduce((s, c) => s + (c.tc || 0), 0);
-    town = { gu, lit: clamp(cs.length / 80, 0, 1) }; seed = hash(gu); st.town = gu; saveSt();
-    statEl.textContent = `${gu} · 단지 ${cs.length.toLocaleString()}곳${med ? " · 84㎡ 중간 " + eok(med) : ""}${trades ? " · 거래 " + trades.toLocaleString() + "건" : ""}`;
-    drawStatic();
+  const stat = () => { statEl.textContent = [town && town.line, wxLine].filter(Boolean).join(" · "); };
+  const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
+  async function loadWeather() {
+    if (!st.wx || !town || !api) return;
+    const key = "djdex:roofwx:" + town.gu; let d = null;
+    try { const c = JSON.parse(sessionStorage.getItem(key) || "null"); if (c && Date.now() - c.t < 15 * 60e3) d = c.d; } catch (e) { /* 없으면 새로 */ }
+    if (!d) {
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${town.la.toFixed(3)}&longitude=${town.ln.toFixed(3)}&current=temperature_2m,cloud_cover,precipitation,weather_code,wind_speed_10m&timezone=auto`);
+        if (!r.ok) throw 0; d = (await r.json()).current;
+        try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d })); } catch (e) { /* 저장 못 해도 됨 */ }
+      } catch (e) { return; }   // 날씨를 못 받아도 옥상은 그대로 열려 있어요
+    }
+    const code = d.weather_code, rainy = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95, foggy = code === 45 || code === 48;
+    api.setWeather({ cloud: clamp((d.cloud_cover || 0) / 100, 0, 1), rain: rainy ? clamp(.35 + (d.precipitation || 0) / 4, .35, 1) : 0, fog: foggy ? .85 : 0, wind: clamp((d.wind_speed_10m || 5) / 8, .3, 3) });
+    wxLine = `${WX(code)} ${Math.round(d.temperature_2m)}°`; stat();
+    if (rainy && !st.amb.includes("rain")) hint("비가 와요. 설정에서 빗소리를 켜 볼까요?");
   }
+  function setTown(gu, byGu) {
+    const cs = byGu[gu] || []; if (!cs.length) { town = null; stat(); return; }
+    const ps = cs.map(c => c.p).filter(Boolean).sort((a, b) => a - b), med = ps.length ? ps[ps.length >> 1] : 0, trades = cs.reduce((s, c) => s + (c.tc || 0), 0);
+    const ll = cs.filter(c => c.la && c.ln), la = ll.reduce((s, c) => s + c.la, 0) / (ll.length || 1), ln = ll.reduce((s, c) => s + c.ln, 0) / (ll.length || 1);
+    town = { gu, la: la || 36.35, ln: ln || 127.38, line: `${gu} · 단지 ${cs.length.toLocaleString()}곳${med ? " · 84㎡ 중간 " + eok(med) : ""}${trades ? " · 거래 " + trades.toLocaleString() + "건" : ""}` };
+    st.town = gu; saveSt(); stat();
+    if (api) { api.setPlace(town.la, town.ln); loadWeather(); }
+  }
+  let byGuAll = null;
   DJ.data().then(d => {
-    const byGu = {}; (d.complexes || []).forEach(c => { if (c.gu) (byGu[c.gu] = byGu[c.gu] || []).push(c); });
+    const byGu = byGuAll = {}; (d.complexes || []).forEach(c => { if (c.gu) (byGu[c.gu] = byGu[c.gu] || []).push(c); });
     const gus = Object.keys(byGu).sort((a, b) => byGu[b].length - byGu[a].length);
     sel.replaceChildren(...gus.map(g => { const o = document.createElement("option"); o.value = g; o.textContent = g; return o; }));
     const rec = (DJ.recent && DJ.recent()[0]) || {}, first = [st.town, rec.gu].find(g => g && byGu[g]) || gus[0];
-    if (first) { sel.value = first; setTown(first, byGu); }
+    if (first) { sel.value = first; pendingTown = () => setTown(first, byGu); if (api) pendingTown(); }
     sel.addEventListener("change", () => setTown(sel.value, byGu));
-  }).catch(() => { seed = hash("집감"); drawStatic(); });
+  }).catch(() => { /* 동네 없이도 옥상은 열려요 */ });
+  let pendingTown = null;
 
-  // ---------- 사진으로 저장 ----------
+  // ---------- 사진 ----------
   $("[data-roof-photo]").addEventListener("click", async () => {
-    const w = 1080, h = 1350, o = document.createElement("canvas"); o.width = w; o.height = h;
-    const g = o.getContext("2d"), s = Math.max(w / cv.width, (h - 150) / cv.height), dw = cv.width * s, dh = cv.height * s;
-    g.fillStyle = "#0a1224"; g.fillRect(0, 0, w, h); g.drawImage(cv, (w - dw) / 2, 0, dw, dh);
+    if (!api) return;
+    const src = api.snapshot(), w = 1080, h = 1350, o = document.createElement("canvas"); o.width = w; o.height = h;
+    const g = o.getContext("2d"), s = Math.max(w / src.width, (h - 150) / src.height), dw = src.width * s, dh = src.height * s;
+    g.fillStyle = "#0a1224"; g.fillRect(0, 0, w, h); g.drawImage(src, (w - dw) / 2, Math.min(0, (h - 150 - dh) / 2), dw, dh);
     const bar = g.createLinearGradient(0, h - 190, 0, h); bar.addColorStop(0, "rgba(8,12,28,0)"); bar.addColorStop(1, "rgba(8,12,28,.92)");
     g.fillStyle = bar; g.fillRect(0, h - 190, w, 190);
     try { await document.fonts.ready; } catch (e) { /* 글꼴 대기 실패는 무시 */ }
@@ -379,20 +357,44 @@
     }, "image/png");
   });
 
-  // ---------- 시작 ----------
-  seed = hash(st.town || "집감");
-  resize(); paintMissions();
-  new ResizeObserver(() => resize()).observe(box);
+  // ---------- 3D 장면 시작 ----------
+  const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
+  const cb = {
+    burst: SND.burst, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name) => { SND.eat(); bump("bbq"); say("맛있게 먹었어요", name + " 😋"); },
+    cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
+    neighbor: () => { hint("이웃도 손을 흔들어 줘요 👋"); },
+    starCounted: (n, idx) => {
+      st.stars = { d: today, idx }; st.starTotal += 1; saveSt(); bump("star"); SND.star(n); paintCount();
+      if (n % 10 === 0) say(`별 ${n}개째`, "별자리가 이어졌어요 ✨");
+      if (n === 10) hint("별을 열 개 세었어요. 이제 소원을 빌어 볼까요?");
+    },
+    layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
+    showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
+    sky: () => { }, quality: q => { hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
+  };
+  async function boot() {
+    if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
+    try {
+      const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
+      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
+      api.setSky(st.sky);
+      if (pendingTown) pendingTown();
+      new ResizeObserver(() => api.resize()).observe(box);
+    } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
+    setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
+  }
+  // 정각 불꽃놀이: 열어 둔 동안 정각이 되면 한바탕
+  let lastHour = "";
+  setInterval(() => { const d = new Date(), k = ymd(d) + d.getHours(); if (d.getMinutes() === 0 && st.hour && api && lastHour !== k && !document.hidden) { lastHour = k; say("정각 불꽃놀이", "고개를 들어 보세요 🎆"); api.show(); } }, 15000);
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { run = false; if (snd.c) snd.c.suspend(); }
-    else { run = true; last = performance.now(); if (snd.c && st.sound) snd.c.resume(); requestAnimationFrame(frame); }
+    if (document.hidden) { if (api) api.pause(); if (A.c && !st.bg) A.c.suspend(); }
+    else { if (api) api.resume(); if (A.c && st.sound) A.c.resume(); }
   });
   if (st.sound) {   // 이전에 소리를 켜 뒀어도, 브라우저 규칙상 처음 누를 때부터 시작
-    $("[data-roof-sound]").textContent = "소리 켜짐"; $("[data-roof-sound]").setAttribute("aria-pressed", "true");
-    const once = () => { setSound(true); cv.removeEventListener("pointerdown", once, true); };
-    cv.addEventListener("pointerdown", once, true);
+    const once = () => { setSound(true); box.removeEventListener("pointerdown", once, true); };
+    box.addEventListener("pointerdown", once, true);
   }
-  setTimeout(() => hint("하늘을 눌러 불꽃을 쏘고, 아래 버튼으로 고기를 구워 보세요."), 1800);
-  requestAnimationFrame(frame);
+  paintMissions(); paintSettings(); paintCount(); paintWish();
+  boot();
   box.dataset.ready = "1";
 })();

@@ -3362,3 +3362,56 @@ body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data
 /* 옥상 화면의 알림은 위쪽에 (아래 불판을 가리지 않게) */
 body[data-page="rooftop"] .toast-zone { top: 76px; bottom: auto; }
 body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6fb; }
+
+/* 옥상 3D: 아래 보조 줄, 별 세기 표시, 소원·설정 창 */
+.roof-cv { touch-action: none; cursor: grab; }
+.roof-cv:active { cursor: grabbing; }
+.roof-nogl { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: rgba(244,246,251,.85); background: #0a1224; z-index: 2; }
+.roof-nogl[hidden] { display: none; }
+.roof-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.roof-sub[hidden] { display: none; }
+.roof-count { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); margin: 0; padding: 7px 14px; border-radius: 999px; background: rgba(10,16,34,.66); border: 1px solid rgba(255,214,120,.4);
+  color: #ffe6a0; font-size: 13.5px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.roof-count[hidden] { display: none; }
+.roof-modal { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(4,8,20,.55); backdrop-filter: blur(4px); z-index: 5; }
+.roof-modal[hidden] { display: none; }
+.roof-card { width: min(440px, 100%); max-height: calc(100% - 8px); overflow: auto; background: rgba(18,26,52,.96); border: 1px solid rgba(255,255,255,.14); border-radius: 22px; padding: 16px 18px 18px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.55); color: #f4f6fb; }
+.roof-wish textarea { width: 100%; margin: 10px 0; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 15px; resize: none; box-sizing: border-box; }
+.roof-wish textarea:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
+.roof-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rs-main, .rs-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rs-main { padding: 12px 2px; }
+.rs-main b, .rs-row b { display: block; font-size: 15px; }
+.rs-main span, .rs-row span { display: block; margin-top: 2px; font-size: 12.5px; color: rgba(244,246,251,.62); line-height: 1.45; }
+.rs-card { margin: 8px 0; padding: 14px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.rs-sw { flex: none; width: 52px; height: 30px; border-radius: 999px; border: 0; background: rgba(255,255,255,.2); position: relative; cursor: pointer; transition: background .2s; }
+.rs-sw i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.rs-sw[aria-checked="true"] { background: #7b5cf8; }
+.rs-sw[aria-checked="true"] i { transform: translateX(22px); }
+.rs-pill { flex: none; border: 0; border-radius: 999px; padding: 8px 18px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; background: rgba(255,255,255,.14); color: rgba(244,246,251,.75); }
+.rs-pill[aria-pressed="true"] { background: linear-gradient(135deg, #3cbaf6, #7b5cf8); color: #fff; }
+.rs-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.roof-chip { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: rgba(244,246,251,.82); font: inherit; font-size: 13.5px; font-weight: 700; padding: 7px 13px; border-radius: 999px; cursor: pointer; }
+.roof-chip[aria-pressed="true"] { background: rgba(123,92,248,.5); border-color: rgba(162,140,255,.85); color: #fff; }
+.roof-chip:focus-visible, .rs-sw:focus-visible, .rs-pill:focus-visible, .rs-vol input:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
+.rs-vol { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.rs-vol input { flex: 1; accent-color: #a28cff; }
+.rs-vol i { font-style: normal; width: 42px; text-align: right; font-size: 13px; color: rgba(244,246,251,.7); font-variant-numeric: tabular-nums; }
+.rs-h { margin: 16px 0 2px; font-size: 14px; font-weight: 800; }
+.rs-det { margin-top: 10px; font-size: 13.5px; color: rgba(244,246,251,.78); border-top: 1px solid rgba(255,255,255,.1); padding-top: 10px; }
+.rs-det summary { cursor: pointer; font-weight: 700; }
+.rs-det ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.7; }
+.rs-det p { margin: 8px 0 0; line-height: 1.6; color: rgba(244,246,251,.62); }
+@media (max-width: 560px) { .roof-count { top: 128px; } .roof-card { padding: 14px 14px 16px; } }
+
+/* 옥상: 꾸미기 줄, 야경 보기 */
+.roof-btn small { font-size: 11px; font-weight: 600; opacity: .7; margin-left: 4px; }
+.roof-btn[aria-pressed="true"] { border-color: rgba(227,185,85,.65); color: #ffe6a0; background: rgba(60,48,20,.55); }
+.roof-btn.vw { background: linear-gradient(135deg, rgba(255,170,90,.28), rgba(123,92,248,.4)); border-color: rgba(255,196,140,.5); }
+.roof-tray { flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.roof-tray::-webkit-scrollbar { display: none; }
+.roof-tray .roof-btn { flex: none; white-space: nowrap; }
+.roof[data-view="aerial"] [data-roof-menu], .roof[data-view="aerial"] .roof-mission, .roof[data-view="aerial"] [data-roof-sub], .roof[data-view="aerial"] .roof-count { display: none; }
+.roof-tray .roof-btn { padding: 8px 10px; font-size: 12.5px; }
+.roof-tray { gap: 5px; }
