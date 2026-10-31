@@ -23,10 +23,11 @@
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const DEF = { last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, star: 0, wish: 0 }, done: "", sound: false, town: "", nick: "",
     sky: "night", wx: true, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
-    stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null };
+    stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null, net: false, id: "" };
   let st = Object.assign({}, DEF, DJ.load("roof", {}));
   st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
   if (!st.nick) st.nick = ADJ[(Math.random() * ADJ.length) | 0] + " " + NOUN[(Math.random() * NOUN.length) | 0];
+  if (!st.id) st.id = Math.random().toString(36).slice(2, 10);
   const today = ymd(new Date()), yd = new Date(); yd.setDate(yd.getDate() - 1);
   if (st.last !== today) { st.streak = st.last === ymd(yd) ? st.streak + 1 : 1; st.days += 1; st.last = today; st.m = Object.assign({}, DEF.m); }
   if (st.stars.d !== today) st.stars = { d: today, idx: [] };
@@ -367,6 +368,52 @@
     }, "image/png");
   });
 
+  // ---------- 함께 있기 (같은 동네 방, 이모지 인사만) ----------
+  const SB = window.DJ_SB, canNet = !!(SB && SB.url && SB.key && window.RoofNet);
+  const REGION = (location.pathname.match(/\/(sejong|seoul|cheongju)(\/|$)/) || [0, "daejeon"])[1];
+  const h36 = t => { let h = 2166136261; for (const c of String(t)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  let net = null, names = [], roomLabel = "", roomMode = "", autoK = 1, friendCode = "";
+  const roomBtn = $("[data-roof-roombtn]"), emoBar = $("[data-roof-emobar]"), roomStat = $("[data-roof-roomstat]");
+  function paintNet(msg) {
+    const n = names.length + 1, on = !!net;
+    $("[data-roof-pc]").textContent = on ? n + "명" : "함께";
+    emoBar.hidden = !on;
+    roomStat.textContent = msg || (on ? `${roomLabel} · ${n}명이 함께 있어요` : "혼자 있어요.");
+    $("[data-roof-members]").replaceChildren(...[st.nick + " (나)", ...names.map(x => x.n)].map(t => { const li = document.createElement("li"); li.innerHTML = "<span>•</span><b></b><i></i>"; li.querySelector("b").textContent = t; return li; }));
+    $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; });
+  }
+  function leaveRoom() { if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; }
+  function joinRoom(mode, code) {
+    if (!canNet || !api) return;
+    leaveRoom(); roomMode = mode;
+    const gu = (town && town.gu) || "all", id = mode === "friend" ? "f-" + code : `${REGION}-${h36(gu)}-${autoK}`;
+    roomLabel = mode === "friend" ? "친구 방" : `${gu} 옥상${autoK > 1 ? " " + autoK + "번" : ""}`;
+    net = RoofNet.connect({ url: SB.url, key: SB.key, topic: "roof:" + id, me: { id: st.id, n: st.nick } }, {
+      status: t => paintNet(t === "연결됨" ? null : t),
+      fail: () => { leaveRoom(); paintNet("지금은 함께 있기를 열 수 없어요. 잠시 뒤 다시 해 주세요."); },
+      peers: list => {
+        names.filter(x => !list.some(y => y.id === x.id)).forEach(x => api.removePeer(x.id)); names = list; paintNet();
+        if (mode === "auto" && list.length >= 8 && autoK < 12) { autoK++; joinRoom("auto"); }   // 한 방은 8명까지, 가득 차면 다음 번호 방
+      },
+      leave: id => { api.removePeer(id); },
+      event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b); },
+    });
+    st.net = mode === "auto"; saveSt(); paintNet("연결하는 중…");
+  }
+  $$("[data-roof-join]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.roofJoin;
+    if (k === "off") { leaveRoom(); st.net = false; saveSt(); paintNet(); return; }
+    if (k === "auto") { autoK = 1; joinRoom("auto"); return; }
+    friendCode = friendCode || Math.random().toString(36).slice(2, 8); joinRoom("friend", friendCode);
+    const link = location.origin + location.pathname.replace(/[^/]*$/, "") + "rooftop?room=" + friendCode;
+    if (navigator.share) navigator.share({ title: "집감 옥상에서 만나요", text: "같이 불꽃놀이 봐요 🎆", url: link }).catch(() => { });
+    else if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => say("초대 링크를 복사했어요", "친구에게 보내 주세요"));
+  }));
+  $$("[data-roof-emo]").forEach(b => b.addEventListener("click", () => { if (net && net.isOpen()) net.send("emo", { e: b.dataset.roofEmo }); if (api) api.emote(b.dataset.roofEmo); }));
+  window.addEventListener("pagehide", () => { if (net) net.leave(); });
+  if (canNet) roomBtn.hidden = false;
+  paintNet();
+
   // ---------- 3D 장면 시작 ----------
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
   const cb = {
@@ -378,6 +425,7 @@
       if (n % 10 === 0) say(`별 ${n}개째`, "별자리가 이어졌어요 ✨");
       if (n === 10) hint("별을 열 개 세었어요. 이제 소원을 빌어 볼까요?");
     },
+    moved: s => { if (net) net.sendPos(s); }, fwOut: p => { if (net) net.send("fw", p); }, peerCount: () => paintNet(),
     layout: l => { st.layout = l; saveSt(); }, lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
@@ -389,13 +437,16 @@
       api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
       api.setSky(st.sky);
       if (pendingTown) pendingTown();
+      const inv = new URLSearchParams(location.search).get("room");
+      if (canNet && inv && /^[a-z0-9]{4,12}$/.test(inv)) { friendCode = inv; setTimeout(() => { joinRoom("friend", inv); say("친구 방에 들어왔어요", "이모지로 인사해 보세요 👋"); }, 1500); }
+      else if (canNet && st.net) setTimeout(() => joinRoom("auto"), 2500);
       new ResizeObserver(() => api.resize()).observe(box);
     } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
     setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
   }
   // 정각 불꽃놀이: 열어 둔 동안 정각이 되면 한바탕
   let lastHour = "";
-  setInterval(() => { const d = new Date(), k = ymd(d) + d.getHours(); if (d.getMinutes() === 0 && st.hour && api && lastHour !== k && !document.hidden) { lastHour = k; say("정각 불꽃놀이", "고개를 들어 보세요 🎆"); api.show(); } }, 15000);
+  setInterval(() => { const d = new Date(), k = ymd(d) + d.getHours(); if (d.getMinutes() === 0 && st.hour && api && lastHour !== k && !document.hidden) { lastHour = k; say("정각 불꽃놀이", "고개를 들어 보세요 🎆"); api.show(+(ymd(d).replace(/-/g, "") + String(d.getHours()).padStart(2, "0"))); } }, 15000);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) { if (api) api.pause(); if (A.c && !st.bg) A.c.suspend(); }
     else { if (api) api.resume(); if (A.c && st.sound) A.c.resume(); }

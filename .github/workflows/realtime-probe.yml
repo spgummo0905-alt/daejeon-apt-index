@@ -1,0 +1,21 @@
+name: realtime-probe
+
+# 함께 있는 옥상이 쓰는 Supabase Realtime(방송)이 되는지 두 사람이 같은 방에 들어가 확인합니다 (수동 실행)
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install websockets
+      - name: Realtime 방송 점검
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: python scripts/realtime_probe.py
