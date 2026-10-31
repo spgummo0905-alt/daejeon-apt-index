@@ -773,18 +773,24 @@ export function start(host, cb, opt) {
   }
   function removeItem(it) { roof.remove(it.g); if (it.obs) obstacles.splice(obstacles.indexOf(it.obs), 1); items.splice(items.indexOf(it), 1); cb.layout && cb.layout(itemList()); }
   // 기본 배치: 대학생 MT·에어비앤비 같은 낭만 옥탑방 캠핑 (옆에 그늘막 거실, 앞쪽 하늘은 탁 트이게)
-  const DEF_LAYOUT = [["canopy", -7.4, -1.6, 0, 0], ["mat", -7.4, -1.4, 0, 0], ["table", -7.4, -1.5, 0, 0], ["pouf", -8.5, -.6, 0, 0], ["pouf", -6.3, -.7, 1, 0], ["pouf", -8.6, -2.5, 2, 0], ["chair", -6.2, -2.6, 0, -.6],
-    ["lamp", -9.8, .4, 0, 0], ["lantern", -5.6, -.2, 0, 0], ["cooler", -5.4, -3.6, 0, .3],
-    ["firepit", 4.6, -3.2, 0, 0], ["bench", 4.6, -4.6, 0, 0], ["chair", 3.6, -2.0, 1, Math.PI - .7], ["chair", 5.6, -2.0, 0, Math.PI + .7], ["chair", 4.6, -1.6, 3, Math.PI],
-    ["sofa", 8.6, -.6, 0, -Math.PI / 2], ["screen", 10.6, -3.8, 0, -.9], ["rug", 8.4, -1.4, 1, 0], ["tent", 9.6, 3.6, 1, 0],
-    ["mat", -1, 1.2, 0, 0], ["lantern", 1.6, .4, 0, 0], ["lamp", 6.6, 1.2, 1, 0]];
+  // 기본 배치: 캠핑 사이트처럼 구역을 나눠 조화롭게 (가운데·앞쪽 전망은 비워 둠)
+  //  ① 왼쪽 타프 거실(돛 타프·돗자리·낮은 상·방석·스탠드)  ② 바로 옆 캠핑 키친(불판·롤 테이블+랜턴·아이스박스·의자)
+  //  ③ 오른쪽 앞 불멍 존(화로를 둘러싼 캔버스 의자 셋 + 블록 벤치)  ④ 오른쪽 영화 코너(러그·소파·빔 스크린)  ⑤ 뒤쪽 텐트 존
+  const DEF_LAYOUT = [
+    ["canopy", -8.2, -2.0, 0, 0], ["mat", -8.2, -1.8, 0, 0], ["table", -8.2, -1.9, 0, 0], ["pouf", -9.3, -1.0, 0, 0], ["pouf", -7.1, -1.0, 1, 0], ["pouf", -9.3, -2.9, 3, 0], ["pouf", -7.1, -2.9, 2, 0],
+    ["lamp", -10.6, -.2, 0, 0], ["lantern", -10.2, -3.6, 0, 0],
+    ["table", -2.1, -3.5, 0, Math.PI / 2], ["cooler", -5.1, -4.0, 0, .3], ["chair", -3.6, -1.7, 2, 0], ["lantern", -5.2, -2.4, 0, 0],
+    ["firepit", 3.6, -3.4, 0, 0], ["chair", 2.3, -2.3, 1, -.87], ["chair", 3.6, -1.9, 0, 0], ["chair", 4.9, -2.3, 3, .87], ["bench", 3.6, -4.9, 0, 0], ["lantern", 5.4, -4.6, 0, 0],
+    ["rug", 9.4, -2.2, 0, Math.PI / 2], ["sofa", 9.6, -1.0, 0, Math.PI], ["beanbag", 8.0, -2.4, 0, 2.56], ["screen", 9.6, -4.9, 0, 0], ["lamp", 11.3, -.6, 1, 0],
+    ["tent", 9.6, 3.6, 1, 0], ["mat", 9.6, 5.5, 2, 0], ["lantern", 8.2, 4.8, 0, 0],
+    ["mat", -1, 1.2, 0, 0]];
   (Array.isArray(opt.layout) ? opt.layout.map(i => [i.t, i.x, i.z, i.c, i.r]) : DEF_LAYOUT).forEach(a => { if (LIM[a[0]]) addItem(a[0], a[1], a[2], a[3] || 0, true, a[4]); });
   lampLights[0].position.set(-4.0, 1.2, -3.4);
   // 고기 굽는 자리
-  const GR = { x: 6.8, z: -2.4 }; obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
+  const GR = { x: -3.6, z: -3.3 };   // 타프 거실 옆 캠핑 키친 obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
   const gStart = roof.children.length;
-  const gtab = new THREE.Mesh(new THREE.BoxGeometry(1.7, .08, .8), stdM(0x3b4259, .6, .2)); gtab.position.set(GR.x, .72, GR.z + .02); roof.add(gtab);
-  for (const [lx, lz] of [[-.78, -.32], [.78, -.32], [-.78, .34], [.78, .34]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .72, 6), stdM(0x2b3044, .5, .5)); l.position.set(GR.x + lx, .36, GR.z + lz); roof.add(l); }
+  const gtab = new THREE.Mesh(new THREE.BoxGeometry(1.7, .08, .8), new THREE.MeshStandardMaterial({ map: texWood(), color: 0xc79a62, roughness: .8 })); gtab.position.set(GR.x, .72, GR.z + .02); roof.add(gtab);
+  for (const [lx, lz] of [[-.78, -.32], [.78, -.32], [-.78, .34], [.78, .34]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .72, 6), stdM(0x1e1f24, .5, .5)); l.position.set(GR.x + lx, .36, GR.z + lz); roof.add(l); }
   const pan = new THREE.Mesh(new THREE.BoxGeometry(1.4, .16, .62), stdM(0x1a1d28, .5, .5)); pan.position.set(GR.x, .84, GR.z); roof.add(pan);
   const coalsM = new THREE.MeshBasicMaterial({ color: 0xff6a22 }); const coals = new THREE.Mesh(new THREE.PlaneGeometry(1.3, .52), coalsM); coals.rotation.x = -Math.PI / 2; coals.position.set(GR.x, .9, GR.z); roof.add(coals);
   for (let i = 0; i <= 14; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .6, 4), stdM(0x9aa0b4, .4, .8)); b.rotation.x = Math.PI / 2; b.position.set(GR.x - .65 + i * .0929, 1.0, GR.z); roof.add(b); }
