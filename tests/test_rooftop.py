@@ -107,3 +107,13 @@ def test_rooftop_first_visit_tour():
     js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
     page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
     assert "startTour" in js and "st.tour" in js and "data-roof-tour" in page and "data-roof-tourre" in page   # 처음 한 번 안내, 설정에서 다시 보기
+
+
+def test_rooftop_my_media_local_only():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert 'data-roof-vidfile' in page and 'accept="video/*"' in page and 'data-roof-musfile' in page   # 내 파일 고르기
+    assert 'data-roof-deco="speaker"' in page and 't === "speaker"' in js3                          # 스피커 소품
+    assert "URL.createObjectURL" in js and "setScreenVideo" in js3 and "VideoTexture" in js3        # 기기 안에서만 재생
+    assert "fetch(" not in js.split("내 영상·음악")[1].split("const cb")[0]                          # 서버로 올리지 않아요

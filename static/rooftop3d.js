@@ -659,9 +659,9 @@ export function start(host, cb, opt) {
     plant(OK.x0 + .5, OK.z0 - .55, 1.3); plant(okX + .6, OK.z0 - .5, 1.1);
     for (let x = OK.x0 + .6; x <= OK.x1 - .3; x += 1.1) obstacles.push({ x, z: okZ, r: okD / 2 + .2 }); }
   // ----- 꾸미기: 텐트·돗자리·의자·랜턴·탁자 (눌러서 놓고, 눌러서 치워요) -----
-  const LIM = { tent: 4, mat: 4, chair: 6, lantern: 6, table: 3, sofa: 3, beanbag: 6, rug: 3, screen: 1, cooler: 2, lamp: 6, canopy: 2, pouf: 8, firepit: 2, bench: 4, bar: 2, dining: 2 },
-    RAD = { tent: 1.1, mat: 0, chair: .46, lantern: .15, table: .5, sofa: .95, beanbag: .45, rug: 0, screen: .55, cooler: .35, lamp: .2, canopy: 0, pouf: .3, firepit: .55, bench: .75, bar: .9, dining: 1.15 },
-    NAME = { tent: "텐트", mat: "돗자리", chair: "의자", lantern: "랜턴", table: "탁자", sofa: "소파", beanbag: "빈백", rug: "러그", screen: "빔 스크린", cooler: "아이스박스", lamp: "스탠드", canopy: "타프 그늘막", pouf: "방석", firepit: "화로", bench: "벤치", bar: "바 테이블", dining: "식탁" };
+  const LIM = { tent: 4, mat: 4, chair: 6, lantern: 6, table: 3, sofa: 3, beanbag: 6, rug: 3, screen: 1, cooler: 2, lamp: 6, canopy: 2, pouf: 8, firepit: 2, bench: 4, bar: 2, dining: 2, speaker: 2 },
+    RAD = { tent: 1.1, mat: 0, chair: .46, lantern: .15, table: .5, sofa: .95, beanbag: .45, rug: 0, screen: .55, cooler: .35, lamp: .2, canopy: 0, pouf: .3, firepit: .55, bench: .75, bar: .9, dining: 1.15, speaker: .18 },
+    NAME = { tent: "텐트", mat: "돗자리", chair: "의자", lantern: "랜턴", table: "탁자", sofa: "소파", beanbag: "빈백", rug: "러그", screen: "빔 스크린", cooler: "아이스박스", lamp: "스탠드", canopy: "타프 그늘막", pouf: "방석", firepit: "화로", bench: "벤치", bar: "바 테이블", dining: "식탁", speaker: "스피커" };
   const items = [], TENT_C = [0x2f6f8f, 0xd9703a, 0x6b8e5a, 0x7d5fa8], MAT_T = [0xffffff, 0xa9d2ff, 0xffe08a, 0xc9f0c0], matTex = texPlaid();
   const fabric = c => new THREE.MeshStandardMaterial({ color: c, roughness: .92, side: THREE.DoubleSide });
   const glowSprite = (c, sc, op, y, z) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false })); sp.scale.set(sc, sc, 1); sp.position.set(0, y, z || 0); return sp; };
@@ -730,6 +730,12 @@ export function start(host, cb, opt) {
         const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffc070, transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false })); f.scale.set(.18, .26, 1); f.position.set(x, .92, z); g.add(f); return f; });
       const cg = glowSprite(0xffb870, 2.4, .35, .9); g.add(cg); parts = { flames: candles, glow: cg };
       sit = { dx: -.45, dz: -.7, y: .3 };
+    } else if (t === "speaker") {   // 작은 휴대용 스피커: 음악이 나오면 앞 링이 박자에 맞춰 빛나요
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .32, 20), stdM(0x2b2d33, .5, .1)); body.position.y = .18; g.add(body);
+      const grill_ = new THREE.Mesh(new THREE.CylinderGeometry(.132, .132, .22, 20, 1, true), new THREE.MeshStandardMaterial({ color: 0x55575e, roughness: .9, wireframe: false })); grill_.position.y = .18; g.add(grill_);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(.13, .012, 6, 24), new THREE.MeshBasicMaterial({ color: 0x6fc2ff })); ring.rotation.x = Math.PI / 2; ring.position.y = .34; g.add(ring);
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(.06, .012, 6, 12, Math.PI), stdM(0xc96a4a, .8)); strap.position.set(0, .34, 0); g.add(strap);
+      const sg = glowSprite(0x6fc2ff, .9, 0, .34); g.add(sg); parts = { ring, glow: sg };
     } else if (t === "pouf") {   // 바닥 방석: 라탄 방석·둥근 쿠션
       const PC = [0xc9a46a, 0x5e4a6e, 0x8a5a4a, 0xd9cdb8];
       const m_ = c % 4 === 0 ? new THREE.MeshStandardMaterial({ map: texWicker(), color: 0xe0c08a, roughness: 1 }) : stdM(PC[c % 4], 1);
@@ -758,7 +764,7 @@ export function start(host, cb, opt) {
       const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.1), scrM); scr.position.set(0, 1.25, 0); g.add(scr);
       const bar = new THREE.Mesh(new THREE.BoxGeometry(2.0, .06, .06), fr); bar.position.set(0, 1.82, 0); g.add(bar);
       [-1, 1].forEach(sx => { const p_ = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, 1.82, 6), fr); p_.position.set(sx * 1, .91, -.02); g.add(p_); const f = new THREE.Mesh(new THREE.BoxGeometry(.06, .03, .5), fr); f.position.set(sx * 1, .015, 0); g.add(f); });
-      const sg_ = glowSprite(0xffa060, 2.6, 0, 1.25, .2); g.add(sg_); parts = { scr: scrM, glow: sg_ }; sit = null;
+      const sg_ = glowSprite(0xffa060, 2.6, 0, 1.25, .2); g.add(sg_); parts = { scr: scrM, glow: sg_, mesh: scr }; sit = null;
     } else if (t === "cooler") {   // 아이스박스
       const CC = [0xb9bfc6, 0x4f8a5a, 0x3f8fd0, 0xd0453f];
       const box = new THREE.Mesh(new THREE.BoxGeometry(.62, .38, .4), stdM(CC[c % 4], .35, c % 4 ? 0 : .6)); box.position.y = .21; g.add(box);
@@ -798,7 +804,7 @@ export function start(host, cb, opt) {
       [[-.18, .1], [-.28, -.12]].forEach(([x, z]) => { const cup = new THREE.Mesh(new THREE.CylinderGeometry(.04, .032, .09, 10), stdM(0xf2efe6, .5)); cup.position.set(x, .615, z); g.add(cup); });
     }
     // 눌리는 범위를 넉넉히 (의자 등받이처럼 얇은 것도 손가락으로 잘 눌리게): 보이지 않는 상자
-    const HIT = { tent: [2.4, 1.5, 2.4], mat: [2.4, .4, 1.8], chair: [.8, 1, .8], lantern: [.55, .8, .55], table: [1.1, .85, 1.1], sofa: [1.8, .9, .9], beanbag: [.9, .6, .9], rug: [2.6, .12, 1.8], screen: [2.1, 1.9, .4], cooler: [.7, .6, .5], lamp: [.45, 1.6, .45], canopy: [3.6, .25, 3], pouf: [.7, .4, .7], firepit: [1, .6, .6], bench: [1.8, .5, .6], bar: [2.4, 1.1, 1], dining: [2, .9, 2] }[t];
+    const HIT = { tent: [2.4, 1.5, 2.4], mat: [2.4, .4, 1.8], chair: [.8, 1, .8], lantern: [.55, .8, .55], table: [1.1, .85, 1.1], sofa: [1.8, .9, .9], beanbag: [.9, .6, .9], rug: [2.6, .12, 1.8], screen: [2.1, 1.9, .4], cooler: [.7, .6, .5], lamp: [.45, 1.6, .45], canopy: [3.6, .25, 3], pouf: [.7, .4, .7], firepit: [1, .6, .6], bench: [1.8, .5, .6], bar: [2.4, 1.1, 1], dining: [2, .9, 2], speaker: [.45, .55, .45] }[t];
     if (HIT) { const hp = new THREE.Mesh(new THREE.BoxGeometry(HIT[0], HIT[1], HIT[2]), new THREE.MeshBasicMaterial({ visible: false })); hp.position.y = t === "canopy" ? 2.15 : HIT[1] / 2; g.add(hp); }   /* 그늘막은 지붕만 눌리게 (아래 바닥은 걸을 수 있게) */
     return { g, sit, parts };
   }
@@ -819,7 +825,7 @@ export function start(host, cb, opt) {
   //  ③ 오른쪽 앞 불멍 존(화로를 둘러싼 캔버스 의자 셋 + 블록 벤치)  ④ 오른쪽 영화 코너(러그·소파·빔 스크린)  ⑤ 뒤쪽 텐트 존
   const DEF_LAYOUT = [
     ["canopy", -8.2, -2.0, 0, 0], ["mat", -8.2, -1.8, 0, 0], ["table", -8.2, -1.9, 0, 0], ["pouf", -9.3, -1.0, 0, 0], ["pouf", -7.1, -1.0, 1, 0], ["pouf", -9.3, -2.9, 3, 0], ["pouf", -7.1, -2.9, 2, 0],
-    ["lamp", -10.6, -.2, 0, 0], ["lantern", -10.2, -3.6, 0, 0],
+    ["lamp", -10.6, -.2, 0, 0], ["lantern", -10.2, -3.6, 0, 0], ["speaker", -6.4, -3.4, 0, 0],
     ["table", -2.1, -3.5, 0, Math.PI / 2], ["cooler", -5.1, -4.0, 0, .3], ["chair", -3.6, -1.7, 2, Math.PI], ["lantern", -5.2, -2.4, 0, 0],
     ["firepit", 3.6, -3.4, 0, 0], ["chair", 2.3, -2.3, 1, Math.PI - .87], ["chair", 3.6, -1.9, 0, Math.PI], ["chair", 4.9, -2.3, 3, Math.PI + .87], ["bench", 3.6, -4.9, 0, 0], ["lantern", 5.4, -4.6, 0, 0],
     ["rug", 9.4, -2.2, 0, Math.PI / 2], ["sofa", 9.6, -1.0, 0, Math.PI], ["beanbag", 8.0, -2.4, 0, 2.56], ["screen", 9.6, -4.9, 0, 0], ["lamp", 11.3, -.6, 1, 0],
@@ -928,7 +934,7 @@ export function start(host, cb, opt) {
   // ----- 소품 동작: 소품을 눌러 앉기·눕기·텐트 들어가기·차 마시기·랜턴 켜고 끄기 -----
   const itemActions = it => ({ tent: [{ id: "enter", label: "들어가기" }, { id: "sit", label: "앞에 앉기" }], mat: [{ id: "sit", label: "앉기" }, { id: "lie", label: "눕기" }],
     chair: [{ id: "sit", label: "앉기" }], lantern: [{ id: "toggle", label: it.lit ? "끄기" : "켜기" }], table: [{ id: "tea", label: "차 마시기" }],
-    sofa: [{ id: "sit", label: "앉기" }], beanbag: [{ id: "sit", label: "푹 앉기" }], screen: [{ id: "movie", label: it.lit ? "영화 끄기" : "영화 켜기" }], cooler: [{ id: "drink", label: "음료 꺼내기" }],
+    sofa: [{ id: "sit", label: "앉기" }], beanbag: [{ id: "sit", label: "푹 앉기" }], speaker: [{ id: "music", label: "🎵 내 음악 틀기" }, { id: "musicoff", label: "멈추기" }], screen: [{ id: "myvideo", label: "📁 내 영상 틀기" }, { id: "movie", label: it.lit ? "영화 끄기" : "영화 켜기" }], cooler: [{ id: "drink", label: "음료 꺼내기" }],
     lamp: [{ id: "toggle", label: it.lit ? "끄기" : "켜기" }], pouf: [{ id: "sit", label: "앉기" }], bench: [{ id: "sit", label: "앉기" }], bar: [{ id: "sit", label: "바에 앉기" }, { id: "drink", label: "한잔하기" }], dining: [{ id: "sit", label: "식탁에 앉기" }, { id: "tea", label: "차 마시기" }], firepit: [{ id: "fire", label: "🔥 불멍하기" }] }[it.t] || []);
   function doAction(it, id) {
     standUp();
@@ -937,13 +943,27 @@ export function start(host, cb, opt) {
     else if (id === "enter") { const sl = slotOf(it, "enter"); if (!sl) { full(); return; } walkTo(it.x + sl[0], it.z + 1.45, () => { me.yaw = Math.PI; slide({ x: it.x + sl[0], z: it.z + sl[1] }, 1.1, "crawl", 0, () => { inTent = it; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x + sl[0], .16, it.z + sl[1]); lookT = .9; emote("🌙"); cb.say && cb.say("텐트 안이에요", "지붕이 비쳐서 밤하늘이 보여요. '그만하기'를 누르면 나가요"); cb.lie && cb.lie(); focusItem = it; setFocus("tent"); }, .3, Math.PI); }, true); }
     else if (id === "tea") walkTo(it.x + .95, it.z + .1, () => { me.yaw = -Math.PI / 2; me.pose = "eat"; eatT = 3.2; emote("☕"); cb.say && cb.say("차를 마셔요", "따뜻한 한 잔 ☕"); focusItem = it; setFocus("table"); });
     else if (id === "toggle") { it.lit = !it.lit; const pp = it.parts; if (pp) { pp.glow.visible = it.lit; pp.bulb.material.color.setHex(it.lit ? 0xffd89a : 0x3a3f50); if (pp.shade) pp.shade.material.emissiveIntensity = it.lit ? .55 : 0; } emote(it.lit ? "💡" : "🌙"); }
-    else if (id === "movie") { it.lit = !it.lit; emote(it.lit ? "🎬" : "🌙"); cb.say && it.lit && cb.say("영화를 틀었어요", "소파나 빈백에 앉아서 봐요 🍿"); }
+    else if (id === "myvideo") { cb.pickVideo && cb.pickVideo(); }
+    else if (id === "music") { cb.pickMusic && cb.pickMusic(); }
+    else if (id === "musicoff") { cb.stopMusic && cb.stopMusic(); }
+    else if (id === "movie") { if (it.lit && it.parts && it.parts.vid) { setScreenVideo(null); } it.lit = !it.lit; emote(it.lit ? "🎬" : "🌙"); cb.say && it.lit && cb.say("영화를 틀었어요", "소파나 빈백에 앉아서 봐요 🍿"); }
     else if (id === "fire") { const sl = rotXZ(0, 1.05, it.r || 0); walkTo(it.x + sl[0], it.z + sl[1], () => { me.yaw = Math.atan2(it.x - mePos.x, it.z - mePos.z); me.pose = "sit"; me.seat = 0; sittingOn = it; emote("🔥"); cb.seated && cb.seated(true); cb.say && cb.say("불멍 중이에요", "타닥타닥, 아무 생각 없이 바라봐요"); }, true); }
     else if (id === "drink") walkTo(it.x + .7, it.z + .4, () => { me.pose = "eat"; eatT = 2.4; emote(pick(["🥤", "🍺", "🧃", "🍹"])); });
   }
   const nearestItem = t => items.filter(i => i.t === t).sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
   const sitNearest = () => { const c = nearestItem("chair") || nearestItem("mat"); if (!c) { cb.say && cb.say("앉을 곳이 없어요", "꾸미기에서 의자나 돗자리를 놓아 보세요"); return; } doAction(c, "sit"); };
   const enterNearest = () => { const t = nearestItem("tent"); if (!t) { cb.say && cb.say("텐트가 없어요", "꾸미기에서 텐트를 놓아 보세요"); return; } doAction(t, "enter"); };
+  // 내 기기 안의 영상을 빔 스크린에 (파일은 이 기기에서만 재생되고 어디에도 올라가지 않아요)
+  let vidTex = null;
+  function setScreenVideo(video) {
+    const sc = items.filter(i => i.t === "screen" && i.parts);
+    if (vidTex) { vidTex.dispose(); vidTex = null; }
+    sc.forEach(it => { if (video) { if (!it.parts.vidM) it.parts.vidM = new THREE.MeshBasicMaterial({ toneMapped: false });
+        vidTex = vidTex || new THREE.VideoTexture(video); vidTex.colorSpace = THREE.SRGBColorSpace; it.parts.vidM.map = vidTex; it.parts.vidM.needsUpdate = true; it.parts.mesh.material = it.parts.vidM; it.parts.vid = true; it.lit = true; }
+      else { it.parts.mesh.material = it.parts.scr; it.parts.vid = false; } });
+    return sc.length;
+  }
+  let musicOn = false;
   const lieDown = () => { const m = items.filter(i => i.t === "mat").sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
     if (!m) { cb.say && cb.say("돗자리가 없어요", "꾸미기에서 돗자리를 펴 보세요"); return; } standUp(); const sl = slotOf(m, "lie"); if (!sl) { full(); return; } walkTo(m.x + sl[0], m.z + sl[1], () => lieOn(m, sl), true); };
   // 동작을 시작하면 그 동작에 맞는 시점으로 자동 전환하고 고정해요 (그만하기를 누르면 원래대로)
@@ -1461,6 +1481,7 @@ export function start(host, cb, opt) {
     fsg.attributes.position.needsUpdate = fsg.attributes.aSize.needsUpdate = fsg.attributes.aAlpha.needsUpdate = fsg.attributes.aCol.needsUpdate = true; flameSm.position.set(0, 0, 0);
     items.forEach(it => { if (it.t === "dining" && it.parts) it.parts.flames.forEach((f, k) => { const n = Math.sin(time * (9 + k * 2) + k * 3); f.scale.set(.16 + n * .02, .24 + n * .05, 1); }); });
     items.forEach(it => { if (it.t === "firepit" && it.parts) { it.parts.flames.forEach((f, k) => { const n = Math.sin(time * (7 + k * 2.3) + k) * .5 + Math.sin(time * (13 + k) + k * 2) * .3; f.scale.set(.3 + n * .06, .5 + n * .14 + k * .05, 1); f.position.y = .5 + k * .04 + n * .03; f.material.opacity = .75 + n * .2; }); it.parts.glow.material.opacity = .4 + Math.sin(time * 9) * .06; } });
+    items.forEach(it => { if (it.t === "speaker" && it.parts) { const b = musicOn ? .55 + .45 * Math.abs(Math.sin(time * 4.2)) * (.7 + .3 * Math.sin(time * 1.3)) : 0; it.parts.glow.material.opacity = b * .8; it.parts.ring.material.color.setHSL((.55 + time * .03) % 1, .7, .35 + b * .35); it.g.children[0].scale.y = 1 + b * .03; } });
     items.forEach(it => { if (it.t === "screen" && it.parts) { const u = it.parts.scr.uniforms; u.uT.value = time; u.uOn.value += ((it.lit ? 1 : 0) - u.uOn.value) * Math.min(1, dt * 2); it.parts.glow.material.opacity = u.uOn.value * (.3 + .05 * Math.sin(time * 3)); } });
     items.forEach(it => { if (it.t === "tent" && it.parts) { const want = inTent === it ? .2 : 1, m = it.parts.body.material; m.transparent = true; m.opacity += (want - m.opacity) * Math.min(1, dt * 4); it.parts.glow.material.opacity = (inTent === it ? .9 : .42) * (it.lit ? 1 : 1); } });
     // 먹을거리
@@ -1582,7 +1603,7 @@ export function start(host, cb, opt) {
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
     setStars(arr) { counted = new Set(arr || []); paintStars(); paintLines(); sg.attributes.aSize.needsUpdate = sg.attributes.aCol.needsUpdate = sg.attributes.aAlpha.needsUpdate = true; },
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },
-    wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, joy(x, y, on, run) { joy.x = x; joy.y = y; joy.on = on; joy.run = run; if (on) autoSpin = 0; }, setPets, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
+    wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, setScreenVideo, setMusic(on) { musicOn = !!on; }, hasItem: t => items.some(i => i.t === t), joy(x, y, on, run) { joy.x = x; joy.y = y; joy.on = on; joy.run = run; if (on) autoSpin = 0; }, setPets, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     snapshot() { draw(); return el; },
