@@ -3396,6 +3396,8 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-nogl[hidden] { display: none; }
 .roof-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .roof-sub[hidden] { display: none; }
+.roof-decorow { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
+.roof-sub[data-roof-sub="deco"] { max-height: 46vh; overflow-y: auto; }
 .roof-pets { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding-top: 6px; margin-top: 2px; border-top: 1px solid rgba(255,255,255,.1); }
 .roof-pets-h { font-size: 12px; font-weight: 700; color: rgba(244,246,251,.7); margin-right: 2px; }
 .roof-pets .roof-btn[aria-pressed="false"] { opacity: .62; }
