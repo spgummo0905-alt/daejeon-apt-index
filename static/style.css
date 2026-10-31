@@ -3326,6 +3326,13 @@ body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data
 .roof-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 999px; background: rgba(10,16,34,.55); border: 1px solid rgba(255,255,255,.12);
   backdrop-filter: blur(8px); color: rgba(244,246,251,.9); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .roof-pill b { color: #fff; font-weight: 800; font-variant-numeric: tabular-nums; }
+.roof-pill[hidden], .roof-pill [hidden] { display: none; }
+.roof-pill > span { display: inline-flex; align-items: center; gap: 4px; }
+.roof-servers { margin: 10px 0; }
+.roof-servers li { grid-template-columns: 12px 1fr auto auto; }
+.roof-servers .srv-dot { width: 8px; height: 8px; border-radius: 50%; }
+.roof-servers .roof-btn { padding: 5px 12px; font-size: 12.5px; }
+.roof-servers .roof-btn:disabled { opacity: .55; }
 .roof-pill i { width: 1px; height: 11px; background: rgba(255,255,255,.28); margin: 0 4px; }
 .roof[data-focus] .roof-status { display: none; }
 .roof-stat { margin: 0; font-size: 13px; color: rgba(244,246,251,.78); text-shadow: 0 1px 8px rgba(0,0,0,.6); flex: 1 1 160px; }
@@ -3394,6 +3401,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-pets .roof-btn[aria-pressed="false"] { opacity: .62; }
 .roof-count { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); margin: 0; padding: 7px 14px; border-radius: 999px; background: rgba(10,16,34,.66); border: 1px solid rgba(255,214,120,.4);
   color: #ffe6a0; font-size: 13.5px; font-weight: 700; pointer-events: none; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+.roof-count-reset:disabled { opacity: .4; cursor: default; }
 .roof-count-reset { pointer-events: auto; border: 1px solid rgba(255,214,120,.45); background: rgba(255,255,255,.1); color: #ffe6a0; font: inherit; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
 .roof-count[hidden] { display: none; }
 .roof-modal { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(4,8,20,.55); backdrop-filter: blur(4px); z-index: 5; }

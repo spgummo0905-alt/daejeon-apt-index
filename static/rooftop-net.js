@@ -12,12 +12,12 @@
     const raw = (t, event, payload) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ topic: t, event, payload, ref: String(++ref) })); };
     const send = (event, payload) => raw(topic, event, payload);
     function members(state) {   // presence_state: {키: {metas: [...]}}
-      const out = []; Object.keys(state || {}).forEach(k => { const m = (state[k].metas || [])[0] || {}; out.push({ id: m.id || k, n: String(m.n || "이웃").slice(0, 12) }); }); return out;
+      const out = []; Object.keys(state || {}).forEach(k => { const m = (state[k].metas || [])[0] || {}; out.push({ id: m.id || k, n: String(m.n || "이웃").slice(0, 12), s: Math.max(0, Math.min(99, m.s | 0)) }); }); return out;
     }
     function onMsg(m) {
       const ev = m.event, pl = m.payload || {};
       if (ev === "phx_reply" && !joined) {
-        if (pl.status === "ok") { joined = true; retry = 0; send("presence", { type: "presence", event: "track", payload: { id: me.id, n: me.n } }); h.status && h.status("연결됨"); }
+        if (pl.status === "ok") { joined = true; retry = 0; send("presence", { type: "presence", event: "track", payload: { id: me.id, n: me.n, s: me.s | 0 } }); h.status && h.status("연결됨"); }
         else { h.status && h.status("연결 실패"); h.fail && h.fail(pl); }
       } else if (ev === "presence_state") {
         const list = members(pl).filter(x => x.id !== me.id); seen.clear(); list.forEach(x => seen.set(x.id, x)); h.peers && h.peers([...seen.values()]);

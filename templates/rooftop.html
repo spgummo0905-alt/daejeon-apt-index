@@ -16,7 +16,8 @@
       <select data-roof-town aria-label="야경으로 볼 동네"></select>
     </label>
     <div class="roof-status" aria-live="polite">
-      <span class="roof-pill" data-roof-who>👥 지금 <b data-roof-now>1</b>명<i aria-hidden="true"></i>오늘 <b data-roof-today>1</b>명</span>
+      <span class="roof-pill" data-roof-who>👥 지금 <b data-roof-now>1</b>명<span data-roof-todayw hidden><i aria-hidden="true"></i>오늘 <b data-roof-today>1</b>명</span></span>
+      <span class="roof-pill" data-roof-srv hidden></span>
       <span class="roof-pill" data-roof-when>🌙 밤</span>
       <span class="roof-pill" data-roof-stay>☕ 방금 왔어요</span>
     </div>
@@ -103,10 +104,11 @@
     <div class="roof-card" role="dialog" aria-label="함께 있기">
       <div class="roof-sheet-head"><b>함께 있기</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
       <p class="roof-note" data-roof-roomstat>혼자 있어요.</p>
-      <p class="roof-note">같은 동네 옥상에서 다른 사람들과 함께 불꽃을 보고 이모지로 인사해요. 말은 주고받지 않아요. 내 닉네임과 위치만 잠깐 보이고 저장되지 않아요.</p>
+      <p class="roof-note">서버에 들어가면 같은 서버에 있는 사람들과 한 옥상에서 불꽃을 보고, 함께 꾸미고, 이모지로 인사해요. 말은 주고받지 않아요. 내 닉네임과 위치만 잠깐 보이고 저장되지 않아요.</p>
+      <ul class="roof-list roof-servers" data-roof-servers aria-label="서버 현황"></ul>
       <ul class="roof-list" data-roof-members></ul>
       <div class="rs-chips">
-        <button type="button" class="roof-btn fw" data-roof-join="auto">이 동네 옥상에서 함께 있기</button>
+        <button type="button" class="roof-btn fw" data-roof-join="auto">사람 있는 서버로 바로 들어가기</button>
         <button type="button" class="roof-btn" data-roof-join="friend">친구 방 만들어 초대하기</button>
         <button type="button" class="roof-btn" data-roof-join="off" hidden>혼자 있기</button>
       </div>

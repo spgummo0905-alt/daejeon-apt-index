@@ -261,7 +261,7 @@
   $("[data-roof-close]").addEventListener("click", () => { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); });
   // 별 세기
   const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
-  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; $("[data-roof-starreset]").hidden = !n; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
+  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `⭐ 오늘 센 별 ${n}개`; $("[data-roof-starreset]").disabled = !n;   /* 좁은 화면에서도 버튼이 보이게 짧게, 버튼은 늘 보여요 */ starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
   const resetStars = () => { st.stars = { d: today, idx: [] }; saveSt(); if (api) api.setStars([]); paintCount(); paintSettings(); hint("센 별을 지우고 처음부터 다시 세어요."); };
   $("[data-roof-starreset]").addEventListener("click", resetStars); $("[data-roof-starreset2]").addEventListener("click", resetStars);
   starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setFocus(counting ? "sky" : null); paintCount(); closeSubs(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
@@ -284,16 +284,16 @@
   const when = h => h < 5 ? ["🌌", "새벽"] : h < 8 ? ["🌅", "아침"] : h < 17 ? ["☀️", "낮"] : h < 19 ? ["🌇", "저녁"] : ["🌙", "밤"];
   const stat = () => {
     const now = window.DJ && DJ.online ? Math.max(1, DJ.online.count()) : 1;
-    $("[data-roof-now]").textContent = now.toLocaleString(); $("[data-roof-today]").textContent = Math.max(todayN, now).toLocaleString();
+    $("[data-roof-now]").textContent = now.toLocaleString(); $("[data-roof-todayw]").hidden = !todayN; $("[data-roof-today]").textContent = Math.max(todayN, now).toLocaleString();
     const [ic, w] = when(kstHour()); $("[data-roof-when]").textContent = `${ic} ${w}${wxLine ? " · " + wxLine : ""}`;
     const f = box.dataset.focus, spin = api && api.getSpin && api.getSpin(), mins = Math.floor((Date.now() - arrived) / 60e3);
     const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
     $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
   };
-  const ONLINE_URL = "https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/online-data/online.json";
-  const loadToday = () => fetch(ONLINE_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => {
-    const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); if (j && j.d === day && j.t) { todayN = j.t; stat(); } }).catch(() => { /* 못 받아도 '지금'은 보여요 */ });
-  loadToday(); setInterval(loadToday, 5 * 60e3); setInterval(() => { try { stat(); } catch (e) { /* 준비 전 */ } }, 20e3);
+  // 오늘 다녀간 사람: 브라우저마다 하루 하나의 무작위 번호를 기록 보관함에 한 번 알리고 그 수를 받아요 (못 받으면 '오늘'은 숨겨요)
+  const loadToday = () => { const vid = window.DJ && DJ.online && DJ.online.vid && DJ.online.vid(); if (!vid || !(window.DJ && DJ.sb)) return;
+    DJ.sb.call("/rest/v1/rpc/roof_visit", { method: "POST", body: { vid } }).then(n => { if (Number.isFinite(+n) && +n > 0) { todayN = +n; stat(); } }).catch(() => { /* 보관함이 아직 없으면 '지금'만 */ }); };
+  setTimeout(loadToday, 3000); setInterval(loadToday, 5 * 60e3); setInterval(() => { try { stat(); } catch (e) { /* 준비 전 */ } }, 20e3);
   if (window.DJ && DJ.online) DJ.online.onChange(() => { try { stat(); } catch (e) { /* 아직 준비 전 */ } });
   const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
   // 기상청 격자 (공식 변환식. scripts/weather_fetch.py 의 grid 와 같아요)
@@ -364,36 +364,55 @@
     }, "image/png");
   });
 
-  // ---------- 함께 있기 (같은 동네 방, 이모지 인사만) ----------
+  // ---------- 함께 있기 (번호 서버 하나로: 1서버·2서버…, 이모지 인사만) ----------
   const SB = window.DJ_SB, canNet = !!(SB && SB.url && SB.key && window.RoofNet);
-  const REGION = (location.pathname.match(/\/(sejong|seoul|cheongju)(\/|$)/) || [0, "daejeon"])[1];
-  const h36 = t => { let h = 2166136261; for (const c of String(t)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  let net = null, names = [], roomLabel = "", roomMode = "", autoK = 1, friendCode = "";
+  let net = null, names = [], roomLabel = "", roomMode = "", friendCode = "";
+  // 대기실: 옥상에 있는 모두가 '몇 번 서버에 있는지'만 알려 주는 곳 → 서버마다 몇 명인지 보여 줘요
+  const SRV_MAX = 20; let lobby = null, curSrv = 0, srvCounts = {};
+  function connectLobby() {
+    if (!canNet) return; if (lobby) lobby.leave();
+    lobby = RoofNet.connect({ url: SB.url, key: SB.key, topic: "roof:lobby", me: { id: st.id, n: st.nick, s: curSrv } }, {
+      peers: list => { srvCounts = {}; list.forEach(x => { if (x.s) srvCounts[x.s] = (srvCounts[x.s] || 0) + 1; }); if (curSrv) srvCounts[curSrv] = (srvCounts[curSrv] || 0) + 1; paintServers(); } });
+    srvCounts = curSrv ? { [curSrv]: 1 } : {}; paintServers();
+  }
+  const cnt = k => k === curSrv && net ? names.length + 1 : (srvCounts[k] || 0);
+  function paintServers() {
+    const top = Math.max(3, ...Object.keys(srvCounts).map(Number).filter(Boolean).map(k => k + 1), curSrv + 1);
+    const ul = $("[data-roof-servers]"); if (!ul) return;
+    ul.replaceChildren(...Array.from({ length: Math.min(top, 12) }, (_, i) => { const k = i + 1, n = cnt(k), here = k === curSrv && !!net, li = document.createElement("li");
+      li.innerHTML = `<span class="srv-dot"></span><b>${k}서버</b><i>${n}명${n >= SRV_MAX ? " · 가득" : ""}</i>`; li.querySelector(".srv-dot").style.background = n >= SRV_MAX ? "#ff7a6a" : n ? "#7ee08f" : "rgba(255,255,255,.3)";
+      const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn"; b.textContent = here ? "지금 여기" : "들어가기"; b.disabled = here || n >= SRV_MAX;
+      b.addEventListener("click", () => joinRoom("srv", k)); li.append(b); if (here) li.classList.add("ok"); return li; }));
+    const pill = $("[data-roof-srv]"); if (pill) { pill.hidden = !(curSrv && net); pill.textContent = `🌐 ${curSrv}서버 · ${cnt(curSrv)}명`; }
+  }
   const roomBtn = $("[data-roof-roombtn]"), emoBar = $("[data-roof-emobar]"), roomStat = $("[data-roof-roomstat]");
   function paintNet(msg) {
     const n = names.length + 1, on = !!net;
     $("[data-roof-pc]").textContent = on ? n + "명" : "함께";
     emoBar.hidden = !on;
-    roomStat.textContent = msg || (on ? `${roomLabel} · ${n}명이 함께 있어요` : "혼자 있어요.");
+    roomStat.textContent = msg || (on ? `${roomLabel} · ${n}명이 함께 있어요` : "혼자 있어요. 들어갈 서버를 골라 보세요."); paintServers();
     $("[data-roof-members]").replaceChildren(...[st.nick + " (나)", ...names.map(x => x.n)].map(t => { const li = document.createElement("li"); li.innerHTML = "<span>•</span><b></b><i></i>"; li.querySelector("b").textContent = t; return li; }));
     $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; });
   }
   // 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
   let roomDeco = { v: 0, l: null }, helloT = 0;
   const sendDeco = () => { if (net && net.isOpen()) net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick }); };
-  function leaveRoom() { const was = !!net; if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
+  function leaveRoom(stay) { const was = !!net; if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
+    if (!stay && curSrv) { curSrv = 0; connectLobby(); }
     if (was && roomDeco.v && api) { api.setLayout(st.layout); } roomDeco = { v: 0, l: null }; }
   function joinRoom(mode, code) {
     if (!canNet || !api) return;
-    leaveRoom(); roomMode = mode;
-    const gu = (town && town.gu) || "all", id = mode === "friend" ? "f-" + code : `${REGION}-${h36(gu)}-${autoK}`;
-    roomLabel = mode === "friend" ? "친구 방" : `${gu} 옥상${autoK > 1 ? " " + autoK + "번" : ""}`;
+    if (mode === "auto") { const ks = Array.from({ length: 12 }, (_, i) => i + 1).filter(k => cnt(k) < SRV_MAX); code = ks.sort((a, b) => cnt(b) - cnt(a) || a - b)[0] || 1; mode = "srv"; }   // 사람이 있는 서버로 (가득 찬 곳은 빼고)
+    leaveRoom(true); roomMode = mode;
+    const k = mode === "srv" ? Math.max(1, Math.min(12, code | 0)) : 0, id = mode === "friend" ? "f-" + code : `srv-${k}`;
+    roomLabel = mode === "friend" ? "친구 방" : `${k}서버`;
+    if (curSrv !== k) { curSrv = k; connectLobby(); } st.srv = k || st.srv;
     net = RoofNet.connect({ url: SB.url, key: SB.key, topic: "roof:" + id, me: { id: st.id, n: st.nick } }, {
       status: t => paintNet(t === "연결됨" ? null : t),
       fail: () => { leaveRoom(); paintNet("지금은 함께 있기를 열 수 없어요. 잠시 뒤 다시 해 주세요."); },
       peers: list => {
         names.filter(x => !list.some(y => y.id === x.id)).forEach(x => api.removePeer(x.id)); names = list; paintNet();
-        if (mode === "auto" && list.length >= 8 && autoK < 12) { autoK++; joinRoom("auto"); }   // 한 방은 8명까지, 가득 차면 다음 번호 방
+        if (mode === "srv" && list.length >= SRV_MAX && k < 12) joinRoom("srv", k + 1);   // 가득 차면 다음 서버로
       },
       leave: id => { api.removePeer(id); },
       event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b);
@@ -401,7 +420,7 @@
         else if (ev === "roomDeco" && Array.isArray(b.l) && +b.v > roomDeco.v) { const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
           if (!first || b.by) hint(first ? `${String(b.by || "누군가").slice(0, 12)}님의 옥상이에요. 함께 꾸며 보세요.` : `${String(b.by || "누군가").slice(0, 12)}님이 옥상을 꾸몄어요.`); } },
     });
-    st.net = mode === "auto"; saveSt(); paintNet("연결하는 중…");
+    st.net = mode === "srv"; saveSt(); paintNet("연결하는 중…");
     // 들어가면 '안녕'을 보내 방의 꾸미기를 받아요. 아무도 답이 없으면 내 꾸미기가 이 방의 꾸미기가 돼요
     clearTimeout(helloT); helloT = setTimeout(function hi(k) { if (!net) return; if (!net.isOpen()) { helloT = setTimeout(() => hi(k), 800); return; }
       net.send("hello", {}); helloT = setTimeout(() => { if (net && !roomDeco.v) { roomDeco = { v: 1 + Math.random(), l: api.getLayout() }; sendDeco(); /* 아주 작은 번호: 먼저 있던 방의 꾸미기나 누가 새로 꾸민 게 항상 이겨요 */ } }, 2500); }, 900);
@@ -409,15 +428,15 @@
   $$("[data-roof-join]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofJoin;
     if (k === "off") { leaveRoom(); st.net = false; saveSt(); paintNet(); return; }
-    if (k === "auto") { autoK = 1; joinRoom("auto"); return; }
+    if (k === "auto") { joinRoom("auto"); return; }
     friendCode = friendCode || Math.random().toString(36).slice(2, 8); joinRoom("friend", friendCode);
     const link = location.origin + location.pathname.replace(/[^/]*$/, "") + "rooftop?room=" + friendCode;
     if (navigator.share) navigator.share({ title: "집감 옥상에서 만나요", text: "같이 불꽃놀이 봐요 🎆", url: link }).catch(() => { });
     else if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => say("초대 링크를 복사했어요", "친구에게 보내 주세요"));
   }));
   $$("[data-roof-emo]").forEach(b => b.addEventListener("click", () => { if (net && net.isOpen()) net.send("emo", { e: b.dataset.roofEmo }); if (api) api.emote(b.dataset.roofEmo); }));
-  window.addEventListener("pagehide", () => { if (net) net.leave(); });
-  if (canNet) roomBtn.hidden = false;
+  window.addEventListener("pagehide", () => { if (net) net.leave(); if (lobby) lobby.leave(); });
+  if (canNet) { roomBtn.hidden = false; setTimeout(connectLobby, 1500); }
   paintNet();
 
   // ---------- 3D 장면 시작 ----------
@@ -462,7 +481,7 @@
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");
       if (canNet && inv && /^[a-z0-9]{4,12}$/.test(inv)) { friendCode = inv; setTimeout(() => { joinRoom("friend", inv); say("친구 방에 들어왔어요", "이모지로 인사해 보세요 👋"); }, 1500); }
-      else if (canNet && st.net) setTimeout(() => joinRoom("auto"), 2500);
+      else if (canNet && st.net) setTimeout(() => joinRoom(st.srv ? "srv" : "auto", st.srv), 2500);
       new ResizeObserver(() => api.resize()).observe(box);
     } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
     setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
