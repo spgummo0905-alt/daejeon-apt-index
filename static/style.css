@@ -3585,3 +3585,10 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof.touring .roof-tray { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .roof-spot { animation: none; } .roof-tour-card { animation: none; } }
 .roof.touring .roof-hint, .roof.touring .roof-joy { display: none; }
+
+/* 지금 재생 중 (내 영상·음악) */
+.roof-nowplay { position: absolute; right: 12px; bottom: calc(108px + env(safe-area-inset-bottom)); z-index: 4; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 140px);
+  padding: 5px 5px 5px 12px; border-radius: 999px; background: rgba(12,18,38,.78); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(10px); color: #f4f6fb; font-size: 12.5px; font-weight: 700; }
+.roof-nowplay[hidden] { display: none; }
+.roof-nowplay span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roof-nowplay .roof-btn { padding: 5px 11px; font-size: 12px; }

@@ -479,7 +479,24 @@
   // ---------- 3D 장면 시작 ----------
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
   let actEl = null; const closeAct = () => { if (actEl) { actEl.remove(); actEl = null; } };
+  // ---------- 내 영상·음악 (이 기기 안의 파일만, 서버로 올리지 않고 나에게만 재생돼요) ----------
+  let myVideo = null, myAudio = null, myURL = [];
+  const nowEl = $("[data-roof-nowplay]");
+  const paintNow = () => { const v = myVideo && !myVideo.paused, a = myAudio && !myAudio.paused; nowEl.hidden = !(v || a);
+    $("[data-roof-nowt]").textContent = v ? "🎬 " + (myVideo.dataset.name || "내 영상") : a ? "🎵 " + (myAudio.dataset.name || "내 음악") : ""; };
+  const shortName = f => f.name.replace(/\.[^.]+$/, "").slice(0, 24);
+  function stopVideo() { if (myVideo) { myVideo.pause(); myVideo.removeAttribute("src"); myVideo.load(); myVideo = null; } if (api) api.setScreenVideo(null); paintNow(); }
+  function stopMusic() { if (myAudio) { myAudio.pause(); myAudio = null; } if (api) api.setMusic(false); paintNow(); }
+  $("[data-roof-vidfile]").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (!f || !api) return;
+    stopVideo(); const url = URL.createObjectURL(f); myURL.push(url); const v = document.createElement("video"); v.src = url; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"; v.dataset.name = shortName(f);
+    v.volume = st.sound ? .8 : 0; myVideo = v; v.play().then(() => { api.setScreenVideo(v); paintNow(); say("빔 스크린에 틀었어요", "소파나 빈백에 앉아서 봐요 🍿"); }).catch(() => say("이 영상은 재생할 수 없어요", "mp4 영상으로 해 볼까요?")); });
+  $("[data-roof-musfile]").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (!f || !api) return;
+    stopMusic(); const url = URL.createObjectURL(f); myURL.push(url); const a = new Audio(url); a.loop = true; a.volume = .7; a.dataset.name = shortName(f); myAudio = a;
+    a.play().then(() => { api.setMusic(true); paintNow(); say("스피커로 틀었어요", "🎵 " + a.dataset.name); }).catch(() => say("이 파일은 재생할 수 없어요", "mp3·m4a 음악으로 해 볼까요?")); });
+  $("[data-roof-nowstop]").addEventListener("click", () => { stopVideo(); stopMusic(); });
+  window.addEventListener("pagehide", () => { stopVideo(); stopMusic(); myURL.forEach(u => URL.revokeObjectURL(u)); });
   const cb = {
+    pickVideo: () => $("[data-roof-vidfile]").click(), pickMusic: () => $("[data-roof-musfile]").click(), stopMusic: () => stopMusic(),
     burst: (...a) => { lastFw = Date.now(); return SND.burst(...a); }, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name, pts) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN += pts || 1; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = pts === 2 ? name + " 완벽하게 구웠어요! ✨ (+2)" : name + " 맛있게 먹었어요 😋 (+1)"; } else say("맛있게 먹었어요", name + " 😋"); },
     cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
     neighbor: () => { hint("이웃도 손을 흔들어 줘요 👋"); },
