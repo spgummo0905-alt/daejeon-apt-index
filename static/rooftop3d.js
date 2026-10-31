@@ -662,7 +662,7 @@ export function start(host, cb, opt) {
       for (let k = 0; k < sa.count; k++) { const y = sa.getY(k); sa.setZ(k, -Math.cos(y / .95 * Math.PI) * .09 - .04); } sling.geometry.computeVertexNormals();
       sling.rotation.x = -Math.PI / 2 + .95; sling.position.set(0, .42, .02); g.add(sling);
       const bar = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .58, 6), wood); bar.rotation.z = Math.PI / 2; bar.position.set(0, .78, .3); g.add(bar);
-      sit = { dx: 0, dz: .03, y: .14 };
+      sit = { dx: 0, dz: .08, y: .24 };   // 캔버스 천 위에 깊숙이 (의자에 앉는 자세가 되도록 .15보다 높게)
     } else if (t === "lantern") {
       const b = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .2, 12), new THREE.MeshBasicMaterial({ color: 0xffd89a })); b.position.y = .13; g.add(b);
       const cap = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, .03, 12), stdM(0x2a2f40, .6)); cap.position.y = .245; g.add(cap);
@@ -868,7 +868,7 @@ export function start(host, cb, opt) {
       if (!other) { full(); return; } it = other; Object.assign(q, it.sit); }
     if (it.t !== "chair") { const sl = slotOf(it, "sit"); if (!sl) { full(); return; } q.dx = sl[0]; q.dz = sl[1]; } else { const rr = rotXZ(q.dx, q.dz, it.r || 0); q.dx = rr[0]; q.dz = rr[1]; }
     const face = (it.t === "chair" ? Math.PI : 0) + (it.r || 0);   // 가구가 보는 쪽으로 앉아요 (의자는 등받이 반대쪽)
-    if (it.t === "chair") { const fr = rotXZ(0, -.85, it.r || 0); walkTo(it.x + fr[0], it.z + fr[1], () => { me.yaw = face; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, .5, face); }, true); }
+    if (it.t === "chair") { const fr = rotXZ(0, -.85, it.r || 0); walkTo(it.x + fr[0], it.z + fr[1], () => { me.yaw = face; slide({ x: it.x + q.dx, z: it.z + q.dz }, .4, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, .12, face); }, true); }   // 돌아서 바로 앉아요
     else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = it.t === "mat" || it.t === "tent" ? Math.PI : face; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, true);
   };
   const lieOn = (it, sl) => { sl = sl || [0, .65]; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x + sl[0], .32, it.z + sl[1]); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); setFocus("lie"); };
