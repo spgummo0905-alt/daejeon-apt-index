@@ -6,14 +6,11 @@ import urllib.request
 
 API = "https://commons.wikimedia.org/w/api.php"
 QUERIES = {
-    "cricket": ["cricket chirping night", "crickets field recording", "night insects ambience"],
-    "wind": ["wind ambience", "wind blowing recording"],
-    "rain": ["rain recording ambience", "rain on roof"],
-    "city": ["city night ambience", "city traffic distant ambience"],
-    "chime": ["wind chime", "temple bell wind"],
-    "fire": ["campfire crackling", "fire crackling recording"],
-    "fireworks": ["fireworks explosion recording", "fireworks sound"],
-    "cat": ["cat meow", "cat purring"],
+    "fire": ["fireplace crackling", "bonfire crackling", "burning wood fire", "campfire"],
+    "city": ["urban ambience night", "street ambience", "traffic ambience", "city soundscape", "Seoul street sounds"],
+    "bug": ["summer night insects", "frogs night chorus", "cicada", "katydid", "night soundscape forest"],
+    "wind": ["wind in trees", "wind through leaves"],
+    "river": ["stream water flowing", "river water sound"],
 }
 
 
