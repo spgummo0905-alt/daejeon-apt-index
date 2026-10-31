@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}집감 옥상 · 잠깐 쉬어가는 곳{% endblock %}
 {% block description %}지금 이 시각의 하늘과 도시가 보이는 옥상에서 불꽃놀이를 보고 별을 세고 소원을 띄우며 잠깐 쉬어가세요.{% endblock %}
+{% block og_image %}static/og/rooftop.jpg{% endblock %}
+{% block og_alt %}달빛 아래 옥상에서 고양이들이 쉬는 모습: 쉿, 옥상에 작은 비밀이 있어요{% endblock %}
 {% block body %}
 {# 집감 옥상: 쉬어가는 3D 공간 (rooftop.js 가 화면·소리·기록, rooftop3d.js 가 장면). 임장 도구가 아니라 다시 열고 싶어지는 곳이라 메뉴에는 넣지 않고
    첫 화면 아래 줄과 바닥글에서만 이어요. 소리는 기본 꺼짐, 불빛은 번쩍이지 않게 은은하게. #}
@@ -154,6 +156,8 @@
         <button type="button" class="rs-sw" data-roof-wx role="switch" aria-checked="true" aria-label="실제 날씨 반영"><i></i></button></div>
       <div class="rs-main"><div><b>정각 불꽃놀이</b><span>옥상을 열어 두면 정각마다 쇼가 시작돼요</span></div>
         <button type="button" class="rs-sw" data-roof-hour role="switch" aria-checked="true" aria-label="정각 불꽃놀이"><i></i></button></div>
+      <div class="rs-main"><div><b>오늘 센 별</b><span data-roof-starsn>0개 · 처음부터 다시 세고 싶을 때</span></div>
+        <button type="button" class="roof-btn" data-roof-starreset2>초기화</button></div>
       <p class="rs-h">빛번짐</p>
       <div class="rs-row"><div><b>빛 번짐 정도</b><span>불빛과 달 주변이 번지는 정도를 조절해요</span></div>
         <label class="rs-vol"><input type="range" min="0" max="100" data-roof-glow aria-label="빛번짐 정도"><i data-roof-glowv></i></label></div>
@@ -168,6 +172,7 @@
       <details class="rs-det"><summary>조작 방법</summary>
         <ul><li>바닥을 누르면 그쪽으로 걸어가요. 매트·의자를 누르면 앉아요.</li><li>컴퓨터에서는 W A S D · 방향키로 걷고, Shift로 달려요. Q·E로 둘러보고, R·F로 위아래를 보고, 스페이스로 불꽃을 쏴요.</li><li>화면을 끌면 둘러봐요. 위로 끌면 하늘이 더 보여요.</li><li>하늘을 누르면 불꽃이 터져요. ‘별 세기’를 켜면 별을 눌러 셀 수 있어요.</li><li>고양이를 누르면 쓰다듬어요. 이웃 옥상 사람들에게도 손을 흔들어 보세요.</li></ul></details>
       <details class="rs-det"><summary>정보</summary>
+        <p class="rs-ver">화면 버전 {{ v }}</p>
         <ul class="roof-credits" data-roof-credits></ul><p>자연 소리는 실제 녹음(위키미디어 커먼즈의 자유 이용 소리)이에요. 별 세기·소원·먹는 소리만 이 기기에서 만들어요. 날씨는 기상청 초단기실황·예보(공공데이터포털), 달 모양과 해·달 위치는 날짜와 시각으로 계산해요. 3D는 three.js(MIT)를 써요.</p></details>
     </div>
   </div>

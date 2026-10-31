@@ -20,7 +20,7 @@
 <meta property="og:image" content="{{ base }}{% block og_image %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endblock %}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="집감 {{ region }}: 실거래가, 입지, 수익률로 보는 단지 비교">
+<meta property="og:image:alt" content="{% block og_alt %}집감 {{ region }}: 실거래가, 입지, 수익률로 보는 단지 비교{% endblock %}">
 <meta name="twitter:card" content="summary_large_image">
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
