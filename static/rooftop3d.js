@@ -177,6 +177,14 @@ const texPlaid = () => canvasTex(128, 128, (g, w, h) => {
   noiseFill(g, w, h, 600, .08);
 });
 const texCorn = () => canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#f2c23c"; g.fillRect(0, 0, w, h); g.fillStyle = "rgba(255,235,150,.7)"; for (let x = 3; x < w; x += 6) for (let y = 3; y < h; y += 6) { g.beginPath(); g.arc(x, y, 2.2, 0, TAU); g.fill(); } });
+// 삼겹살 결: 흰 비계와 붉은 살코기가 번갈아 (색은 익은 정도에 따라 위에서 곱해져요)
+const texPork = () => canvasTex(128, 64, (g, w, h) => {
+  const bands = [[.0, .16, 1], [.16, .34, .62], [.34, .42, .98], [.42, .6, .66], [.6, .67, 1], [.67, .85, .6], [.85, 1, .96]];
+  bands.forEach(([a, b, v]) => { const c = Math.round(v * 255); g.fillStyle = `rgb(${c},${c},${c})`; g.fillRect(0, a * h, w, (b - a) * h + 1); });
+  for (let i = 0; i < 260; i++) { const v = 150 + Math.random() * 105; g.fillStyle = `rgba(${v},${v},${v},.22)`; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 5, 1); }
+  g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1.2; [.16, .34, .6, .85].forEach(y => { g.beginPath(); g.moveTo(0, y * h); for (let x = 0; x <= w; x += 8) g.lineTo(x, y * h + Math.sin(x * .3) * 1.4); g.stroke(); }); });
+// 석쇠 자국: 구워질수록 진해져요
+const texMarks = () => canvasTex(128, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = "rgba(40,22,12,.95)"; for (let x = 6; x < w; x += 18) { g.save(); g.translate(x, 0); g.rotate(.0); g.fillRect(0, 0, 5, h); g.restore(); } });
 const texLabel = (text, bg) => {
   const c = document.createElement("canvas"); c.width = 256; c.height = 64; const g = c.getContext("2d");
   g.font = "700 26px 'Pretendard Variable', system-ui, sans-serif"; const w = Math.min(250, g.measureText(text).width + 34);
@@ -499,6 +507,9 @@ export function start(host, cb, opt) {
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(.05, .12, .48, 10), stdM(0x59627c, .6)); leg.position.y = .25; g.add(leg);
       [[.14, .1], [-.16, -.08]].forEach(([x, z]) => { const cup = new THREE.Mesh(new THREE.CylinderGeometry(.045, .035, .09, 10), stdM(0xf2efe6, .5)); cup.position.set(x, .575, z); g.add(cup); });
     }
+    // 눌리는 범위를 넉넉히 (의자 등받이처럼 얇은 것도 손가락으로 잘 눌리게): 보이지 않는 상자
+    const HIT = { tent: [2.4, 1.5, 2.4], mat: [2.4, .4, 1.8], chair: [.8, 1, .8], lantern: [.55, .8, .55], table: [1.1, .85, 1.1] }[t];
+    if (HIT) { const hp = new THREE.Mesh(new THREE.BoxGeometry(HIT[0], HIT[1], HIT[2]), new THREE.MeshBasicMaterial({ visible: false })); hp.position.y = HIT[1] / 2; g.add(hp); }
     return { g, sit, parts };
   }
   const itemList = () => items.map(i => ({ t: i.t, x: +i.x.toFixed(2), z: +i.z.toFixed(2), c: i.c }));
@@ -586,8 +597,8 @@ export function start(host, cb, opt) {
   const slide = (to, dur, pose, seat, done, delay, yaw) => { seq = { to, dur, pose, seat: seat || 0, done, t: -(delay || 0), yaw, started: false }; };
   const sitOn = it => {
     standUp(); const q = it.sit;
-    if (it.t === "chair") walkTo(it.x, it.z - .85, () => { me.yaw = Math.PI; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); }, .5, Math.PI); }, true);
-    else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = Math.PI; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); }, true);
+    if (it.t === "chair") walkTo(it.x, it.z - .85, () => { me.yaw = Math.PI; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.hint && cb.hint("바닥을 누르면 일어나요"); }, .5, Math.PI); }, true);
+    else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = Math.PI; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); cb.hint && cb.hint("바닥을 누르면 일어나요"); }, true);
   };
   const lieOn = it => { me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .32, it.z + .65); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); setFocus("lie"); };
   // ----- 소품 동작: 소품을 눌러 앉기·눕기·텐트 들어가기·차 마시기·랜턴 켜고 끄기 -----
@@ -601,6 +612,9 @@ export function start(host, cb, opt) {
     else if (id === "tea") walkTo(it.x + .95, it.z + .1, () => { me.yaw = -Math.PI / 2; me.pose = "eat"; eatT = 3.2; emote("☕"); cb.say && cb.say("차를 마셔요", "따뜻한 한 잔 ☕"); focusItem = it; setFocus("table"); });
     else if (id === "toggle") { it.lit = !it.lit; const pp = it.parts; if (pp) { pp.glow.visible = it.lit; pp.bulb.material.color.setHex(it.lit ? 0xffd89a : 0x3a3f50); } emote(it.lit ? "💡" : "🌙"); }
   }
+  const nearestItem = t => items.filter(i => i.t === t).sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
+  const sitNearest = () => { const c = nearestItem("chair") || nearestItem("mat"); if (!c) { cb.say && cb.say("앉을 곳이 없어요", "꾸미기에서 의자나 돗자리를 놓아 보세요"); return; } doAction(c, "sit"); };
+  const enterNearest = () => { const t = nearestItem("tent"); if (!t) { cb.say && cb.say("텐트가 없어요", "꾸미기에서 텐트를 놓아 보세요"); return; } doAction(t, "enter"); };
   const lieDown = () => { const m = items.filter(i => i.t === "mat").sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
     if (!m) { cb.say && cb.say("돗자리가 없어요", "꾸미기에서 돗자리를 펴 보세요"); return; } standUp(); walkTo(m.x, m.z + .65, () => lieOn(m), true); };
   // 동작을 시작하면 그 동작에 맞는 시점으로 자동 전환하고 고정해요 (그만하기를 누르면 원래대로)
@@ -729,31 +743,48 @@ export function start(host, cb, opt) {
     const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xff7a30, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gl.scale.set(4.2, 4.2, 1); gl.position.set(GR.x, .86, GR.z); gl.visible = false; scene.add(gl);
     return { m, gl }; })();
   let snapCam = false;
+  // 익은 정도 막대(앞/뒤)와 기름 튀는 불꽃
+  const gaugeCv = () => { const c = document.createElement("canvas"); c.width = 128; c.height = 40; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return { c, t }; };
+  const drawGauge = (G, a, b, topIsA) => { const g = G.c.getContext("2d"), W = 128, M = 1.3; g.clearRect(0, 0, W, 40);
+    [[a, 6], [b, 24]].forEach(([v, y], i) => { g.fillStyle = "rgba(10,12,20,.72)"; g.beginPath(); g.roundRect(2, y, 124, 11, 5); g.fill();
+      g.fillStyle = "rgba(120,220,140,.28)"; g.fillRect(2 + 124 * .55 / M, y + 1, 124 * (1.05 - .55) / M, 9); g.fillStyle = "rgba(255,90,70,.28)"; g.fillRect(2 + 124 * 1.15 / M, y + 1, 124 * (.15) / M, 9);
+      const w = Math.min(1, v / M) * 124, ok = v >= .55 && v <= 1.05, burnt = v > 1.15; g.fillStyle = burnt ? "#ff5a46" : ok ? "#7ee08f" : "#ffc36b"; g.beginPath(); g.roundRect(2, y, Math.max(6, w), 11, 5); g.fill();
+      g.fillStyle = "rgba(255,255,255,.85)"; g.font = "700 9px system-ui, sans-serif"; g.fillText(i === 0 ? "위" : "아래", 7, y + 9); });
+    G.t.needsUpdate = true; };
+  const sparks = Array.from({ length: 30 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffd08a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); sp.visible = false; scene.add(sp); return { sp, l: 0, vx: 0, vy: 0, vz: 0 }; });
+  let sparkN = 0; const oilSpark = (x, y, z) => { const q = sparks[sparkN++ % sparks.length]; q.l = rnd(.35, .6); q.vx = rnd(-.4, .4); q.vy = rnd(.8, 1.6); q.vz = rnd(-.25, .25); q.sp.position.set(x, y, z); q.sp.scale.setScalar(rnd(.03, .06)); q.sp.visible = true; };
   const foods = [], foodGroup = new THREE.Group(); roof.add(foodGroup);
   const slotPos = i => new THREE.Vector3(GR.x - .48 + i * .32, 1.05, GR.z);
   const mkFood = kind => {
     const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: .8 });
     let mesh;
-    if (kind === "pork") { mesh = new THREE.Mesh(new THREE.BoxGeometry(.28, .04, .1), m); }
+    if (kind === "pork") { const geo = new THREE.BoxGeometry(.3, .045, .11, 12, 2, 5), pa = geo.attributes.position;
+      for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i), ex = Math.abs(x) / .15, ez = Math.abs(z) / .055;
+        pa.setY(i, y * (1 - .3 * Math.max(ex, ez) ** 4) + (y > 0 ? Math.sin(x * 53 + z * 31) * .0022 : 0)); pa.setX(i, x * (1 - .06 * ez * ez)); pa.setZ(i, z * (1 - .08 * ex ** 3)); }
+      geo.computeVertexNormals(); m.map = texPork(); m.roughness = .55; m.needsUpdate = true; mesh = new THREE.Mesh(geo, m);
+      const mk = new THREE.Mesh(new THREE.PlaneGeometry(.26, .095), new THREE.MeshBasicMaterial({ map: texMarks(), transparent: true, opacity: 0, depthWrite: false })); mk.rotation.x = -Math.PI / 2; mk.position.y = .0235; mesh.add(mk); mesh.userData.marks = mk; }
     else if (kind === "shrimp") { mesh = new THREE.Mesh(new THREE.TorusGeometry(.07, .035, 8, 14, Math.PI * 1.3), m); mesh.rotation.x = Math.PI / 2; }
-    else if (kind === "mushroom") { mesh = new THREE.Mesh(new THREE.SphereGeometry(.09, 12, 8, 0, TAU, 0, Math.PI / 2), m); }
+    else if (kind === "mushroom") { mesh = new THREE.Mesh(new THREE.SphereGeometry(.09, 18, 10, 0, TAU, 0, Math.PI / 2), m); m.roughness = .5;
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(.03, .04, .07, 10), stdM(0xe8dcc0, .8)); st.position.y = -.03; mesh.add(st); }
     else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .26, 12), new THREE.MeshStandardMaterial({ map: texCorn(), roughness: .8 })); mesh.rotation.z = Math.PI / 2; }
-    g.add(mesh); g.userData = { food: true }; mesh.userData = { food: true }; return { g, mesh, m };
+    g.add(mesh); g.userData = { food: true }; mesh.userData.food = true; return { g, mesh, m };
   };
   const slotFree = () => { const used = new Set(foods.map(f => f.slot)); return [0, 1, 2, 3, 4].find(i => !used.has(i)); };
   const addFood = kind => {
     const slot = slotFree(); if (slot === undefined) { cb.say && cb.say("불판이 가득 찼어요", "먹거나 치우고 올려 보세요"); return false; }
     const o = mkFood(kind), f = { kind, slot, c: [0, 0], down: 0, flip: 0, ...o }; o.g.position.copy(slotPos(slot)); foodGroup.add(o.g); foods.push(f);
-    o.mesh.userData.foodRef = f; cb.sizzle && cb.sizzle(foods.length); cb.hint && cb.hint("뒤집어 가며 노릇하게 구워 보세요. 다 익으면 눌러서 먹어요.");
+    const G = gaugeCv(), gs = new THREE.Sprite(new THREE.SpriteMaterial({ map: G.t, transparent: true, depthWrite: false, depthTest: false, fog: false })); gs.scale.set(.3, .094, 1); gs.renderOrder = 15; gs.visible = focus === "grill"; foodGroup.add(gs); f.gauge = { G, gs }; drawGauge(G, 0, 0);
+    o.mesh.traverse(c => { c.userData.foodRef = f; }); cb.sizzle && cb.sizzle(foods.length); cb.hint && cb.hint("뒤집어 가며 노릇하게 구워 보세요. 다 익으면 눌러서 먹어요.");
     if (!target && focus !== "grill") walkTo(GR.x - .1, GR.z + 1.2, () => { me.yaw = Math.PI; });
     return true;
   };
   const ready = f => Math.min(f.c[0], f.c[1]) >= .55 && Math.max(f.c[0], f.c[1]) <= 1.05, burnt = f => Math.max(f.c[0], f.c[1]) > 1.15;
-  const rmFood = f => { foodGroup.remove(f.g); foods.splice(foods.indexOf(f), 1); cb.sizzle && cb.sizzle(foods.length); };
+  const rmFood = f => { foodGroup.remove(f.g); if (f.gauge) { foodGroup.remove(f.gauge.gs); f.gauge.G.t.dispose(); } foods.splice(foods.indexOf(f), 1); cb.sizzle && cb.sizzle(foods.length); };
   const tapFood = (f, close) => {
-    if (ready(f) && close) { rmFood(f); cb.eat && cb.eat(f.kind, FOOD[f.kind].name); emote("😋"); }
-    else if (ready(f)) { rmFood(f); walkTo(GR.x - .3, GR.z + 1.15, () => { me.pose = "eat"; eatT = 2.6; me.yaw = 0; emote("😋"); cb.eat && cb.eat(f.kind, FOOD[f.kind].name); }); }
-    else if (burnt(f)) { rmFood(f); cb.say && cb.say("조금 탔어요", "괜찮아요, 다시 구워 봐요"); emote("😅"); }
+    const perfect = Math.min(f.c[0], f.c[1]) >= .72 && Math.max(f.c[0], f.c[1]) <= .95;
+    if (ready(f) && close) { rmFood(f); cb.eat && cb.eat(f.kind, FOOD[f.kind].name, perfect ? 2 : 1); emote(perfect ? "🤩" : "😋"); }
+    else if (ready(f)) { rmFood(f); walkTo(GR.x - .3, GR.z + 1.15, () => { me.pose = "eat"; eatT = 2.6; me.yaw = 0; emote("😋"); cb.eat && cb.eat(f.kind, FOOD[f.kind].name, 1); }); }
+    else if (burnt(f)) { rmFood(f); cb.burnt && cb.burnt(); cb.say && cb.say("조금 탔어요", "괜찮아요, 다시 구워 봐요"); emote("😅"); }
     else { f.down = 1 - f.down; f.flip = 1; }
   };
 
@@ -1021,8 +1052,15 @@ export function start(host, cb, opt) {
     fsg.attributes.position.needsUpdate = fsg.attributes.aSize.needsUpdate = fsg.attributes.aAlpha.needsUpdate = fsg.attributes.aCol.needsUpdate = true; flameSm.position.set(0, 0, 0);
     items.forEach(it => { if (it.t === "tent" && it.parts) { const want = inTent === it ? .2 : 1, m = it.parts.body.material; m.transparent = true; m.opacity += (want - m.opacity) * Math.min(1, dt * 4); it.parts.glow.material.opacity = (inTent === it ? .9 : .42) * (it.lit ? 1 : 1); } });
     // 먹을거리
+    const mg = focus === "grill"; if (mg) coalLight.intensity *= .3;
     foods.forEach(f => { f.c[f.down] += dt / 12; if (f.flip > 0) f.flip = Math.max(0, f.flip - dt * 2.4); const up = 1 - f.down, col = colorAt(f.kind, f.c[up]); f.m.color.setRGB(col[0], col[1], col[2]);
+      const avg = (f.c[0] + f.c[1]) / 2, shr = 1 - .13 * clamp(avg, 0, 1.2); f.mesh.scale.set(shr, 1 + avg * (f.kind === "pork" ? .9 : .25), f.kind === "corn" ? 1 : shr);
+      const mk = f.mesh.userData.marks; if (mk) mk.material.opacity = clamp((f.c[up] - .18) / .6, 0, .85);
+      const gp = slotPos(f.slot); if (f.gauge) { f.gauge.gs.visible = mg; f.gauge.gs.position.set(gp.x, gp.y + .02, gp.z + .2); if (mg && frameN % 4 === 0) drawGauge(f.gauge.G, f.c[up], f.c[f.down]); }
+      if (mg && f.flip <= 0 && f.c[up] > .06 && Math.random() < dt * (2.5 + 5 * Math.min(1, f.c[up]))) oilSpark(gp.x + rnd(-.1, .1), gp.y + .03, gp.z + rnd(-.04, .04));
+      if (mg && Math.random() < dt * (1.5 + 2 * Math.min(1, f.c[up]))) addSmoke(gp.x + rnd(-.08, .08), gp.y + .05, gp.z, rnd(-.03, .03), rnd(.18, .3), 0, rnd(.06, .1), .1, rnd(1.2, 2), [1, .96, .9]);
       f.g.position.y = slotPos(f.slot).y + Math.sin(f.flip * Math.PI) * .35; f.g.rotation.x = f.flip * Math.PI; if (burnt(f) && Math.random() < dt * 8) addSmoke(f.g.position.x, 1.15, f.g.position.z, 0, .5, 0, .3, .2, 2, [.35, .35, .4]); });
+    sparks.forEach(q => { if (q.l > 0) { q.l -= dt; q.vy -= 3.2 * dt; q.sp.position.x += q.vx * dt; q.sp.position.y += q.vy * dt; q.sp.position.z += q.vz * dt; q.sp.material.opacity = clamp(q.l * 3, 0, 1) * (mg ? 1 : 0); if (q.l <= 0) q.sp.visible = false; } });
     if (frameN % 20 === 0) foods.forEach(f => { if (ready(f) && !f.said) { f.said = true; cb.hint && cb.hint(FOOD[f.kind].name + "이(가) 다 익었어요. 눌러서 먹어요."); } });
     // 줄조명 반짝임, 반딧불, 도로
     for (let i = 0; i < nBulb; i++) rg.attributes.aAlpha.setX(i, .55 + .3 * Math.sin(time * 1.1 + i * .9) + (bldU.uNight.value < .3 ? -.4 : 0));
@@ -1104,7 +1142,7 @@ export function start(host, cb, opt) {
     if (mScr.z < 1 && Math.hypot(sx - cx, sy - cy) < 80) { meteor.caught = true; meteorN++; emote("🌠"); cb.meteor && cb.meteor(meteorN); return true; } return false;
   };
   const api = {
-    el, resize, setMeteors(on) { meteorOn = !!on; if (!on) meteor = null; }, meteorCount: () => meteorN, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
+    el, resize, sitNearest, enterNearest, setMeteors(on) { meteorOn = !!on; if (!on) meteor = null; }, meteorCount: () => meteorN, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
     setSky(m) { S.mode = m; applySky(); }, setWeather(w) { Object.assign(S.weather, w); applySky(); },
     setPlace(lat, lon) { S.lat = lat; S.lon = lon; applySky(); },
     setPeer, removePeer, peerEmote, remoteShell, emote, peerCount: () => peers.size, EMO,
