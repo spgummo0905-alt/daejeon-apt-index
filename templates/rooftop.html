@@ -15,7 +15,11 @@
       <span class="sr-only">야경으로 볼 동네</span>
       <select data-roof-town aria-label="야경으로 볼 동네"></select>
     </label>
-    <p class="roof-stat" data-roof-stat aria-live="polite"></p>
+    <div class="roof-status" aria-live="polite">
+      <span class="roof-pill" data-roof-who>👥 지금 <b data-roof-now>1</b>명<i aria-hidden="true"></i>오늘 <b data-roof-today>1</b>명</span>
+      <span class="roof-pill" data-roof-when>🌙 밤</span>
+      <span class="roof-pill" data-roof-stay>☕ 방금 왔어요</span>
+    </div>
     <div class="roof-tools">
       <button type="button" class="roof-btn" data-roof-open="room" data-roof-roombtn hidden aria-label="함께 있기">👥 <b data-roof-pc>함께</b></button>
       <button type="button" class="roof-btn roof-mission" data-roof-mission aria-expanded="false" aria-label="오늘의 미션">🎯 <b data-roof-mcount>0/4</b></button>

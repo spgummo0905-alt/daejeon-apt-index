@@ -1244,7 +1244,13 @@ export function start(host, cb, opt) {
     if (mScr.z < 1 && Math.hypot(sx - cx, sy - cy) < 80) { meteor.caught = true; meteorN++; emote("🌠"); cb.meteor && cb.meteor(meteorN); return true; } return false;
   };
   const api = {
-    el, resize, sitNearest, enterNearest, setMeteors(on) { meteorOn = !!on; if (!on) meteor = null; }, meteorCount: () => meteorN, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
+    el, resize, sitNearest, enterNearest,
+    // 함께 있는 방: 방의 꾸미기를 통째로 바꿔 끼워요 (남이 꾸민 옥상을 같이 봐요)
+    setLayout(list) { if (focus === "tent" || focus === "table") setFocus(null); standUp();
+      items.slice().forEach(it => { roof.remove(it.g); if (it.obs) obstacles.splice(obstacles.indexOf(it.obs), 1); }); items.length = 0;
+      const ok = Array.isArray(list) ? list.slice(0, 30).filter(i => i && LIM[i.t] && Number.isFinite(+i.x) && Number.isFinite(+i.z)).map(i => [i.t, +i.x, +i.z, (+i.c || 0) | 0]) : DEF_LAYOUT;
+      ok.forEach(a => addItem(a[0], a[1], a[2], a[3], true)); },
+    getLayout: () => itemList(), setMeteors(on) { meteorOn = !!on; if (!on) meteor = null; }, meteorCount: () => meteorN, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
     setSky(m) { S.mode = m; applySky(); }, setWeather(w) { Object.assign(S.weather, w); applySky(); },
     setPlace(lat, lon) { S.lat = lat; S.lon = lon; applySky(); },
     setPeer, removePeer, peerEmote, remoteShell, emote, peerCount: () => peers.size, EMO,

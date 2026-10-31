@@ -28,7 +28,9 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: python scripts/online_fetch.py "$RUNNER_TEMP/online.json"
+        run: |
+          git fetch -q --depth 1 origin online-data 2>/dev/null && git show FETCH_HEAD:online.json > "$RUNNER_TEMP/prev.json" 2>/dev/null || echo "{}" > "$RUNNER_TEMP/prev.json"
+          python scripts/online_fetch.py "$RUNNER_TEMP/online.json" "$RUNNER_TEMP/prev.json"
       - name: online-data 가지에 올리기
         run: |
           if [ ! -s "$RUNNER_TEMP/online.json" ]; then echo "올릴 자료가 없어요"; exit 0; fi

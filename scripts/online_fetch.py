@@ -1,7 +1,8 @@
 """지금 접속 중인 사람 수를 online.json 한 장으로 만듭니다 (online-data 가지, .github/workflows/online.yml 이 5분마다).
 사이트 화면(static/online.js)과 같은 Supabase 실시간 접속자 목록('site:online')에 잠깐 들어가 사람 수를 읽고 나옵니다 (키는 로그에 찍지 않음).
-결과: {"u": 갱신 시각, "n": 접속자 수}  (이 스크립트 자신은 세지 않음)"""
+결과: {"u": 갱신 시각, "n": 지금 접속자 수, "d": 날짜, "t": 오늘 다녀간 사람 수, "k": 오늘 본 번호의 짧은 해시}  (이 스크립트 자신은 세지 않음)"""
 import asyncio
+import hashlib
 import json
 import os
 import sys
@@ -45,7 +46,7 @@ async def count():
                 keys -= set((pl.get("leaves") or {}).keys())
         if not got and not keys:
             raise RuntimeError("접속자 목록을 받지 못함")
-        return len([k for k in keys if k != ME])
+        return [k for k in keys if k != ME]
 
 
 def main():
@@ -53,14 +54,21 @@ def main():
         print("SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY 가 없어 건너뜁니다.")
         return 0
     try:
-        n = asyncio.run(count())
+        keys = asyncio.run(count())
     except Exception as e:   # 키가 섞인 주소가 로그에 남지 않게 종류만
         print(f"[접속자] 실패: {type(e).__name__}: {str(e)[:100].replace(KEY, '***')}")
         return 1
-    kst = datetime.now(timezone(timedelta(hours=9)))
+    kst = datetime.now(timezone(timedelta(hours=9))); day = kst.date().isoformat()
+    seen = set()
+    try:   # 오늘 앞서 본 번호들 (날이 바뀌면 새로 셈). 번호는 원래 값 대신 짧은 해시로만 남겨요
+        prev = json.load(open(sys.argv[2], encoding="utf-8")) if len(sys.argv) > 2 else {}
+        if prev.get("d") == day: seen = set(prev.get("k") or [])
+    except Exception:
+        pass
+    seen |= {hashlib.sha1(k.encode()).hexdigest()[:10] for k in keys}
     with open(sys.argv[1] if len(sys.argv) > 1 else "online.json", "w", encoding="utf-8") as f:
-        json.dump({"u": kst.isoformat(timespec="seconds"), "n": n}, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"[접속자] 지금 {n}명")
+        json.dump({"u": kst.isoformat(timespec="seconds"), "n": len(keys), "d": day, "t": len(seen), "k": sorted(seen)}, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"[접속자] 지금 {len(keys)}명 · 오늘 {len(seen)}명")
     return 0
 
 

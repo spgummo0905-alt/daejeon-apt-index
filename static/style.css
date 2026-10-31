@@ -3322,6 +3322,12 @@ body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data
 .roof-town select { appearance: none; border: 1px solid rgba(255,255,255,.18); background: rgba(10,16,34,.62); color: #f4f6fb; font: inherit; font-size: 14px; font-weight: 700;
   padding: 7px 28px 7px 12px; border-radius: 999px; backdrop-filter: blur(6px); cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, #cfd6ea 50%), linear-gradient(135deg, #cfd6ea 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.roof-status { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 200px; order: 3; flex-basis: 100%; }
+.roof-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 999px; background: rgba(10,16,34,.55); border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(8px); color: rgba(244,246,251,.9); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.roof-pill b { color: #fff; font-weight: 800; font-variant-numeric: tabular-nums; }
+.roof-pill i { width: 1px; height: 11px; background: rgba(255,255,255,.28); margin: 0 4px; }
+.roof[data-focus] .roof-status { display: none; }
 .roof-stat { margin: 0; font-size: 13px; color: rgba(244,246,251,.78); text-shadow: 0 1px 8px rgba(0,0,0,.6); flex: 1 1 160px; }
 .roof-tools { display: flex; gap: 6px; margin-left: auto; }
 .roof-btn { border: 1px solid rgba(255,255,255,.16); background: rgba(10,16,34,.6); color: #f4f6fb; font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 13px; border-radius: 999px;
@@ -3331,7 +3337,7 @@ body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data
 .roof-btn:focus-visible, .roof-mission:focus-visible, .roof-town select:focus-visible, .roof-x:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
 .roof-btn.fw { background: linear-gradient(135deg, rgba(60,186,246,.32), rgba(123,92,248,.4)); border-color: rgba(162,140,255,.5); }
 .roof-btn[aria-pressed="true"] { border-color: rgba(227,185,85,.6); color: #ffe6a0; }
-.roof-hint { position: absolute; left: 50%; top: 104px; transform: translate(-50%, 8px); margin: 0; width: max-content; max-width: min(86vw, 380px); text-align: center; font-size: 14px; font-weight: 600; line-height: 1.5;
+.roof-hint { position: absolute; left: 50%; top: 158px; transform: translate(-50%, 8px); margin: 0; width: max-content; max-width: min(86vw, 380px); text-align: center; font-size: 14px; font-weight: 600; line-height: 1.5;
   padding: 9px 16px; border-radius: 16px; background: rgba(10,16,34,.55); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(8px);
   color: rgba(255,255,255,.94); text-shadow: 0 1px 6px rgba(0,0,0,.5); z-index: 2; opacity: 0; transition: opacity .9s ease, transform .9s ease; pointer-events: none; }
 .roof-hint.on { opacity: 1; transform: translate(-50%, 0); }
