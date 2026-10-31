@@ -229,11 +229,22 @@
   $$("[data-roof-deco]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : deco === "edit" ? "옮기거나 돌릴 가구를 눌러 보세요. 다시 누르면 끝나요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
+  // 꾸미기 탭: 옥탑·캠핑·동물·배치
+  $$("[data-roof-tab]").forEach(t => t.addEventListener("click", () => { const k = t.dataset.roofTab;
+    $$("[data-roof-tab]").forEach(x => x.setAttribute("aria-selected", String(x === t))); $$("[data-roof-pane]").forEach(p => { p.hidden = p.dataset.roofPane !== k; }); }));
   // 기본 옥탑방으로 되돌리기 (내가 꾸민 배치는 지워져요)
   $("[data-roof-resetlayout]").addEventListener("click", () => { if (!api || !confirm("기본 옥탑방 배치로 되돌릴까요? 지금 꾸민 배치는 사라져요.")) return;
     api.setLayout(null); const l = api.getLayout(); if (cb.layout) cb.layout(l); hint("기본 옥탑방으로 되돌렸어요."); });
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
   $("[data-roof-stand]").addEventListener("click", () => { if (api) api.stand(); });
+  // 화면 조이스틱 (터치 기기): 왼쪽 아래를 누르고 밀면 그 쪽으로 걸어요, 끝까지 밀면 달려요
+  { const jz = $("[data-roof-joy]"), knob = jz.querySelector("i"); let jid = null, cx = 0, cy = 0; const R = 44;
+    const set = (x, y, on) => { const d = Math.hypot(x, y), k = d > R ? R / d : 1; x *= k; y *= k; knob.style.transform = `translate(${x}px, ${y}px)`; if (api) api.joy(x / R, y / R, on, d > R * 1.15); };
+    jz.addEventListener("pointerdown", e => { e.preventDefault(); jid = e.pointerId; jz.setPointerCapture(jid); const r = jz.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; jz.classList.add("on"); set(e.clientX - cx, e.clientY - cy, true); });
+    jz.addEventListener("pointermove", e => { if (e.pointerId === jid) set(e.clientX - cx, e.clientY - cy, true); });
+    const end = e => { if (e.pointerId !== jid) return; jid = null; jz.classList.remove("on"); set(0, 0, false); };
+    jz.addEventListener("pointerup", end); jz.addEventListener("pointercancel", end);
+    jz.hidden = !matchMedia("(pointer: coarse)").matches; }
   // 함께하는 동물: 눌러서 꺼내고 넣어요 (저장돼요)
   const PET_NAME = { dog: "강아지", cat: "고양이", cham: "카멜레온", frog: "개구리", parrot: "앵무새" };
   const paintPets = () => { const on = st.pets || ["dog", "cat"]; $$("[data-roof-pet]").forEach(b => b.setAttribute("aria-pressed", String(on.includes(b.dataset.roofPet)))); };
@@ -264,7 +275,7 @@
   $("[data-roof-close]").addEventListener("click", () => { sheet.hidden = true; mb.setAttribute("aria-expanded", "false"); });
   // 별 세기
   const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
-  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `⭐ 오늘 센 별 ${n}개`; $("[data-roof-starreset]").disabled = !n;   /* 좁은 화면에서도 버튼이 보이게 짧게, 버튼은 늘 보여요 */ starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
+  const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `⭐ 오늘 센 별 ${n}개`; $("[data-roof-starreset]").disabled = !n;   /* 좁은 화면에서도 버튼이 보이게 짧게, 버튼은 늘 보여요 */ starBtn.querySelector("span").textContent = counting ? "세는 중" : "별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
   const resetStars = () => { st.stars = { d: today, idx: [] }; saveSt(); if (api) api.setStars([]); paintCount(); paintSettings(); hint("센 별을 지우고 처음부터 다시 세어요."); };
   $("[data-roof-starreset]").addEventListener("click", resetStars); $("[data-roof-starreset2]").addEventListener("click", resetStars);
   starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setFocus(counting ? "sky" : null); paintCount(); closeSubs(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
@@ -381,8 +392,9 @@
     const top = Math.max(3, ...Object.keys(srvCounts).map(Number).filter(Boolean).map(k => k + 1), curSrv + 1);
     const ul = $("[data-roof-servers]"); if (!ul) return;
     ul.replaceChildren(...Array.from({ length: Math.min(top, 12) }, (_, i) => { const k = i + 1, n = cnt(k), here = k === curSrv && !!net, li = document.createElement("li");
-      li.innerHTML = `<span class="srv-dot"></span><b>${k}서버</b><i>${n}명${n >= SRV_MAX ? " · 가득" : ""}</i>`; li.querySelector(".srv-dot").style.background = n >= SRV_MAX ? "#ff7a6a" : n ? "#7ee08f" : "rgba(255,255,255,.3)";
-      const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn"; b.textContent = here ? "지금 여기" : "들어가기"; b.disabled = here || n >= SRV_MAX;
+      const lvl = n >= SRV_MAX ? "full" : n >= SRV_MAX * .7 ? "busy" : n ? "on" : "off";
+      li.className = "srv srv-" + lvl + (here ? " here" : ""); li.innerHTML = `<span class="srv-dot"></span><span class="srv-t"><b>${k}서버</b><small>${here ? "지금 여기 있어요" : n >= SRV_MAX ? "가득 찼어요" : n ? "함께 있는 사람이 있어요" : "비어 있어요"}</small></span><span class="srv-n"><b>${n}</b>/${SRV_MAX}</span>`;
+      const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn srv-go"; b.textContent = here ? "✓" : "입장"; b.disabled = here || n >= SRV_MAX; b.setAttribute("aria-label", `${k}서버 ${here ? "지금 여기" : "들어가기"}`);
       b.addEventListener("click", () => joinRoom("srv", k)); li.append(b); if (here) li.classList.add("ok"); return li; }));
     const pill = $("[data-roof-srv]"); if (pill) { pill.hidden = !(curSrv && net); pill.textContent = `🌐 ${curSrv}서버 · ${cnt(curSrv)}명`; }
   }
@@ -392,7 +404,7 @@
     $("[data-roof-pc]").textContent = on ? n + "명" : "함께";
     emoBar.hidden = !on;
     roomStat.textContent = msg || (on ? `${roomLabel} · ${n}명이 함께 있어요` : "혼자 있어요. 들어갈 서버를 골라 보세요."); paintServers();
-    $("[data-roof-members]").replaceChildren(...[st.nick + " (나)", ...names.map(x => x.n)].map(t => { const li = document.createElement("li"); li.innerHTML = "<span>•</span><b></b><i></i>"; li.querySelector("b").textContent = t; return li; }));
+    $("[data-roof-members]").replaceChildren(...[[st.nick, 1], ...names.map(x => [x.n, 0])].map(([t, me_]) => { const li = document.createElement("li"); li.className = me_ ? "me" : ""; li.textContent = t + (me_ ? " · 나" : ""); return li; }));
     $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; });
   }
   // 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
