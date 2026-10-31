@@ -18,5 +18,5 @@
   window.addEventListener("pagehide", leave);
   setTimeout(join, 2500);   // 화면이 먼저 뜬 뒤에 붙어요
   const DJ = (window.DJ = window.DJ || {});
-  DJ.online = { count: () => n, onChange: f => { subs.push(f); f(n); } };
+  DJ.online = { count: () => n, onChange: f => { subs.push(f); f(n); }, vid: () => id };
 })();

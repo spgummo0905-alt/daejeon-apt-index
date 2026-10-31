@@ -706,20 +706,29 @@ export function start(host, cb, opt) {
   // 움직임 이어 붙이기: 앉으러 돌아서 천천히 앉고, 텐트는 엎드려 기어 들어가요
   let seq = null;
   const slide = (to, dur, pose, seat, done, delay, yaw) => { seq = { to, dur, pose, seat: seat || 0, done, t: -(delay || 0), yaw, started: false }; };
+  // 자리: 같은 돗자리·텐트에 여럿이 앉거나 누우면 겹치지 않게 옆자리로 (함께 있는 사람이 앉은 곳은 피해요)
+  const SLOTS = { mat: { sit: [[0, .2], [-.7, .2], [.7, .2], [-.7, -.45], [.7, -.45], [0, -.45]], lie: [[0, .65], [-.62, .65], [.62, .65]] },
+    tent: { sit: [[0, 1.45], [-.65, 1.45], [.65, 1.45]], enter: [[0, .5], [-.38, .5], [.38, .5]] } };
+  const taken = (x, z) => [...peers.values()].some(p => (p.pose === "sit" || p.pose === "lie") && Math.hypot(p.tx - x, p.tz - z) < .42);
+  const slotOf = (it, kind) => { const L = (SLOTS[it.t] || {})[kind]; if (!L) return [0, 0]; return L.find(([dx, dz]) => !taken(it.x + dx, it.z + dz)) || null; };
+  const full = () => { cb.say && cb.say("자리가 다 찼어요", "다른 곳에 앉아 보세요"); };
   const sitOn = it => {
-    standUp(); const q = it.sit;
+    standUp(); const q = Object.assign({}, it.sit);
+    if (it.t === "chair" && taken(it.x + q.dx, it.z + q.dz)) { const other = items.filter(i => i.t === "chair" && i !== it && !taken(i.x + i.sit.dx, i.z + i.sit.dz)).sort((a, b) => Math.hypot(a.x - it.x, a.z - it.z) - Math.hypot(b.x - it.x, b.z - it.z))[0];
+      if (!other) { full(); return; } it = other; Object.assign(q, it.sit); }
+    if (it.t !== "chair") { const sl = slotOf(it, "sit"); if (!sl) { full(); return; } q.dx = sl[0]; q.dz = sl[1]; }
     if (it.t === "chair") walkTo(it.x, it.z - .85, () => { me.yaw = Math.PI; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, .5, Math.PI); }, true);
     else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = Math.PI; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, true);
   };
-  const lieOn = it => { me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .32, it.z + .65); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); setFocus("lie"); };
+  const lieOn = (it, sl) => { sl = sl || [0, .65]; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x + sl[0], .32, it.z + sl[1]); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); setFocus("lie"); };
   // ----- 소품 동작: 소품을 눌러 앉기·눕기·텐트 들어가기·차 마시기·랜턴 켜고 끄기 -----
   const itemActions = it => ({ tent: [{ id: "enter", label: "들어가기" }, { id: "sit", label: "앞에 앉기" }], mat: [{ id: "sit", label: "앉기" }, { id: "lie", label: "눕기" }],
     chair: [{ id: "sit", label: "앉기" }], lantern: [{ id: "toggle", label: it.lit ? "끄기" : "켜기" }], table: [{ id: "tea", label: "차 마시기" }] }[it.t] || []);
   function doAction(it, id) {
     standUp();
     if (id === "sit") sitOn(it);
-    else if (id === "lie") { standUp(); walkTo(it.x, it.z + .65, () => lieOn(it), true); }
-    else if (id === "enter") walkTo(it.x, it.z + 1.45, () => { me.yaw = Math.PI; slide({ x: it.x, z: it.z + .5 }, 1.1, "crawl", 0, () => { inTent = it; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .16, it.z + .5); lookT = .9; emote("🌙"); cb.say && cb.say("텐트 안이에요", "지붕이 비쳐서 밤하늘이 보여요. '그만하기'를 누르면 나가요"); cb.lie && cb.lie(); focusItem = it; setFocus("tent"); }, .3, Math.PI); }, true);
+    else if (id === "lie") { standUp(); const sl = slotOf(it, "lie"); if (!sl) { full(); return; } walkTo(it.x + sl[0], it.z + sl[1], () => lieOn(it, sl), true); }
+    else if (id === "enter") { const sl = slotOf(it, "enter"); if (!sl) { full(); return; } walkTo(it.x + sl[0], it.z + 1.45, () => { me.yaw = Math.PI; slide({ x: it.x + sl[0], z: it.z + sl[1] }, 1.1, "crawl", 0, () => { inTent = it; me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x + sl[0], .16, it.z + sl[1]); lookT = .9; emote("🌙"); cb.say && cb.say("텐트 안이에요", "지붕이 비쳐서 밤하늘이 보여요. '그만하기'를 누르면 나가요"); cb.lie && cb.lie(); focusItem = it; setFocus("tent"); }, .3, Math.PI); }, true); }
     else if (id === "tea") walkTo(it.x + .95, it.z + .1, () => { me.yaw = -Math.PI / 2; me.pose = "eat"; eatT = 3.2; emote("☕"); cb.say && cb.say("차를 마셔요", "따뜻한 한 잔 ☕"); focusItem = it; setFocus("table"); });
     else if (id === "toggle") { it.lit = !it.lit; const pp = it.parts; if (pp) { pp.glow.visible = it.lit; pp.bulb.material.color.setHex(it.lit ? 0xffd89a : 0x3a3f50); } emote(it.lit ? "💡" : "🌙"); }
   }
@@ -727,7 +736,7 @@ export function start(host, cb, opt) {
   const sitNearest = () => { const c = nearestItem("chair") || nearestItem("mat"); if (!c) { cb.say && cb.say("앉을 곳이 없어요", "꾸미기에서 의자나 돗자리를 놓아 보세요"); return; } doAction(c, "sit"); };
   const enterNearest = () => { const t = nearestItem("tent"); if (!t) { cb.say && cb.say("텐트가 없어요", "꾸미기에서 텐트를 놓아 보세요"); return; } doAction(t, "enter"); };
   const lieDown = () => { const m = items.filter(i => i.t === "mat").sort((a, b) => Math.hypot(a.x - mePos.x, a.z - mePos.z) - Math.hypot(b.x - mePos.x, b.z - mePos.z))[0];
-    if (!m) { cb.say && cb.say("돗자리가 없어요", "꾸미기에서 돗자리를 펴 보세요"); return; } standUp(); walkTo(m.x, m.z + .65, () => lieOn(m), true); };
+    if (!m) { cb.say && cb.say("돗자리가 없어요", "꾸미기에서 돗자리를 펴 보세요"); return; } standUp(); const sl = slotOf(m, "lie"); if (!sl) { full(); return; } walkTo(m.x + sl[0], m.z + sl[1], () => lieOn(m, sl), true); };
   // 동작을 시작하면 그 동작에 맞는 시점으로 자동 전환하고 고정해요 (그만하기를 누르면 원래대로)
   function setFocus(id) {
     if (id === focus) return; const prev = focus; focus = id; if (id === "grill" || prev === "grill") snapCam = true;

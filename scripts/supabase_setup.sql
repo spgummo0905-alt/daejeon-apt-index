@@ -444,3 +444,23 @@ grant execute on function public.push_key() to anon, authenticated;
 grant execute on function public.push_sub_put(text, text, text) to authenticated;
 grant execute on function public.push_sub_del(text) to authenticated;
 grant execute on function public.push_sub_has(text) to authenticated;
+
+-- ===== 옥상: 오늘 다녀간 사람 수 (브라우저마다 하루 하나의 무작위 번호만, 이름·위치 없음, 7일 지나면 지움) =====
+create table if not exists public.roof_visits (
+  d date not null,
+  vid text not null,
+  primary key (d, vid)
+);
+alter table public.roof_visits enable row level security;   -- 직접 읽고 쓰기는 막고 아래 함수로만
+create or replace function public.roof_visit(vid text)
+returns integer language plpgsql security definer set search_path = '' as $$
+declare today date := (now() at time zone 'Asia/Seoul')::date; n integer;
+begin
+  if vid is null or length(vid) < 4 or length(vid) > 24 then return null; end if;
+  insert into public.roof_visits(d, vid) values (today, vid) on conflict do nothing;
+  delete from public.roof_visits where d < today - 7;
+  select count(*) into n from public.roof_visits where d = today;
+  return n;
+end $$;
+revoke all on function public.roof_visit(text) from public;
+grant execute on function public.roof_visit(text) to anon, authenticated;
