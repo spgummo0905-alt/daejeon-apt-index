@@ -17,19 +17,35 @@ ME = "counter-" + os.urandom(3).hex()
 
 
 async def count():
+    """들어가서 '나도 있어요'를 알린 뒤(그래야 목록을 보내 줘요) 목록을 받아 세고, 나 자신은 빼요"""
     url = f"wss://{HOST}/realtime/v1/websocket?apikey={KEY}&vsn=1.0.0"
     async with websockets.connect(url, open_timeout=20) as ws:
         await ws.send(json.dumps({"topic": TOPIC, "event": "phx_join", "ref": "1", "payload": {
             "config": {"broadcast": {"self": False, "ack": False}, "presence": {"key": ME}, "private": False}, "access_token": KEY}}))
-        for _ in range(30):
-            m = json.loads(await asyncio.wait_for(ws.recv(), 15))
+        keys, got = set(), False
+        loop = asyncio.get_event_loop()
+        end = loop.time() + 12
+        while loop.time() < end:
+            try:
+                m = json.loads(await asyncio.wait_for(ws.recv(), max(0.5, end - loop.time())))
+            except asyncio.TimeoutError:
+                break
             if m.get("topic") != TOPIC:
                 continue
-            if m.get("event") == "phx_reply" and (m.get("payload") or {}).get("status") != "ok":
+            ev, pl = m.get("event"), m.get("payload") or {}
+            if ev == "phx_reply" and pl.get("status") != "ok":
                 raise RuntimeError("참가 실패")
-            if m.get("event") == "presence_state":
-                return len([k for k in (m.get("payload") or {}) if k != ME])
-    raise RuntimeError("접속자 목록을 받지 못함")
+            if ev == "phx_reply" and not got and m.get("ref") == "1":
+                await ws.send(json.dumps({"topic": TOPIC, "event": "presence", "ref": "2", "payload": {"type": "presence", "event": "track", "payload": {"id": ME}}}))
+            elif ev == "presence_state":
+                keys, got = set(pl.keys()), True
+                end = min(end, loop.time() + 2.5)   # 곧이어 오는 변화까지만 조금 더 기다림
+            elif ev == "presence_diff":
+                keys |= set((pl.get("joins") or {}).keys())
+                keys -= set((pl.get("leaves") or {}).keys())
+        if not got and not keys:
+            raise RuntimeError("접속자 목록을 받지 못함")
+        return len([k for k in keys if k != ME])
 
 
 def main():
