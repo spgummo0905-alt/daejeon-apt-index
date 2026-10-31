@@ -826,10 +826,14 @@ export function start(host, cb, opt) {
     ["tent", 9.6, 3.6, 1, 0], ["mat", 9.6, 5.5, 2, 0], ["lantern", 8.2, 4.8, 0, 0],
     ["bar", -9.4, -RZ + 1.0, 0, 0], ["dining", 3.6, 5.6, 0, 0], ["lamp", 1.4, 6.4, 0, 0],
     ["mat", -1, 1.2, 0, 0]];
-  (Array.isArray(opt.layout) ? opt.layout.map(i => [i.t, i.x, i.z, i.c, i.r]) : DEF_LAYOUT).forEach(a => { if (LIM[a[0]]) addItem(a[0], a[1], a[2], a[3] || 0, true, a[4]); });
+  const GR = { x: -3.6, z: -3.3 };   // 타프 거실 옆 캠핑 키친 (불판 자리: 배치보다 먼저 정해요)
+  (Array.isArray(opt.layout) ? opt.layout.map(i => [i.t, i.x, i.z, i.c, i.r]) : DEF_LAYOUT).forEach(a => { if (!LIM[a[0]]) return;
+    const gd = Math.hypot(a[1] - GR.x, a[2] - GR.z), need = 1.05 + (RAD[a[0]] || .4) + .25;   // 예전에 저장한 배치가 불판 자리와 겹치면 살짝 비켜 놓아요
+    if (gd < need) { const k = need / (gd || 1e-3); a = [a[0], GR.x + (a[1] - GR.x) * k + (gd ? 0 : need), GR.z + (a[2] - GR.z) * k, a[3], a[4]]; }
+    addItem(a[0], a[1], a[2], a[3] || 0, true, a[4]); });
   lampLights[0].position.set(-4.0, 1.2, -3.4);
   // 고기 굽는 자리
-  const GR = { x: -3.6, z: -3.3 };   // 타프 거실 옆 캠핑 키친 obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
+   obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
   const gStart = roof.children.length;
   const gtab = new THREE.Mesh(new THREE.BoxGeometry(1.7, .08, .8), new THREE.MeshStandardMaterial({ map: texWood(), color: 0xc79a62, roughness: .8 })); gtab.position.set(GR.x, .72, GR.z + .02); roof.add(gtab);
   for (const [lx, lz] of [[-.78, -.32], [.78, -.32], [-.78, .34], [.78, .34]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .72, 6), stdM(0x1e1f24, .5, .5)); l.position.set(GR.x + lx, .36, GR.z + lz); roof.add(l); }
@@ -1069,7 +1073,7 @@ export function start(host, cb, opt) {
     gr.addColorStop(0, "#2b1d17"); gr.addColorStop(.45, "#171a24"); gr.addColorStop(1, "#0a0d14"); x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
     const m = new THREE.Mesh(new THREE.CircleGeometry(16, 48), new THREE.MeshBasicMaterial({ map: t, fog: false })); m.rotation.x = -Math.PI / 2; m.position.set(GR.x, .3, GR.z); m.visible = false; scene.add(m);
-    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xff7a30, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gl.scale.set(4.2, 4.2, 1); gl.position.set(GR.x, .86, GR.z); gl.visible = false; scene.add(gl);
+    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xff7a30, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gl.scale.set(4.2, 4.2, 1); gl.material.opacity = .22; gl.renderOrder = -1; gl.position.set(GR.x, .2, GR.z - .6);   // 불판 뒤·아래에서만 은은하게 (고기를 덮지 않게) gl.visible = false; scene.add(gl);
     return { m, gl }; })();
   let snapCam = false;
   // 익은 정도 막대(앞/뒤)와 기름 튀는 불꽃
@@ -1083,19 +1087,19 @@ export function start(host, cb, opt) {
   const sparks = Array.from({ length: 30 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffd08a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); sp.visible = false; scene.add(sp); return { sp, l: 0, vx: 0, vy: 0, vz: 0 }; });
   let sparkN = 0; const oilSpark = (x, y, z) => { const q = sparks[sparkN++ % sparks.length]; q.l = rnd(.35, .6); q.vx = rnd(-.4, .4); q.vy = rnd(.8, 1.6); q.vz = rnd(-.25, .25); q.sp.position.set(x, y, z); q.sp.scale.setScalar(rnd(.03, .06)); q.sp.visible = true; };
   const foods = [], foodGroup = new THREE.Group(); roof.add(foodGroup);
-  const slotPos = i => new THREE.Vector3(GR.x - .48 + i * .32, 1.05, GR.z);
+  const slotPos = i => new THREE.Vector3(GR.x - .52 + i * .26, 1.05, GR.z);   // 다섯 칸이 모두 불판 안쪽에 오도록
   const mkFood = kind => {
     const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: .8 });
     let mesh;
     if (kind === "pork") { const geo = new THREE.BoxGeometry(.3, .045, .11, 12, 2, 5), pa = geo.attributes.position;
       for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i), ex = Math.abs(x) / .15, ez = Math.abs(z) / .055;
         pa.setY(i, y * (1 - .3 * Math.max(ex, ez) ** 4) + (y > 0 ? Math.sin(x * 53 + z * 31) * .0022 : 0)); pa.setX(i, x * (1 - .06 * ez * ez)); pa.setZ(i, z * (1 - .08 * ex ** 3)); }
-      geo.computeVertexNormals(); m.map = texPork(); m.roughness = .55; m.needsUpdate = true; mesh = new THREE.Mesh(geo, m);
+      geo.computeVertexNormals(); m.map = texPork(); m.roughness = .55; m.needsUpdate = true; mesh = new THREE.Mesh(geo, m); mesh.rotation.y = Math.PI / 2 + rnd(-.12, .12);   // 세로로 (옆 칸과 안 겹치게)
       const mk = new THREE.Mesh(new THREE.PlaneGeometry(.26, .095), new THREE.MeshBasicMaterial({ map: texMarks(), transparent: true, opacity: 0, depthWrite: false })); mk.rotation.x = -Math.PI / 2; mk.position.y = .0235; mesh.add(mk); mesh.userData.marks = mk; }
     else if (kind === "shrimp") { mesh = new THREE.Mesh(new THREE.TorusGeometry(.07, .035, 8, 14, Math.PI * 1.3), m); mesh.rotation.x = Math.PI / 2; }
     else if (kind === "mushroom") { mesh = new THREE.Mesh(new THREE.SphereGeometry(.09, 18, 10, 0, TAU, 0, Math.PI / 2), m); m.roughness = .5;
       const st = new THREE.Mesh(new THREE.CylinderGeometry(.03, .04, .07, 10), stdM(0xe8dcc0, .8)); st.position.y = -.03; mesh.add(st); }
-    else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .26, 12), new THREE.MeshStandardMaterial({ map: texCorn(), roughness: .8 })); mesh.rotation.z = Math.PI / 2; }
+    else { m.map = texCorn(); mesh = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .26, 12), m); mesh.rotation.z = Math.PI / 2; }   // 옥수수도 같은 재질(익는 색·은은한 빛)
     g.add(mesh); g.userData = { food: true }; mesh.userData.food = true; return { g, mesh, m };
   };
   const slotFree = () => { const used = new Set(foods.map(f => f.slot)); return [0, 1, 2, 3, 4].find(i => !used.has(i)); };
@@ -1182,7 +1186,7 @@ export function start(host, cb, opt) {
     hemi.color.setRGB(p.amb[0] * 1.1 + .06, p.amb[1] * 1.1 + .07, p.amb[2] * 1.1 + .1); hemi.intensity = 1.0 + dayLight * 1.2; hemi.groundColor.setRGB(.08, .08, .12);
     dirL.color.copy(bldU.uLightCol.value).multiplyScalar(1.6); dirL.intensity = 1.1 + dayLight * 1.4; dirL.position.copy(lightDir).multiplyScalar(30);
     renderer.setClearColor(new THREE.Color().setRGB(p.bot[0] / 255, p.bot[1] / 255, p.bot[2] / 255, THREE.SRGBColorSpace));
-    const nightK = p.night; lampLights.forEach(l => l.intensity = 9 + nightK * 16);
+    const nightK = p.night; lampLights.forEach(l => { l.userData.on = l.intensity = 9 + nightK * 16; });
     S.a = { phase, sunAlt, moonUp, night: p.night };
     cb.sky && cb.sky({ phase, sunAlt, moonUp, night: p.night });
   }
@@ -1295,7 +1299,7 @@ export function start(host, cb, opt) {
   const bloomOn = () => quality !== "low";
   let glowK = (opt.glow ?? 40) / 100; const applyGlow = () => { addGlow.uniforms.uMul.value = .4 + glowK; };   // 빛번짐 정도 (설정에서 조절)
   applyGlow();
-  const draw = () => { if (bloomOn()) post.render((.55 + .55 * bldU.uNight.value) * glowK * 1.6); else renderer.render(scene, camera); };
+  const draw = () => { if (bloomOn()) post.render((.55 + .55 * bldU.uNight.value) * glowK * 1.6 * (focus === "grill" ? .35 : 1)); else renderer.render(scene, camera); };
 
   // ----- 크기·품질 -----
   function resize() {
@@ -1338,7 +1342,7 @@ export function start(host, cb, opt) {
       const dx = target.x - mePos.x, dz = target.z - mePos.z, d = Math.hypot(dx, dz);
       if (d < .08) { mePos.x = target.x; mePos.z = target.z; target = null; const f = afterWalk; afterWalk = null; sitSpot = null; if (f) f(); else me.yaw = Math.PI; }
       else { const sp = Math.min(d, 2.5 * dt); mePos.x += dx / d * sp; mePos.z += dz / d * sp; me.yaw = Math.atan2(dx, dz); moving = true; if (me.pose !== "walk") me.pose = "idle"; }
-      const q = pushOut({ x: mePos.x, z: mePos.z }); if (!sitSpot) { mePos.x = q.x; mePos.z = q.z; }
+      if (target && !sitSpot) { const q = pushOut({ x: mePos.x, z: mePos.z }); mePos.x = q.x; mePos.z = q.z; }   // 자리에 막 도착해 앉는 순간에는 밀어내지 않아요 (가구 옆에 둥둥 뜨던 것)
     }
     if (eatT > 0) { eatT -= dt; if (eatT <= 0) { me.pose = "idle"; me.yaw = Math.PI; if (focus === "table") setFocus(null); } }
     if (cheerT > 0) { cheerT -= dt; if (!moving && me.pose !== "sit" && me.pose !== "eat") me.pose = "cheer"; if (cheerT <= 0 && me.pose === "cheer") me.pose = "idle"; }
@@ -1451,7 +1455,7 @@ export function start(host, cb, opt) {
     sky.position.copy(camera.position); moon.rotation.y = 0; updMeteors(dt); updPlane(dt, time);
     // 불판 불빛·연기
     const fl = 1 + Math.sin(time * 11) * .12 + Math.sin(time * 23) * .08; coalLight.intensity = (6 + 6 * bldU.uNight.value) * fl; coalsM.color.setRGB(1, .38 + .12 * Math.sin(time * 5), .12);
-    if (!reduced && Math.random() < (.5 + foods.length * .7) * dt * 10) addSmoke(GR.x + rnd(-.5, .5), 1.1, GR.z + rnd(-.2, .2), rnd(-.08, .12), rnd(.35, .6), rnd(-.05, .05), mini ? rnd(.09, .16) : rnd(.22, .4), mini ? .07 : .12 + Math.min(.12, foods.length * .03), rnd(2.6, 4), mini ? [1, .72, .5] : [.82, .84, .9]);
+    if (!reduced && Math.random() < (.5 + foods.length * .7) * dt * 10) addSmoke(GR.x + rnd(-.5, .5), 1.1, GR.z + rnd(-.2, .2), rnd(-.08, .12), rnd(.35, .6), rnd(-.05, .05), mini ? rnd(.09, .16) : rnd(.22, .4), mini ? .025 : .12 + Math.min(.12, foods.length * .03), rnd(2.6, 4), mini ? [1, .72, .5] : [.82, .84, .9]);
     for (let i = 0; i < 160; i++) { const p = smoke[i]; if (p.l > 0) { p.l -= dt; p.x += (p.vx + Math.sin(time * .8 + i) * .05) * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
       fsg.attributes.position.setXYZ(i, p.x, p.y, p.z); const k = Math.max(0, p.l / (p.m || 1)); fsg.attributes.aSize.setX(i, p.l > 0 ? p.s * (1.8 - k) : 0); fsg.attributes.aAlpha.setX(i, p.l > 0 ? (p.a || .1) * k : 0); const t = p.t || [.8, .8, .9]; fsg.attributes.aCol.setXYZ(i, t[0], t[1], t[2]); }
     fsg.attributes.position.needsUpdate = fsg.attributes.aSize.needsUpdate = fsg.attributes.aAlpha.needsUpdate = fsg.attributes.aCol.needsUpdate = true; flameSm.position.set(0, 0, 0);
@@ -1460,13 +1464,13 @@ export function start(host, cb, opt) {
     items.forEach(it => { if (it.t === "screen" && it.parts) { const u = it.parts.scr.uniforms; u.uT.value = time; u.uOn.value += ((it.lit ? 1 : 0) - u.uOn.value) * Math.min(1, dt * 2); it.parts.glow.material.opacity = u.uOn.value * (.3 + .05 * Math.sin(time * 3)); } });
     items.forEach(it => { if (it.t === "tent" && it.parts) { const want = inTent === it ? .2 : 1, m = it.parts.body.material; m.transparent = true; m.opacity += (want - m.opacity) * Math.min(1, dt * 4); it.parts.glow.material.opacity = (inTent === it ? .9 : .42) * (it.lit ? 1 : 1); } });
     // 먹을거리
-    const mg = focus === "grill"; if (mg) coalLight.intensity *= .3;
-    foods.forEach(f => { f.c[f.down] += dt / 12; if (f.flip > 0) f.flip = Math.max(0, f.flip - dt * 2.4); const up = 1 - f.down, col = colorAt(f.kind, f.c[up]); f.m.color.setRGB(col[0], col[1], col[2]);
+    const mg = focus === "grill"; if (mg) { coalLight.intensity = 1.1 + Math.sin(time * 11) * .1; lampLights.forEach(l => { l.intensity = 0; }); } else lampLights.forEach(l => { if (l.userData.on != null) l.intensity = l.userData.on; });   // 바로 옆 랜턴 불빛까지 겹치면 고기가 하얗게 날아가요   // 미니게임에선 불빛을 낮춰 고기 색이 하얗게 날아가지 않게
+    foods.forEach(f => { f.c[f.down] += dt / 12; if (f.flip > 0) f.flip = Math.max(0, f.flip - dt * 2.4); const up = 1 - f.down, col = colorAt(f.kind, f.c[up]); f.m.color.setRGB(col[0] * .82, col[1] * .82, col[2] * .82); f.m.emissive.setRGB(col[0] * .26, col[1] * .22, col[2] * .2);   // 어두운 곳에서도 보일 만큼만 (날고기 분홍·익은 갈색이 살아 있게) if (f.m.map && !f.m.emissiveMap) { f.m.emissiveMap = f.m.map; f.m.needsUpdate = true; }
       const avg = (f.c[0] + f.c[1]) / 2, shr = 1 - .13 * clamp(avg, 0, 1.2); f.mesh.scale.set(shr, 1 + avg * (f.kind === "pork" ? .9 : .25), f.kind === "corn" ? 1 : shr);
       const mk = f.mesh.userData.marks; if (mk) mk.material.opacity = clamp((f.c[up] - .18) / .6, 0, .85);
       const gp = slotPos(f.slot); if (f.gauge) { f.gauge.gs.visible = mg; f.gauge.gs.position.set(gp.x, gp.y + .02, gp.z + .2); if (mg && frameN % 4 === 0) drawGauge(f.gauge.G, f.c[up], f.c[f.down]); }
       if (mg && f.flip <= 0 && f.c[up] > .06 && Math.random() < dt * (2.5 + 5 * Math.min(1, f.c[up]))) oilSpark(gp.x + rnd(-.1, .1), gp.y + .03, gp.z + rnd(-.04, .04));
-      if (mg && Math.random() < dt * (1.5 + 2 * Math.min(1, f.c[up]))) addSmoke(gp.x + rnd(-.08, .08), gp.y + .05, gp.z, rnd(-.03, .03), rnd(.18, .3), 0, rnd(.06, .1), .1, rnd(1.2, 2), [1, .96, .9]);
+      if (mg && Math.random() < dt * (1.5 + 2 * Math.min(1, f.c[up]))) addSmoke(gp.x + rnd(-.08, .08), gp.y + .12, gp.z - .05, rnd(-.03, .03), rnd(.25, .4), 0, rnd(.05, .08), .035, rnd(1, 1.6), [1, .96, .9]);   // 김은 옅게 위로
       f.g.position.y = slotPos(f.slot).y + Math.sin(f.flip * Math.PI) * .35; f.g.rotation.x = f.flip * Math.PI; if (burnt(f) && Math.random() < dt * 8) addSmoke(f.g.position.x, 1.15, f.g.position.z, 0, .5, 0, .3, .2, 2, [.35, .35, .4]); });
     sparks.forEach(q => { if (q.l > 0) { q.l -= dt; q.vy -= 3.2 * dt; q.sp.position.x += q.vx * dt; q.sp.position.y += q.vy * dt; q.sp.position.z += q.vz * dt; q.sp.material.opacity = clamp(q.l * 3, 0, 1) * (mg ? 1 : 0); if (q.l <= 0) q.sp.visible = false; } });
     if (frameN % 20 === 0) foods.forEach(f => { if (ready(f) && !f.said) { f.said = true; cb.hint && cb.hint(FOOD[f.kind].name + "이(가) 다 익었어요. 눌러서 먹어요."); } });
