@@ -1,0 +1,39 @@
+name: fetch-assets
+
+# 힉스필드로 만든 배경 이미지를 받아 assets-fetch 가지에 올립니다 (수동 실행). urls 에는 "이름=주소" 를 줄마다 하나씩
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "이름=주소 (줄마다 하나)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 받기
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bg"
+          printf '%s\n' "$URLS" | while IFS='=' read -r name url; do
+            [ -z "$name" ] && continue
+            curl -sSL --fail -o "$RUNNER_TEMP/bg/$name.png" "$url" && echo "받음: $name $(stat -c %s "$RUNNER_TEMP/bg/$name.png") bytes"
+          done
+      - name: assets-fetch 가지에 올리기
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan assets-tmp
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          mkdir -p assets/bg && cp "$RUNNER_TEMP"/bg/*.png assets/bg/
+          git add assets/bg
+          git commit -qm "assets $(date -u +%FT%TZ)"
+          git push -f origin assets-tmp:assets-fetch
