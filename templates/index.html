@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% set rail_nav %}<div class="rail-nav"><button type="button" class="rail-btn" data-rail-prev aria-label="이전"><svg class="ic"><use href="#i-chev-left"/></svg></button><span class="rail-dots" aria-hidden="true"><i></i></span><button type="button" class="rail-btn" data-rail-next aria-label="다음"><svg class="ic"><use href="#i-chev-right"/></svg></button></div>{% endset %}
+{% block description %}전국 아파트 임장, 이제 더 쉽고 편리하게! 실거래가부터 시세·학군·교통·입지까지 한눈에 비교하고, 나에게 맞는 아파트를 찾아보세요. 관심 단지 비교부터 임장 동선과 현장 기록까지, 똑똑하고 편리한 임장의 시작.{% endblock %}
 {% block head_extra %}
 {# 사이트에 들어올 때마다(새 창·새 탭·주소 입력·바깥 링크) 인트로부터. 같은 창에서 인트로를 이미 봤거나,
    사이트 안에서 넘어왔거나, 검색 로봇이면 그대로 (인트로 ↔ 첫 화면이 계속 오가지 않게 이 창에서만 기억).
