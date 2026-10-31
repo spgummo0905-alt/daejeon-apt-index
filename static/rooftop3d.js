@@ -270,9 +270,10 @@ const dampTo = (o, k, v, d) => { o.rotation[k] += (v - o.rotation[k]) * d; };
 function animPerson(P, dt, t, moving) {
   const d = Math.min(1, dt * 11), pose = moving ? "walk" : P.pose;
   if (pose === "walk") P.ph += dt * 9.5;
-  const s = Math.sin(P.ph), sit = pose === "sit", chairSit = sit && P.seat > .15, crawl = pose === "crawl";
+  const s = Math.sin(P.ph), sit = pose === "sit", chairSit = sit && P.seat > .15, crawl = pose === "crawl", recline = sit && P.seat > .305 ? .55 : 0;   // 캠핑 의자: 등받이에 기대 눕듯이
   P.body.position.y += ((crawl ? .3 : sit ? .2 + P.seat : .46 + (pose === "walk" ? Math.abs(Math.cos(P.ph)) * .045 : Math.sin(t * 1.6) * .006)) - P.body.position.y) * d;
-  dampTo(P.legs[0], "x", sit ? -1.5 : crawl ? .5 + s * .5 : pose === "walk" ? s * .75 : 0, d); dampTo(P.legs[1], "x", sit ? -1.5 : crawl ? .5 - s * .5 : pose === "walk" ? -s * .75 : 0, d);
+  dampTo(P.body, "x", -recline, d);
+  dampTo(P.legs[0], "x", sit ? -1.5 + recline * .55 : crawl ? .5 + s * .5 : pose === "walk" ? s * .75 : 0, d); dampTo(P.legs[1], "x", sit ? -1.5 + recline * .55 : crawl ? .5 - s * .5 : pose === "walk" ? -s * .75 : 0, d);
   const kA = chairSit ? 1.5 : sit ? .12 : crawl ? .9 : pose === "walk" ? Math.max(0, -s) * .9 : 0, kB = chairSit ? 1.5 : sit ? .12 : crawl ? .9 : pose === "walk" ? Math.max(0, s) * .9 : 0;
   dampTo(P.legs[0].userData.knee, "x", kA, d); dampTo(P.legs[1].userData.knee, "x", kB, d);
   const A = P.arms; let a0x = 0, a1x = 0, a0z = 0, a1z = 0, hx = 0;
@@ -281,7 +282,7 @@ function animPerson(P, dt, t, moving) {
   else if (pose === "cheer") { a0z = -2.7 + Math.sin(t * 9) * .15; a1z = 2.7 - Math.sin(t * 9 + 1) * .15; }
   else if (pose === "eat") { a0x = -2.0 + Math.sin(t * 7) * .12; hx = Math.sin(t * 7) * .05; }
   else if (pose === "watch") { hx = -.5; a0x = a1x = .05; }
-  else if (pose === "sit") { a0x = a1x = chairSit ? -.7 : -.35; }
+  else if (pose === "sit") { a0x = a1x = recline ? -.25 : chairSit ? -.7 : -.35; a0z = recline ? -.25 : 0; a1z = recline ? .25 : 0; }
   else if (crawl) { a0x = -1.5 + s * .5; a1x = -1.5 - s * .5; }
   dampTo(A[0], "x", a0x, d); dampTo(A[1], "x", a1x, d); dampTo(A[0], "z", a0z, d); dampTo(A[1], "z", a1z, d);
   dampTo(P.head, "x", pose === "watch" ? -.5 : pose === "eat" ? hx : 0, d);
@@ -663,7 +664,7 @@ export function start(host, cb, opt) {
       sling.rotation.x = -Math.PI / 2 + .95; sling.position.set(0, .42, .02); g.add(sling);
       const bar = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .58, 6), wood); bar.rotation.z = Math.PI / 2; bar.position.set(0, .62, .36); g.add(bar);   // 등받이 윗막대는 어깨 아래로
       g.scale.setScalar(1.3);   // 사람 몸에 맞게 넉넉한 크기 (팔걸이가 몸을 뚫지 않게)
-      sit = { dx: 0, dz: .12, y: .3 };   // 캔버스 천 위에 깊숙이
+      sit = { dx: 0, dz: .16, y: .31 };   // 캔버스 천 위에 깊숙이 (.305 넘으면 등받이에 기대는 자세)
     } else if (t === "lantern") {
       const b = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .2, 12), new THREE.MeshBasicMaterial({ color: 0xffd89a })); b.position.y = .13; g.add(b);
       const cap = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, .03, 12), stdM(0x2a2f40, .6)); cap.position.y = .245; g.add(cap);
