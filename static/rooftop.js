@@ -227,6 +227,8 @@
     const k = b.dataset.roofDeco; deco = deco === k ? null : k; if (api) api.setDeco(deco); paintDeco();
     if (deco) hint(deco === "remove" ? "치울 것을 눌러 보세요." : "놓고 싶은 자리를 눌러 보세요. 다시 누르면 끝나요."); }));
   $("[data-roof-lie]").addEventListener("click", () => { if (api) { api.lie(); closeSubs(); } });
+  $("[data-roof-sit]").addEventListener("click", () => { if (api) { api.sitNearest(); closeSubs(); } });
+  $("[data-roof-tent]").addEventListener("click", () => { if (api) { api.enterNearest(); closeSubs(); } });
   // 야경 보기: 높은 곳으로 올라가 도시를 내려다봐요
   const viewBtn = $("[data-roof-view]");
   viewBtn.addEventListener("click", () => {
@@ -375,7 +377,7 @@
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
   let actEl = null; const closeAct = () => { if (actEl) { actEl.remove(); actEl = null; } };
   const cb = {
-    burst: SND.burst, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN++; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = name + " 맛있게 먹었어요 😋"; } else say("맛있게 먹었어요", name + " 😋"); },
+    burst: SND.burst, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name, pts) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN += pts || 1; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = pts === 2 ? name + " 완벽하게 구웠어요! ✨ (+2)" : name + " 맛있게 먹었어요 😋 (+1)"; } else say("맛있게 먹었어요", name + " 😋"); },
     cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
     neighbor: () => { hint("이웃도 손을 흔들어 줘요 👋"); },
     starCounted: (n, idx) => {
@@ -388,7 +390,8 @@
       closeAct(); const el = document.createElement("div"); el.className = "roof-act"; el.setAttribute("role", "menu");
       acts.forEach(x => { const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn"; b.textContent = x.label; b.addEventListener("click", ev => { ev.stopPropagation(); closeAct(); pick(x.id); }); el.append(b); });
       box.append(el); const w = el.offsetWidth, h = el.offsetHeight; el.style.left = clamp(pos.x - w / 2, 8, box.clientWidth - w - 8) + "px"; el.style.top = clamp(pos.y - h - 14, 70, box.clientHeight - h - 130) + "px";
-      actEl = el; setTimeout(() => document.addEventListener("pointerdown", closeAct, { once: true }), 0);
+      actEl = el; const away = ev => { if (el.contains(ev.target)) return; document.removeEventListener("pointerdown", away, true); closeAct(); };   // 메뉴 안을 누를 땐 닫지 않아요 (버튼이 눌리기 전에 사라지던 버그)
+      setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
     },
     focus: id => {   // 동작을 시작하면 그 동작만 보이게: 아래 버튼은 숨기고 '그만하기'만 남겨요
       const NAMES = { grill: "🍖 고기 굽는 중 · 익으면 눌러서 먹어요", sky: "⭐ 별 세기 · 별을 눌러 보세요", lie: "🛌 누워서 밤하늘 보는 중", tent: "⛺ 텐트 안에서 쉬는 중", table: "☕ 차 마시는 중" };
