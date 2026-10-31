@@ -3304,3 +3304,61 @@ a.notice-text { text-decoration: underline; text-underline-offset: 3px; }
   .mv-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
   .mv-h { margin-top: 0; }
 }
+
+/* ===================== 집감 옥상 (rooftop.html): 쉬어가는 1인용 공간 =====================
+   화면 색 설정과 상관없이 늘 밤. 불빛은 번쩍이지 않고 은은하게, 소리는 기본 꺼짐. */
+body[data-page="rooftop"] {
+  --bg: #070d1f; --surface: #111e39; --text: #f4f6fb; --text-2: rgba(244,246,251,.78); --muted: rgba(244,246,251,.58);
+  --border: rgba(255,255,255,.12); --chip: rgba(255,255,255,.08); --accent: #7fb2f0; --gold: #e3b955; --brand-ink: #fff; --brand-violet: #a28cff;
+  --shadow: none; color-scheme: dark; background: var(--bg); color: var(--text);
+}
+body[data-page="rooftop"] main { max-width: none; padding: 0; }
+body[data-page="rooftop"] .top-nav, body[data-page="rooftop"] .tabbar, body[data-page="rooftop"] footer { display: none; }
+.roof { position: relative; height: calc(100dvh - 64px); min-height: 520px; overflow: hidden; background: #070d1f; user-select: none; -webkit-user-select: none; }
+.roof-cv { position: absolute; inset: 0; display: block; touch-action: manipulation; cursor: pointer; }
+.roof-top { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; pointer-events: none; }
+.roof-top > * { pointer-events: auto; }
+.roof-town select { appearance: none; border: 1px solid rgba(255,255,255,.18); background: rgba(10,16,34,.62); color: #f4f6fb; font: inherit; font-size: 14px; font-weight: 700;
+  padding: 7px 28px 7px 12px; border-radius: 999px; backdrop-filter: blur(6px); cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #cfd6ea 50%), linear-gradient(135deg, #cfd6ea 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.roof-stat { margin: 0; font-size: 13px; color: rgba(244,246,251,.78); text-shadow: 0 1px 8px rgba(0,0,0,.6); flex: 1 1 160px; }
+.roof-tools { display: flex; gap: 6px; margin-left: auto; }
+.roof-btn { border: 1px solid rgba(255,255,255,.16); background: rgba(10,16,34,.6); color: #f4f6fb; font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 13px; border-radius: 999px;
+  cursor: pointer; backdrop-filter: blur(6px); transition: transform var(--t-fast) var(--ease-out), background var(--t-fast); white-space: nowrap; }
+.roof-btn:hover { background: rgba(40,52,92,.75); }
+.roof-btn:active { transform: scale(.96); }
+.roof-btn:focus-visible, .roof-mission:focus-visible, .roof-town select:focus-visible, .roof-x:focus-visible { outline: 2px solid #a28cff; outline-offset: 2px; }
+.roof-btn.fw { background: linear-gradient(135deg, rgba(60,186,246,.32), rgba(123,92,248,.4)); border-color: rgba(162,140,255,.5); }
+.roof-btn[aria-pressed="true"] { border-color: rgba(227,185,85,.6); color: #ffe6a0; }
+.roof-hint { position: absolute; left: 50%; top: 18%; transform: translate(-50%, 8px); margin: 0; max-width: min(86vw, 420px); text-align: center; font-size: 15px; font-weight: 600;
+  color: rgba(255,255,255,.92); text-shadow: 0 2px 14px rgba(0,0,0,.7); opacity: 0; transition: opacity .9s ease, transform .9s ease; pointer-events: none; }
+.roof-hint.on { opacity: 1; transform: translate(-50%, 0); }
+.roof-bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, rgba(7,13,31,0), rgba(7,13,31,.72)); pointer-events: none; }
+.roof-bottom > * { pointer-events: auto; }
+.roof-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.roof-mission { border: 0; background: none; color: rgba(244,246,251,.82); font: inherit; font-size: 13px; cursor: pointer; padding: 2px 8px; text-shadow: 0 1px 8px rgba(0,0,0,.7); }
+.roof-mission b { color: #ffe6a0; margin-left: 4px; }
+.roof-sheet { position: absolute; left: 12px; bottom: 112px; width: min(320px, calc(100vw - 24px)); background: rgba(14,22,46,.94); border: 1px solid rgba(255,255,255,.14); border-radius: 18px;
+  padding: 14px 16px; backdrop-filter: blur(10px); box-shadow: 0 16px 50px rgba(0,0,0,.5); }
+.roof-sheet-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+.roof-x { border: 0; background: none; color: #cfd6ea; font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.roof-rank { margin: 6px 0 10px; font-size: 13px; color: #ffe6a0; font-weight: 700; }
+.roof-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.roof-list li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; font-size: 14px; color: rgba(244,246,251,.85); }
+.roof-list li.ok { color: #b8f0d0; }
+.roof-list li i { font-style: normal; font-size: 12.5px; color: rgba(244,246,251,.6); font-variant-numeric: tabular-nums; }
+.roof-note { margin: 10px 0 0; font-size: 12px; color: rgba(244,246,251,.55); }
+@media (max-width: 560px) { .roof-stat { order: 3; flex-basis: 100%; } .roof-sheet { bottom: 150px; } .roof-btn { padding: 8px 11px; font-size: 13px; } }
+@media (prefers-reduced-motion: reduce) { .roof-hint { transition: none; } }
+
+/* 첫 화면 아래 줄: 옥상으로 가는 조용한 입구 (메뉴에는 넣지 않음) */
+.roof-strip { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 11px 16px; border-radius: 14px; color: #f4f6fb; font-size: 14px;
+  background: linear-gradient(135deg, #0f1b38, #1d2a55); border: 1px solid rgba(255,255,255,.08); transition: transform var(--t-fast) var(--ease-out); }
+.roof-strip:hover { transform: translateY(-1px); text-decoration: none; }
+.roof-strip-t { flex: 1; min-width: 0; color: rgba(244,246,251,.82); }
+.roof-strip-t b { color: #fff; margin-right: 6px; }
+.roof-strip i { font-style: normal; color: #a28cff; }
+/* 옥상 화면의 알림은 위쪽에 (아래 불판을 가리지 않게) */
+body[data-page="rooftop"] .toast-zone { top: 76px; bottom: auto; }
+body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6fb; }
