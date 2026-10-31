@@ -71,3 +71,12 @@ def test_rooftop_focus_mode_and_natural_sitting():
     assert "crawl" in js3 and "knee" in js3 and "slide(" in js3                                  # 무릎, 텐트 기어들기, 천천히 앉기
     page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
     assert "data-roof-exit" in page and "data-roof-reset" in page                                # 그만하기, 시점 돌아가기
+
+
+def test_rooftop_has_own_share_image(tmp_path):
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "rooftop.html").read_text(encoding="utf-8")
+    assert 'og:image" content="' in page and 'static/og/rooftop.jpg"' in page          # 옥상 링크만 옥상 썸네일
+    assert (out / "static" / "og" / "rooftop.jpg").exists()
+    assert "static/og/daejeon.jpg" in (out / "index.html").read_text(encoding="utf-8")   # 다른 쪽은 그대로

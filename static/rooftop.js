@@ -153,6 +153,7 @@
     $$("[data-roof-amb]").forEach(b => b.setAttribute("aria-pressed", String(st.amb.includes(b.dataset.roofAmb))));
     $$("[data-roof-sky]").forEach(b => b.setAttribute("aria-pressed", String(st.sky === b.dataset.roofSky)));
     $$("[data-roof-q]").forEach(b => b.setAttribute("aria-pressed", String(st.q === b.dataset.roofQ)));
+    $("[data-roof-starsn]").textContent = st.stars.idx.length + "개 · 처음부터 다시 세고 싶을 때";
     { const gl = $("[data-roof-glow]"); gl.value = st.glow ?? 40; $("[data-roof-glowv]").textContent = gl.value + "%"; }
     $$("[data-roof-vol]").forEach(r => { r.value = st.vol[r.dataset.roofVol]; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = st.vol[r.dataset.roofVol] + "%"; });
   }
@@ -244,7 +245,8 @@
   // 별 세기
   const starBtn = $("[data-roof-stars]"), cntEl = $("[data-roof-count]"); let counting = false;
   const paintCount = () => { const n = st.stars.idx.length; cntEl.hidden = !counting; $("[data-roof-countt]").textContent = `오늘 센 별 ${n}개 · 별을 눌러 세어 보세요`; $("[data-roof-starreset]").hidden = !n; starBtn.textContent = counting ? "⭐ 세는 중" : "⭐ 별 세기"; starBtn.setAttribute("aria-pressed", String(counting)); };
-  $("[data-roof-starreset]").addEventListener("click", () => { st.stars = { d: today, idx: [] }; saveSt(); if (api) api.setStars([]); paintCount(); hint("센 별을 지우고 처음부터 다시 세어요."); });
+  const resetStars = () => { st.stars = { d: today, idx: [] }; saveSt(); if (api) api.setStars([]); paintCount(); paintSettings(); hint("센 별을 지우고 처음부터 다시 세어요."); };
+  $("[data-roof-starreset]").addEventListener("click", resetStars); $("[data-roof-starreset2]").addEventListener("click", resetStars);
   starBtn.addEventListener("click", () => { counting = !counting; if (api) api.setFocus(counting ? "sky" : null); paintCount(); closeSubs(); if (counting) hint("하늘의 별을 하나씩 눌러 보세요. 센 별은 금빛으로 이어져요."); });
   // 소원
   const wt = $("[data-roof-wishtext]"), wlog = $("[data-roof-wishlog]");
