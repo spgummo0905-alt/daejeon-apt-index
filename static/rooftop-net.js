@@ -2,6 +2,7 @@
 // - 보내는 것은 위치·자세·이모지 인사·불꽃 한 발뿐이에요. 글은 보내지 않고 서버에 저장하지도 않아요.
 // - 받은 값은 믿지 않고 rooftop3d.js 가 범위를 다시 맞춰서 써요. 한 사람이 너무 많이 보내면 무시해요.
 (function () {
+  if (window.RoofNet) return;   // 사이트 어디서든 접속자 수 때문에 먼저 불러와도 한 번만
   const MAX_PER_SEC = 24;
   function connect(opt, h) {
     h = h || {};
