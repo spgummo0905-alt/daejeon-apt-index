@@ -1,6 +1,6 @@
 // 집감 옥상: 쉬어가는 3D 공간의 화면·소리·기록. 장면은 rooftop3d.js (three.js) 가 그립니다.
 // - 소리는 브라우저에서 만들고 기본은 꺼짐 (환경음·불꽃·효과음을 따로 고르고 조절)
-// - 하늘은 지금 시각·달 모양을 계산해서, 날씨는 그 동네 좌표로 Open-Meteo 에서 받아 반영 (실패해도 그냥 맑게)
+// - 하늘은 지금 시각·달 모양을 계산해서, 날씨는 기상청 자료(서버가 30분마다 받아 둔 weather.json)에서 그 동네 격자를 찾아 반영 (실패해도 그냥 맑게)
 // - 오늘의 미션·연속 방문·칭호·별 세기·소원은 이 기기(로그인하면 계정)에 저장 (djdex:roof)
 (function () {
   const box = document.getElementById("roof");
@@ -299,20 +299,30 @@
   const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
   const stat = () => { statEl.textContent = [town && town.line, wxLine].filter(Boolean).join(" · "); };
   const WX = c => c === 0 ? "맑음" : c <= 3 ? "구름" : c <= 48 ? "안개" : c <= 57 ? "이슬비" : c <= 67 ? "비" : c <= 77 ? "눈" : c <= 82 ? "소나기" : c <= 86 ? "눈" : "뇌우";
+  // 기상청 격자 (공식 변환식. scripts/weather_fetch.py 의 grid 와 같아요)
+  function kmaGrid(lat, lon) {
+    const d = Math.PI / 180, re = 6371.00877 / 5, s1 = 30 * d, s2 = 60 * d, olon = 126 * d, olat = 38 * d;
+    const sn = Math.log(Math.cos(s1) / Math.cos(s2)) / Math.log(Math.tan(Math.PI * .25 + s2 * .5) / Math.tan(Math.PI * .25 + s1 * .5));
+    const sf = Math.pow(Math.tan(Math.PI * .25 + s1 * .5), sn) * Math.cos(s1) / sn, ro = re * sf / Math.pow(Math.tan(Math.PI * .25 + olat * .5), sn);
+    const ra = re * sf / Math.pow(Math.tan(Math.PI * .25 + lat * d * .5), sn); let th = lon * d - olon;
+    if (th > Math.PI) th -= 2 * Math.PI; if (th < -Math.PI) th += 2 * Math.PI; th *= sn;
+    return [Math.floor(ra * Math.sin(th) + 43 + .5), Math.floor(ro - ra * Math.cos(th) + 136 + .5)];
+  }
+  const WX_URL = "https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/weather-data/weather.json";
   async function loadWeather() {
     if (!st.wx || !town || !api) return;
-    const key = "djdex:roofwx:" + town.gu; let d = null;
-    try { const c = JSON.parse(sessionStorage.getItem(key) || "null"); if (c && Date.now() - c.t < 15 * 60e3) d = c.d; } catch (e) { /* 없으면 새로 */ }
-    if (!d) {
-      try {
-        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${town.la.toFixed(3)}&longitude=${town.ln.toFixed(3)}&current=temperature_2m,cloud_cover,precipitation,weather_code,wind_speed_10m&timezone=auto`);
-        if (!r.ok) throw 0; d = (await r.json()).current;
-        try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d })); } catch (e) { /* 저장 못 해도 됨 */ }
-      } catch (e) { return; }   // 날씨를 못 받아도 옥상은 그대로 열려 있어요
+    let all = null;
+    try { const c = JSON.parse(sessionStorage.getItem("djdex:roofwx") || "null"); if (c && Date.now() - c.t < 10 * 60e3) all = c.d; } catch (e) { /* 없으면 새로 */ }
+    if (!all) {
+      try { const r = await fetch(WX_URL); if (!r.ok) throw 0; all = await r.json(); try { sessionStorage.setItem("djdex:roofwx", JSON.stringify({ t: Date.now(), d: all })); } catch (e) { /* 저장 못 해도 됨 */ } }
+      catch (e) { return; }   // 날씨를 못 받아도 옥상은 그대로 열려 있어요
     }
-    const code = d.weather_code, rainy = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95, foggy = code === 45 || code === 48;
-    api.setWeather({ cloud: clamp((d.cloud_cover || 0) / 100, 0, 1), rain: rainy ? clamp(.35 + (d.precipitation || 0) / 4, .35, 1) : 0, fog: foggy ? .85 : 0, wind: clamp((d.wind_speed_10m || 5) / 8, .3, 3) });
-    wxLine = `${WX(code)} ${Math.round(d.temperature_2m)}°`; stat();
+    const [gx, gy] = kmaGrid(town.la, town.ln); let best = null, bd = 5;
+    Object.entries(all.g || {}).forEach(([k, v]) => { const [x, y] = k.split("_").map(Number), dd = Math.hypot(x - gx, y - gy); if (dd < bd) { bd = dd; best = v; } });
+    if (!best) return;
+    const rainy = best.pty === 1 || best.pty === 2 || best.pty === 5 || best.pty === 6, snowy = best.pty === 3 || best.pty === 7, foggy = best.reh >= 98 && best.wsd < 1.6;
+    api.setWeather({ cloud: best.sky >= 4 ? .92 : best.sky === 3 ? .62 : .12, rain: rainy || snowy ? clamp(.4 + best.rn1 / 6, .4, 1) : 0, fog: foggy ? .7 : 0, wind: clamp(best.wsd / 3.5, .3, 3) });
+    wxLine = `${rainy ? "비" : snowy ? "눈" : best.sky >= 4 ? "흐림" : best.sky === 3 ? "구름 많음" : "맑음"} ${Math.round(best.t)}°`; stat();
     if (rainy && !st.amb.includes("rain")) hint("비가 와요. 설정에서 빗소리를 켜 볼까요?");
   }
   function setTown(gu, byGu) {
