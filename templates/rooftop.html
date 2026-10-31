@@ -18,6 +18,7 @@
     <p class="roof-stat" data-roof-stat aria-live="polite"></p>
     <div class="roof-tools">
       <button type="button" class="roof-btn" data-roof-open="room" data-roof-roombtn hidden aria-label="함께 있기">👥 <b data-roof-pc>함께</b></button>
+      <button type="button" class="roof-btn roof-mission" data-roof-mission aria-expanded="false" aria-label="오늘의 미션">🎯 <b data-roof-mcount>0/4</b></button>
       <button type="button" class="roof-btn" data-roof-open="set" aria-label="옥상 설정">설정</button>
       <button type="button" class="roof-btn" data-roof-photo>사진 저장</button>
     </div>
@@ -40,7 +41,7 @@
   <p class="roof-count" data-roof-count hidden><span data-roof-countt></span><button type="button" class="roof-count-reset" data-roof-starreset aria-label="센 별 처음부터 다시 세기">↺ 처음부터</button></p>
 
   <div class="roof-bottom">
-    <button type="button" class="roof-mission" data-roof-mission aria-expanded="false">오늘의 미션 <b data-roof-mcount>0/4</b></button>
+    <button type="button" class="roof-btn roof-stand" data-roof-stand hidden>🙂 일어나기</button>
     <div class="roof-sub" data-roof-sub="fire" hidden>
       <button type="button" class="roof-btn fw" data-roof-fire>한 발</button>
       <button type="button" class="roof-btn fw" data-roof-show>한바탕 쇼</button>
@@ -65,11 +66,11 @@
       <button type="button" class="roof-btn" data-roof-tent>⛺ 텐트 들어가기</button>
     </div>
     <div class="roof-tray" role="group" aria-label="옥상에서 하기">
-      <button type="button" class="roof-btn fw" data-roof-menu="fire" aria-expanded="false">🎆 불꽃</button>
-      <button type="button" class="roof-btn" data-roof-menu="grill" aria-expanded="false">🍖 굽기</button>
-      <button type="button" class="roof-btn" data-roof-menu="deco" aria-expanded="false">⛺ 꾸미기</button>
-      <button type="button" class="roof-btn" data-roof-menu="sky" aria-expanded="false">🌙 밤하늘</button>
-      <button type="button" class="roof-btn vw" data-roof-view aria-pressed="false">🌃 야경</button>
+      <button type="button" class="roof-dock" data-roof-menu="fire" aria-expanded="false"><i aria-hidden="true">🎆</i><span>불꽃</span></button>
+      <button type="button" class="roof-dock" data-roof-menu="grill" aria-expanded="false"><i aria-hidden="true">🍖</i><span>굽기</span></button>
+      <button type="button" class="roof-dock" data-roof-menu="deco" aria-expanded="false"><i aria-hidden="true">⛺</i><span>꾸미기</span></button>
+      <button type="button" class="roof-dock" data-roof-menu="sky" aria-expanded="false"><i aria-hidden="true">🌙</i><span>쉬기</span></button>
+      <button type="button" class="roof-dock vw" data-roof-view aria-pressed="false"><i aria-hidden="true">🌃</i><span data-roof-viewt>야경</span></button>
     </div>
   </div>
 

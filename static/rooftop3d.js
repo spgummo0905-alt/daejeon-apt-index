@@ -591,14 +591,14 @@ export function start(host, cb, opt) {
   let inTent = null, focus = null, fcs = 0, focusItem = null, lookDev = false;
   const standUp = () => { seq = null; if (focus && focus !== "grill" && focus !== "sky") { focus = null; cb.focus && cb.focus(null); }
     if (inTent) { const it0 = inTent, q = pushOut({ x: it0.x, z: it0.z + 1.5 }); inTent = null; me.g.position.set(it0.x, 0, it0.z + .5); me.pose = "crawl"; me.yaw = 0; lookT = .22; slide({ x: q.x, z: q.z }, 1.0, "crawl", 0, () => { me.pose = "idle"; me.yaw = Math.PI; emote("☀️"); }, 0, 0); return; }
-    if (me.pose === "sit" || me.pose === "lie") { me.pose = "idle"; me.g.position.y = 0; me.seat = 0; sittingOn = null; lookT = .22; } };
+    if (me.pose === "sit" || me.pose === "lie") { me.pose = "idle"; me.g.position.y = 0; me.seat = 0; sittingOn = null; lookT = .22; cb.seated && cb.seated(false); } };
   // 움직임 이어 붙이기: 앉으러 돌아서 천천히 앉고, 텐트는 엎드려 기어 들어가요
   let seq = null;
   const slide = (to, dur, pose, seat, done, delay, yaw) => { seq = { to, dur, pose, seat: seat || 0, done, t: -(delay || 0), yaw, started: false }; };
   const sitOn = it => {
     standUp(); const q = it.sit;
-    if (it.t === "chair") walkTo(it.x, it.z - .85, () => { me.yaw = Math.PI; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.hint && cb.hint("바닥을 누르면 일어나요"); }, .5, Math.PI); }, true);
-    else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = Math.PI; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); cb.hint && cb.hint("바닥을 누르면 일어나요"); }, true);
+    if (it.t === "chair") walkTo(it.x, it.z - .85, () => { me.yaw = Math.PI; slide({ x: it.x + q.dx, z: it.z + q.dz }, .55, "sit", q.y, () => { sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, .5, Math.PI); }, true);
+    else walkTo(it.x + q.dx, it.z + q.dz, () => { me.yaw = Math.PI; me.pose = "sit"; me.seat = q.y; me.g.position.y = 0; sittingOn = it; emote("😌"); cb.seated && cb.seated(true); }, true);
   };
   const lieOn = it => { me.pose = "lie"; me.yaw = 0; me.g.position.set(it.x, .32, it.z + .65); sittingOn = it; lookT = .95; emote("🌙"); cb.lie && cb.lie(); setFocus("lie"); };
   // ----- 소품 동작: 소품을 눌러 앉기·눕기·텐트 들어가기·차 마시기·랜턴 켜고 끄기 -----
@@ -1154,7 +1154,7 @@ export function start(host, cb, opt) {
     setCounting(on) { counting = on; starDim = on ? 1.5 : 1; applySky(); if (on) lookT = Math.max(lookT, .55); },
     setStars(arr) { counted = new Set(arr || []); paintStars(); paintLines(); sg.attributes.aSize.needsUpdate = sg.attributes.aCol.needsUpdate = sg.attributes.aAlpha.needsUpdate = true; },
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },
-    wave() { waveT = 1.8; emote("👋"); }, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
+    wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     snapshot() { draw(); return el; },
