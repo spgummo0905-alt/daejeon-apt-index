@@ -14,7 +14,7 @@ base_url = "https://www.jipgam.kr/"
 og_image = "static/og/daejeon.jpg"
 # 검색 등록 확인 코드: 네이버 서치어드바이저 / 구글 서치 콘솔에서 'HTML 태그' 방식으로 받은
 # content="..." 안의 값만 넣으세요. 비워 두면 태그를 넣지 않습니다.
-naver_site_verification = ""
+naver_site_verification = "ffb371c396da76d1bb43d727523fbb50b1079361"
 google_site_verification = ""
 # 위쪽 지역 고르기 (각 지역 사이트 주소). 세종은 config.sejong.toml 로 /sejong/ 에 만듭니다.
 # group 은 고르기 창에서 묶는 권역(적힌 순서대로), desc 는 이름 아래 한 줄, badge 는 이름 옆 작은 표시.
