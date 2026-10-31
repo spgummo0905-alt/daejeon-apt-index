@@ -3439,3 +3439,5 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof[data-focus] .roof-tray, .roof[data-focus] .roof-mission, .roof[data-focus] .roof-emo, .roof[data-focus] .roof-tools, .roof[data-focus] .roof-town { display: none; }
 .roof[data-focus="sky"] .roof-count { display: block; top: 148px; }
 @media (max-width: 560px) { .roof-focus { top: 112px; font-size: 12.5px; } .roof[data-focus="sky"] .roof-count { top: 160px; } }
+.ft-online { margin: 6px 0 0; font-size: 12.5px; color: var(--muted, #8a93a6); } .ft-online b { color: var(--text, inherit); font-variant-numeric: tabular-nums; }
+.ft-online[hidden] { display: none; }
