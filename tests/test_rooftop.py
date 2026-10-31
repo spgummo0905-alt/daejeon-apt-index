@@ -80,3 +80,8 @@ def test_rooftop_has_own_share_image(tmp_path):
     assert 'og:image" content="' in page and 'static/og/rooftop.jpg"' in page          # 옥상 링크만 옥상 썸네일
     assert (out / "static" / "og" / "rooftop.jpg").exists()
     assert "static/og/daejeon.jpg" in (out / "index.html").read_text(encoding="utf-8")   # 다른 쪽은 그대로
+
+
+def test_rooftop_has_white_dog():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "function makeDog" in js3 and "petDog" in js3 and "dog.g" in js3      # 흰 강아지: 따라다니고, 누르면 폴짝
