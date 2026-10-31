@@ -1,0 +1,50 @@
+{
+ "loops": {
+  "cricket": "cricket.mp3",
+  "katydid": "katydid.mp3",
+  "frog": "frog.mp3",
+  "cicada": "cicada.mp3",
+  "wind": "wind.mp3",
+  "rain": "rain.mp3",
+  "chime": "chime.mp3",
+  "fire": "fire.mp3",
+  "city": "city.mp3",
+  "water": "water.mp3",
+  "purr": "purr.mp3"
+ },
+ "oneshots": {
+  "meow1": "meow1.mp3",
+  "meow2": "meow2.mp3"
+ },
+ "near": [
+  "fw_silv2_0.mp3",
+  "fw_silv2_1.mp3",
+  "fw_silv2_2.mp3",
+  "fw_silv2_3.mp3",
+  "fw_silv2_4.mp3",
+  "fw_silv3_0.mp3",
+  "fw_silv3_1.mp3",
+  "fw_silv3_2.mp3",
+  "fw_silv3_3.mp3",
+  "fw_piece_0.mp3",
+  "fw_piece_1.mp3",
+  "fw_piece_2.mp3",
+  "fw_piece_3.mp3",
+  "fw_nijm_0.mp3",
+  "fw_nijm_1.mp3",
+  "fw_nijm_2.mp3",
+  "fw_nijm_3.mp3",
+  "fw_nijm_4.mp3"
+ ],
+ "far": [
+  "fw_far1_0.mp3",
+  "fw_far1_1.mp3",
+  "fw_far1_2.mp3",
+  "fw_far2_0.mp3",
+  "fw_far2_1.mp3",
+  "fw_far2_2.mp3",
+  "fw_far4_0.mp3",
+  "fw_far4_1.mp3",
+  "fw_far4_2.mp3"
+ ]
+}
