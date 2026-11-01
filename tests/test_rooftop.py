@@ -140,3 +140,10 @@ def test_rooftop_calm_sky_defaults():
     js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
     assert "const crownIdx = [];" in js3 and "const beacons = [];" in js3       # 하늘에 뜬 드론 같던 탑 조명은 빼요
     assert "st.glow ?? 20" in js and "st.skyV" in js                             # 기본 빛번짐 20%, 한 번 맞춤
+
+
+def test_rooftop_no_shimmer():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "fwidth(q)" in js3 and "BOX(" in js3                          # 창 무늬를 픽셀 폭에 맞춰 부드럽게, 멀면 평균
+    assert "clamp(sz, 2.2, 90.)" in js3                                  # 아주 작은 불빛이 깜빡이지 않게
+    assert "antialias: true" in js3 and "samples: mobile ? 2 : 4" in js3  # 휴대폰도 계단 현상 줄이기
