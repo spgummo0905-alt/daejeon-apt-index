@@ -23,7 +23,7 @@
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const DEF = { last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, star: 0, wish: 0 }, done: "", sound: false, town: "", nick: "",
     sky: "night", wx: true, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
-    stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null, net: false, id: "" };
+    stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null, net: false, id: "", arrive: true, zen: true };
   let st = Object.assign({}, DEF, DJ.load("roof", {}));
   st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
   if (!st.nick) st.nick = ADJ[(Math.random() * ADJ.length) | 0] + " " + NOUN[(Math.random() * NOUN.length) | 0];
@@ -151,7 +151,7 @@
   // ---------- 설정 창 ----------
   const sw = (el, on) => { el.setAttribute("aria-checked", String(!!on)); };
   function paintSettings() {
-    sw($("[data-roof-sound]"), st.sound); sw($("[data-roof-bg]"), st.bg); sw($("[data-roof-wx]"), st.wx); sw($("[data-roof-hour]"), st.hour);
+    sw($("[data-roof-sound]"), st.sound); sw($("[data-roof-bg]"), st.bg); sw($("[data-roof-wx]"), st.wx); sw($("[data-roof-hour]"), st.hour); sw($("[data-roof-arrset]"), st.arrive); sw($("[data-roof-zenset]"), st.zen);
     $$("[data-roof-bus]").forEach(b => { const on = st.on[b.dataset.roofBus]; b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "켜짐" : "멈춤"; });
     $$("[data-roof-amb]").forEach(b => b.setAttribute("aria-pressed", String(st.amb.includes(b.dataset.roofAmb))));
     $$("[data-roof-sky]").forEach(b => b.setAttribute("aria-pressed", String(st.sky === b.dataset.roofSky)));
@@ -164,6 +164,8 @@
   $("[data-roof-bg]").addEventListener("click", () => { st.bg = !st.bg; saveSt(); paintSettings(); });
   $("[data-roof-wx]").addEventListener("click", () => { st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .15, rain: 0, fog: 0, wind: 1 }); stat(); } });
   $("[data-roof-hour]").addEventListener("click", () => { st.hour = !st.hour; saveSt(); paintSettings(); });
+  $("[data-roof-arrset]").addEventListener("click", () => { st.arrive = !st.arrive; saveSt(); paintSettings(); });
+  $("[data-roof-zenset]").addEventListener("click", () => { st.zen = !st.zen; saveSt(); paintSettings(); });
   $$("[data-roof-bus]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.roofBus; st.on[k] = !st.on[k]; saveSt(); applyGains(); paintSettings(); }));
   $$("[data-roof-amb]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofAmb, i = st.amb.indexOf(k); if (i >= 0) st.amb.splice(i, 1); else st.amb.push(k); saveSt();
@@ -208,9 +210,52 @@
     setTimeout(cyc, 50); });
   $("[data-roof-tosky]").addEventListener("click", () => { if (api) { stopLie(true); api.setFocus("sky"); } });
   const hintEl = $("[data-roof-hint]"); let hintT = 0;
-  function hint(t) { hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
+  function hint(t) { if (box.classList.contains("arriving") || box.classList.contains("zen")) return; hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
   const subs = $$("[data-roof-sub]");
   const closeSubs = () => { subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); };
+  // ---------- 들어올 때 인사: 숨 한 번 고르고, 밤하늘부터 천천히 보며 올라와요 ----------
+  const arrEl = $("[data-roof-arrive]"), DAY = "일월화수목금토";
+  const clockT = d => { const h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0"); return `${h < 5 ? "새벽" : h < 12 ? "오전" : h < 18 ? "오후" : "밤"} ${h % 12 || 12}:${m}`; };
+  let arriving = false, arriveReq = false, arrBreathT = 0;
+  function paintArrive() {
+    const d = new Date(), h = d.getHours();
+    const g = h >= 5 && h < 11 ? ["좋은 아침이에요", "따뜻한 커피 한 잔 들고 올라온 것처럼"] : h >= 11 && h < 17 ? ["잠깐 쉬어 가요", "바람 좀 쐬고 내려가요"]
+      : h >= 17 && h < 21 ? ["오늘 하루도 수고했어요", "노을 지는 옥상에서 숨 돌리고 가요"] : ["오늘 밤은 여기서 쉬어요", "별이 잘 보이는 밤이에요"];
+    $("[data-roof-arrt]").textContent = `${DAY[d.getDay()]}요일 · ${clockT(d)}`;
+    $("[data-roof-arrh]").textContent = g[0];
+    $("[data-roof-arrs]").textContent = st.streak > 1 ? `${g[1]} · ${st.streak}일째 올라왔네요` : g[1];
+  }
+  function showArrive() {
+    arriving = true; arrEl.hidden = false; box.classList.add("arriving"); paintArrive();
+    const b = $("[data-roof-arrb]"); let inh = true;   // 빛이 커질 때 들이쉬고, 작아질 때 내쉬어요 (8초 한 번)
+    arrBreathT = setInterval(() => { inh = !inh; b.style.opacity = 0; setTimeout(() => { b.textContent = inh ? "천천히 들이쉬고" : "길게 내쉬어요"; b.style.opacity = 1; }, 400); }, 4000);
+  }
+  function goUp(kind) {
+    if (!arriving) return; arriving = false; clearInterval(arrBreathT);
+    try { sessionStorage.setItem("djdex:roofarr", "1"); } catch (e) { /* 다음에도 보여요 */ }
+    if (kind === "sound") { if (!st.amb.length) st.amb = ["cricket", "wind"]; st.on.amb = true; setSound(true); } else if (st.sound) setSound(false);
+    arrEl.classList.add("out"); if (api) api.arrive(); else arriveReq = true;
+    setTimeout(() => { arrEl.hidden = true; box.classList.remove("arriving"); lastAct = Date.now();
+      if (!st.tour && api) startTour(); }, calmMQ.matches ? 900 : 5200);   // 카메라가 거의 내려왔을 때 버튼이 살며시
+  }
+  $$("[data-roof-arrgo]").forEach(b => b.addEventListener("click", () => goUp(b.dataset.roofArrgo)));
+  // ---------- 멍 모드: 잠깐 손을 놓으면 버튼이 사라지고 천천히 둘러봐요 ----------
+  let lastAct = Date.now(), zenOn = false, zenSpin = false;
+  const zenNote = $("[data-roof-zennote]");
+  const zenBlocked = () => !api || arriving || box.classList.contains("arriving") || box.classList.contains("touring") || !!box.dataset.focus
+    || $$("[data-roof-modal]").some(m => !m.hidden) || subs.some(x => !x.hidden) || document.hidden;
+  function zen(on) {
+    if (on === zenOn) return; zenOn = on; box.classList.toggle("zen", on);
+    if (on) { $("[data-roof-zent]").textContent = clockT(new Date()); zenSpin = !api.getSpin(); if (zenSpin) api.setSpin(true); }
+    else { if (zenSpin && api) api.setSpin(false); zenSpin = false; lastAct = Date.now(); }
+  }
+  ["pointerdown", "keydown", "wheel"].forEach(ev => window.addEventListener(ev, e => {
+    lastAct = Date.now();
+    if (zenOn) { zen(false); if (ev === "pointerdown" && box.contains(e.target)) { e.stopPropagation(); } }   // 깨우는 첫 터치는 불꽃·걷기로 이어지지 않게
+  }, true));
+  setInterval(() => { if (zenOn) { $("[data-roof-zent]").textContent = clockT(new Date()); if (zenBlocked()) zen(false); return; }
+    if (st.zen && Date.now() - lastAct > 35000 && !zenBlocked()) zen(true); }, 1000);
+  $("[data-roof-zen]").addEventListener("click", () => { closeSubs(); setTimeout(() => zen(true), 80); });
   $$("[data-roof-exit]").forEach(b => b.addEventListener("click", () => { if (api) api.setFocus(null); }));
   $("[data-roof-reset]").addEventListener("click", () => { if (api) { api.resetView(); $("[data-roof-reset]").hidden = true; } });
   $$("[data-roof-menu]").forEach(b => b.addEventListener("click", () => {
@@ -541,7 +586,8 @@
       else if (canNet && st.net) setTimeout(() => joinRoom(st.srv ? "srv" : "auto", st.srv), 2500);
       new ResizeObserver(() => api.resize()).observe(box);
     } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
-    if (!st.tour) setTimeout(() => startTour(), 1200); else setTimeout(() => hint("바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터져요. 화면을 끌면 둘러볼 수 있어요."), 1800);
+    if (arriveReq) { arriveReq = false; api.arrive(); }
+    if (!arriving && arrEl.hidden && !st.tour && !box.classList.contains("touring")) setTimeout(() => startTour(), 1200);   // 인사 중이면 인사가 끝난 뒤에
   }
   // 정각 불꽃놀이: 열어 둔 동안 정각이 되면 한바탕
   let lastHour = "";
@@ -550,7 +596,10 @@
     if (document.hidden) { if (api) api.pause(); if (A.c && !st.bg) A.c.suspend(); }
     else { if (api) api.resume(); if (A.c && st.sound) A.c.resume(); }
   });
-  if (st.sound) {   // 이전에 소리를 켜 뒀어도, 브라우저 규칙상 처음 누를 때부터 시작
+  // 새로 들어올 때마다 (같은 창에서 새로 고친 건 빼고) 인사부터. 친구 초대 링크로 온 사람도 같아요
+  let seenArr = false; try { seenArr = !!sessionStorage.getItem("djdex:roofarr"); } catch (e) { /* 보여 줘요 */ }
+  if (st.arrive && !seenArr) showArrive();
+  if (st.sound && !arriving) {   // 이전에 소리를 켜 뒀어도, 브라우저 규칙상 처음 누를 때부터 시작
     const once = () => { setSound(true); box.removeEventListener("pointerdown", once, true); };
     box.addEventListener("pointerdown", once, true);
   }

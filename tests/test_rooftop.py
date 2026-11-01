@@ -124,3 +124,12 @@ def test_rooftop_layout_keeps_rotation_everywhere():
     js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
     assert "function placeLayout" in js3 and js3.count("placeLayout(") >= 3      # 처음·방 들어가기·나오기 모두 같은 길 (돌린 방향 r 포함)
     assert "LAYOUT_V" in js and "b.lv === LAYOUT_V" in js                       # 옛 배치·옛 화면이 보낸 배치는 쓰지 않아요
+
+
+def test_rooftop_calm_arrival_and_zen():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    assert "data-roof-arrive" in page and 'data-roof-arrgo="sound"' in page and 'data-roof-arrgo="quiet"' in page   # 들어올 때 인사 + 숨 고르기
+    assert "arrive()" in js3 and "api.arrive()" in js                                                           # 하늘에서 천천히 내려오는 카메라
+    assert "data-roof-zen" in page and "data-roof-zenset" in page and "data-roof-arrset" in page and 'classList.toggle("zen"' in js   # 멍 모드·설정

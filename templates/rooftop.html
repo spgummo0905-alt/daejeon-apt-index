@@ -8,6 +8,20 @@
    첫 화면 아래 줄과 바닥글에서만 이어요. 소리는 기본 꺼짐, 불빛은 번쩍이지 않게 은은하게. #}
 <section class="roof" id="roof" aria-label="집감 옥상">
   <p class="sr-only">밤하늘과 도시가 보이는 3차원 옥상입니다. 바닥을 누르면 걸어가고, 하늘을 누르면 불꽃이 터지고, 아래 버튼으로 불꽃놀이·고기 굽기·별 세기·소원 빌기를 할 수 있어요. 화면을 끌면 둘러볼 수 있어요.</p>
+  <div class="roof-arrive" data-roof-arrive hidden>
+    <div class="roof-arrive-in">
+      <p class="roof-arrive-time" data-roof-arrt></p>
+      <h2 class="roof-arrive-h" data-roof-arrh>오늘 하루도 수고했어요</h2>
+      <p class="roof-arrive-s" data-roof-arrs>잠깐 숨 돌리고 가요</p>
+      <div class="roof-arrive-orb" aria-hidden="true"><i></i></div>
+      <p class="roof-arrive-b" aria-hidden="true" data-roof-arrb>천천히 들이쉬고</p>
+      <div class="roof-arrive-go">
+        <button type="button" class="roof-arrive-btn" data-roof-arrgo="sound">🎧 소리 켜고 올라가기</button>
+        <button type="button" class="roof-arrive-btn ghost" data-roof-arrgo="quiet">조용히 올라가기</button>
+      </div>
+    </div>
+  </div>
+  <p class="roof-zen-note" data-roof-zennote aria-hidden="true"><b data-roof-zent></b><span>화면을 누르면 돌아와요</span></p>
   <p class="roof-nogl" data-roof-nogl hidden>이 기기에서는 3D 옥상을 열 수 없어요. 다른 브라우저나 기기에서 열어 주세요.</p>
 
   <div class="roof-top">
@@ -105,6 +119,7 @@
       <button type="button" class="roof-btn" data-roof-stars aria-pressed="false"><i aria-hidden="true">⭐</i><span>별 세기</span></button>
       <button type="button" class="roof-btn" data-roof-open="wish"><i aria-hidden="true">🏮</i><span>소원 빌기</span></button>
       <button type="button" class="roof-btn" data-roof-lie><i aria-hidden="true">🛌</i><span>누워서 보기</span></button>
+      <button type="button" class="roof-btn" data-roof-zen><i aria-hidden="true">🫧</i><span>멍 때리기</span></button>
       <button type="button" class="roof-btn" data-roof-spin aria-pressed="false"><i aria-hidden="true">🌀</i><span>천천히 둘러보기</span></button>
       <button type="button" class="roof-btn" data-roof-sit><i aria-hidden="true">🪑</i><span>앉기</span></button>
       <button type="button" class="roof-btn" data-roof-tent><i aria-hidden="true">⛺</i><span>텐트 들어가기</span></button>
@@ -215,6 +230,10 @@
       </div>
       <div class="rs-main"><div><b>실제 날씨 반영</b><span>구름·비·안개·바람을 그 동네 지금 날씨로 (기상청)</span></div>
         <button type="button" class="rs-sw" data-roof-wx role="switch" aria-checked="true" aria-label="실제 날씨 반영"><i></i></button></div>
+      <div class="rs-main"><div><b>들어올 때 인사</b><span>숨 한 번 고르고 하늘부터 천천히 보며 올라와요</span></div>
+        <button type="button" class="rs-sw" data-roof-arrset role="switch" aria-checked="true" aria-label="들어올 때 인사"><i></i></button></div>
+      <div class="rs-main"><div><b>가만히 있으면 멍 모드</b><span>잠깐 손을 놓으면 버튼이 사라지고 천천히 둘러봐요</span></div>
+        <button type="button" class="rs-sw" data-roof-zenset role="switch" aria-checked="true" aria-label="가만히 있으면 멍 모드"><i></i></button></div>
       <div class="rs-main"><div><b>정각 불꽃놀이</b><span>옥상을 열어 두면 정각마다 쇼가 시작돼요</span></div>
         <button type="button" class="rs-sw" data-roof-hour role="switch" aria-checked="true" aria-label="정각 불꽃놀이"><i></i></button></div>
       <div class="rs-main"><div><b>오늘 센 별</b><span data-roof-starsn>0개 · 처음부터 다시 세고 싶을 때</span></div>
