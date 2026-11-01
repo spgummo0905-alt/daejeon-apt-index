@@ -214,6 +214,34 @@
   function hint(t) { if (box.classList.contains("arriving") || box.classList.contains("zen")) return; hintEl.textContent = t; hintEl.classList.add("on"); clearTimeout(hintT); hintT = setTimeout(() => hintEl.classList.remove("on"), 5200); }
   const subs = $$("[data-roof-sub]");
   const closeSubs = () => { subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); };
+  // ---------- 방명록: 게스트하우스처럼 다녀간 사람이 한 줄 남겨요 (모두에게 보이고, 내 글은 이 기기에서만 지울 수 있어요) ----------
+  const gList = $("[data-roof-glist]"), gText = $("[data-roof-gtext]"), gWho = $("[data-roof-gwho]"), gGo = $("[data-roof-ggo]");
+  let gMood = "🌙", gBusy = false;
+  if (!st.gbTok) { st.gbTok = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join(""); saveSt(); }
+  st.gbMine = st.gbMine || [];
+  const gCall = (fn, body) => (DJ.sb && DJ.sb.call ? DJ.sb.call("/rest/v1/rpc/" + fn, { method: "POST", body }) : Promise.reject(new Error("off")));
+  const ago = t => { const m = (Date.now() - new Date(t)) / 60000; return m < 1 ? "방금" : m < 60 ? `${m | 0}분 전` : m < 1440 ? `${(m / 60) | 0}시간 전` : m < 43200 ? `${(m / 1440) | 0}일 전` : new Date(t).toLocaleDateString("ko-KR", { month: "long", day: "numeric" }); };
+  const paintWho = () => { gWho.textContent = `${st.nick} · ${gText.value.length}/80`; };
+  const gEmpty = t => { const li = document.createElement("li"); li.className = "roof-guest-empty"; li.textContent = t; gList.replaceChildren(li); };
+  function paintGuest(rows) {
+    if (!rows.length) return gEmpty("아직 남긴 글이 없어요. 첫 번째 손님이 되어 주세요 🌙");
+    gList.replaceChildren(...rows.map(r => { const li = document.createElement("li"), mine = st.gbMine.includes(+r.id); li.className = mine ? "mine" : "";
+      const i = document.createElement("i"); i.setAttribute("aria-hidden", "true"); i.textContent = r.mood || "🌙";
+      const d = document.createElement("div"), p_ = document.createElement("p"), sm = document.createElement("small"); p_.textContent = r.msg; sm.textContent = `${r.nick}${mine ? " · 나" : ""} · ${ago(r.at)}`;
+      if (mine) { const x = document.createElement("button"); x.type = "button"; x.textContent = "지우기"; x.addEventListener("click", () => gCall("roof_guest_delete", { p_id: +r.id, p_tok: st.gbTok }).then(() => { st.gbMine = st.gbMine.filter(v => v !== +r.id); saveSt(); loadGuest(); }).catch(() => say("지금은 지울 수 없어요", "잠시 뒤 다시 해 주세요"))); sm.append(x); }
+      d.append(p_, sm); li.append(i, d); return li; }));
+  }
+  function loadGuest() { paintWho(); gEmpty("불러오는 중…"); gCall("roof_guest_list", { lim: 40 }).then(r => paintGuest(Array.isArray(r) ? r : [])).catch(() => gEmpty("지금은 방명록을 열 수 없어요. 잠시 뒤 다시 열어 주세요.")); }
+  $$("[data-roof-gmood]").forEach(b => b.addEventListener("click", () => { gMood = b.dataset.roofGmood; $$("[data-roof-gmood]").forEach(x => x.setAttribute("aria-checked", String(x === b))); }));
+  gText.addEventListener("input", paintWho);
+  $("[data-roof-gform]").addEventListener("submit", e => { e.preventDefault(); const m = gText.value.trim(); if (!m || gBusy) return; gBusy = true; gGo.disabled = true;
+    const vid = (DJ.online && DJ.online.vid && DJ.online.vid()) || st.id;
+    gCall("roof_guest_write", { p_vid: vid, p_tok: st.gbTok, p_nick: st.nick, p_msg: m, p_mood: gMood }).then(v => { v = +v;
+      if (v > 0) { st.gbMine = st.gbMine.concat(v).slice(-60); saveSt(); gText.value = ""; say("방명록에 남겼어요", "다음에 또 올라와요 🌙"); if (api) api.emote(gMood); loadGuest(); }
+      else say(v === -1 ? "링크나 광고는 남길 수 없어요" : v === -2 ? "조금 있다가 다시 남겨 주세요" : v === -3 ? "오늘은 충분히 남겼어요" : "남길 수 없는 글이에요", v === -3 ? "내일 또 와요 🌙" : ""); })
+      .catch(() => say("지금은 남길 수 없어요", "잠시 뒤 다시 해 주세요")).finally(() => { gBusy = false; gGo.disabled = false; }); });
+  const openGuest = () => { closeSubs(); openModal("guest"); loadGuest(); setTimeout(() => gText.focus({ preventScroll: true }), 60); };
+  $$('[data-roof-open="guest"]').forEach(b => b.addEventListener("click", () => loadGuest()));
   // ---------- 들어올 때 인사: 숨 한 번 고르고, 밤하늘부터 천천히 보며 올라와요 ----------
   const arrEl = $("[data-roof-arrive]"), DAY = "일월화수목금토";
   const clockT = d => { const h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0"); return `${h < 5 ? "새벽" : h < 12 ? "오전" : h < 18 ? "오후" : "밤"} ${h % 12 || 12}:${m}`; };
@@ -545,7 +573,7 @@
   $("[data-roof-nowstop]").addEventListener("click", () => { stopVideo(); stopMusic(); });
   window.addEventListener("pagehide", () => { stopVideo(); stopMusic(); myURL.forEach(u => URL.revokeObjectURL(u)); });
   const cb = {
-    pickVideo: () => $("[data-roof-vidfile]").click(), pickMusic: () => $("[data-roof-musfile]").click(), stopMusic: () => stopMusic(),
+    guestbook: () => openGuest(), pickVideo: () => $("[data-roof-vidfile]").click(), pickMusic: () => $("[data-roof-musfile]").click(), stopMusic: () => stopMusic(),
     burst: (...a) => { lastFw = Date.now(); return SND.burst(...a); }, launch: SND.launch, sizzle: SND.sizzle, eat: (kind, name, pts) => { SND.eat(); bump("bbq"); if (box.dataset.focus === "grill") { miniN += pts || 1; $("[data-roof-minin]").textContent = miniN; $("[data-roof-minih]").textContent = pts === 2 ? name + " 완벽하게 구웠어요! ✨ (+2)" : name + " 맛있게 먹었어요 😋 (+1)"; } else say("맛있게 먹었어요", name + " 😋"); },
     cat: () => { SND.meow(); }, say, hint, fire: () => bump("fw"),
     neighbor: () => { hint("이웃도 손을 흔들어 줘요 👋"); },

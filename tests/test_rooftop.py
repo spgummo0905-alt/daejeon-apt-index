@@ -147,3 +147,15 @@ def test_rooftop_no_shimmer():
     assert "fwidth(q)" in js3 and "BOX(" in js3                          # 창 무늬를 픽셀 폭에 맞춰 부드럽게, 멀면 평균
     assert "clamp(sz, 2.2, 90.)" in js3                                  # 아주 작은 불빛이 깜빡이지 않게
     assert "antialias: true" in js3 and "samples: mobile ? 2 : 4" in js3  # 휴대폰도 계단 현상 줄이기
+
+def test_rooftop_guestbook():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    page = (ROOT / "templates" / "rooftop.html").read_text(encoding="utf-8")
+    sql = (ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
+    assert 'data-roof-modal="guest"' in page and 'data-roof-open="guest"' in page and "data-roof-gform" in page   # 쉬기 > 방명록
+    assert 't === "guestbook"' in js3 and 'id === "guest"' in js3                                               # 옥탑방 입구 옆 방명록 받침대
+    assert "roof_guest_write" in js and "roof_guest_list" in js and "roof_guest_delete" in js
+    assert "create table if not exists public.roof_guestbook" in sql and "public.roof_guestbook enable row level security" in sql
+    assert "https?://" in sql                                                                                    # 링크·광고는 받지 않아요
+    assert page.count('class="roof-sec"') >= 2                                                                    # 쉬기 메뉴를 밤하늘·쉼으로 묶어요

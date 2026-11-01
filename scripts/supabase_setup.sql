@@ -464,3 +464,49 @@ begin
 end $$;
 revoke all on function public.roof_visit(text) from public;
 grant execute on function public.roof_visit(text) to anon, authenticated;
+
+-- ===== 옥상 방명록: 게스트하우스처럼 다녀간 사람이 한 줄 남겨요 (닉네임·글·기분만, 링크 금지, 지우기는 쓴 기기만) =====
+create table if not exists public.roof_guestbook (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  nick text not null,
+  msg text not null,
+  mood text not null default '🌙',
+  vid text not null,
+  tok text not null,
+  hidden boolean not null default false
+);
+alter table public.roof_guestbook enable row level security;   -- 직접 읽고 쓰기는 막고 아래 함수로만
+create index if not exists roof_guestbook_at on public.roof_guestbook (at desc);
+create or replace function public.roof_guest_list(lim integer default 40)
+returns table (id bigint, at timestamptz, nick text, msg text, mood text)
+language sql stable security definer set search_path = '' as $$
+  select g.id, g.at, g.nick, g.msg, g.mood from public.roof_guestbook g
+  where not g.hidden order by g.at desc limit least(greatest(coalesce(lim, 40), 1), 60);
+$$;
+create or replace function public.roof_guest_write(p_vid text, p_tok text, p_nick text, p_msg text, p_mood text)
+returns bigint language plpgsql security definer set search_path = '' as $$
+declare m text := btrim(regexp_replace(coalesce(p_msg, ''), '\s+', ' ', 'g')); n text := btrim(coalesce(p_nick, '')); new_id bigint;
+begin
+  if p_vid is null or length(p_vid) < 4 or length(p_vid) > 24 or p_tok is null or length(p_tok) < 12 or length(p_tok) > 40 then return null; end if;
+  if length(m) < 1 or length(m) > 80 or length(n) < 1 or length(n) > 16 then return null; end if;
+  if m ~* '(https?://|www\.|\.(com|net|kr|io|me)\y|open\.kakao|t\.me/)' then return -1; end if;   -- 광고·링크는 받지 않아요
+  if coalesce(p_mood, '') not in ('🌙', '⭐', '🔥', '☕', '🍖', '🌧', '💛', '🎆') then p_mood := '🌙'; end if;
+  if exists (select 1 from public.roof_guestbook g where g.vid = p_vid and g.at > now() - interval '60 seconds') then return -2; end if;   -- 너무 자주는 안 돼요
+  if (select count(*) from public.roof_guestbook g where g.vid = p_vid and g.at > now() - interval '1 day') >= 5 then return -3; end if;
+  insert into public.roof_guestbook (nick, msg, mood, vid, tok) values (n, m, p_mood, p_vid, p_tok) returning id into new_id;
+  delete from public.roof_guestbook where id < new_id - 3000;   -- 오래된 글은 3천 개까지만
+  return new_id;
+end $$;
+create or replace function public.roof_guest_delete(p_id bigint, p_tok text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+begin
+  delete from public.roof_guestbook g where g.id = p_id and g.tok = p_tok;
+  return found;
+end $$;
+revoke all on function public.roof_guest_list(integer) from public;
+revoke all on function public.roof_guest_write(text, text, text, text, text) from public;
+revoke all on function public.roof_guest_delete(bigint, text) from public;
+grant execute on function public.roof_guest_list(integer) to anon, authenticated;
+grant execute on function public.roof_guest_write(text, text, text, text, text) to anon, authenticated;
+grant execute on function public.roof_guest_delete(bigint, text) to anon, authenticated;
