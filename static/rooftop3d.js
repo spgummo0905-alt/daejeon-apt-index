@@ -768,14 +768,14 @@ export function start(host, cb, opt) {
     } else if (t === "chair") {   // 나무 캔버스 접이식 의자 (흰 캔버스·얼룩말 무늬·베이지·카키)
       const wood = stdM(0xb9895a, .7), CAN = [0xf2ede2, 0xe8e2d6, 0xd9c7a8, 0x8f9a6a];
       const canvasM = c % 2 ? new THREE.MeshStandardMaterial({ map: texZebra(), roughness: 1, side: THREE.DoubleSide }) : new THREE.MeshStandardMaterial({ color: CAN[c % 4], roughness: 1, side: THREE.DoubleSide });
-      [-1, 1].forEach(sx => { const x = sx * .27;
+      [-1, 1].forEach(sx => { const x = sx * .37;   // 집콩이 몸이 넉넉히 들어가게 넓은 틀
         const f1 = new THREE.Mesh(new THREE.BoxGeometry(.035, .05, .9), wood); f1.position.set(x, .38, 0); f1.rotation.x = -.55; g.add(f1);
         const f2 = new THREE.Mesh(new THREE.BoxGeometry(.035, .05, .72), wood); f2.position.set(x, .28, -.02); f2.rotation.x = .62; g.add(f2);
       });   // 팔걸이 없이 (앉은 몸을 뚫지 않게)
-      const sling = new THREE.Mesh(new THREE.PlaneGeometry(.5, .95, 1, 8), canvasM); const sa = sling.geometry.attributes.position;
+      const sling = new THREE.Mesh(new THREE.PlaneGeometry(.7, .95, 1, 8), canvasM); const sa = sling.geometry.attributes.position;
       for (let k = 0; k < sa.count; k++) { const y = sa.getY(k); sa.setZ(k, -Math.cos(y / .95 * Math.PI) * .09 - .04); } sling.geometry.computeVertexNormals();
       sling.rotation.x = -Math.PI / 2 + .95; sling.position.set(0, .42, .02); g.add(sling);
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .58, 6), wood); bar.rotation.z = Math.PI / 2; bar.position.set(0, .62, .36); g.add(bar);   // 등받이 윗막대는 어깨 아래로
+      // 등받이 윗막대는 뺐어요: 뒤에서 보면 앉은 몸 앞을 가로질러 갇힌 듯 보였어요 (천이 양쪽 틀에 걸린 모양)
       g.scale.setScalar(1.3);   // 사람 몸에 맞게 넉넉한 크기 (팔걸이가 몸을 뚫지 않게)
       sit = { dx: 0, dz: -.04, y: .31 };   // 캔버스 천 위에 깊숙이 (.305 넘으면 등받이에 기대는 자세)
     } else if (t === "lantern") {

@@ -176,3 +176,10 @@ def test_rooftop_jipkong_mascot():
     assert "function makeKong" in js3 and "const me = makeKong(" in js3 and "const P = makeKong(" in js3   # 나·함께 있는 사람 모두 집콩이
     assert "texKnit" in js3 and "texBlush" in js3 and "LatheGeometry" in js3                            # 니트 목도리·볼터치·찹쌀떡 몸
     assert "K.blob.scale.set" in js3 and "K.hat.scale.set" in js3                                        # 쫀득하게 눌렸다 돌아오기
+
+
+def test_rooftop_default_clear_night_and_open_chair():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert 'sky: "night", wx: false,' in js and 'st.sky = "night"; st.wx = false;' in js   # 들어오면 맑은 밤 (설정에서 바꿀 수 있어요)
+    assert "등받이 윗막대는 뺐어요" in js3                                                # 앉으면 갇힌 듯 보이던 의자 윗막대

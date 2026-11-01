@@ -22,7 +22,7 @@
   const ADJ = ["고요한", "포근한", "느긋한", "다정한", "반짝이는", "든든한", "말랑한", "은은한"], NOUN = ["구름", "달빛", "별", "바람", "노을", "온기", "새벽", "솜사탕"];
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const DEF = { last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, star: 0, wish: 0 }, done: "", sound: false, town: "", nick: "",
-    sky: "night", wx: true, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
+    sky: "night", wx: false, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
     stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null, net: false, id: "", arrive: true, zen: true };
   let st = Object.assign({}, DEF, DJ.load("roof", {}));
   st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
@@ -34,7 +34,9 @@
   // 가구 배치 버전: 캠핑 옥탑방으로 바뀌기 전에 저장된 옛 배치(돌린 방향이 빠진 것 등)는 한 번만 새 기본 배치로 바꿔요
   const LAYOUT_V = 4;
   if (st.layoutV !== LAYOUT_V) { st.layout = null; st.layoutV = LAYOUT_V; }
-  if (st.skyV !== 1) { delete st.glow; st.skyV = 1; }   // 밤하늘이 돋보이게 바꾼 새 기본 빛번짐(20%)으로 한 번 맞춰요
+  if ((st.skyV || 0) < 1) delete st.glow;
+  if ((st.skyV || 0) < 2) { st.sky = "night"; st.wx = false; }   // 들어오면 불꽃·야경이 가장 잘 보이는 맑은 밤으로 (설정에서 실제 날씨·노을·은하수로 바꿀 수 있어요)
+  st.skyV = 2;   // 밤하늘이 돋보이게 바꾼 새 기본 빛번짐(20%)으로 한 번 맞춰요
   DJ.save("roof", st);
   const saveSt = () => DJ.save("roof", st);
   const doneCount = () => MISSIONS.filter(m => st.m[m.k] >= m.n).length;
@@ -163,7 +165,7 @@
   }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
   $("[data-roof-bg]").addEventListener("click", () => { st.bg = !st.bg; saveSt(); paintSettings(); });
-  $("[data-roof-wx]").addEventListener("click", () => { st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .15, rain: 0, fog: 0, wind: 1 }); stat(); } });
+  $("[data-roof-wx]").addEventListener("click", () => { st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 }); stat(); } });
   $("[data-roof-hour]").addEventListener("click", () => { st.hour = !st.hour; saveSt(); paintSettings(); });
   $("[data-roof-arrset]").addEventListener("click", () => { st.arrive = !st.arrive; saveSt(); paintSettings(); });
   $("[data-roof-zenset]").addEventListener("click", () => { st.zen = !st.zen; saveSt(); paintSettings(); });
@@ -178,7 +180,7 @@
   $("[data-roof-glow]").addEventListener("input", e => { st.glow = +e.target.value; $("[data-roof-glowv]").textContent = e.target.value + "%"; if (api) api.setGlow(st.glow); saveSt(); });
   $$("[data-roof-vol]").forEach(r => r.addEventListener("input", () => { st.vol[r.dataset.roofVol] = +r.value; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = r.value + "%"; applyGains(); }));
   $$("[data-roof-vol]").forEach(r => r.addEventListener("change", saveSt));
-  $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); }));
+  $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); stat(); }));
   $$("[data-roof-q]").forEach(b => b.addEventListener("click", () => { st.q = b.dataset.roofQ; saveSt(); paintSettings(); if (api) api.setQuality(st.q === "auto" ? (matchMedia("(pointer: coarse)").matches ? "mid" : "high") : st.q); }));
   let creditsDone = false;
   function paintCredits() {   // 설정 '정보'에 쓴 녹음의 저작자와 라이선스를 보여 줘요
@@ -400,7 +402,8 @@
   const stat = () => {
     const now = window.DJ && DJ.online ? Math.max(1, DJ.online.count()) : 1;
     $("[data-roof-now]").textContent = now.toLocaleString(); $("[data-roof-todayw]").hidden = !todayN; $("[data-roof-today]").textContent = Math.max(todayN, now).toLocaleString();
-    const [ic, w] = when(kstHour()); $("[data-roof-when]").textContent = `${ic} ${w}${wxLine ? " · " + wxLine : ""}`;
+    const SKY_T = { night: ["🌙", "맑은 밤"], dusk: ["🌇", "노을"], galaxy: ["🌌", "은하수"] }, [ic, w] = st.sky !== "real" && SKY_T[st.sky] ? SKY_T[st.sky] : when(kstHour());   // 고른 하늘을 그대로 (실제 시간과 다른 하늘이면 헷갈려요)
+    $("[data-roof-when]").textContent = `${ic} ${w}${st.wx && wxLine ? " · " + wxLine : ""}`;
     const f = box.dataset.focus, spin = api && api.getSpin && api.getSpin(), mins = Math.floor((Date.now() - arrived) / 60e3);
     const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
     $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
@@ -608,7 +611,7 @@
     try {
       const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
       api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 20, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
-      api.setSky(st.sky);
+      api.setSky(st.sky); if (!st.wx) api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 });   // 맑은 밤: 구름·비·안개 없이
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");
       if (canNet && inv && /^[a-z0-9]{4,12}$/.test(inv)) { friendCode = inv; setTimeout(() => { joinRoom("friend", inv); say("친구 방에 들어왔어요", "이모지로 인사해 보세요 👋"); }, 1500); }
