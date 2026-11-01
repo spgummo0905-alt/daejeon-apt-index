@@ -133,3 +133,10 @@ def test_rooftop_calm_arrival_and_zen():
     assert "data-roof-arrive" in page and 'data-roof-arrgo="sound"' in page and 'data-roof-arrgo="quiet"' in page   # 들어올 때 인사 + 숨 고르기
     assert "arrive()" in js3 and "api.arrive()" in js                                                           # 하늘에서 천천히 내려오는 카메라
     assert "data-roof-zen" in page and "data-roof-zenset" in page and "data-roof-arrset" in page and 'classList.toggle("zen"' in js   # 멍 모드·설정
+
+
+def test_rooftop_calm_sky_defaults():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    assert "const crownIdx = [];" in js3 and "const beacons = [];" in js3       # 하늘에 뜬 드론 같던 탑 조명은 빼요
+    assert "st.glow ?? 20" in js and "st.skyV" in js                             # 기본 빛번짐 20%, 한 번 맞춤

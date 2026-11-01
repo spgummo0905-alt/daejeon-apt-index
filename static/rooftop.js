@@ -34,6 +34,7 @@
   // 가구 배치 버전: 캠핑 옥탑방으로 바뀌기 전에 저장된 옛 배치(돌린 방향이 빠진 것 등)는 한 번만 새 기본 배치로 바꿔요
   const LAYOUT_V = 4;
   if (st.layoutV !== LAYOUT_V) { st.layout = null; st.layoutV = LAYOUT_V; }
+  if (st.skyV !== 1) { delete st.glow; st.skyV = 1; }   // 밤하늘이 돋보이게 바꾼 새 기본 빛번짐(20%)으로 한 번 맞춰요
   DJ.save("roof", st);
   const saveSt = () => DJ.save("roof", st);
   const doneCount = () => MISSIONS.filter(m => st.m[m.k] >= m.n).length;
@@ -157,7 +158,7 @@
     $$("[data-roof-sky]").forEach(b => b.setAttribute("aria-pressed", String(st.sky === b.dataset.roofSky)));
     $$("[data-roof-q]").forEach(b => b.setAttribute("aria-pressed", String(st.q === b.dataset.roofQ)));
     $("[data-roof-starsn]").textContent = st.stars.idx.length + "개 · 처음부터 다시 세고 싶을 때";
-    { const gl = $("[data-roof-glow]"); gl.value = st.glow ?? 40; $("[data-roof-glowv]").textContent = gl.value + "%"; }
+    { const gl = $("[data-roof-glow]"); gl.value = st.glow ?? 20; $("[data-roof-glowv]").textContent = gl.value + "%"; }
     $$("[data-roof-vol]").forEach(r => { r.value = st.vol[r.dataset.roofVol]; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = st.vol[r.dataset.roofVol] + "%"; });
   }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
@@ -578,7 +579,7 @@
     if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
     try {
       const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
-      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 40, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
+      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 20, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
       api.setSky(st.sky);
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");
