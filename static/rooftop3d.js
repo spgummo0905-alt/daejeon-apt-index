@@ -493,7 +493,7 @@ export function start(host, cb, opt) {
   const glowPts = mkPoints(14000, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
   let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 14000) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
   const crowns = []; towers.forEach((t, i) => { for (let k = 0; k < 4; k++) { const a = k / 4 * TAU; crowns.push({ x: t.x + Math.cos(a) * 12, y: t.y - 2 - (i % 3) * 6, z: t.z + Math.sin(a) * 12, h: i * .07 + k * .05 }); } });
-  const beacons = towers.map(t => ({ i: gAdd(t.x, t.y, t.z, 1, .12, .1, 9, .9), ph: rnd(0, TAU) }));
+  const beacons = [];   // 먼 탑 꼭대기 항공등은 몸통이 안 보여 하늘에 뜬 빨간 점처럼 보여서 뺐어요 (가까운 고층 건물 항공등은 그대로)
   // 옥상 위 물탱크·기계실 (건물 윤곽이 살아나요) + 높은 건물 꼭대기 붉은 항공등 (다 같이 천천히 깜빡)
   { const rb = []; city.forEach(b => { const dist = Math.hypot(b.x, b.z); if (dist > 760 || b.h < 18 || dist < 30) return; const n = b.h > 60 ? 2 : (Math.random() < .7 ? 1 : 0); for (let k = 0; k < n; k++) rb.push(b);
       if (b.h > 75 && dist < 1100 && Math.random() < .55) { const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw); [[-1, -1], [1, 1]].forEach(([sx, sz]) => { const ox = sx * b.w * .45, oz = sz * b.d * .45; beacons.push({ i: gAdd(b.x + ox * cy - oz * sy, b.h - OURH + .6, b.z + ox * sy + oz * cy, 1, .1, .08, 5.5, .9), ph: 0 }); }); } });
@@ -513,7 +513,7 @@ export function start(host, cb, opt) {
   };
   ROAD_X.forEach(x => { if (Math.abs(x) < 430) road(x, (900 - 330) / 2, 0, 1, 1230); else road(x, -50, 0, 1, 1900); });
   ROAD_Z.forEach(z => { if (z >= -330) road(0, z, 1, 0, 2200); });
-  const crownIdx = crowns.map(c => ({ i: gAdd(c.x, c.y, c.z, 1, .8, .5, 14, .9), h: c.h }));
+  const crownIdx = [];   // 탑 꼭대기 무지개 왕관 조명은 뺐어요: 탑 몸통이 어두워 하늘에 뜬 드론처럼 보여 밤하늘을 가렸어요
   signs.forEach(sg_ => { for (let k = 0; k < 2; k++) { const c = pick([[1, .25, .25], [.3, 1, .55], [.4, .65, 1], [1, .85, .3], [1, .4, .85]]); gAdd(sg_.x + rnd(-sg_.w / 3, sg_.w / 3), sg_.y - k * 2.2, sg_.z, c[0], c[1], c[2], 6.5, .85); } });
   // 만(바다)과 다리: 높은 곳에서 내려다보면 불꽃과 불빛이 물에 비쳐요
   const WATER_Y = -OURH + .4, BAY = { x: 2700, z0: -330, z1: -2700 };
@@ -870,10 +870,10 @@ export function start(host, cb, opt) {
   lampLights[1].position.set(0, 2.4, -3.4);
   const roofGlow = mkPoints(bulbPos.length / 3 + 40, addGlow), rg = roofGlow.geometry;
   const nBulb = bulbPos.length / 3;
-  for (let i = 0; i < nBulb; i++) { rg.attributes.position.setXYZ(i, bulbPos[i * 3], bulbPos[i * 3 + 1], bulbPos[i * 3 + 2]); rg.attributes.aCol.setXYZ(i, bulbCol[i * 3], bulbCol[i * 3 + 1], bulbCol[i * 3 + 2]); rg.attributes.aSize.setX(i, .26); rg.attributes.aAlpha.setX(i, .75); }
+  for (let i = 0; i < nBulb; i++) { rg.attributes.position.setXYZ(i, bulbPos[i * 3], bulbPos[i * 3 + 1], bulbPos[i * 3 + 2]); rg.attributes.aCol.setXYZ(i, bulbCol[i * 3], bulbCol[i * 3 + 1], bulbCol[i * 3 + 2]); rg.attributes.aSize.setX(i, .2); rg.attributes.aAlpha.setX(i, .5); }
   // 한지 등 세 개
-  for (const [x, y, z] of [[-2.4, 2.35, -4.7], [1.3, 2.4, -4.7], [4.8, 2.3, -4.7]]) { const l = new THREE.Mesh(new THREE.SphereGeometry(.2, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffd9a8 })); l.scale.y = 1.25; l.position.set(x, y, z); roof.add(l);
-    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb070, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.set(1.5, 1.5, 1); gl.position.copy(l.position); roof.add(gl); }
+  for (const [x, y, z] of [[-2.4, 2.35, -4.7], [1.3, 2.4, -4.7], [4.8, 2.3, -4.7]]) { const l = new THREE.Mesh(new THREE.SphereGeometry(.15, 14, 10), new THREE.MeshBasicMaterial({ color: 0xd9a878 }));   /* 야경 앞을 가리지 않게 작고 은은한 한지 등 */ l.scale.y = 1.25; l.position.set(x, y, z); roof.add(l);
+    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb070, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.set(.8, .8, 1); gl.position.copy(l.position); roof.add(gl); }
   // 반딧불
   const FF = 22, ffs = Array.from({ length: FF }, () => ({ x: rnd(-RX + 1, RX - 1), y: rnd(.4, 2.2), z: rnd(-RZ + 1, RZ - 1), p: rnd(0, TAU), s: rnd(.3, .8) }));
   for (let i = 0; i < FF; i++) { rg.attributes.aCol.setXYZ(nBulb + i, .8, 1, .45); rg.attributes.aSize.setX(nBulb + i, .22); }
@@ -889,7 +889,7 @@ export function start(host, cb, opt) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(w, 40, d), stdM(0x353a52, .95)); b.position.y = -20; g.add(b);
     const t = new THREE.Mesh(new THREE.BoxGeometry(w, .12, d), stdM(0x6f7488, .9)); t.position.y = .02; g.add(t);
     [[0, d / 2 - .1, w, .2], [0, -d / 2 + .1, w, .2]].forEach(([x, z, ww, dd]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(ww, .9, dd), stdM(0x555a70, .9)); p.position.set(x, .5, z); g.add(p); });
-    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb070, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.set(6, 4, 1); gl.position.set(0, 1.4, 0); g.add(gl);
+    const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb070, transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.set(6, 4, 1); gl.position.set(0, 1.4, 0); g.add(gl);
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(w * .8, .05, .05), new THREE.MeshBasicMaterial({ color: 0xffd8a0 })); lamp.position.set(0, 2.5, d / 2 - .6); g.add(lamp);
     ppl.forEach(([px, pz, hood, pose]) => { const P = makePerson({ hood }); P.g.position.set(px, .1, pz); P.pose = pose; P.yaw = Math.PI; P.base = pose; P.nextWave = rnd(6, 18); P.waveT = 0; P.g.scale.setScalar(1); g.add(P.g); neighbors.push(P); });
   };
@@ -1187,7 +1187,7 @@ export function start(host, cb, opt) {
   const S = { mode: "real", lat: 36.35, lon: 127.38, weather: { cloud: .15, rain: 0, fog: 0, wind: 1 }, a: null };
   const sunDirV = new THREE.Vector3(), moonDirV = new THREE.Vector3();
   function applySky() {
-    let A = astro(new Date(), S.lat, S.lon), sunAlt = A.sun.alt, sunAz = A.sun.az, mAlt = A.moon.alt, mAz = A.moon.az, phase = A.phase, milky = .4, starBoost = 1;
+    let A = astro(new Date(), S.lat, S.lon), sunAlt = A.sun.alt, sunAz = A.sun.az, mAlt = A.moon.alt, mAz = A.moon.az, phase = A.phase, milky = .5, starBoost = 1.3;   // 기본 밤하늘: 별과 은하수를 조금 더 또렷하게
     const mode = S.override || S.mode;
     if (mode === "twilight") { sunAlt = -.085; sunAz = Math.PI * 1.5; mAlt = .45; mAz = Math.PI * .85; phase = .35; milky = .2; }
     if (mode === "night") { sunAlt = -.7; mAlt = .55; mAz = Math.PI * 1.05; phase = .5; }
