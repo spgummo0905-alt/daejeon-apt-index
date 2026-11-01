@@ -70,6 +70,12 @@ def main() -> None:
                 top = sorted((c for c in rows if c.get("i") is not None), key=lambda c: -c["i"])[:3]
                 out["지수 TOP 3"] = [f"{c.get('n')} {c.get('i')}점 {c.get('pt') or ''}".strip() for c in top]
                 out["전세 시세 있는 단지"] = sum(1 for c in rows if c.get("j"))
+                # 수익률(흐름) 점수: 오래된 단지인데 5년 수익률이 비어 있으면 예전 거래가 빠졌다는 뜻이에요
+                old = [c for c in rows if (c.get("y") or 9999) <= 2015]
+                out["10년 수익률 있는 단지"] = sum(1 for c in rows if c.get("c10") is not None)
+                out["5년 수익률 있는 단지"] = sum(1 for c in rows if c.get("c5") is not None)
+                out["2015년 이전 준공인데 5년 수익률 없음"] = f"{sum(1 for c in old if c.get('c5') is None)} / {len(old)}"
+                out["준공 연도 분포(~2015/2016~20/2021~)"] = [len(old), sum(1 for c in rows if 2016 <= (c.get("y") or 0) <= 2020), sum(1 for c in rows if (c.get("y") or 0) >= 2021)]
             sm = s.get(url + "sitemap.xml", timeout=30)
             apts = re.findall(r"<loc>[^<]*/apt/([^<]*)</loc>", sm.text) if sm.ok else []
             out["단지 페이지"] = len(apts)
