@@ -178,14 +178,15 @@ def test_rooftop_jipkong_mascot():
     assert "K.blob.scale.set" in js3 and "K.hat.scale.set" in js3                                        # 쫀득하게 눌렸다 돌아오기
 
 
-def test_rooftop_full_far_shore_city():
-    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
-    assert "const FAR = { z0: -1185" in js3 and "BAY = { x: 2700, z0: -330, z1: -1185 }" in js3   # 만을 좁히고 건너편을 도시로 채움
-    assert "ROAD_X.forEach(x => road(x, (900 - 330) / 2, 0, 1, 1230));" in js3                       # 바다 위로 뻗던 도로 불빛 없앰
-    assert "glowMir" in js3 and "const GMAX = 22000" in js3                                          # 물에 비친 불빛
-
 def test_rooftop_default_clear_night_and_open_chair():
     js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
     js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
     assert 'sky: "night", wx: false,' in js and 'st.sky = "night"; st.wx = false;' in js   # 들어오면 맑은 밤 (설정에서 바꿀 수 있어요)
     assert "등받이 윗막대는 뺐어요" in js3                                                # 앉으면 갇힌 듯 보이던 의자 윗막대
+
+
+def test_rooftop_romantic_sunset_view():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert (ROOT / "static" / "bg" / "sky.webp").stat().st_size > 30000                     # 노을·은하수 하늘 사진
+    assert "farSea" in js3 and "hills.visible = skyU.uPhotoK.value < .5" in js3             # 수평선까지 바다, 사진 속 산과 겹치지 않게
+    assert "uPhotoK" in js3.split("const water")[1].split("water.rotation")[0]               # 노을 쪽 윤슬 길·남색 바다
