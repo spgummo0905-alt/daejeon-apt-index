@@ -31,6 +31,9 @@
   const today = ymd(new Date()), yd = new Date(); yd.setDate(yd.getDate() - 1);
   if (st.last !== today) { st.streak = st.last === ymd(yd) ? st.streak + 1 : 1; st.days += 1; st.last = today; st.m = Object.assign({}, DEF.m); }
   if (st.stars.d !== today) st.stars = { d: today, idx: [] };
+  // 가구 배치 버전: 캠핑 옥탑방으로 바뀌기 전에 저장된 옛 배치(돌린 방향이 빠진 것 등)는 한 번만 새 기본 배치로 바꿔요
+  const LAYOUT_V = 4;
+  if (st.layoutV !== LAYOUT_V) { st.layout = null; st.layoutV = LAYOUT_V; }
   DJ.save("roof", st);
   const saveSt = () => DJ.save("roof", st);
   const doneCount = () => MISSIONS.filter(m => st.m[m.k] >= m.n).length;
@@ -433,7 +436,7 @@
   }
   // 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
   let roomDeco = { v: 0, l: null }, helloT = 0;
-  const sendDeco = () => { if (net && net.isOpen()) net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick }); };
+  const sendDeco = () => { if (net && net.isOpen()) net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick, lv: LAYOUT_V }); };
   function leaveRoom(stay) { const was = !!net; if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
     if (!stay && curSrv) { curSrv = 0; connectLobby(); }
     if (was && roomDeco.v && api) { api.setLayout(st.layout); } roomDeco = { v: 0, l: null }; }
@@ -454,7 +457,7 @@
       leave: id => { api.removePeer(id); },
       event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b);
         else if (ev === "hello") sendDeco();   // 새로 온 사람에게 지금 방의 꾸미기를 알려 줘요
-        else if (ev === "roomDeco" && Array.isArray(b.l) && +b.v > roomDeco.v) { const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
+        else if (ev === "roomDeco" && Array.isArray(b.l) && b.lv === LAYOUT_V && +b.v > roomDeco.v) {   /* 옛 버전 화면이 보낸 배치는 받지 않아요 */ const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
           if (!first || b.by) hint(first ? `${String(b.by || "누군가").slice(0, 12)}님의 옥상이에요. 함께 꾸며 보세요.` : `${String(b.by || "누군가").slice(0, 12)}님이 옥상을 꾸몄어요.`); } },
     });
     st.net = mode === "srv"; saveSt(); paintNet("연결하는 중…");

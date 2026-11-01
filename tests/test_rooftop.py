@@ -117,3 +117,10 @@ def test_rooftop_my_media_local_only():
     assert 'data-roof-deco="speaker"' in page and 't === "speaker"' in js3                          # 스피커 소품
     assert "URL.createObjectURL" in js and "setScreenVideo" in js3 and "VideoTexture" in js3        # 기기 안에서만 재생
     assert "fetch(" not in js.split("내 영상·음악")[1].split("const cb")[0]                          # 서버로 올리지 않아요
+
+
+def test_rooftop_layout_keeps_rotation_everywhere():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    assert "function placeLayout" in js3 and js3.count("placeLayout(") >= 3      # 처음·방 들어가기·나오기 모두 같은 길 (돌린 방향 r 포함)
+    assert "LAYOUT_V" in js and "b.lv === LAYOUT_V" in js                       # 옛 배치·옛 화면이 보낸 배치는 쓰지 않아요
