@@ -1223,7 +1223,7 @@ export function start(host, cb, opt) {
   rainGeo.setAttribute("position", new THREE.BufferAttribute(rp, 3)); const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xaac4ff, transparent: true, opacity: .0, depthWrite: false })); rain.frustumCulled = false; scene.add(rain);
 
   // ----- 카메라와 입력 -----
-  let yaw = 0, lookUp = .22, yawT = 0, lookT = .22, camDist = 5.8, autoSpin = 0;
+  let yaw = 0, lookUp = .22, yawT = 0, lookT = .22, camDist = 5.8, autoSpin = 0, camEase = 6, arriveT = 0;   // camEase·arriveT: 들어올 때 하늘에서 천천히 내려오는 카메라
   const fPos = new THREE.Vector3(), fTgt = new THREE.Vector3(), aerPos = new THREE.Vector3(), aerTgt = new THREE.Vector3(), camPos = new THREE.Vector3(0, 2.4, 6), camTgt = new THREE.Vector3(0, 2, -20);
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const joy = { x: 0, y: 0, on: false, run: false };   // 화면 조이스틱(rooftop.js 가 넣어 줌)
@@ -1232,7 +1232,7 @@ export function start(host, cb, opt) {
   ring.rotation.x = -Math.PI / 2; ring.position.y = .06; roof.add(ring); let ringT = 0;
   const showRing = (x, z) => { ring.position.x = x; ring.position.z = z; ringT = 1; };
   const pointers = new Map(); let dragD = 0, downAt = 0, pinch = 0;
-  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragD = 0; downAt = performance.now(); });
+  el.addEventListener("pointerdown", e => { if (arriveT > 0) { arriveT = 0; camEase = 6; } el.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragD = 0; downAt = performance.now(); });
   el.addEventListener("pointermove", e => { const p = pointers.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; dragD += Math.abs(dx) + Math.abs(dy);
     if (pointers.size >= 2) { const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) camDist = clamp(camDist - (d - pinch) * .012, 3, 7.5); pinch = d; dragD = 99; return; }   // 두 손가락: 가까이·멀리
     if (focus && focus !== "sky") return;
@@ -1454,7 +1454,8 @@ export function start(host, cb, opt) {
     if (target && !joy.on && !focus && Math.abs(((Math.atan2(-(target.x - mePos.x), -(target.z - mePos.z)) - yawT) % TAU + TAU * 1.5) % TAU - Math.PI) > .1 && Math.hypot(target.x - mePos.x, target.z - mePos.z) > 1.2) { /* 멀리 걸어갈 땐 시점이 가는 쪽을 천천히 따라가요 */
       const want = Math.atan2(-(target.x - mePos.x), -(target.z - mePos.z)), dd = ((want - yawT) % TAU + TAU * 1.5) % TAU - Math.PI; yawT += dd * Math.min(1, dt * .8); }
     // 카메라
-    yaw += (yawT - yaw) * Math.min(1, dt * 6); lookUp += (lookT - lookUp) * Math.min(1, dt * 6);
+    if (arriveT > 0) { arriveT -= dt; if (arriveT < 6.2) lookT = .22; camDist += (5.8 - camDist) * Math.min(1, dt * .32); if (arriveT <= 0) camEase = 6; }   // 하늘 → 도시로 천천히
+    yaw += (yawT - yaw) * Math.min(1, dt * camEase); lookUp += (lookT - lookUp) * Math.min(1, dt * camEase);
     const sitting = me.pose === "sit", lying = me.pose === "lie", cy = (lying ? 1.0 : sitting ? 1.7 : 2.25) + (reduced ? 0 : Math.sin(time * .5) * .02);
     if (lying) lookT = Math.max(lookT, .95);
     const bx = mePos.x, bz = mePos.z;
@@ -1611,6 +1612,7 @@ export function start(host, cb, opt) {
     starCount: () => counted.size, wish(text) { standUp(); emote("🙏"); me.pose = "idle"; sendLantern(text); },
     wave() { waveT = 1.8; emote("👋"); }, stand() { standUp(); }, setScreenVideo, setMusic(on) { musicOn = !!on; }, hasItem: t => items.some(i => i.t === t), joy(x, y, on, run) { joy.x = x; joy.y = y; joy.on = on; joy.run = run; if (on) autoSpin = 0; }, setPets, setQuality(q) { quality = q; resize(); }, setGlow(v) { glowK = clamp(v / 100, 0, 1); applyGlow(); },
     setReduced(v) { opt.reduced = v; }, kinds: KINDS,
+    arrive() { if (opt.reduced) return; lookUp = lookT = .82; yaw = yawT - .55; camDist = 7.2; camEase = .55; arriveT = 7.8; },   // 들어올 때: 밤하늘부터 보고 천천히 옥상으로
     pause() { running = false; }, resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     snapshot() { draw(); return el; },
     dispose() { running = false; renderer.dispose(); el.remove(); },
