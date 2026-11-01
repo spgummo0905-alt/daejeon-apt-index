@@ -243,6 +243,16 @@ const texGuestPage = () => {   // 방명록 왼쪽 쪽: 크림색 종이에 손�
   for (let y = 44, i = 0; y < 160; y += 16, i++) { g.beginPath(); let x = 14; g.moveTo(x, y - 3); const end = 40 + ((i * 37) % 70); while (x < end) { x += 5; g.lineTo(x, y - 3 - Math.sin(x * .7 + i) * 2.2); } g.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 };
+const texKnit = () => {   // 니트 결: 작은 V 코가 줄줄이
+  const c = document.createElement("canvas"); c.width = 64; c.height = 32; const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 64, 32);
+  g.strokeStyle = "rgba(120,80,60,.35)"; g.lineWidth = 2; for (let y = 0; y < 32; y += 8) for (let x = 0; x < 64; x += 8) { g.beginPath(); g.moveTo(x + 1, y + 1); g.lineTo(x + 4, y + 7); g.lineTo(x + 7, y + 1); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(9, 2); t.colorSpace = THREE.SRGBColorSpace; return t;
+};
+const texBlush = () => {   // 가장자리가 부드럽게 번진 볼터치
+  const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+  gr.addColorStop(0, "rgba(255,140,120,.95)"); gr.addColorStop(.55, "rgba(255,150,130,.5)"); gr.addColorStop(1, "rgba(255,170,150,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+};
 const texEmoji = e => {
   const c = document.createElement("canvas"); c.width = c.height = 96; const g = c.getContext("2d");
   g.font = "64px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, 48, 52);
@@ -288,39 +298,55 @@ function makePerson(o) {
 //  makePerson 과 같은 모양(g·body·head·arms·legs·food)이라 앉기·눕기·먹기·인사가 그대로 돼요. 몸은 말랑하게 눌렸다 돌아와요(sq)
 function makeKong(o) {
   const g = new THREE.Group(), body = new THREE.Group(); body.position.y = .41; g.add(body);
-  const mochi = new THREE.MeshStandardMaterial({ color: 0xfff6ea, roughness: .5, emissive: 0x4a3a2a, emissiveIntensity: .45 });   // 밤에도 뽀얗게
-  const roofM = new THREE.MeshStandardMaterial({ color: 0xf08a3c, roughness: .6, emissive: 0x5a2208, emissiveIntensity: .3 }), roofD = stdM(0xc8662a, .7);
-  const scarfC = new THREE.Color(o.hood || 0x7b5cf8), scarfM = new THREE.MeshStandardMaterial({ color: scarfC, roughness: .95 });
-  const blob = new THREE.Group(); body.add(blob);                                     // 눌림(쫀득)은 이 묶음 크기로
-  const bodyM = new THREE.Mesh(new THREE.SphereGeometry(.34, 32, 24), mochi); bodyM.scale.set(1.04, .92, .94); blob.add(bodyM);
-  const hd = new THREE.Group(); body.add(hd);                                          // 얼굴·지붕 (고개 돌리기·올려보기)
-  const roofG = new THREE.Group(); roofG.position.set(0, .26, -.01); roofG.rotation.y = Math.PI / 2; hd.add(roofG);   // 용마루가 앞뒤로: 앞에서 보면 ⌂ 모양 집 지붕
-  [-1, 1].forEach(sd => { const pl = new THREE.Mesh(new THREE.CapsuleGeometry(.05, .5, 4, 10), roofM); pl.rotation.z = Math.PI / 2; pl.scale.set(1, 1, 3.6);   // 둥근 판 두 장이 만나는 박공지붕
-    const holder = new THREE.Group(); holder.rotation.x = sd * .78; holder.position.z = sd * .1; holder.add(pl); pl.position.y = .0; roofG.add(holder); });
-  const ridge = new THREE.Mesh(new THREE.CapsuleGeometry(.04, .52, 4, 10), roofD); ridge.rotation.z = Math.PI / 2; ridge.position.y = .085; roofG.add(ridge);
-  const chim = new THREE.Mesh(new THREE.BoxGeometry(.07, .13, .07), stdM(0xb4704a, .8)); chim.position.set(-.12, .12, .13); roofG.add(chim);
-  const chimTop = new THREE.Mesh(new THREE.BoxGeometry(.09, .025, .09), roofD); chimTop.position.set(-.12, .19, .13); roofG.add(chimTop);
-  const eyeM = new THREE.MeshBasicMaterial({ color: 0x2a1f22 }), eyes = [-1, 1].map(sd => { const e = new THREE.Mesh(new THREE.CapsuleGeometry(.018, .035, 4, 8), eyeM); e.rotation.z = Math.PI / 2; e.position.set(sd * .1, .08, .305); e.scale.set(1, 1, .5); hd.add(e); return e; });   // 졸린 듯 가로로 누운 눈
-  const cheeks = [-1, 1].map(sd => { const b = new THREE.Mesh(new THREE.CircleGeometry(.045, 16), new THREE.MeshBasicMaterial({ color: 0xff9a9a, transparent: true, opacity: .6, depthWrite: false })); b.position.set(sd * .17, .025, .285); b.rotation.y = sd * .5; hd.add(b); return b; });
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(.022, .007, 6, 12, Math.PI), new THREE.MeshBasicMaterial({ color: 0x7a3b33 })); mouth.position.set(0, .02, .315); mouth.rotation.z = Math.PI; hd.add(mouth);
-  // 목도리: 얼굴 아래를 감고 한 자락이 늘어져요
-  const scarf = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 10, 28), scarfM); scarf.rotation.x = Math.PI / 2 + .08; scarf.position.y = -.035; scarf.scale.set(1.04, .94, 1); blob.add(scarf);
-  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(.04, .12, 4, 8), scarfM); tail.position.set(.15, -.12, .27); tail.rotation.set(.2, 0, .25); blob.add(tail);
-  // 배에 불 켜진 작은 창 (옥탑방 불빛)
-  const winG = new THREE.Group(); winG.position.set(0, -.16, .282); winG.rotation.x = .38; blob.add(winG);
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(.13, .1), new THREE.MeshBasicMaterial({ color: 0xffcf7a })); winG.add(glass);
-  const frM = new THREE.MeshBasicMaterial({ color: 0x9a5a34 });
-  [[0, 0, .14, .012], [0, 0, .012, .11], [0, .055, .15, .016], [0, -.055, .15, .016], [.07, 0, .016, .126], [-.07, 0, .016, .126]].forEach(([x, y, w, h]) => { const f = new THREE.Mesh(new THREE.PlaneGeometry(w, h), frM); f.position.set(x, y, .002); winG.add(f); });
-  const wGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb860, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false })); wGlow.scale.set(.42, .42, 1); wGlow.position.z = .02; winG.add(wGlow);
-  // 손발: 짧고 동글동글 (사람 캐릭터와 같은 관절이라 포즈가 그대로)
-  const mkArm = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .31, -.02, .02); const a = new THREE.Mesh(new THREE.CapsuleGeometry(.06, .07, 4, 10), mochi); a.position.y = -.07; p_.add(a); body.add(p_); return p_; };
-  const mkLeg = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .14, -.24, .02); const up = new THREE.Mesh(new THREE.CapsuleGeometry(.065, .04, 4, 8), mochi); up.position.y = -.04; p_.add(up);
-    const kn = new THREE.Group(); kn.position.y = -.08; const foot = new THREE.Mesh(new THREE.SphereGeometry(.08, 14, 10), mochi); foot.scale.set(1, .62, 1.3); foot.position.set(0, -.04, .03); kn.add(foot); p_.add(kn); p_.userData.knee = kn; body.add(p_); return p_; };
+  const soft = (c, r, sh, em) => new THREE.MeshPhysicalMaterial({ color: c, roughness: r, sheen: 1, sheenColor: new THREE.Color(sh), sheenRoughness: .55, emissive: em || 0x000000, emissiveIntensity: .32 });
+  const mochi = soft(0xfff3e6, .6, 0xffdcc8, 0x5a4030), toe = soft(0xf6d3bc, .65, 0xffc9b0, 0x3a2216);
+  const hatM = soft(0xf5a06a, .72, 0xffcfa8, 0x7a3418); hatM.emissiveIntensity = .5;
+  const sc = new THREE.Color(o.hood || 0xf2b48a).lerp(new THREE.Color(0xfff1e2), .28);   // 목도리: 사람마다 색 (파스텔로 살짝 부드럽게)
+  const knitM = new THREE.MeshStandardMaterial({ map: texKnit(), color: sc, roughness: 1 });
+  const blob = new THREE.Group(); body.add(blob);                                       // 쫀득하게 눌리는 몸 (아래가 조금 더 넓은 찹쌀떡)
+  const PR = [[0, -.36], [.17, -.355], [.29, -.32], [.36, -.24], [.385, -.12], [.38, 0], [.355, .12], [.315, .23], [.26, .33], [.19, .41], [.1, .46], [0, .475]];   // 아래가 넓은 키 큰 찹쌀떡
+  const prof = PR.map(([x, y]) => new THREE.Vector2(x, y));
+  const rr = y => { for (let k = 1; k < PR.length; k++) if (y <= PR[k][1]) { const a = PR[k - 1], b = PR[k], t_ = (y - a[1]) / (b[1] - a[1]); return a[0] + (b[0] - a[0]) * t_; } return 0; };
+  const onSkin = (x, y, out) => Math.sqrt(Math.max(0, rr(y) ** 2 - x * x)) + (out || .006);   // 몸 표면 바로 위 (얼굴이 파묻히지 않게)
+  const curve = new THREE.SplineCurve(prof), bodyM = new THREE.Mesh(new THREE.LatheGeometry(curve.getPoints(40), 48), mochi); blob.add(bodyM);
+  const hd = new THREE.Group(); body.add(hd);                                           // 얼굴·모자 (고개)
+  // 홍시 베레모: 머리보다 넓게 푹 눌러쓴 말랑한 모자 + 꼭지(줄기·잎 두 장)
+  const hat = new THREE.Group(); hat.position.set(.01, .4, -.01); hat.rotation.set(-.1, 0, -.11); hd.add(hat);
+  const brim = new THREE.Mesh(new THREE.SphereGeometry(.3, 48, 28), hatM); brim.scale.set(1.28, .66, 1.2); hat.add(brim);   // 한 덩어리로 푹 눌러쓴 말랑한 베레모
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(.26, 32, 20), hatM); crown.scale.set(1.0, .62, .95); crown.position.set(.03, .07, -.02); hat.add(crown);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(.018, .024, .1, 10), stdM(0x8a5a44, .8)); stem.position.set(.03, .25, -.02); stem.rotation.z = .12; hat.add(stem);
+  const leafM = stdM(0xb3a27e, .85); [-1, 1].forEach(sd => { const lf = new THREE.Mesh(new THREE.SphereGeometry(.07, 14, 8), leafM); lf.scale.set(1, .28, .55); lf.position.set(.03 + sd * .07, .25, -.02); lf.rotation.z = sd * .35; hat.add(lf); });
+  // 얼굴: 지그시 감은 눈, ω 입, 큰 볼터치
+  const inkM = new THREE.MeshBasicMaterial({ color: 0x5a3a30 });
+  const eyes = [-1, 1].map(sd => { const e = new THREE.Mesh(new THREE.CapsuleGeometry(.012, .055, 4, 8), inkM); e.rotation.z = Math.PI / 2 + sd * .08; e.position.set(sd * .11, .2, onSkin(sd * .11, .2)); e.rotation.y = -sd * .32; e.scale.set(1, 1, .5); hd.add(e); return e; });
+  const mouth = new THREE.Group(); mouth.position.set(0, .145, onSkin(0, .145)); hd.add(mouth);
+  [-1, 1].forEach(sd => { const a = new THREE.Mesh(new THREE.TorusGeometry(.017, .0055, 6, 12, Math.PI), inkM); a.rotation.z = Math.PI; a.position.x = sd * .017; mouth.add(a); });
+  const cheekM = new THREE.MeshBasicMaterial({ map: texBlush(), transparent: true, depthWrite: false });
+  const cheeks = [-1, 1].map(sd => { const c = new THREE.Mesh(new THREE.PlaneGeometry(.15, .11), cheekM); c.position.set(sd * .2, .13, onSkin(sd * .2, .13, .012)); c.rotation.y = sd * .62; hd.add(c); return c; });
+  // 두툼한 니트 목도리 + 늘어진 한 자락(술)
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(.355, .075, 14, 40), knitM); scarf.rotation.x = Math.PI / 2; scarf.position.y = .03; scarf.scale.set(1.02, 1.02, .82); blob.add(scarf);
+  const tail = new THREE.Group(); tail.position.set(.18, -.07, onSkin(.18, -.07, .05)); tail.rotation.set(.12, .45, .1); blob.add(tail);
+  const tm = new THREE.Mesh(new THREE.CapsuleGeometry(.055, .1, 6, 12), knitM); tm.scale.set(1, 1, .42); tail.add(tm);   // 말랑하게 둥근 목도리 자락
+  for (let k = 0; k < 6; k++) { const f = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, .04, 4), knitM); f.position.set(-.045 + k * .018, -.165, 0); tail.add(f); }
+  // 배에 아치형 창: 따뜻한 불빛 + 창틀 + 창턱
+  const winG = new THREE.Group(); winG.position.set(-.05, -.13, onSkin(-.05, -.13, .022)); winG.rotation.set(.06, -.13, 0); blob.add(winG);
+  const arch = (w, h) => { const sh = new THREE.Shape(), r = w / 2; sh.moveTo(-r, -h / 2); sh.lineTo(r, -h / 2); sh.lineTo(r, h / 2 - r); sh.absarc(0, h / 2 - r, r, 0, Math.PI, false); sh.lineTo(-r, -h / 2); return new THREE.ShapeGeometry(sh, 16); };
+  const frame = new THREE.Mesh(arch(.15, .16), new THREE.MeshStandardMaterial({ color: 0xd98e66, roughness: .8 })); winG.add(frame);
+  const glass = new THREE.Mesh(arch(.115, .125), new THREE.MeshBasicMaterial({ color: 0xffd98a })); glass.position.z = .003; winG.add(glass);
+  const barM = new THREE.MeshBasicMaterial({ color: 0xd98e66 });
+  const bv = new THREE.Mesh(new THREE.PlaneGeometry(.012, .12), barM); bv.position.z = .005; winG.add(bv);
+  const bh = new THREE.Mesh(new THREE.PlaneGeometry(.115, .012), barM); bh.position.set(0, .0, .005); winG.add(bh);
+  const sill = new THREE.Mesh(new THREE.BoxGeometry(.16, .022, .03), new THREE.MeshStandardMaterial({ color: 0xd98e66, roughness: .8 })); sill.position.set(0, -.09, .012); winG.add(sill);
+  const wGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb860, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false })); wGlow.scale.set(.38, .38, 1); wGlow.position.z = .03; winG.add(wGlow);
+  // 손: 동글동글 벙어리장갑 / 발: 몸 아래로 살짝 보이는 말랑한 발
+  const mkArm = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .365, -.07, .04); const a = new THREE.Mesh(new THREE.CapsuleGeometry(.075, .07, 6, 12), mochi); a.position.y = -.075; a.rotation.z = sd * .18; p_.add(a); body.add(p_); return p_; };
+  const mkLeg = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .15, -.3, .04); const kn = new THREE.Group(); kn.position.y = -.04;
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(.085, 16, 12), toe); foot.scale.set(1.1, .58, 1.25); foot.position.set(0, -.02, .05); kn.add(foot); p_.add(kn); p_.userData.knee = kn; body.add(p_); return p_; };
   const arms = [mkArm(-1), mkArm(1)], legs = [mkLeg(-1), mkLeg(1)];
-  const food = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), stdM(0xd89a60, .9)); food.position.set(0, -.15, .06); food.visible = false; arms[0].add(food);
-  const shadow = new THREE.Mesh(new THREE.CircleGeometry(.32, 20), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: .32, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .015; g.add(shadow);
+  const food = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), stdM(0xd89a60, .9)); food.position.set(0, -.17, .07); food.visible = false; arms[0].add(food);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(.36, 24), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: .3, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .015; g.add(shadow);
   g.rotation.order = "YXZ";
-  const P = { g, body, head: hd, arms, legs, food, pose: "idle", ph: Math.random() * 6, seat: 0, yaw: 0, tag: null, mouth, kong: { blob, eyes, cheeks, wGlow, sq: 0, sv: 0, prev: "idle", blinkT: rnd(2, 5) } };
+  const P = { g, body, head: hd, arms, legs, food, pose: "idle", ph: Math.random() * 6, seat: 0, yaw: 0, tag: null, mouth, kong: { blob, eyes, cheeks, wGlow, hat, sq: 0, sv: 0, prev: "idle", blinkT: rnd(2, 5) } };
   g.userData.person = P; return P;
 }
 const dampTo = (o, k, v, d) => { o.rotation[k] += (v - o.rotation[k]) * d; };
@@ -334,9 +360,9 @@ function animPerson(P, dt, t, moving) {
     if (pose !== K.prev) { K.sv -= pose === "sit" || pose === "lie" ? 2.2 : pose === "cheer" || pose === "wave" ? -1.6 : 1.2; K.prev = pose; }
     const want = pose === "walk" ? -.07 * Math.max(0, Math.cos(P.ph * 2)) : Math.sin(t * 1.7 + P.ph) * .018;
     K.sv += ((want - K.sq) * 150 - K.sv * 8.5) * Math.min(dt, .05); K.sq += K.sv * Math.min(dt, .05); K.sq = clamp(K.sq, -.22, .2);
-    K.blob.scale.set(1 - K.sq * .55, 1 + K.sq, 1 - K.sq * .55); P.head.position.y = K.sq * .3;
+    K.blob.scale.set(1 - K.sq * .55, 1 + K.sq, 1 - K.sq * .55); P.head.position.y = K.sq * .3; K.hat.scale.set(1 + K.sq * .25, 1 - K.sq * .4, 1 + K.sq * .25);   // 모자도 말랑하게 같이
     K.blinkT -= dt; const sleepy = pose === "lie", blink = K.blinkT < .12; if (K.blinkT < 0) K.blinkT = rnd(2.5, 5.5);
-    K.eyes.forEach(e => { e.scale.x = sleepy || blink ? .25 : 1; });                     // 누우면 스르르 감고, 가끔 깜빡
+    K.eyes.forEach(e => { e.scale.y = sleepy ? .75 : blink ? .85 : 1; });                // 지그시 감은 눈 (누우면 더 가늘게)
     const puff = pose === "eat" ? 1.35 + Math.sin(t * 7) * .1 : 1; K.cheeks.forEach(c => { c.scale.setScalar(puff); });   // 먹을 때 볼이 빵빵
     K.wGlow.material.opacity = .32 + .14 * Math.sin(t * 1.3 + P.ph);                    // 배 창문 불빛이 은은하게 숨 쉬듯
   }
@@ -973,7 +999,7 @@ export function start(host, cb, opt) {
   neighborRoof(31, -7, -66, 14, 10, [[-1, 0, 0xf0b040, "idle"], [2, 1, 0x6a8ae8, "sit"]]);
 
   // ----- 나(아바타)와 고양이 -----
-  const me = makeKong({ hood: opt.hood || 0x7b5cf8 }); roof.add(me.g); me.g.position.set(0, 0, 1.0); me.yaw = Math.PI;
+  const me = makeKong({ hood: opt.hood || 0xf2b48a }); roof.add(me.g); me.g.position.set(0, 0, 1.0); me.yaw = Math.PI;
   const cat = makeCat(); roof.add(cat.g); cat.g.position.set(1.8, 0, 1.6);
   const cham = makeChameleon(); cham.g.scale.setScalar(1.8); roof.add(cham.g); cham.g.position.set(1.5, 0, -.4);
   const frog = makeFrog(); frog.g.scale.setScalar(1.7); roof.add(frog.g); frog.g.position.set(-1.9, 0, -1.4); frog.yaw = .3;
