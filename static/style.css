@@ -3626,3 +3626,26 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-zen-note span { font-size: 12px; }
 .roof.zen .roof-zen-note { color: rgba(235,238,255,.55); }
 @media (prefers-reduced-motion: reduce) { .roof-arrive-orb::before, .roof-arrive-orb i, .roof-arrive-in { animation: none; } }
+
+/* ---------- 옥상: 쉬기 묶음 (밤하늘 · 쉼) ---------- */
+.roof-groups { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+.roof-groups[hidden] { display: none; }
+.roof-sec { margin: 2px 4px 0; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: rgba(220,226,255,.55); }
+.roof-sec:first-child { margin-top: 0; }
+/* ---------- 옥상: 방명록 ---------- */
+.roof-guest { display: flex; flex-direction: column; }
+.roof-guest-form { margin: 10px 0 4px; padding: 12px; border-radius: 16px; background: rgba(255,240,215,.06); border: 1px solid rgba(255,220,180,.14); }
+.roof-guest-moods { display: flex; gap: 4px; margin-bottom: 8px; }
+.roof-guest-moods button { flex: 1 1 0; min-width: 0; max-width: 42px; height: 36px; padding: 0; border-radius: 12px; border: 1px solid transparent; background: rgba(255,255,255,.05); font-size: 18px; cursor: pointer; line-height: 1; }
+.roof-guest-moods button[aria-checked="true"] { background: rgba(255,214,160,.18); border-color: rgba(255,214,160,.55); }
+.roof-guest textarea { width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #fff; font: inherit; font-size: 15px; resize: none; box-sizing: border-box; }
+.roof-guest textarea:focus-visible { outline: 2px solid #ffd6a0; outline-offset: 2px; }
+.roof-guest .roof-row { margin-top: 8px; }
+.roof-guest-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: min(46vh, 380px); overflow: auto; overscroll-behavior: contain; }
+.roof-guest-list li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; padding: 10px 4px; border-bottom: 1px dashed rgba(255,255,255,.08); }
+.roof-guest-list li > i { font-style: normal; font-size: 19px; line-height: 1.3; text-align: center; }
+.roof-guest-list p { margin: 0; font-size: 14.5px; line-height: 1.5; color: rgba(246,247,252,.95); word-break: keep-all; overflow-wrap: anywhere; }
+.roof-guest-list small { display: flex; gap: 6px; align-items: center; margin-top: 3px; font-size: 12px; color: rgba(220,226,255,.5); }
+.roof-guest-list small button { margin-left: auto; padding: 2px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: none; color: rgba(220,226,255,.65); font: inherit; font-size: 11.5px; cursor: pointer; }
+.roof-guest-list .mine p { color: #ffe3bd; }
+.roof-guest-empty { padding: 22px 6px; text-align: center; color: rgba(220,226,255,.55); font-size: 13.5px; line-height: 1.6; }

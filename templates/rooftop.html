@@ -115,14 +115,21 @@
         <button type="button" class="roof-btn" data-roof-pet="parrot" aria-pressed="false"><i aria-hidden="true">🦜</i><span>앵무새</span></button>
       </div>
     </div>
-    <div class="roof-sub roof-sheet2 roof-grid" data-roof-sub="sky" hidden>
-      <button type="button" class="roof-btn" data-roof-stars aria-pressed="false"><i aria-hidden="true">⭐</i><span>별 세기</span></button>
-      <button type="button" class="roof-btn" data-roof-open="wish"><i aria-hidden="true">🏮</i><span>소원 빌기</span></button>
-      <button type="button" class="roof-btn" data-roof-lie><i aria-hidden="true">🛌</i><span>누워서 보기</span></button>
-      <button type="button" class="roof-btn" data-roof-zen><i aria-hidden="true">🫧</i><span>멍 때리기</span></button>
-      <button type="button" class="roof-btn" data-roof-spin aria-pressed="false"><i aria-hidden="true">🌀</i><span>천천히 둘러보기</span></button>
-      <button type="button" class="roof-btn" data-roof-sit><i aria-hidden="true">🪑</i><span>앉기</span></button>
-      <button type="button" class="roof-btn" data-roof-tent><i aria-hidden="true">⛺</i><span>텐트 들어가기</span></button>
+    <div class="roof-sub roof-sheet2 roof-groups" data-roof-sub="sky" hidden>
+      <p class="roof-sec">밤하늘</p>
+      <div class="roof-grid">
+        <button type="button" class="roof-btn" data-roof-stars aria-pressed="false"><i aria-hidden="true">⭐</i><span>별 세기</span></button>
+        <button type="button" class="roof-btn" data-roof-open="wish"><i aria-hidden="true">🏮</i><span>소원 빌기</span></button>
+        <button type="button" class="roof-btn" data-roof-lie><i aria-hidden="true">🛌</i><span>누워서 보기</span></button>
+        <button type="button" class="roof-btn" data-roof-spin aria-pressed="false"><i aria-hidden="true">🌀</i><span>둘러보기</span></button>
+      </div>
+      <p class="roof-sec">쉼</p>
+      <div class="roof-grid">
+        <button type="button" class="roof-btn" data-roof-sit><i aria-hidden="true">🪑</i><span>앉기</span></button>
+        <button type="button" class="roof-btn" data-roof-tent><i aria-hidden="true">⛺</i><span>텐트</span></button>
+        <button type="button" class="roof-btn" data-roof-zen><i aria-hidden="true">🫧</i><span>멍 때리기</span></button>
+        <button type="button" class="roof-btn" data-roof-open="guest"><i aria-hidden="true">📖</i><span>방명록</span></button>
+      </div>
     </div>
     <div class="roof-tray" role="group" aria-label="옥상에서 하기">
       <button type="button" class="roof-dock" data-roof-menu="fire" aria-expanded="false"><i aria-hidden="true">🎆</i><span>불꽃</span></button>
@@ -181,6 +188,21 @@
       <p class="roof-note">짧게 적어 보세요. 풍등이 되어 밤하늘로 떠올라요. (최대 36자)</p>
       <textarea maxlength="36" rows="2" data-roof-wishtext placeholder="예: 좋은 집에서 편안히 지내길"></textarea>
       <div class="roof-row"><span class="roof-note" data-roof-wishlog></span><button type="button" class="roof-btn fw" data-roof-wishgo>풍등 띄우기</button></div>
+    </div>
+  </div>
+
+  <div class="roof-modal" data-roof-modal="guest" hidden>
+    <div class="roof-card roof-guest" role="dialog" aria-label="옥상 방명록">
+      <div class="roof-sheet-head"><b>📖 옥상 방명록</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
+      <p class="roof-note">게스트하우스처럼, 다녀간 사람들이 남긴 한 줄이에요. 모두에게 보여요.</p>
+      <form class="roof-guest-form" data-roof-gform>
+        <div class="roof-guest-moods" role="radiogroup" aria-label="오늘 기분">
+          <button type="button" role="radio" aria-checked="true" data-roof-gmood="🌙" aria-label="달">🌙</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="⭐" aria-label="별">⭐</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="☕" aria-label="쉼">☕</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="🔥" aria-label="불멍">🔥</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="🍖" aria-label="고기">🍖</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="🎆" aria-label="불꽃">🎆</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="🌧" aria-label="비">🌧</button><button type="button" role="radio" aria-checked="false" data-roof-gmood="💛" aria-label="마음">💛</button>
+        </div>
+        <textarea maxlength="80" rows="2" data-roof-gtext placeholder="예: 오늘 별 보고 마음이 편해졌어요" aria-label="방명록에 남길 말"></textarea>
+        <div class="roof-row"><span class="roof-note" data-roof-gwho></span><button type="submit" class="roof-btn fw" data-roof-ggo>남기기</button></div>
+      </form>
+      <ol class="roof-guest-list" data-roof-glist aria-live="polite"></ol>
     </div>
   </div>
 
