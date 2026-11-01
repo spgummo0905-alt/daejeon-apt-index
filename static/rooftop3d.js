@@ -833,10 +833,17 @@ export function start(host, cb, opt) {
     ["bar", -9.4, -RZ + 1.0, 0, 0], ["dining", 3.6, 5.6, 0, 0], ["lamp", 1.4, 6.4, 0, 0],
     ["mat", -1, 1.2, 0, 0]];
   const GR = { x: -3.6, z: -3.3 };   // 타프 거실 옆 캠핑 키친 (불판 자리: 배치보다 먼저 정해요)
-  (Array.isArray(opt.layout) ? opt.layout.map(i => [i.t, i.x, i.z, i.c, i.r]) : DEF_LAYOUT).forEach(a => { if (!LIM[a[0]]) return;
-    const gd = Math.hypot(a[1] - GR.x, a[2] - GR.z), need = 1.05 + (RAD[a[0]] || .4) + .25;   // 예전에 저장한 배치가 불판 자리와 겹치면 살짝 비켜 놓아요
-    if (gd < need) { const k = need / (gd || 1e-3); a = [a[0], GR.x + (a[1] - GR.x) * k + (gd ? 0 : need), GR.z + (a[2] - GR.z) * k, a[3], a[4]]; }
-    addItem(a[0], a[1], a[2], a[3] || 0, true, a[4]); });
+  // 배치 불러오기: 처음 들어올 때·방에 들어갈 때·방에서 나올 때 모두 같은 길로 (돌린 방향 r까지 그대로, 불판 자리와 겹치면 살짝 비켜요)
+  const okNum = v => Number.isFinite(+v);
+  function placeLayout(list) {
+    const rows = Array.isArray(list) && list.length ? list.slice(0, 40).filter(i => i && LIM[i.t] && okNum(i.x) && okNum(i.z)).map(i => [i.t, clamp(+i.x, -RX + .4, RX - .4), clamp(+i.z, -RZ + .4, RZ - .4), (+i.c || 0) | 0, okNum(i.r) ? +i.r : 0]) : DEF_LAYOUT;
+    const cnt = {};
+    (rows.length ? rows : DEF_LAYOUT).forEach(a => { if (!LIM[a[0]]) return; cnt[a[0]] = (cnt[a[0]] || 0) + 1; if (cnt[a[0]] > LIM[a[0]]) return;
+      const gd = Math.hypot(a[1] - GR.x, a[2] - GR.z), need = 1.05 + (RAD[a[0]] || .4) + .25;
+      if (gd < need) { const k = need / (gd || 1e-3); a = [a[0], GR.x + (a[1] - GR.x) * k + (gd ? 0 : need), GR.z + (a[2] - GR.z) * k, a[3], a[4]]; }
+      addItem(a[0], a[1], a[2], a[3] || 0, true, a[4] || 0); });
+  }
+  placeLayout(opt.layout);
   lampLights[0].position.set(-4.0, 1.2, -3.4);
   // 고기 굽는 자리
    obstacles.push({ x: GR.x, z: GR.z, r: 1.05 });
@@ -1591,8 +1598,7 @@ export function start(host, cb, opt) {
     // 함께 있는 방: 방의 꾸미기를 통째로 바꿔 끼워요 (남이 꾸민 옥상을 같이 봐요)
     setLayout(list) { if (focus === "tent" || focus === "table") setFocus(null); standUp();
       items.slice().forEach(it => { roof.remove(it.g); if (it.obs) obstacles.splice(obstacles.indexOf(it.obs), 1); }); items.length = 0;
-      const ok = Array.isArray(list) ? list.slice(0, 30).filter(i => i && LIM[i.t] && Number.isFinite(+i.x) && Number.isFinite(+i.z)).map(i => [i.t, +i.x, +i.z, (+i.c || 0) | 0]) : DEF_LAYOUT;
-      ok.forEach(a => addItem(a[0], a[1], a[2], a[3], true)); },
+      placeLayout(list); },
     getLayout: () => itemList(), setMeteors(on) { meteorOn = !!on; if (!on) meteor = null; }, meteorCount: () => meteorN, addFood, fire: () => aimShell(new THREE.Vector3(rnd(-.42, .42), rnd(.14, .32), -1).normalize()), show: seed => show(seed),
     setSky(m) { S.mode = m; applySky(); }, setWeather(w) { Object.assign(S.weather, w); applySky(); },
     setPlace(lat, lon) { S.lat = lat; S.lon = lon; applySky(); },
