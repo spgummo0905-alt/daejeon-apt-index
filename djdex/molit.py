@@ -287,16 +287,64 @@ def _norm_name(name: str) -> str:
     return re.sub(r"[\s()（）·.,-]", "", name or "")
 
 
+_CITY = re.compile(r"^(청주|대전|세종|서울|충북|충남)")
+_BLOCK = re.compile(r"\(.*?\)|[A-Z]\d+BL|[A-Z]?\d+블록|아파트", re.I)
+
+
+def _core_name(name: str) -> str:
+    """분양 때 이름과 입주 뒤 이름을 견주려고 덜어 내는 부분: 괄호(블록 번호), A7BL·S4블록, '아파트', 앞의 도시 이름."""
+    n = _norm_name(_BLOCK.sub("", name or ""))
+    return _CITY.sub("", n)
+
+
+def _subseq(a: str, b: str) -> bool:
+    it = iter(b)
+    return all(ch in it for ch in a)
+
+
+def _same_complex(a: str, b: str) -> float:
+    """두 이름이 같은 단지로 보이는 정도 (0~1). 차수·단지 번호 숫자가 다르면 0 (1단지와 2단지는 다른 단지)."""
+    from difflib import SequenceMatcher
+    ca, cb = _core_name(a), _core_name(b)
+    if not ca or not cb or re.findall(r"\d+", ca) != re.findall(r"\d+", cb):
+        return 0.0
+    if ca == cb:
+        return 1.0
+    short, long_ = sorted((ca, cb), key=len)
+    if len(short) >= 6 and _subseq(short, long_):   # '테크노폴리스지웰푸르지오' ⊂ '테크노폴리스신영지웰푸르지오'
+        return 0.95
+    r = SequenceMatcher(None, ca, cb).ratio()
+    return r if r >= .86 else 0.0
+
+
 def link_ids(rows: list[dict]) -> list[dict]:
-    """분양권 API에는 단지 일련번호가 없어 '구-동-지번-이름' 임시 ID가 붙습니다.
-    같은 동, 같은 이름(공백 무시)의 매매 단지가 있으면 그 일련번호로 합칩니다."""
+    """분양권 API에는 단지 일련번호가 없어 '구-동-지번-이름' 임시 ID가 붙습니다. 매매 단지와 합치는 순서:
+    ① 같은 동·같은 이름(공백 무시) ② 같은 동·같은 지번 ③ 같은 동에서 이름이 거의 같은 단지 하나
+    (분양 때는 '청주테크노폴리스 지웰푸르지오', 입주 뒤에는 '청주테크노폴리스신영지웰푸르지오'처럼 이름이 조금 바뀌어
+    같은 아파트가 두 단지로 나뉘던 것)."""
     by_key: dict[tuple, str] = {}
+    by_jibun: dict[tuple, set] = {}
+    names: dict[tuple, dict[str, str]] = {}
     for r in rows:
         if r["kind"] == "매매":
             by_key.setdefault((r["gu"], r["dong"], _norm_name(r["name"])), r["complex_id"])
+            if str(r.get("jibun") or "").strip():
+                by_jibun.setdefault((r["gu"], r["dong"], str(r["jibun"]).strip()), set()).add(r["complex_id"])
+            names.setdefault((r["gu"], r["dong"]), {}).setdefault(r["complex_id"], r["name"])
+    memo: dict[tuple, str | None] = {}
     for r in rows:
-        if r["kind"] != "매매":
-            cid = by_key.get((r["gu"], r["dong"], _norm_name(r["name"])))
-            if cid:
-                r["complex_id"] = cid
+        if r["kind"] == "매매":
+            continue
+        k = (r["gu"], r["dong"], _norm_name(r["name"]), str(r.get("jibun") or "").strip())
+        if k not in memo:
+            cid = by_key.get(k[:3])
+            if not cid and k[3] and len(by_jibun.get((k[0], k[1], k[3]), ())) == 1:
+                cid = next(iter(by_jibun[(k[0], k[1], k[3])]))
+            if not cid:
+                scored = sorted(((_same_complex(r["name"], n), c) for c, n in names.get((k[0], k[1]), {}).items()), reverse=True)
+                if scored and scored[0][0] > 0 and (len(scored) == 1 or scored[1][0] < scored[0][0]):
+                    cid = scored[0][1]   # 가장 비슷한 단지가 하나뿐일 때만 (애매하면 합치지 않아요)
+            memo[k] = cid
+        if memo[k]:
+            r["complex_id"] = memo[k]
     return rows
