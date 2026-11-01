@@ -159,3 +159,10 @@ def test_rooftop_guestbook():
     assert "create table if not exists public.roof_guestbook" in sql and "public.roof_guestbook enable row level security" in sql
     assert "https?://" in sql                                                                                    # 링크·광고는 받지 않아요
     assert page.count('class="roof-sec"') >= 2                                                                    # 쉬기 메뉴를 밤하늘·쉼으로 묶어요
+
+
+def test_rooftop_jipkong_mascot():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "function makeKong" in js3 and "const me = makeKong(" in js3 and "const P = makeKong(" in js3   # 나·함께 있는 사람 모두 집콩이
+    assert "texKnit" in js3 and "texBlush" in js3 and "LatheGeometry" in js3                            # 니트 목도리·볼터치·찹쌀떡 몸
+    assert "K.blob.scale.set" in js3 and "K.hat.scale.set" in js3                                        # 쫀득하게 눌렸다 돌아오기
