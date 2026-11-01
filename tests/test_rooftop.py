@@ -190,3 +190,10 @@ def test_rooftop_romantic_sunset_view():
     assert (ROOT / "static" / "bg" / "sky.webp").stat().st_size > 30000                     # 노을·은하수 하늘 사진
     assert "farSea" in js3 and "hills.visible = skyU.uPhotoK.value < .5" in js3             # 수평선까지 바다, 사진 속 산과 겹치지 않게
     assert "uPhotoK" in js3.split("const water")[1].split("water.rotation")[0]               # 노을 쪽 윤슬 길·남색 바다
+
+
+def test_rooftop_waterfront_landmarks():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    for k in ("lmTower", "wheel.rotation.z", "hallGlow", "dome", "ferries", "벚꽃 길", "고층 옥상 테두리 불빛"):
+        assert k in js3                                                                  # 초고층 타워·대관람차·공연장·돔·유람선·벚꽃·옥상 불빛
+    assert "em *= 1. + 1.1*uPhotoK" in js3 and "const GMAX = 22000" in js3                 # 노을엔 금빛 창

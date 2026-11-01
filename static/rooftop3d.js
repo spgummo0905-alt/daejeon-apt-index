@@ -110,7 +110,7 @@ void main(){
 }`;
 const BLD_FS = `
 precision highp float;
-uniform vec3 uFogColor,uLightDir,uLightCol,uAmb,uFlash; uniform float uFogD,uNight,uTime;
+uniform vec3 uFogColor,uLightDir,uLightCol,uAmb,uFlash; uniform float uFogD,uNight,uTime,uPhotoK;
 varying vec3 vL; varying vec3 vN; varying vec3 vW; varying vec4 vT; varying vec3 vO; varying float vSY; varying float vId; varying vec3 vS;
 ${NOISE}
 void main(){
@@ -166,6 +166,7 @@ void main(){
   } else {
     col = vT.rgb*.1 + vec3(.012,.008,.014) + vec3(.008)*h21(floor(vW.xz*.7));
   }
+  em *= 1. + 1.1*uPhotoK; col *= mix(vec3(1.), vec3(1.12,.96,.9), uPhotoK);   // 노을빛에 물든 벽, 금빛 창
   col += em;
   col += uFlash*(.35 + .65*max(n.y*.5+.5,0.))*(roof<.5?.7:.5);
   float dist = length(vW - cameraPosition); float ff = 1.-exp(-uFogD*uFogD*dist*dist);
@@ -528,6 +529,7 @@ export function start(host, cb, opt) {
 
   const bldU = { uFogColor: { value: new THREE.Color() }, uFogD: { value: .0011 }, uLightDir: { value: new THREE.Vector3(0, 1, 0) }, uLightCol: { value: new THREE.Color() },
     uAmb: { value: new THREE.Color() }, uFlash: { value: new THREE.Color() }, uNight: { value: 1 }, uTime: { value: 0 } };
+  bldU.uPhotoK = skyU.uPhotoK;   // 노을 하늘일 땐 창 불빛을 더 따뜻하고 밝게
   const bldMat = new THREE.ShaderMaterial({ vertexShader: BLD_VS, fragmentShader: BLD_FS, uniforms: bldU });
   scene.fog = new THREE.FogExp2(0x222a48, .0011);
 
@@ -581,8 +583,8 @@ export function start(host, cb, opt) {
   bld.frustumCulled = false; scene.add(bld);
   // 땅(멀리 어둡게)과 도로 불빛, 고층 위 붉은 점멸등
   const ground = new THREE.Mesh(new THREE.CircleGeometry(2600, 6), new THREE.MeshBasicMaterial({ color: 0x080a14, fog: true })); ground.rotation.x = -Math.PI / 2; ground.position.y = -OURH - 1; scene.add(ground);
-  const glowPts = mkPoints(14000, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
-  let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= 14000) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
+  const GMAX = 22000, glowPts = mkPoints(GMAX, addGlow); const gp = glowPts.geometry, gpos = gp.attributes.position, gcol = gp.attributes.aCol, gsz = gp.attributes.aSize, gal = gp.attributes.aAlpha;
+  let gn = 0; const gAdd = (x, y, z, r, g, b, s, a) => { if (gn >= GMAX) return -1; gpos.setXYZ(gn, x, y, z); gcol.setXYZ(gn, r, g, b); gsz.setX(gn, s); gal.setX(gn, a); return gn++; };
   const crowns = []; towers.forEach((t, i) => { for (let k = 0; k < 4; k++) { const a = k / 4 * TAU; crowns.push({ x: t.x + Math.cos(a) * 12, y: t.y - 2 - (i % 3) * 6, z: t.z + Math.sin(a) * 12, h: i * .07 + k * .05 }); } });
   const beacons = [];   // 먼 탑 꼭대기 항공등은 몸통이 안 보여 하늘에 뜬 빨간 점처럼 보여서 뺐어요 (가까운 고층 건물 항공등은 그대로)
   // 옥상 위 물탱크·기계실 (건물 윤곽이 살아나요) + 높은 건물 꼭대기 붉은 항공등 (다 같이 천천히 깜빡)
@@ -661,6 +663,45 @@ export function start(host, cb, opt) {
       bridgeLights.push({ i: gAdd(top.x, top.y, top.z, 1, 1, 1, 9, .95), h: t }); }
   });
   for (const lane of [-3, 3]) for (let k = 0; k < 22; k++) { const dirn = lane < 0 ? 1 : -1, c0 = bAt(.5, lane); cars.push({ ux: bdir.x, uz: bdir.z, cx: c0.x, cz: c0.z, y: BY + 1.4, s: rnd(-BL / 2, BL / 2), v: dirn * rnd(9, 17), len: BL, i: gAdd(0, 0, 0, 1, dirn > 0 ? .95 : .2, dirn > 0 ? .8 : .15, 3.2, .8) }); }
+  // ----- 해안 랜드마크: 초고층 유리 타워·대관람차·조개 지붕 공연장·돔·오가는 유람선·벚꽃 길 (야경을 낭만 있게) -----
+  const G0 = -OURH;
+  const towerTex = (() => { const c = document.createElement("canvas"); c.width = 64; c.height = 256; const g = c.getContext("2d");
+    const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, "#c9b4ff"); gr.addColorStop(.5, "#6b74c8"); gr.addColorStop(1, "#2b2f63"); g.fillStyle = gr; g.fillRect(0, 0, 64, 256);
+    g.fillStyle = "rgba(255,230,190,.85)"; for (let y = 4; y < 256; y += 6) for (let x = 2; x < 64; x += 8) if (Math.random() < .55) g.fillRect(x, y, 5, 2);
+    g.fillStyle = "rgba(255,255,255,.9)"; g.fillRect(30, 0, 3, 256);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.repeat.set(4, 1); return t; })();
+  const lmTower = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 22, 240, 4, 1), new THREE.MeshBasicMaterial({ map: towerTex, fog: false }));
+  lmTower.rotation.y = Math.PI / 4; lmTower.position.set(400, G0 + 120, -320); scene.add(lmTower);
+  const lmBase = new THREE.Mesh(new THREE.CylinderGeometry(52, 58, 22, 24), new THREE.MeshBasicMaterial({ color: 0xffc98a })); lmBase.position.set(400, G0 + 11, -320); scene.add(lmBase);
+  for (let k = 0; k <= 26; k++) { const y = k / 26 * 240, r = 22 - k / 26 * 19.5; for (const a of [0, 1, 2, 3]) { const an = a * Math.PI / 2; gAdd(400 + Math.cos(an) * r, G0 + y, -320 + Math.sin(an) * r, .85, .7, 1, 5, .8); } }
+  gAdd(400, G0 + 246, -320, 1, .3, .3, 10, .95);
+
+  // 대관람차
+  const wheel = new THREE.Group(); wheel.position.set(640, G0 + 52, -312); scene.add(wheel);
+  const wheelPts = mkPoints(96, addGlow), wp = wheelPts.geometry; scene.remove(wheelPts); wheel.add(wheelPts);
+  for (let i = 0; i < 96; i++) { const a = i / 96 * TAU, rr = i % 2 ? 46 : 44; wp.attributes.position.setXYZ(i, Math.cos(a) * rr, Math.sin(a) * rr, 0); const c = new THREE.Color().setHSL(i / 96, .8, .62); wp.attributes.aCol.setXYZ(i, c.r, c.g, c.b); wp.attributes.aSize.setX(i, 6); wp.attributes.aAlpha.setX(i, .95); }
+  wp.attributes.position.needsUpdate = wp.attributes.aCol.needsUpdate = wp.attributes.aSize.needsUpdate = wp.attributes.aAlpha.needsUpdate = true;
+  const spokeM = new THREE.LineBasicMaterial({ color: 0xd8c8ff, transparent: true, opacity: .6 }); const sp_ = []; for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; sp_.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(Math.cos(a) * 45, Math.sin(a) * 45, 0)); }
+  wheel.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(sp_), spokeM));
+  for (const sx of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(2, 58, 2), new THREE.MeshBasicMaterial({ color: 0x3a3f66 })); leg.position.set(640 + sx * 16, G0 + 26, -312); leg.rotation.z = sx * .3; scene.add(leg); }
+  // 조개 지붕 공연장 (왼쪽 물가)
+  const shellM = new THREE.MeshBasicMaterial({ color: 0xf3ecff, side: THREE.DoubleSide });
+  [[0, 1], [26, .8], [-24, .7]].forEach(([dx, k]) => { const sh = new THREE.Mesh(new THREE.SphereGeometry(40 * k, 24, 12, 0, Math.PI, 0, Math.PI / 2), shellM); sh.scale.set(1, .55, .6); sh.rotation.set(0, Math.PI / 2 + .3, -.25); sh.position.set(-470 + dx, G0 + 6, -312 + dx * .3); scene.add(sh); });
+  const hallGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffc98a, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); hallGlow.scale.set(160, 60, 1); hallGlow.position.set(-470, G0 + 14, -308); scene.add(hallGlow);
+  for (let i = 0; i < 40; i++) gAdd(-530 + i * 3, G0 + 4, -282, 1, .8, .5, 5, .8);
+  // 돔 경기장 (오른쪽 안쪽)
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(48, 32, 12, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffbe72, transparent: true, opacity: .9 })); dome.scale.y = .32; dome.position.set(-700, G0, -300); scene.add(dome);
+  for (let i = 0; i < 64; i++) { const a = i / 64 * TAU; gAdd(-700 + Math.cos(a) * 49, G0 + 3, -300 + Math.sin(a) * 49, 1, .78, .4, 6, .9); }
+  city.forEach(b => { if (b.h < 35 || b.z < -340 || Math.hypot(b.x, b.z) > 1100) return; const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw), top = b.h - OURH + .5;   // 고층 옥상 테두리 불빛
+    for (const [ox, oz] of [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5], [0, .5], [0, -.5]]) { const lx = ox * b.w, lz = oz * b.d; gAdd(b.x + lx * cy - lz * sy, top, b.z + lx * sy + lz * cy, 1, .82, .55, 2.8, .55); } });
+  // 벚꽃 길: 바닷가 쪽 도로를 따라 분홍 꽃 불빛 (가로등에 비친 벚꽃)
+  for (const z of ROAD_Z.filter(z => z >= -330 && z < 200)) for (let x = -1000; x <= 1000; x += 9) if (Math.random() < .7) gAdd(x + rnd(-3, 3), G0 + rnd(4, 9), z + (Math.random() < .5 ? -9 : 9) + rnd(-2, 2), 1, rnd(.55, .7), rnd(.75, .85), rnd(7, 11), rnd(.35, .6));
+  // 오가는 유람선
+  const ferries = [0, 1].map(k => { const g = new THREE.Group(); const hull = new THREE.Mesh(new THREE.BoxGeometry(26, 4, 8), new THREE.MeshBasicMaterial({ color: 0xf2f2f6 })); hull.position.y = 2; g.add(hull);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(14, 4, 6), new THREE.MeshBasicMaterial({ color: 0xffe2a8 })); cab.position.y = 6; g.add(cab);
+    const fg = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffd28a, transparent: true, opacity: .6, blending: THREE.AdditiveBlending, depthWrite: false })); fg.scale.set(60, 26, 1); fg.position.y = 6; g.add(fg);
+    g.position.set(k ? 400 : -300, WATER_Y, k ? -520 : -680); scene.add(g); return { g, v: k ? -14 : 11 }; });
+  const landmarkTick = (dt, t) => { wheel.rotation.z = t * .05; ferries.forEach(f => { f.g.position.x += f.v * dt; if (f.g.position.x > 1600) f.g.position.x = -1600; if (f.g.position.x < -1600) f.g.position.x = 1600; f.g.rotation.y = f.v > 0 ? 0 : Math.PI; }); };
   const updGlowStatic = () => { gpos.needsUpdate = gcol.needsUpdate = gsz.needsUpdate = gal.needsUpdate = true; gp.setDrawRange(0, gn); };
 
   // ----- 우리 옥상 -----
@@ -1633,6 +1674,7 @@ export function start(host, cb, opt) {
       if (time > nextCascade && quality !== "low") { nextCascade = time + rnd(36, 62); cascadeT = 7; } }
     if (cascadeT > 0) { cascadeT -= dt; for (let j = 0; j < (quality === "high" ? 16 : 9); j++) { const p = bAt(.06 + j * .035, rnd(-6, 6)); spark(p.x, BY + 3, p.z, rnd(-4, 4), rnd(20, 36), rnd(-4, 4), [255, 205, 115], 2.6, rnd(1.3, 2.3), 1.1, 13, 2); } }
     crownIdx.forEach(b => { const c = tmpC.setHSL((b.h + time * .03) % 1, .8, .6); gcolArr[b.i * 3] = c.r; gcolArr[b.i * 3 + 1] = c.g; gcolArr[b.i * 3 + 2] = c.b; });
+    landmarkTick(dt, time);
     if (aer > .05 || frameN % 4 === 0) bridgeLights.forEach(b => { const c = tmpC.setHSL((b.h + time * .035) % 1, .85, .56); gcolArr[b.i * 3] = c.r; gcolArr[b.i * 3 + 1] = c.g; gcolArr[b.i * 3 + 2] = c.b; }); gcol.needsUpdate = true;
     // 로켓
     for (let i = rockets.length - 1; i >= 0; i--) {
