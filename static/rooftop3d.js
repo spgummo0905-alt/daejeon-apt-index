@@ -123,9 +123,13 @@ void main(){
     bool apt = (vS.z < 17. || vS.x < 17.) && vSY > 36. && !sideX == (vS.x > vS.z);   // 판상형 아파트의 긴 면: 발코니
     float cw = apt ? 3.1 : 2.7, chh = apt ? 2.85 : 3.2;
     vec2 q = vec2((along + W*.5)/cw, hh/chh); vec2 cell = floor(q); vec2 f = fract(q);
+    vec2 fw = max(fwidth(q), vec2(1e-4));                                 // 화면에서 창 한 칸이 몇 픽셀인지 (작을수록 자글거림)
+    float far = smoothstep(.12, .36, max(fw.x, fw.y));                    // 멀어서 창이 몇 픽셀밖에 안 되면 무늬 대신 평균 밝기로 (움직일 때 치지직 방지)
     float top = vSY - 1.4;                                   // 옥상 난간 띠
     float pil = apt ? step(mod(cell.x, 4.), .5) : step(mod(cell.x, 5.), .5)*step(18., W);   // 세대·기둥 사이 벽
-    float win = apt ? step(.1,f.x)*step(f.x,.9)*step(.3,f.y)*step(f.y,.94) : step(.18,f.x)*step(f.x,.82)*step(.26,f.y)*step(f.y,.76);
+    #define BOX(a,b,x,w) (clamp(((x)-(a))/(w)+.5,0.,1.)*clamp(((b)-(x))/(w)+.5,0.,1.))
+    float win = apt ? BOX(.1,.9,f.x,fw.x)*BOX(.3,.94,f.y,fw.y) : BOX(.18,.82,f.x,fw.x)*BOX(.26,.76,f.y,fw.y);   // 창 가장자리를 픽셀 폭만큼 부드럽게
+    float cov = apt ? .8*.64 : .64*.5;                                       // 한 칸에서 창이 차지하는 몫 (멀리서 볼 평균)
     win *= (1.-pil)*step(hh, top)*step(apt ? 2.9 : 4.4, hh);
     float r = h21(cell + vId*7.13 + floor(uTime/45. + h21(cell+vId)*6.)*.37);
     float lit = step(vT.a, r)*win;
@@ -134,24 +138,25 @@ void main(){
     float fx = apt ? (f.x-.1)/.8 : (f.x-.18)/.64, fy = apt ? (f.y-.3)/.64 : (f.y-.26)/.5;
     float inner = mix(.78, 1.12, fy);                                                     // 방 안 불빛은 위가 조금 밝게
     if(r3 < .32) inner *= .5 + .5*smoothstep(.05,.2,abs(fx-.5));                           // 가운데 커튼
-    else if(r3 < .48) inner *= .72 + .28*step(.45, fract(fy*7.));                           // 블라인드
-    wc *= inner * (.55 + .6*h21(cell+3.3)) * (r2>.86 ? (.8+.2*sin(uTime*7.+vId)) : 1.);
+    else if(r3 < .48) inner *= .72 + .28*mix(step(.45, fract(fy*7.)), .55, smoothstep(.2, .5, fwidth(fy*7.)));   // 블라인드 (줄이 픽셀보다 촘촘하면 평균)
+    wc *= inner * (.55 + .6*h21(cell+3.3)) * (r2>.86 ? (.9+.1*sin(uTime*1.6+vId)) : 1.);
     em = wc*lit*(uNight*1.3 + .07);
-    col = mix(col, col*.45 + vec3(.012,.018,.03) + uFogColor*.10, win*(1.-lit));         // 불 꺼진 유리
+    em = mix(em, vec3(1.,.8,.52)*.82*cov*(1.-vT.a)*(uNight*1.3 + .07), far);               // 먼 건물: 창마다 깜빡이지 않게 평균 불빛
+    col = mix(col, col*.45 + vec3(.012,.018,.03) + uFogColor*.10, mix(win*(1.-lit), cov*vT.a, far));   // 불 꺼진 유리
     if(apt){
       float slab = step(f.y,.09)*step(2.9,hh)*step(hh,top);                               // 발코니 바닥판
       float rail = step(.09,f.y)*step(f.y,.3)*step(2.9,hh)*step(hh,top)*(1.-pil);          // 난간
       col = mix(col, vT.rgb*(uAmb*.62 + uLightCol*dif*.5) + vec3(.02), slab);
-      col = mix(col, col*.62, rail*(.55 + .45*step(.5, fract(along*3.))));
+      col = mix(col, col*.62, rail*(.55 + .45*mix(step(.5, fract(along*3.)), .5, smoothstep(.2, .5, fwidth(along*3.)))) * (1. - far*.6));
       em *= 1. - rail*.55;                                                                  // 난간 너머로 불빛
     } else {
-      col *= 1. - .22*step(f.y,.06)*step(hh,top);                                           // 층 구분선
+      col *= 1. - .22*step(f.y,.06)*step(hh,top)*(1. - far);                                // 층 구분선 (멀면 생략)
       col = mix(col, col*1.12 + vec3(.01), pil*step(hh,top));                                // 기둥 띠
       float shop = step(hh, 4.2)*step(.6, hh)*step(vSY, 60.)*step(.25, h21(vec2(vId,2.)));  // 1층 상가 불빛
       vec3 sc = h21(vec2(vId,5.)) < .5 ? vec3(1.,.8,.5) : vec3(.8,.9,1.);
-      em += sc*shop*(.5 + .5*step(.12, fract(along/4.)))*uNight*.9;
+      em += sc*shop*(.5 + .5*mix(step(.12, fract(along/4.)), .88, far))*uNight*.9;
     }
-    col *= .86 + .14*h21(vec2(floor(along*1.3), floor(hh*.7)));
+    col *= .86 + .14*mix(h21(vec2(floor(along*1.3), floor(hh*.7))), .5, smoothstep(.15, .45, max(fwidth(along*1.3), fwidth(hh*.7))));
     float cap = step(top, hh);                                                               // 난간 띠·윗선
     col = mix(col, vT.rgb*(uAmb*.7 + uLightCol*dif*.55) + vec3(.015), cap*.85);
     col *= 1. - .25*step(vSY-.25, hh);
@@ -170,8 +175,9 @@ void main(){
 }`;
 
 const GLOW_VS = `attribute float aSize; attribute float aAlpha; attribute vec3 aCol; uniform float uScale; varying vec3 vC; varying float vA;
-void main(){ vC = aCol; vA = aAlpha; vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv;
-  gl_PointSize = clamp(aSize*uScale/max(-mv.z,.1), 0., 90.); }`;
+void main(){ vC = aCol; vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv;
+  float sz = aSize*uScale/max(-mv.z,.1); vA = aAlpha*clamp(sz/2.2, 0., 1.);   // 아주 작은 불빛은 크기 대신 밝기를 줄여요 (움직일 때 깜빡임 방지)
+  gl_PointSize = clamp(sz, 2.2, 90.); }`;
 const GLOW_FS = `precision highp float; varying vec3 vC; varying float vA; uniform float uSoft, uMul;
 void main(){ float d = length(gl_PointCoord-.5)*2.; if(d>1.) discard; float a = pow(1.-d, uSoft); gl_FragColor = vec4(vC*1.3, a*vA*uMul);
   #include <colorspace_fragment>
@@ -470,7 +476,7 @@ export function start(host, cb, opt) {
   opt = opt || {};
   const reduced = !!opt.reduced, mobile = matchMedia("(pointer: coarse)").matches || innerWidth < 760;
   let quality = opt.quality || (mobile ? "mid" : "high");
-  const renderer = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: "high-performance" });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });   // 휴대폰도 가장자리 계단 현상 줄이기
   renderer.setClearColor(0x050816);
   const el = renderer.domElement; el.className = "roof-cv"; el.setAttribute("aria-hidden", "true"); host.prepend(el);
   const scene = new THREE.Scene();
@@ -1403,7 +1409,7 @@ export function start(host, cb, opt) {
   // ----- 번짐(블룸): 불빛이 은은하게 번져서 사진 같은 야경이 돼요 (가볍게 쓰려면 화질 '가볍게'에서는 꺼요) -----
   const post = (() => {
     const HF = { type: THREE.HalfFloatType };
-    const main = new THREE.WebGLRenderTarget(4, 4, Object.assign({ depthBuffer: true, samples: mobile ? 0 : 4 }, HF));
+    const main = new THREE.WebGLRenderTarget(4, 4, Object.assign({ depthBuffer: true, samples: mobile ? 2 : 4 }, HF));
     const mk = () => new THREE.WebGLRenderTarget(4, 4, Object.assign({ depthBuffer: false }, HF)), a1 = mk(), b1 = mk(), a2 = mk(), b2 = mk();
     const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)), ps = new THREE.Scene(); ps.add(quad);
     const vs = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }";
