@@ -176,3 +176,10 @@ def test_rooftop_jipkong_mascot():
     assert "function makeKong" in js3 and "const me = makeKong(" in js3 and "const P = makeKong(" in js3   # 나·함께 있는 사람 모두 집콩이
     assert "texKnit" in js3 and "texBlush" in js3 and "LatheGeometry" in js3                            # 니트 목도리·볼터치·찹쌀떡 몸
     assert "K.blob.scale.set" in js3 and "K.hat.scale.set" in js3                                        # 쫀득하게 눌렸다 돌아오기
+
+
+def test_rooftop_full_far_shore_city():
+    js3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "const FAR = { z0: -1185" in js3 and "BAY = { x: 2700, z0: -330, z1: -1185 }" in js3   # 만을 좁히고 건너편을 도시로 채움
+    assert "ROAD_X.forEach(x => road(x, (900 - 330) / 2, 0, 1, 1230));" in js3                       # 바다 위로 뻗던 도로 불빛 없앰
+    assert "glowMir" in js3 and "const GMAX = 22000" in js3                                          # 물에 비친 불빛
