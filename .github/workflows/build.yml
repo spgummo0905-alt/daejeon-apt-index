@@ -359,6 +359,25 @@ jobs:
         with:
           path: data/sejong
           key: djdex-sejong2-${{ github.run_id }}-slow
+      # 청주도 세종처럼 관리비·카카오맵 장소·네이버 글·공급면적을 하루 몫씩 이어 받습니다 (빠져 있어서 청주 단지 화면에 관리비·후기가 비어 있었음)
+      - name: 청주 공급면적·관리비·후기 이어 받기
+        id: slow_cj
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) && hashFiles('data/cheongju/READY') != '' }}
+        continue-on-error: true
+        timeout-minutes: 45
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m djdex --config config.cheongju.toml slow
+      - name: 청주 이어 받은 자료 저장
+        if: ${{ always() && (steps.slow_cj.outcome == 'success' || steps.slow_cj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/cheongju
+          key: djdex-cheongju-${{ github.run_id }}-slow
       # 서울 관리비·카카오맵 장소·네이버 글·공급면적: 단지가 많아 대전·세종을 먼저 받고 맨 뒤에서 하루 몫씩 이어 받습니다.
       - name: 서울 관리비·후기 이어 받기
         id: slow_se
