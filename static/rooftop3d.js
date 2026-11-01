@@ -89,8 +89,8 @@ void main(){
   sky = mix(sky, ccol, cov*.88);
   // 실제 사진 같은 노을 하늘 (정면 쪽 넓은 부분에 깔고 가장자리는 부드럽게 섞어요)
   float paz = atan(d.x, -d.z), pel = asin(clamp(d.y,-1.,1.));
-  vec2 puv = vec2(.5 + paz/2.6, pel/1.15);
-  float pw = smoothstep(0.,.14,puv.x)*smoothstep(1.,.86,puv.x)*smoothstep(0.,.03,pel)*smoothstep(1.,.78,puv.y);
+  float pe = pel + .035; vec2 puv = vec2(.5 + paz/2.6, pe/1.15);   // 사진 수평선을 살짝 내려 바다 수평선과 딱 맞게
+  float pw = smoothstep(0.,.14,puv.x)*smoothstep(1.,.86,puv.x)*smoothstep(0.,.02,pe)*smoothstep(1.,.78,puv.y);
   sky = mix(sky, texture2D(uPhoto, puv).rgb*1.05, pw*uPhotoK*(1.-cov*.5));
   sky += uFlashCol*uFlash*(.22+.9*exp(-abs(h)*3.));
   sky = mix(sky, uBot, uFog*smoothstep(.5,.0,h)*.6);
@@ -480,7 +480,7 @@ export function start(host, cb, opt) {
   renderer.setClearColor(0x050816);
   const el = renderer.domElement; el.className = "roof-cv"; el.setAttribute("aria-hidden", "true"); host.prepend(el);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 3200);
+  const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 5200);
   const clock = new THREE.Clock();
   let W = 1, H = 1, time = 0, running = true;
   const POOL = quality === "high" ? 11000 : quality === "mid" ? 6500 : 3500;
@@ -609,9 +609,9 @@ export function start(host, cb, opt) {
   // 만(바다)과 다리: 높은 곳에서 내려다보면 불꽃과 불빛이 물에 비쳐요
   const WATER_Y = -OURH + .4, BAY = { x: 2700, z0: -330, z1: -2700 };
   const water = new THREE.Mesh(new THREE.PlaneGeometry(BAY.x * 2, BAY.z0 - BAY.z1), new THREE.ShaderMaterial({ depthWrite: false, transparent: true,
-    uniforms: { uFogColor: bldU.uFogColor, uFogD: bldU.uFogD, uNight: bldU.uNight, uTime: bldU.uTime, uSkyBot: skyU.uBot, uSkyTop: skyU.uTop, uFlashCol: skyU.uFlashCol, uFlash: skyU.uFlash },
+    uniforms: { uFogColor: bldU.uFogColor, uFogD: bldU.uFogD, uNight: bldU.uNight, uTime: bldU.uTime, uSkyBot: skyU.uBot, uSkyTop: skyU.uTop, uFlashCol: skyU.uFlashCol, uFlash: skyU.uFlash, uPhotoK: skyU.uPhotoK },
     vertexShader: "varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }",
-    fragmentShader: `precision highp float; uniform vec3 uFogColor,uSkyBot,uSkyTop,uFlashCol; uniform float uFogD,uNight,uTime,uFlash; varying vec3 vW; ${NOISE}
+    fragmentShader: `precision highp float; uniform vec3 uFogColor,uSkyBot,uSkyTop,uFlashCol; uniform float uFogD,uNight,uTime,uFlash,uPhotoK; varying vec3 vW; ${NOISE}
       void main(){
         vec3 V = normalize(cameraPosition - vW); float fr = pow(1.-clamp(V.y,0.,1.), 2.3);
         vec2 q = vW.xz*.05; float w = vn(q+vec2(uTime*.04,uTime*.03))*.6 + vn(q*2.7-vec2(uTime*.05,0.))*.4;
@@ -621,13 +621,19 @@ export function start(host, cb, opt) {
         float near = 1.-smoothstep(0.,420.,abs(vW.z+330.));
         float st = smoothstep(.6,.95, vn(vec2(vW.x*.06 + uTime*.05, vW.z*.06)));
         col += vec3(1.,.72,.42)*st*uNight*(.03+.16*near);
-                col = mix(col, uSkyBot*.55 + vec3(.02,.025,.05), smoothstep(-900.,-2600., vW.z)*.85);   // 먼 곳은 수평선의 노을빛으로 자연스럽게 이어 붙임
+                col = mix(col, uSkyBot*.55 + vec3(.02,.025,.05), smoothstep(-900.,-2600., vW.z)*.85*(1.-.75*uPhotoK));
+        col = mix(col, mix(vec3(.02,.045,.13), vec3(.28,.16,.3), pow(fr, 3.)) + vec3(.03,.04,.09)*w, uPhotoK*.85);   // 노을 하늘일 땐 깊은 남색 바다 (수평선 가까이만 노을빛)   // 먼 곳은 수평선의 노을빛으로 자연스럽게 이어 붙임
+        { vec3 rd = vW - cameraPosition; float az = atan(rd.x, -rd.z);   // 노을 하늘 사진의 해 쪽으로 물 위에 반짝이는 윤슬 길
+          float lane = exp(-pow((az + .69)/(.05 + .05*smoothstep(-2600.,-600.,vW.z)), 2.));
+          float sp = smoothstep(.55, .95, vn(vec2(vW.x*.09 + uTime*.3, vW.z*.035 - uTime*.12)));
+          col += vec3(1.,.55,.25)*lane*(.4 + 2.6*sp)*uPhotoK*smoothstep(-400.,-1400.,vW.z); }
         col += uFlashCol*uFlash*(.9*fr+.25)*1.3;
         float dist = length(vW - cameraPosition); float ff = 1.-exp(-uFogD*uFogD*dist*dist*.4); col = mix(col, uFogColor*vec3(.38,.36,.55), clamp(ff,0.,1.));
         gl_FragColor = vec4(col, 1.);
         #include <colorspace_fragment>
       }` }));
   water.rotation.x = -Math.PI / 2; water.position.set(0, WATER_Y, (BAY.z0 + BAY.z1) / 2); scene.add(water);
+  const farSea = new THREE.Mesh(new THREE.PlaneGeometry(12000, 3600), water.material); farSea.rotation.x = -Math.PI / 2; farSea.position.set(0, WATER_Y - .2, BAY.z1 - 1800); scene.add(farSea);   // 수평선까지 이어지는 먼 바다 (하늘과 바다 사이 빈 띠 없애기)
   // 땅: 만 자리는 뚫어 둠 (물에 비친 불꽃이 가려지지 않게)
   const gsh = new THREE.Shape(); gsh.absarc(0, 0, 2800, 0, TAU, false);
   const hole = new THREE.Path(); hole.moveTo(-BAY.x, -BAY.z0); hole.lineTo(-BAY.x, -BAY.z1); hole.lineTo(BAY.x, -BAY.z1); hole.lineTo(BAY.x, -BAY.z0); hole.closePath(); gsh.holes.push(hole);
@@ -1307,7 +1313,7 @@ export function start(host, cb, opt) {
     set(skyU.uTop, p.top.map(v => v * (1 - cl * .25))); set(skyU.uMid, p.mid); set(skyU.uBot, p.bot); skyU.uMilky.value = milky * (1 - cl * .8) * (mode === "real" ? (sunAlt < -.2 ? 1 : 0) : 1);
     sunDirV.copy(dirOf(sunAlt, sunAz)); skyU.uSunDir.value.copy(sunDirV);
     const glow = clamp(1 - Math.abs(sunAlt + .02) / .18, 0, 1) * (1 - cl * .5); skyU.uSunCol.value.setRGB(1 * glow, .5 * glow, .22 * glow);
-    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCity.value = p.night * (1 - cl * .3); skyU.uPhotoK.value = (mode === "twilight" || mode === "dusk") ? 1 : mode === "real" ? clamp((sunAlt + .22) * 6, 0, 1) * clamp(1 - sunAlt * 8, 0, 1) : 0; bayBoard.material.opacity = clamp((p.night - .25) * 3, 0, 1) * (1 - cl * .35); skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
+    skyU.uStars.value = p.stars * starBoost * (1 - cl * .85) * (1 - w.fog * .6) * starDim; skyU.uCity.value = p.night * (1 - cl * .3); skyU.uPhotoK.value = (mode === "twilight" || mode === "dusk") ? 1 : mode === "real" ? clamp((sunAlt + .22) * 6, 0, 1) * clamp(1 - sunAlt * 8, 0, 1) : 0; hills.visible = skyU.uPhotoK.value < .5;   // 노을 사진에 산이 있어 3D 산은 숨겨요 bayBoard.material.opacity = clamp((p.night - .25) * 3, 0, 1) * (1 - cl * .35); skyU.uCloud.value = cl; skyU.uWind.value = w.wind; skyU.uFog.value = w.fog;
     const cc = p.mid.map((v, j) => v * .55 + p.bot[j] * .35 + (p.night > .5 ? 14 : 30)); set(skyU.uCloudCol, cc.map(v => v * (1 - cl * .15)));
     const fogc = p.fog.map((v, j) => lerp(v, 150 + j * 10, w.fog * .55)); bldU.uFogColor.value.setRGB(fogc[0] / 255, fogc[1] / 255, fogc[2] / 255, THREE.SRGBColorSpace); scene.fog.color.copy(bldU.uFogColor.value);
     bldU.uFogD.value = .0011 * (1 + w.fog * 2.6 + w.rain * .8); scene.fog.density = bldU.uFogD.value * .95;
