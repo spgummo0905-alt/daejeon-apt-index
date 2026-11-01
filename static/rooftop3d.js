@@ -284,12 +284,62 @@ function makePerson(o) {
   g.rotation.order = "YXZ"; const P = { g, body, head: hd, arms, legs, food, pose: "idle", ph: Math.random() * 6, seat: 0, yaw: 0, tag: null, mouth };
   g.userData.person = P; return P;
 }
+// 집콩이: 집감 옥상의 마스코트. 크림색 쫀득한 찹쌀떡 몸 + 둥근 주황 지붕 모자(굴뚝) + 배에 불 켜진 작은 창 + 목도리(사람마다 색)
+//  makePerson 과 같은 모양(g·body·head·arms·legs·food)이라 앉기·눕기·먹기·인사가 그대로 돼요. 몸은 말랑하게 눌렸다 돌아와요(sq)
+function makeKong(o) {
+  const g = new THREE.Group(), body = new THREE.Group(); body.position.y = .41; g.add(body);
+  const mochi = new THREE.MeshStandardMaterial({ color: 0xfff6ea, roughness: .5, emissive: 0x4a3a2a, emissiveIntensity: .45 });   // 밤에도 뽀얗게
+  const roofM = new THREE.MeshStandardMaterial({ color: 0xf08a3c, roughness: .6, emissive: 0x5a2208, emissiveIntensity: .3 }), roofD = stdM(0xc8662a, .7);
+  const scarfC = new THREE.Color(o.hood || 0x7b5cf8), scarfM = new THREE.MeshStandardMaterial({ color: scarfC, roughness: .95 });
+  const blob = new THREE.Group(); body.add(blob);                                     // 눌림(쫀득)은 이 묶음 크기로
+  const bodyM = new THREE.Mesh(new THREE.SphereGeometry(.34, 32, 24), mochi); bodyM.scale.set(1.04, .92, .94); blob.add(bodyM);
+  const hd = new THREE.Group(); body.add(hd);                                          // 얼굴·지붕 (고개 돌리기·올려보기)
+  const roofG = new THREE.Group(); roofG.position.set(0, .26, -.01); roofG.rotation.y = Math.PI / 2; hd.add(roofG);   // 용마루가 앞뒤로: 앞에서 보면 ⌂ 모양 집 지붕
+  [-1, 1].forEach(sd => { const pl = new THREE.Mesh(new THREE.CapsuleGeometry(.05, .5, 4, 10), roofM); pl.rotation.z = Math.PI / 2; pl.scale.set(1, 1, 3.6);   // 둥근 판 두 장이 만나는 박공지붕
+    const holder = new THREE.Group(); holder.rotation.x = sd * .78; holder.position.z = sd * .1; holder.add(pl); pl.position.y = .0; roofG.add(holder); });
+  const ridge = new THREE.Mesh(new THREE.CapsuleGeometry(.04, .52, 4, 10), roofD); ridge.rotation.z = Math.PI / 2; ridge.position.y = .085; roofG.add(ridge);
+  const chim = new THREE.Mesh(new THREE.BoxGeometry(.07, .13, .07), stdM(0xb4704a, .8)); chim.position.set(-.12, .12, .13); roofG.add(chim);
+  const chimTop = new THREE.Mesh(new THREE.BoxGeometry(.09, .025, .09), roofD); chimTop.position.set(-.12, .19, .13); roofG.add(chimTop);
+  const eyeM = new THREE.MeshBasicMaterial({ color: 0x2a1f22 }), eyes = [-1, 1].map(sd => { const e = new THREE.Mesh(new THREE.CapsuleGeometry(.018, .035, 4, 8), eyeM); e.rotation.z = Math.PI / 2; e.position.set(sd * .1, .08, .305); e.scale.set(1, 1, .5); hd.add(e); return e; });   // 졸린 듯 가로로 누운 눈
+  const cheeks = [-1, 1].map(sd => { const b = new THREE.Mesh(new THREE.CircleGeometry(.045, 16), new THREE.MeshBasicMaterial({ color: 0xff9a9a, transparent: true, opacity: .6, depthWrite: false })); b.position.set(sd * .17, .025, .285); b.rotation.y = sd * .5; hd.add(b); return b; });
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(.022, .007, 6, 12, Math.PI), new THREE.MeshBasicMaterial({ color: 0x7a3b33 })); mouth.position.set(0, .02, .315); mouth.rotation.z = Math.PI; hd.add(mouth);
+  // 목도리: 얼굴 아래를 감고 한 자락이 늘어져요
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 10, 28), scarfM); scarf.rotation.x = Math.PI / 2 + .08; scarf.position.y = -.035; scarf.scale.set(1.04, .94, 1); blob.add(scarf);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(.04, .12, 4, 8), scarfM); tail.position.set(.15, -.12, .27); tail.rotation.set(.2, 0, .25); blob.add(tail);
+  // 배에 불 켜진 작은 창 (옥탑방 불빛)
+  const winG = new THREE.Group(); winG.position.set(0, -.16, .282); winG.rotation.x = .38; blob.add(winG);
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(.13, .1), new THREE.MeshBasicMaterial({ color: 0xffcf7a })); winG.add(glass);
+  const frM = new THREE.MeshBasicMaterial({ color: 0x9a5a34 });
+  [[0, 0, .14, .012], [0, 0, .012, .11], [0, .055, .15, .016], [0, -.055, .15, .016], [.07, 0, .016, .126], [-.07, 0, .016, .126]].forEach(([x, y, w, h]) => { const f = new THREE.Mesh(new THREE.PlaneGeometry(w, h), frM); f.position.set(x, y, .002); winG.add(f); });
+  const wGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb860, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false })); wGlow.scale.set(.42, .42, 1); wGlow.position.z = .02; winG.add(wGlow);
+  // 손발: 짧고 동글동글 (사람 캐릭터와 같은 관절이라 포즈가 그대로)
+  const mkArm = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .31, -.02, .02); const a = new THREE.Mesh(new THREE.CapsuleGeometry(.06, .07, 4, 10), mochi); a.position.y = -.07; p_.add(a); body.add(p_); return p_; };
+  const mkLeg = sd => { const p_ = new THREE.Group(); p_.position.set(sd * .14, -.24, .02); const up = new THREE.Mesh(new THREE.CapsuleGeometry(.065, .04, 4, 8), mochi); up.position.y = -.04; p_.add(up);
+    const kn = new THREE.Group(); kn.position.y = -.08; const foot = new THREE.Mesh(new THREE.SphereGeometry(.08, 14, 10), mochi); foot.scale.set(1, .62, 1.3); foot.position.set(0, -.04, .03); kn.add(foot); p_.add(kn); p_.userData.knee = kn; body.add(p_); return p_; };
+  const arms = [mkArm(-1), mkArm(1)], legs = [mkLeg(-1), mkLeg(1)];
+  const food = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), stdM(0xd89a60, .9)); food.position.set(0, -.15, .06); food.visible = false; arms[0].add(food);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(.32, 20), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: .32, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .015; g.add(shadow);
+  g.rotation.order = "YXZ";
+  const P = { g, body, head: hd, arms, legs, food, pose: "idle", ph: Math.random() * 6, seat: 0, yaw: 0, tag: null, mouth, kong: { blob, eyes, cheeks, wGlow, sq: 0, sv: 0, prev: "idle", blinkT: rnd(2, 5) } };
+  g.userData.person = P; return P;
+}
 const dampTo = (o, k, v, d) => { o.rotation[k] += (v - o.rotation[k]) * d; };
 function animPerson(P, dt, t, moving) {
   const d = Math.min(1, dt * 11), pose = moving ? "walk" : P.pose;
   if (pose === "walk") P.ph += dt * 9.5;
   const s = Math.sin(P.ph), sit = pose === "sit", chairSit = sit && P.seat > .15, crawl = pose === "crawl", recline = sit && P.seat > .305 ? .55 : 0;   // 캠핑 의자: 등받이에 기대 눕듯이
-  P.body.position.y += ((crawl ? .3 : sit ? .2 + P.seat : .46 + (pose === "walk" ? Math.abs(Math.cos(P.ph)) * .045 : Math.sin(t * 1.6) * .006)) - P.body.position.y) * d;
+  const K = P.kong, base = K ? .41 : .46;   // 집콩이는 둥근 몸 아래가 의자에 닿게 (사람보다 엉덩이가 높아요)
+  P.body.position.y += ((crawl ? (K ? .34 : .3) : sit ? (K ? .41 : .2) + P.seat : base + (pose === "walk" ? Math.abs(Math.cos(P.ph)) * (K ? .07 : .045) : Math.sin(t * 1.6) * .006)) - P.body.position.y) * d;
+  if (K) {   // 쫀득: 용수철처럼 눌렸다가 말랑하게 돌아와요 (걸을 때 통통, 앉을 때 푹, 가만히 있으면 숨 쉬듯)
+    if (pose !== K.prev) { K.sv -= pose === "sit" || pose === "lie" ? 2.2 : pose === "cheer" || pose === "wave" ? -1.6 : 1.2; K.prev = pose; }
+    const want = pose === "walk" ? -.07 * Math.max(0, Math.cos(P.ph * 2)) : Math.sin(t * 1.7 + P.ph) * .018;
+    K.sv += ((want - K.sq) * 150 - K.sv * 8.5) * Math.min(dt, .05); K.sq += K.sv * Math.min(dt, .05); K.sq = clamp(K.sq, -.22, .2);
+    K.blob.scale.set(1 - K.sq * .55, 1 + K.sq, 1 - K.sq * .55); P.head.position.y = K.sq * .3;
+    K.blinkT -= dt; const sleepy = pose === "lie", blink = K.blinkT < .12; if (K.blinkT < 0) K.blinkT = rnd(2.5, 5.5);
+    K.eyes.forEach(e => { e.scale.x = sleepy || blink ? .25 : 1; });                     // 누우면 스르르 감고, 가끔 깜빡
+    const puff = pose === "eat" ? 1.35 + Math.sin(t * 7) * .1 : 1; K.cheeks.forEach(c => { c.scale.setScalar(puff); });   // 먹을 때 볼이 빵빵
+    K.wGlow.material.opacity = .32 + .14 * Math.sin(t * 1.3 + P.ph);                    // 배 창문 불빛이 은은하게 숨 쉬듯
+  }
   dampTo(P.body, "x", -recline, d);
   dampTo(P.legs[0], "x", sit ? -1.5 + recline * .55 : crawl ? .5 + s * .5 : pose === "walk" ? s * .75 : 0, d); dampTo(P.legs[1], "x", sit ? -1.5 + recline * .55 : crawl ? .5 - s * .5 : pose === "walk" ? -s * .75 : 0, d);
   const kA = chairSit ? 1.5 : sit ? .12 : crawl ? .9 : pose === "walk" ? Math.max(0, -s) * .9 : 0, kB = chairSit ? 1.5 : sit ? .12 : crawl ? .9 : pose === "walk" ? Math.max(0, s) * .9 : 0;
@@ -923,7 +973,7 @@ export function start(host, cb, opt) {
   neighborRoof(31, -7, -66, 14, 10, [[-1, 0, 0xf0b040, "idle"], [2, 1, 0x6a8ae8, "sit"]]);
 
   // ----- 나(아바타)와 고양이 -----
-  const me = makePerson({ hood: opt.hood || 0x7b5cf8 }); roof.add(me.g); me.g.position.set(0, 0, 1.0); me.yaw = Math.PI;
+  const me = makeKong({ hood: opt.hood || 0x7b5cf8 }); roof.add(me.g); me.g.position.set(0, 0, 1.0); me.yaw = Math.PI;
   const cat = makeCat(); roof.add(cat.g); cat.g.position.set(1.8, 0, 1.6);
   const cham = makeChameleon(); cham.g.scale.setScalar(1.8); roof.add(cham.g); cham.g.position.set(1.5, 0, -.4);
   const frog = makeFrog(); frog.g.scale.setScalar(1.7); roof.add(frog.g); frog.g.position.set(-1.9, 0, -1.4); frog.yaw = .3;
@@ -932,10 +982,10 @@ export function start(host, cb, opt) {
   const PETS = { dog: null, cat: null, cham, frog, parrot };
   const setPets = list => { const on = new Set(list || ["dog", "cat"]); Object.entries(PETS).forEach(([k, p]) => { const o = k === "dog" ? dog : k === "cat" ? cat : p; o.g.visible = on.has(k); }); };
   const dog = makeDog(); roof.add(dog.g); dog.g.position.set(-1.0, 0, -.1); dog.g.rotation.y = dog.yaw = .35; PETS.dog = dog; PETS.cat = cat; setPets(opt.pets);   // 흰 강아지
-  const tagSpr = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel("나 · " + (opt.nick || "고요한 구름")), transparent: true, depthWrite: false })); tagSpr.scale.set(1.3, .33, 1); tagSpr.position.set(0, 1.78, 0); me.g.add(tagSpr);
+  const tagSpr = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel("나 · " + (opt.nick || "고요한 구름")), transparent: true, depthWrite: false })); tagSpr.scale.set(1.3, .33, 1); tagSpr.position.set(0, 1.5, 0); me.g.add(tagSpr);
   const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false })); bubble.scale.set(.5, .5, 1); bubble.visible = false; me.g.add(bubble);
   let bubbleT = 0;
-  const emote = e => { bubble.material.map = texEmoji(e); bubble.material.needsUpdate = true; bubble.visible = true; bubbleT = 2.2; bubble.position.set(0, 2.15, 0); };
+  const emote = e => { bubble.material.map = texEmoji(e); bubble.material.needsUpdate = true; bubble.visible = true; bubbleT = 2.2; bubble.position.set(0, 1.85, 0); };
   let target = null, sitSpot = null, eatT = 0, cheerT = 0, waveT = 0, afterWalk = null;
   const pushOut = p => { for (const o of obstacles) { const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz), m = o.r + .28; if (d < m) { const k = m / (d || 1e-3); p.x = o.x + dx * k; p.z = o.z + dz * k; } } p.x = clamp(p.x, -RX + 1.1, RX - 1.1); p.z = clamp(p.z, -RZ + 1.1, RZ - .9); return p; };
   const walkTo = (x, z, then, sit) => { target = pushOut({ x, z }); if (sit) { target.x = x; target.z = z; } sitSpot = sit || null; afterWalk = then || null; me.pose = "idle"; };
@@ -1183,8 +1233,8 @@ export function start(host, cb, opt) {
     let p = peers.get(id);
     if (!p) {
       if (peers.size >= PEER_MAX) return;
-      const P = makePerson({ hood: HOODS[hashStr(id) % HOODS.length] }); roof.add(P.g);
-      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel(String(st.n || "이웃").slice(0, 12)), transparent: true, depthWrite: false })); tag.scale.set(1.2, .3, 1); tag.position.set(0, 1.75, 0); P.g.add(tag);
+      const P = makeKong({ hood: HOODS[hashStr(id) % HOODS.length] }); roof.add(P.g);
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texLabel(String(st.n || "이웃").slice(0, 12)), transparent: true, depthWrite: false })); tag.scale.set(1.2, .3, 1); tag.position.set(0, 1.48, 0); P.g.add(tag);
       const bub = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false })); bub.scale.set(.5, .5, 1); bub.visible = false; P.g.add(bub);
       P.g.position.set(nv(st.x, -RX + 1.1, RX - 1.1), 0, nv(st.z, -RZ + 1.1, RZ - .9)); p = { P, bub, bt: 0, tx: P.g.position.x, tz: P.g.position.z, ty: 0, pose: "idle", yaw: Math.PI, last: time }; peers.set(id, p);
       cb.peerCount && cb.peerCount(peers.size);
@@ -1194,7 +1244,7 @@ export function start(host, cb, opt) {
   function removePeer(id) { const p = peers.get(id); if (!p) return; roof.remove(p.P.g); peers.delete(id); cb.peerCount && cb.peerCount(peers.size); }
   function peerEmote(id, e) {
     const p = peers.get(id); if (!p || !EMO.includes(e)) return;
-    p.bub.material.map = emoTex[e] || (emoTex[e] = texEmoji(e)); p.bub.material.needsUpdate = true; p.bub.visible = true; p.bt = 2.4; p.bub.position.set(0, 2.1, 0);
+    p.bub.material.map = emoTex[e] || (emoTex[e] = texEmoji(e)); p.bub.material.needsUpdate = true; p.bub.visible = true; p.bt = 2.4; p.bub.position.set(0, 1.82, 0);
     if (e === "👋") p.wave = 1.6;
   }
   // ----- 고양이 -----
@@ -1412,10 +1462,10 @@ export function start(host, cb, opt) {
       g.position.y += (p.ty - g.position.y) * Math.min(1, dt * 8); if (mv && d > .25) p.P.yaw = Math.atan2(dx, dz); else if (!mv) p.P.yaw = p.yaw;
       if (p.wave > 0) { p.wave -= dt; p.P.pose = "wave"; } else p.P.pose = p.pose;
       animPerson(p.P, dt, time + p.P.ph, mv);
-      if (p.bt > 0) { p.bt -= dt; p.bub.position.y = 2.1 + (2.4 - p.bt) * .1; p.bub.material.opacity = Math.min(1, p.bt * 2); if (p.bt <= 0) p.bub.visible = false; }
+      if (p.bt > 0) { p.bt -= dt; p.bub.position.y = 1.82 + (2.4 - p.bt) * .1; p.bub.material.opacity = Math.min(1, p.bt * 2); if (p.bt <= 0) p.bub.visible = false; }
       if (time - p.last > 25) gone.push(id);
     }); gone.forEach(removePeer);
-    if (bubbleT > 0) { bubbleT -= dt; bubble.position.y = 2.15 + (2.2 - bubbleT) * .12; bubble.material.opacity = Math.min(1, bubbleT * 2); if (bubbleT <= 0) bubble.visible = false; }
+    if (bubbleT > 0) { bubbleT -= dt; bubble.position.y = 1.85 + (2.2 - bubbleT) * .12; bubble.material.opacity = Math.min(1, bubbleT * 2); if (bubbleT <= 0) bubble.visible = false; }
     // 이웃
     neighbors.forEach(n => { n.nextWave -= dt; if (n.waveT > 0) { n.waveT -= dt; if (n.waveT <= 0) { n.pose = n.base; n.yaw = Math.PI; } }
       else if (n.nextWave < 0) { n.nextWave = rnd(10, 26); n.pose = "wave"; n.waveT = 2.4; n.yaw = Math.atan2(camera.position.x - n.g.getWorldPosition(v3).x, camera.position.z - v3.z) ; }
