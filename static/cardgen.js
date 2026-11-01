@@ -229,7 +229,7 @@
     ctx.fillText("◆".repeat(t.stars) + "◇".repeat(5 - t.stars), W / 2, fy + 1);
     ctx.textAlign = "right"; ctx.fillStyle = t.sub; ctx.font = `600 15px ${FONT}`;
     ctx.fillText((data.asof || "") + " 실거래 기준", W - 56, fy - 10);
-    ctx.fillText((data.region || "대전") + " 아파트 지수", W - 56, fy + 10);
+    ctx.fillText("집감 · " + (data.region || "대전"), W - 56, fy + 10);
 
     holo(ctx, 22, 22, W - 44, H - 44, t, rand);
     return cv;
@@ -315,9 +315,11 @@
   const UA = navigator.userAgent || "";
   const KAKAO = /KAKAOTALK/i.test(UA);
   const IN_APP = KAKAO || /NAVER\(inapp|Instagram|FBAN|FBAV|\bLine\/|DaumApps|everytimeApp|BAND\/|KAKAOSTORY|TikTok|musical_ly|; wv\)/i.test(UA);
-  const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); return u.toString(); };
+  // 보내는 주소: 받은 사람이 열면 '공유받은 단지 카드' 안내가 뜨게 from=share (app.js welcome)
+  const pageUrl = () => { const u = new URL(location.href); u.hash = ""; u.searchParams.delete("card"); u.searchParams.set("from", "share"); return u.toString(); };
   function externalUrl() {
     const u = new URL(pageUrl());
+    u.searchParams.delete("from");   // 내 기기에서 여는 것
     u.searchParams.set("card", "1");
     return "kakaotalk://web/openExternal?url=" + encodeURIComponent(u.toString());
   }
@@ -383,7 +385,7 @@
         const [data] = await Promise.all([DJ.data(), document.fonts ? document.fonts.ready : null]);
         const c = data.bySlug[slug];
         if (!c) throw new Error("no card");
-        await glyphs(JSON.stringify(c) + (data.region || "") + "아파트 지수 등급 점 위 상위 하위 억 만 원 년 평 ㎡");
+        await glyphs(JSON.stringify(c) + (data.region || "") + "집감 · 지수 등급 점 위 상위 하위 억 만 원 년 평 ㎡");
         const cv = draw(c, data);
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         image = { blob, url: URL.createObjectURL(blob), file: c.n.replace(/[\\/:*?"<>|\s]+/g, "_") + "_단지카드.png" };
@@ -466,7 +468,7 @@
       last = document.activeElement;
       back.hidden = false; sheet.hidden = false;
       requestAnimationFrame(() => { back.classList.add("on"); sheet.classList.add("on"); });
-      say(IN_APP && save && !navigator.share ? "'이미지 저장'을 누르면 카드를 크게 띄워 드려요. 길게 눌러 저장하면 돼요." : "");
+      say(IN_APP && save && !navigator.share ? "'이미지 저장'을 누르면 카드가 크게 열립니다. 길게 눌러 저장하세요." : "");
       document.addEventListener("keydown", esc);
       sheet.querySelector(".sheet-act").focus();
       prepare();
@@ -485,13 +487,14 @@
     // (카드 이미지가 올라가 있으면 그것, 아니면 사이트 대표 이미지)
     sheet.querySelector('[data-act="kakao"]').addEventListener("click", () => {
       const url = pageUrl(), link = { mobileWebUrl: url, webUrl: url };
+      const homeUrl = new URL("../index.html", location.href).toString(), home = { mobileWebUrl: homeUrl, webUrl: homeUrl };
       if (window.Kakao && Kakao.Share && Kakao.isInitialized && Kakao.isInitialized()) {
         try {
           const img = kakaoImg && kakaoImg.url ? kakaoImg : (sheet.dataset.og ? { url: sheet.dataset.og, width: 1200, height: 630 } : null);
           if (img) {
             Kakao.Share.sendDefault({ objectType: "feed",
               content: { title, description: text, imageUrl: img.url, imageWidth: img.width, imageHeight: img.height, link },
-              buttons: [{ title: "점수 보기", link }] });
+              buttons: [{ title: "카드 보기", link }, { title: "우리 단지 찾기", link: home }] });
           } else {
             Kakao.Share.sendDefault({ objectType: "text", text: title + "\n" + text, buttonTitle: "점수 보기", link });
           }

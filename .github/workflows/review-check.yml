@@ -3,9 +3,32 @@ name: review-check
 # 후기 링크 점검 (수동 실행): 휴대폰 브라우저처럼 열어 앱 설치·로그인을 요구하는지, 후기가 바로 보이는지 로그로 남깁니다.
 on:
   workflow_dispatch:
+    inputs:
+      probe:
+        description: "네이버 글 고르기만 점검 (scripts/naver_probe.py)"
+        type: boolean
+        default: false
 
 jobs:
+  # 단지 페이지 '살아본 사람들 이야기'에 남는 글과 빠지는 글 제목 (실제 단지로)
+  naver-probe:
+    if: ${{ inputs.probe }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          PROBE_SEED: ${{ github.run_number }}
+        run: python scripts/naver_probe.py
+
   check:
+    if: ${{ !inputs.probe }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

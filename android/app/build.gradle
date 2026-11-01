@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// 집감 안드로이드 앱: 사이트(https://www.jipgam.kr)를 크롬 기반 전체 화면(TWA)으로 여는 껍데기.
+// 화면과 기능은 사이트 그대로라 사이트를 고치면 앱도 바로 바뀝니다.
+def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+
+android {
+    namespace 'kr.jipgam.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'kr.jipgam.app'
+        minSdk 23
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv("ANDROID_VERSION_CODE") ?: "1")
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            // 업로드 키: 저장소 Secrets 에서 워크플로가 파일로 풀어 줍니다 (android.yml). 없으면 서명 없는 빌드
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (keystorePath) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

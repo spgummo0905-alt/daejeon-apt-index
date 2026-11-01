@@ -167,3 +167,54 @@ def kinfo(trades: pd.DataFrame, seed: int = 12) -> dict:
             marea = hh * rnd.randint(60, 95)
             out[cid].update(marea=marea, fee={"ym": "202608", "total": int(marea * rnd.uniform(900, 2200))})
     return out
+
+
+def hill(trades: pd.DataFrame, seed: int = 14) -> dict:
+    """데모용 가짜 언덕 자료 (elev.json 모양). 다섯에 하나는 역 단면 없이, 열에 하나는 비워 둠."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, cid in enumerate(sorted(trades["complex_id"].unique())):
+        if i % 10 == 9:
+            continue
+        e = rnd.uniform(20, 120)
+        rf = rnd.choice([6, 11, 16, 24, 31, 42, 58]) + rnd.uniform(0, 4)
+        out[cid] = {"e": round(e, 1), "rf": round(rf, 1)}
+        if i % 5 != 4:
+            st = rnd.uniform(-8, 28)
+            base = e - st
+            pf = [base + (e - base) * k / 8 + rnd.uniform(-3, 3) * (0 < k < 8) for k in range(9)]
+            pf[0], pf[8] = base, e
+            out[cid].update(st=round(st, 1), pf=[round(v, 1) for v in pf])
+    return out
+
+
+def noise(trades: pd.DataFrame, seed: int = 15) -> dict:
+    """데모용 가짜 소음 체크 자료 (noise.json 의 data 모양). 일곱에 하나는 비워 둠."""
+    rnd = random.Random(seed)
+    out = {}
+    for i, cid in enumerate(sorted(trades["complex_id"].unique())):
+        if i % 7 == 6:
+            continue
+        row = {}
+        if rnd.random() < 0.85:
+            row.update(road=rnd.choice([35, 80, 140, 260, 520, 880]), road_kind=rnd.choice(["대로", "대로", "간선도로", "고속도로"]),
+                       road_name=rnd.choice(["계룡로", "한밭대로", "대덕대로", "호남고속도로"]))
+        if rnd.random() < 0.3:
+            row.update(rail=rnd.choice([90, 240, 610]), rail_name=rnd.choice(["경부선", "호남선"]))
+        out[cid] = row
+    return out
+
+
+def movein(districts: dict, seed: int = 16) -> list[dict]:
+    """데모용 가짜 입주 예정 물량 (movein.json 의 rows 모양): 앞으로 3년 동안 구마다 몇 단지."""
+    from datetime import date
+    rnd = random.Random(seed)
+    t, out = date.today(), []
+    for k, gu in enumerate(districts.values()):
+        for j in range(rnd.randint(1, 3)):
+            y, m = t.year + rnd.randint(0, 2), rnd.randint(1, 12)
+            if (y, m) <= (t.year, t.month):
+                y += 1
+            out.append({"id": f"D{k}{j}", "name": f"데모{gu}입주{j + 1}단지", "addr": f"데모시 {gu} 데모동",
+                        "area": gu, "hh": rnd.choice([320, 680, 1150, 1840]), "ym": f"{y:04d}{m:02d}", "notice": ""})
+    return sorted(out, key=lambda r: r["ym"])

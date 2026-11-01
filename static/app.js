@@ -9,10 +9,32 @@
     try { const v = localStorage.getItem("djdex:" + key); return v ? JSON.parse(v) : fallback; }
     catch (e) { return fallback; }
   }
+  // 고친 시각도 함께 적어 둡니다 (djdex-t). 카카오로 로그인하면 sync.js 가 이걸 보고 기기끼리 새 것을 남깁니다.
+  // 기기마다 따로인 것(지도 위치·카드 순서·새 소식 수)은 적지 않습니다.
+  DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"];
   function save(key, value) {
-    try { localStorage.setItem("djdex:" + key, JSON.stringify(value)); } catch (e) { /* 저장 불가: 무시 */ }
+    try {
+      localStorage.setItem("djdex:" + key, JSON.stringify(value));
+      if (!DJ.LOCAL_ONLY.includes(key)) {
+        const t = JSON.parse(localStorage.getItem("djdex-t") || "{}");
+        t[key] = Date.now();
+        localStorage.setItem("djdex-t", JSON.stringify(t));
+        if (DJ.onSave) DJ.onSave(key);
+      }
+    } catch (e) { /* 저장 불가: 무시 */ }
   }
   DJ.load = load; DJ.save = save;
+
+  // ---------- 내 설정 (관심 화면 '내 설정', prefs.js). 로그인하면 기기끼리 같이 맞춰짐 ----------
+  // region: 사이트를 열면 먼저 볼 지역, unit: 면적 단위, dp: 관심 단지 84㎡ 시세가 이만큼(만원) 바뀌면 새 소식 (0 = 받지 않음),
+  // checks: 내가 더한 현장 체크 항목 (현장 모드·임장 코스 체크리스트에 함께)
+  DJ.prefs = () => Object.assign({ region: "", unit: "", dp: 500, checks: [] }, load("prefs", {}));
+  DJ.setPref = function (k, v) {
+    const p = load("prefs", {});
+    p[k] = v;
+    save("prefs", p);
+    document.dispatchEvent(new CustomEvent("dj:prefs", { detail: k }));
+  };
 
   // ---------- 데이터 ----------
   let dataPromise = null;
@@ -58,23 +80,36 @@
   DJ.el = el;
 
   // ---------- 알림 ----------
-  DJ.toast = function (title, body) {
+  DJ.toast = function (title, body, ms) {   // ms: 오래 보여 줄 때 (실패 이유처럼 읽어야 하는 알림)
     const zone = document.getElementById("toast-zone");
     if (!zone) return;
     const t = el("div", "toast");
     t.append(el("strong", "", title));
     if (body) t.append(el("span", "", body));
     zone.append(t);
-    setTimeout(() => t.classList.add("out"), 3200);
-    setTimeout(() => t.remove(), 3800);
+    setTimeout(() => t.classList.add("out"), ms || 3200);
+    setTimeout(() => t.remove(), (ms || 3200) + 600);
   };
 
   DJ.unlock = function () {}; // 예전 페이지 호환용 (업적 기능은 없앴습니다)
 
+  // ---------- 로그인해야 쓰는 내 기록 ----------
+  // 카카오 로그인을 켠 사이트에선 관심 단지·임장 코스·임장 노트·카드첩이 계정에 저장되는 기록이라,
+  // 어느 기기에서든 로그인만 하면 같은 기록을 이어 봅니다. 로그인 전엔 비어 보이고, 담으려 하면 로그인 안내.
+  // (로그인을 켜지 않은 사이트·로그인 기능이 안 되는 브라우저는 예전처럼 이 기기에)
+  DJ.locked = () => !!(DJ.sync && !DJ.sync.user);
+  DJ.askLogin = function (what) {
+    if (!DJ.locked()) return false;
+    if (DJ.loginPrompt) DJ.loginPrompt(what);
+    else DJ.toast(`${what} · 로그인하면 쓸 수 있어요`, "위쪽 '로그인'에서 카카오로 로그인해 주세요");
+    return true;
+  };
+
   // ---------- 찜 / 최근 본 ----------
-  DJ.favs = () => load("favs", []);
+  DJ.favs = () => DJ.locked() ? [] : load("favs", []);
   DJ.isFav = s => DJ.favs().includes(s);
   DJ.toggleFav = function (s) {
+    if (DJ.askLogin("관심 단지")) return DJ.isFav(s);
     let f = DJ.favs();
     const on = !f.includes(s);
     f = on ? [s, ...f] : f.filter(x => x !== s);
@@ -82,10 +117,63 @@
     DJ.paintFavCount();
     return on;
   };
-  // 메뉴의 '관심 단지' 옆 숫자
+  // 메뉴의 '관심 단지' 옆 숫자. 새 소식이 있는 관심 단지가 있으면 그 수를 빨간 숫자로
   DJ.paintFavCount = function () {
-    const n = DJ.favs().length;
-    document.querySelectorAll("[data-fav-count]").forEach(b => { b.hidden = !n; b.textContent = n > 99 ? "99+" : n; });
+    const n = DJ.favs().length, news = n ? load("watchN", 0) : 0;
+    document.querySelectorAll("[data-fav-count]").forEach(b => {
+      const k = news || n;
+      b.hidden = !k;
+      b.textContent = k > 99 ? "99+" : k;
+      b.classList.toggle("news", !!news);
+      b.title = news ? `관심 단지 새 소식 ${news}곳` : "";
+    });
+  };
+
+  // ---------- 관심 단지 새 소식: 지난번 확인했을 때와 견줘 새 거래·시세 변화 (이 브라우저에만) ----------
+  // 임장 후보를 지켜보다 실제 거래가 생기면 다음 임장·가격 협상 때를 바로 알 수 있게.
+  // watch = {단지: [거래 수, 마지막 거래일, 84㎡ 시세(만원), 확인한 날]}. 관심 단지에 넣거나 단지 페이지를 열면 그때 상태로 맞춥니다.
+  DJ.snap = c => [c.tc || 0, c.ld || "", c.p || 0, DJ.today()];
+  DJ.news = function (c) {
+    const old = load("watch", {})[c.s];
+    if (!old) return null;
+    const n = {}, more = (c.tc || 0) - old[0];
+    if (more > 0) n.trades = more;
+    else if (c.ld && old[1] && c.ld > old[1]) n.trades = 1;
+    if (n.trades && c.ld) n.last = [c.ld, c.lr, c.lp];
+    if (n.trades && c.h) n.high = true;
+    const dp = DJ.prefs().dp;   // 84㎡ 시세가 이만큼(기본 500만 원) 넘게 바뀜. 0이면 시세 변화는 알리지 않음
+    if (dp && c.p && old[2] && Math.abs(c.p - old[2]) >= dp) n.dp = [old[2], c.p];
+    return Object.keys(n).length ? Object.assign(n, { since: old[3] }) : null;
+  };
+  DJ.watchSeen = function (c) {
+    const w = load("watch", {});
+    w[c.s] = DJ.snap(c);
+    save("watch", w);
+  };
+  // 관심 단지 중 소식이 있는 곳 [{c, n}] (처음 보는 관심 단지는 지금 상태를 기준으로 저장만)
+  DJ.watchSync = function (bySlug) {
+    const w = load("watch", {}), out = [];
+    let changed = false;
+    DJ.favs().forEach(s => {
+      const c = bySlug[s];
+      if (!c) return;
+      if (!w[s]) { w[s] = DJ.snap(c); changed = true; return; }
+      const n = DJ.news(c);
+      if (n) out.push({ c, n });
+    });
+    if (changed) save("watch", w);
+    save("watchN", out.length);
+    DJ.paintFavCount();
+    return out;
+  };
+  // short: 단지 페이지에서는 바로 위 가격 배지에 최근 거래가 있어 빼요
+  DJ.newsText = function (n, short) {
+    const eok = v => (v >= 10000 ? (+(v / 10000).toFixed(1)) + "억" : Math.round(v).toLocaleString() + "만");
+    const out = [];
+    if (n.trades) out.push(`새 거래 ${n.trades}건`);
+    if (n.last && !short) out.push(`최근 ${n.last[0].slice(5)}${n.last[1] || n.last[2] ? " · " : ""}${n.last[1] ? n.last[1] + "㎡ " : ""}${n.last[2] || ""}`.trim());
+    if (n.dp) out.push(`84㎡ 시세 ${eok(n.dp[0])} → ${eok(n.dp[1])}`);
+    return out;
   };
   DJ.recent = () => load("recent", []);
   DJ.addRecent = function (c) {
@@ -93,6 +181,108 @@
     r.unshift(c);   // {s, gu, g} + 단지 페이지에서는 이름·지수·가격·지역·주소까지 (떠 있는 '최근 본' 목록용)
     save("recent", r.slice(0, 30));
   };
+
+  // ---------- 임장 기록: 현장 체크리스트·호가·메모 (현장 모드와 임장 코스가 함께 씀, 이 브라우저에만) ----------
+  // visit:<단지> = {c: [기본 항목 체크], x: {이 단지 항목 id: true}, m: 메모, q: [[평, 층, 호가(만원), 적은 날]], d: 다녀온 날}
+  DJ.CHECK = [
+    "역·버스 정류장까지 실제로 걸어 보기 (몇 분 걸리는지)",
+    "언덕·계단 (단지 안과 역 가는 길)",
+    "단지 관리 상태 (외벽·조경·주차장·엘리베이터)",
+    "밤 주차 여유 (퇴근 뒤 자리가 있는지)",
+    "소음 (큰길·철도·학교·상가)",
+    "동 간 거리와 향 (앞 동에 가려 해가 드는지)",
+    "아이 학교 가는 길 (횡단보도·안전)",
+    "상가·마트·병원·학원 (걸어서 닿는지)",
+    "부동산에 들러 매물·호가·분위기 묻기",
+  ];
+  DJ.hash = t => { let h = 5381; for (const ch of String(t)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0; return h.toString(36); };
+  DJ.visit = s => Object.assign({ c: [], x: {}, m: "", q: [] }, load("visit:" + s, {}));
+  DJ.saveVisit = (s, v) => save("visit:" + s, v);
+  // 이 단지 자료로 짚는 현장 확인 거리 [id, 할 일, 왜]: 숫자로 본 약점을 현장에서 직접 확인하게
+  DJ.visitItems = function (c, region) {
+    const out = [], f = c.f || {}, hl = c.hl || [];
+    const m = v => v < 1000 ? Math.round(v) + "m" : (v / 1000).toFixed(1) + "km";
+    const rank = top => top <= 50 ? `${region || ""} 상위 ${Math.max(1, Math.round(top))}%` : `${region || ""} 하위 ${Math.max(1, Math.round(100 - top))}%`;
+    if (hl[1] != null && hl[1] >= 12) out.push(["hill-st", `${c.stn || "역"}에서 걸어 올라와 보기`, `역보다 약 ${Math.round(hl[1])}m 높아요`]);
+    else if (hl[0] != null && hl[0] >= 35) out.push(["hill", "단지 안 경사·계단 걸어 보기", `주변 고저차 약 ${Math.round(hl[0])}m`]);
+    if ("subway" in f && (f.subway == null || f.subway > 800))
+      out.push(["bus", "버스 정류장과 배차 간격 확인", f.subway == null ? "걸어갈 만한 거리에 역이 없어요" : `${c.stn || "역"}까지 직선 ${m(f.subway)}`]);
+    if (f.elementary != null && f.elementary > 500) out.push(["school", "초등학교까지 아이 걸음으로 걸어 보기", `직선 ${m(f.elementary)}`]);
+    if (c.pk != null && (c.pk < 1 || (c.pq != null && c.pq >= 70))) out.push(["park", "밤 9시 넘어 주차장 빈자리 보기", `세대당 ${c.pk}대${c.pq != null ? " · " + rank(c.pq).trim() : ""}`]);
+    if (c.nz) {   // 소음 체크: 큰길(고속·간선은 150m, 대로는 60m)이나 철도(150m) 가까이
+      const [road, kind, rail] = c.nz, big = kind === "고속도로" || kind === "간선도로";
+      if (road != null && road <= (big ? 150 : 60)) out.push(["noise", "큰길 쪽 동에서 소음 들어 보기 (창문 닫고·열고)", `${kind}까지 직선 ${m(road)}`]);
+      else if (rail != null && rail <= 150) out.push(["noise", "열차 지나갈 때 소음·진동 확인", `철도까지 직선 ${m(rail)}`]);
+    }
+    const age = c.y ? new Date().getFullYear() - c.y : null;
+    if (age != null && age >= 25) out.push(["old", "외벽 균열·배관·엘리베이터 상태 보기", `${age}년 차 · 재건축·리모델링 이야기도 부동산에 묻기`]);
+    if (c.fm && c.fq != null && c.fq <= 30) out.push(["fee", "관리사무소에 관리비가 높은 이유 묻기", `㎡당 ${c.fm.toLocaleString()}원 · ${rank(c.fq).trim()}`]);
+    if (c.jr != null && c.jr >= 70) out.push(["jeonse", "전세 매물과 호가도 함께 묻기", `전세가율 ${c.jr}% · 매매와 전세 차이가 작아요`]);
+    if (c.h) out.push(["high", "지금 호가가 신고가보다 높은지 묻기", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
+    else if (c.dd != null && c.dd <= -10) out.push(["dip", "급매·가격을 낮춘 매물이 있는지 묻기", `고점보다 ${Math.abs(Math.round(c.dd))}% 낮아요`]);
+    DJ.prefs().checks.forEach(t => out.push(["my:" + DJ.hash(t), t, "내가 더한 항목"]));   // 내 설정의 체크 항목
+    return out;
+  };
+  // 임장 코스에 단지 더하기 (관심 화면 임장 코스와 같은 목록, 8곳까지). 더한 수를 돌려줌, 꽉 차면 -1
+  DJ.addToCourse = function (slugs) {
+    const st = load("course", {});
+    if (!Array.isArray(st.list)) st.list = DJ.favs().slice(0, 8);
+    let n = 0;
+    for (const x of slugs) {
+      if (st.list.includes(x)) continue;
+      if (st.list.length >= 8) { if (n) st.auto = false; save("course", st); return n || -1; }
+      st.list.push(x); n++;
+    }
+    if (n) st.auto = false;   // 직접 고친 코스 (관심 단지를 따라가지 않음)
+    save("course", st);
+    return n;
+  };
+  // 임장 코스 공통 (관심 화면 코스·현장 모드·단지 페이지 '코스에 넣기'가 같은 순서·같은 목록을 쓰게)
+  DJ.SPEED = { walk: { kmh: 4.5, detour: 1.3, label: "걸어서" }, car: { kmh: 25, detour: 1.4, label: "차로" } };
+  DJ.km = (a, b) => {   // 두 단지 사이 직선거리 (km)
+    const R = 6371, r = Math.PI / 180;
+    const dLa = (b.la - a.la) * r, dLn = (b.ln - a.ln) * r;
+    const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.la * r) * Math.cos(b.la * r) * Math.sin(dLn / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  // 직선거리(m) → 걸어서 약 몇 분. 화면 어디서나 같은 계산 (djdex/site.py 의 walk_min 과 같은 값)
+  DJ.walkMin = m => DJ.moveMin(m / 1000, "walk");
+  DJ.moveMin = (km, mode) => { const sp = DJ.SPEED[mode] || DJ.SPEED.walk; return Math.max(1, Math.round(km * sp.detour / sp.kmh * 60)); };
+  // 가장 짧은 방문 순서 (시작·끝 자유): 8곳까지라 모든 순서를 다 견줍니다. pts → 인덱스 순서
+  DJ.courseOrder = function (pts) {
+    const n = pts.length;
+    if (n <= 2) return pts.map((_, i) => i);
+    const M = pts.map(a => pts.map(b => DJ.km(a, b)));
+    let best = null, bestLen = Infinity;
+    const used = new Array(n).fill(false), path = [];
+    (function walk(len) {
+      if (len >= bestLen) return;
+      if (path.length === n) { bestLen = len; best = path.slice(); return; }
+      for (let i = 0; i < n; i++) {
+        if (used[i]) continue;
+        if (path.length === n - 1 && path[0] > i) continue;   // 거꾸로 된 같은 길은 한 번만
+        used[i] = true; path.push(i);
+        walk(len + (path.length > 1 ? M[path[path.length - 2]][i] : 0));
+        path.pop(); used[i] = false;
+      }
+    })(0);
+    return best;
+  };
+  // 지금 내 코스의 단지 (직접 고치기 전까지는 관심 단지), 위치가 있는 이 지역 단지만 방문 순서대로
+  DJ.courseStops = function (d) {
+    const st = load("course", {});
+    let list = DJ.locked() ? [] : (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
+    list = list.filter(s => d.bySlug[s] && d.bySlug[s].la != null);
+    const pts = list.map(s => d.bySlug[s]);
+    return { mode: st.mode || "walk", stops: DJ.courseOrder(pts).map(i => pts[i]) };
+  };
+  DJ.removeFromCourse = function (slug) {
+    const st = load("course", {});
+    const list = (!Array.isArray(st.list) || !st.list.length || st.auto) ? DJ.favs().slice(0, 8) : st.list;
+    save("course", Object.assign(st, { list: list.filter(s => s !== slug), auto: false }));
+  };
+  // 체크한 수 / 전체 (이 단지 항목 + 기본 항목)
+  DJ.visitDone = (v, items) => [items.filter(([id]) => v.x[id]).length + DJ.CHECK.filter((_, i) => v.c[i]).length, items.length + DJ.CHECK.length];
 
   // ---------- 카드첩: 열어 본 단지 카드를 모읍니다 (이 브라우저에만) ----------
   // {단지: 처음 모은 날}. 지역은 단지 코드 앞 두 자리(시도: 30 대전, 36 세종, 11 서울)로 나눠 셉니다.
@@ -114,6 +304,7 @@
   };
   // 새로 모은 카드면 그 지역에서 몇 장째인지, 이미 있던 카드면 0
   DJ.collect = function (s) {
+    if (DJ.locked()) return 0;
     const a = DJ.album();
     if (a[s]) return 0;
     a[s] = DJ.today();
@@ -153,9 +344,10 @@
   DJ.unit = () => document.documentElement.classList.contains("u-py") ? "py" : "m2";
   const syncUnit = () => document.querySelectorAll("[data-area-unit]").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.areaUnit === DJ.unit())));
-  DJ.setUnit = function (u) {
+  DJ.setUnit = function (u, keep) {
     document.documentElement.classList.toggle("u-py", u === "py");
     try { localStorage.setItem("dj-unit", u); } catch (e) { /* 저장 못 해도 이번 화면은 바뀜 */ }
+    if (keep !== false && DJ.prefs().unit !== u) DJ.setPref("unit", u);
     syncUnit();
     document.dispatchEvent(new CustomEvent("dj:unit", { detail: u }));
   };
@@ -163,6 +355,9 @@
     const b = e.target.closest && e.target.closest("[data-area-unit]");
     if (b) DJ.setUnit(b.dataset.areaUnit);
   });
+  // 다른 기기에서 받아 온 설정(면적 단위)을 이 화면에 (sync.js 도 받아 온 뒤 부름)
+  DJ.applyPrefs = function () { const u = DJ.prefs().unit; if (u && u !== DJ.unit()) DJ.setUnit(u, false); };
+  DJ.applyPrefs();
   syncUnit();
   // 글자로 쓰는 면적 (select 처럼 태그를 못 넣는 곳): '97㎡(전용 77)' · '29평(전용 23)', 공급면적을 모르면 '전용 77㎡'
   DJ.area = function (ex, su, dec) {
@@ -188,6 +383,27 @@
     DJ.copyBox(url);   // 복사가 완전히 막힌 브라우저에서만
     return false;
   };
+  // 인쇄용 종이(sheet)만 찍기 (임장 코스·임장 노트). 휴대폰 브라우저는 print() 가 바로 돌아와 그 뒤에 페이지를 찍으므로
+  // 종이를 바로 치우지 않고 두었다가 다음 인쇄 때 바꿉니다 (화면엔 보이지 않음). PC 는 인쇄 창이 닫히면 치움.
+  // 카카오톡·네이버 같은 앱 안 브라우저는 인쇄가 되지 않아, 다른 브라우저로 열라고 알려 줌
+  DJ.inApp = () => /KAKAOTALK|NAVER\(inapp|DaumApps|Instagram|FBAN|FBAV|Line\/|; wv\)/i.test(navigator.userAgent);
+  DJ.printSheet = function (sheet) {
+    if (DJ.inApp()) {
+      DJ.toast("이 앱 안에서는 인쇄가 안 돼요", "오른쪽 위 메뉴에서 '다른 브라우저로 열기'를 누른 뒤 다시 눌러 주세요. 크롬·사파리에선 'PDF로 저장'도 돼요.", 9000);
+      return Promise.resolve(false);
+    }
+    document.querySelectorAll(".print-sheet").forEach(x => x.remove());
+    sheet.classList.add("print-sheet");
+    document.body.append(sheet);
+    document.body.classList.add("printing");
+    const imgs = [...sheet.querySelectorAll("img")].map(i => i.decode().catch(() => {}));
+    return Promise.race([Promise.all(imgs), new Promise(ok => setTimeout(ok, 3000))]).then(() => {   // 사진이 뜬 뒤
+      if (!matchMedia("(pointer: coarse)").matches)
+        addEventListener("afterprint", () => setTimeout(() => { sheet.remove(); document.body.classList.remove("printing"); }, 300), { once: true });
+      window.print();
+      return true;
+    });
+  };
   DJ.share = async function (title, text, url) {
     url = url || location.href;
     try {
@@ -197,59 +413,290 @@
   };
 
   // ---------- 검색 자동완성 ----------
-  // input 옆에 결과 목록을 띄우고, 고르면 onPick(단지) 를 부릅니다.
-  DJ.search = function (input, onPick) {
-    const list = el("ul", "ac-list");
+  // 단지 이름뿐 아니라 동·역 이름, '7억 이하 30평대' 같은 조건까지 한 칸에서 찾습니다.
+  // 조건은 '조건으로 찾기'로, 동은 메인 단지 목록으로, 역은 역세권 화면의 그 역으로 바로 보냅니다.
+  // 빈칸을 누르면 최근 찾은 것·최근 본 단지와 찾는 예시를 보여줍니다.
+  const PY_IDS = [["u20", 0, 20], ["20", 20, 30], ["30", 30, 40], ["40", 40, 50], ["50", 50, 1e9]];
+  const pyId = py => PY_IDS.find(([, lo, hi]) => py >= lo && py < hi)[0];
+  const WORDS = [   // 조건 낱말 → 조건으로 찾기 값
+    [/준신축/, { age: "semi" }, "준신축까지"], [/신축/, { age: "new" }, "신축"],
+    [/역세권|역\s*근처|역\s*가까운/, { stn: 500 }, "역 500m 안"], [/초품아/, { sch: 300 }, "초등학교 300m 안"],
+    [/대단지/, { must: "big" }, "대단지"], [/학원가/, { must: "academy" }, "학원가"],
+    [/신고가/, { must: "high" }, "최근 신고가"], [/주차/, { must: "park" }, "주차 넉넉"],
+  ];
+  // '7억 이하 30평대', '6억5천', '84㎡', '국평', '신축 역세권' → {budget, py, age, stn, sch, must, label, rest}
+  DJ.parseCond = function (q) {
+    let s = " " + String(q) + " ";
+    const out = { py: [], must: [], label: [] };
+    s = s.replace(/(\d+(?:\.\d+)?)\s*억\s*(?:(\d)\s*천)?(\s*대)?\s*(이하|아래|까지|미만|이내|안쪽|안|이상|넘[는게은]?|초과|부터)?/,
+      (m, a, b, dae, dir) => {
+        if (dir && /이상|넘|초과|부터/.test(dir)) return m;   // 최소 가격은 조건으로 찾기에 없어서 그대로 둡니다
+        let v = +a + (b ? +b / 10 : 0);
+        if (dae) v = Math.floor(v) + 1;   // '7억대' → 8억 이하
+        if (v > 0 && v < 200) { out.budget = +v.toFixed(1); out.label.push(`${out.budget}억 이하`); }
+        return " ";
+      });
+    s = s.replace(/국평|국민\s*평형/, () => { out.py.push("30"); out.label.push("30평대"); return " "; });
+    s = s.replace(/(\d{2,3})\s*평\s*(?:대|형)?(\s*이상)?/g, (m, a, up) => {
+      const id = pyId(+a);
+      const ids = up ? PY_IDS.filter(([, lo]) => lo >= PY_IDS.find(p => p[0] === id)[1]).map(p => p[0]) : [id];
+      ids.forEach(x => { if (!out.py.includes(x)) out.py.push(x); });
+      out.label.push(up ? `${a}평 이상` : (id === "u20" ? "20평 미만" : id === "50" ? "50평 이상" : `${id}평대`));
+      return " ";
+    });
+    // 전용면적(㎡) → 공급 평 어림 (전용 × 1.33 ÷ 3.3058). 59㎡ → 20평대, 84㎡ → 30평대
+    s = s.replace(/(\d{2,3})\s*(?:㎡|m2|m²|제곱미터|제곱)(?:\s*형)?/gi, (m, a) => {
+      const id = pyId(+a * 1.33 / 3.3058);
+      if (!out.py.includes(id)) out.py.push(id);
+      out.label.push(`${a}㎡`);
+      return " ";
+    });
+    WORDS.forEach(([re, v, label]) => {
+      if (!re.test(s)) return;
+      s = s.replace(re, " ");
+      if (v.must) out.must.push(v.must); else Object.assign(out, v);
+      out.label.push(label);
+    });
+    out.rest = s.replace(/\s+/g, " ").trim();
+    return out.label.length ? out : null;
+  };
+  // 조건으로 찾기 주소. 남은 글자가 구 이름이면 지역 조건으로
+  DJ.condHref = function (cond, gu) {
+    const p = new URLSearchParams();
+    if (cond.budget) p.set("budget", cond.budget);
+    if (cond.py.length) p.set("py", cond.py.join(","));
+    if (cond.age) p.set("age", cond.age);
+    if (cond.stn) p.set("stn", cond.stn);
+    if (cond.sch) p.set("sch", cond.sch);
+    if (cond.must.length) p.set("must", cond.must.join(","));
+    if (gu) p.set("gu", gu);
+    return ROOT + "finder.html?" + p.toString() + "#results";
+  };
+  // 조건에 맞는 단지 수 (조건으로 찾기와 같은 셈: 평형별 추정 시세 tp)
+  function condCount(cs, cond, gu) {
+    const NOW = new Date().getFullYear();
+    const pyOk = py => !cond.py.length || cond.py.includes(pyId(py));
+    return cs.filter(c => {
+      if (gu && c.gu !== gu) return false;
+      if (cond.budget || cond.py.length) {
+        const tp = c.tp && c.tp.length ? c.tp : (c.p ? [[34, c.p]] : []);
+        if (!tp.some(([py, pr]) => pyOk(py) && (!cond.budget || pr <= cond.budget * 10000))) return false;
+      }
+      if (cond.age && !(c.y && c.y >= NOW - (cond.age === "new" ? 5 : 15))) return false;
+      if (cond.stn && !(c.f.subway != null && c.f.subway <= cond.stn)) return false;
+      if (cond.sch && !(c.f.elementary != null && c.f.elementary <= cond.sch)) return false;
+      for (const m of cond.must) {
+        if (m === "big" && !(c.hh >= 1000)) return false;
+        if (m === "high" && !c.h) return false;
+        if (m === "park" && !(c.pk >= 1.2)) return false;
+        if (m === "academy" && !(c.hm != null && c.hm <= 20)) return false;
+      }
+      return true;
+    }).length;
+  }
+  const STN_R = 700;   // 역세권 화면과 같은 거리
+  // 지역 안의 동·구·역 목록 (한 번만 셉니다)
+  function places(d) {
+    if (d._places) return d._places;
+    const dong = new Map(), gu = new Map(), stn = new Map(), all = new Set();
+    d.complexes.forEach(c => {
+      all.add(c.gu);
+      if (c.sm) return;   // 소규모(빌라형)는 메인 목록·역세권 화면처럼 세지 않음
+      const k = c.gu + "|" + c.d;
+      dong.set(k, (dong.get(k) || 0) + 1);
+      if (c.gu !== c.d) gu.set(c.gu, (gu.get(c.gu) || 0) + 1);
+      if (c.stn && c.f.subway != null && c.f.subway <= STN_R) stn.set(c.stn, (stn.get(c.stn) || 0) + 1);
+    });
+    d._places = {
+      dong: [...dong].map(([k, n]) => { const [g, dn] = k.split("|"); return { gu: g, d: dn, n }; }),
+      gu: [...gu].map(([g, n]) => ({ gu: g, n })),
+      stn: [...stn].map(([s, n]) => ({ s, n })),
+      guAll: [...all],   // 조건으로 찾기의 지역 값 (구, 구가 없는 곳은 동)
+    };
+    return d._places;
+  }
+  // 최근 찾은 것 (이 기기에만, 지역마다 따로)
+  const HIST = "searches";
+  const absUrl = u => { const a = new URL(u, location.href); return a.pathname + a.search + a.hash; };
+  function remember(row, region) {
+    if (!row.href) return;
+    const u = absUrl(row.href);
+    const h = load(HIST, []).filter(x => x.u !== u);
+    h.unshift({ k: row.kind, t: row.label, s: row.sub, u, g: row.g || "", r: region });
+    save(HIST, h.slice(0, 12));
+  }
+
+  DJ.search = function (input, onPick, opts) {
+    opts = opts || {};
+    const wide = !!opts.grouped;   // false: 단지만 (비교·임장 코스에 더하기)
+    const list = el("ul", "ac-list" + (opts.inline ? " ac-inline" : ""));
+    list.id = "ac-" + Math.random().toString(36).slice(2, 8);
     list.setAttribute("role", "listbox");
     list.hidden = true;
     input.setAttribute("autocomplete", "off");
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-controls", list.id);
+    input.setAttribute("aria-expanded", "false");
     input.parentElement.classList.add("ac-wrap");
     input.after(list);
-    let items = [], active = -1;
+    let rows = [], active = -1, region = "";
+    const norm = s => String(s || "").replace(/\s/g, "").toLowerCase();
 
-    function render(q) {
-      DJ.data().then(d => {
-        q = q.trim().replace(/\s/g, "");
-        list.replaceChildren();
-        if (!q) { list.hidden = true; return; }
-        const norm = s => s.replace(/\s/g, "");
-        items = d.complexes.filter(c => norm(c.n).includes(q) || norm(c.d).includes(q) || norm(c.gu).includes(q))
-          .sort((a, b) => (norm(b.n).startsWith(q) - norm(a.n).startsWith(q)) || ((b.i || 0) - (a.i || 0)))
-          .slice(0, 8);
-        active = -1;
-        items.forEach((c, k) => {
-          const li = el("li", "ac-item");
-          li.setAttribute("role", "option");
-          li.append(el("span", "grade g-" + c.g, c.g), el("span", "ac-name", c.n),
-                    el("span", "ac-sub", DJ.place(c) + (c.i != null ? " · " + c.i + "점" : "")));
-          li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
-          list.append(li);
+    function show(on) { list.hidden = !on; input.setAttribute("aria-expanded", on ? "true" : "false"); }
+    function group(title, extra) {
+      const li = el("li", "ac-group");
+      li.setAttribute("role", "presentation");
+      li.append(el("span", "", title));
+      if (extra) li.append(extra);
+      list.append(li);
+    }
+    function item(row) {
+      const k = rows.push(row) - 1;
+      const li = el("li", "ac-item ac-" + row.kind);
+      li.id = list.id + "-" + k;
+      li.setAttribute("role", "option");
+      const ICON = { dong: "pin", gu: "map", stn: "train", cond: "filter" };
+      if (row.g) li.append(el("span", "grade g-" + row.g, row.g));
+      else li.append(DJ.icon(ICON[row.kind] || "search"));
+      li.firstChild.classList.add("ac-ic");
+      li.append(el("span", "ac-name", row.label), el("span", "ac-sub", row.sub || ""));
+      if (row.go) li.append(el("span", "ac-go", row.go));
+      li.addEventListener("mousedown", e => { e.preventDefault(); pick(k); });
+      list.append(li);
+    }
+    function aptRow(c) {
+      return { kind: "apt", label: c.n, g: c.g, c, href: DJ.href(c),
+               sub: [DJ.place(c), c.pt ? "84㎡ " + c.pt : "", c.i != null ? c.i + "점" : ""].filter(Boolean).join(" · ") };
+    }
+
+    function empty(d) {
+      const here = new URL(ROOT || "./", location.href).pathname;
+      if (wide) {
+        const h = load(HIST, []).filter(x => x.r === region).slice(0, 5);
+        if (h.length) {
+          const clr = el("button", "link-btn", "지우기");
+          clr.type = "button";
+          clr.addEventListener("mousedown", e => {
+            e.preventDefault();
+            save(HIST, load(HIST, []).filter(x => x.r !== region));
+            render("");
+          });
+          group("최근 찾은 것", clr);
+          h.forEach(x => item({ kind: x.k, label: x.t, sub: x.s, g: x.g, href: x.u }));
+        }
+      }
+      // 최근 본 단지 (이 지역 것만)
+      const seen = new Set(rows.map(r => r.href && absUrl(r.href)));
+      const rec = DJ.recent().map(r => d.bySlug[r.s]).filter(c => c && !seen.has(absUrl(DJ.href(c))))
+        .slice(0, wide ? Math.max(2, 5 - rows.length) : 6);
+      if (rec.length) { group("최근 본 단지"); rec.forEach(c => item(aptRow(c))); }
+      if (wide) {
+        // 이 지역에 맞춘 찾는 예시: 단지가 가장 많은 역·동, 중간 가격대 예산
+        const P = places(d);
+        const ex = [];
+        const st = P.stn.slice().sort((a, b) => b.n - a.n)[0];
+        if (st) ex.push(st.s);
+        const ps = d.complexes.map(c => c.p).filter(Boolean).sort((a, b) => a - b);
+        if (ps.length) ex.push(`${Math.max(1, Math.round(ps[Math.floor(ps.length / 2)] / 10000))}억 이하 30평대`);
+        const dn = P.dong.filter(x => x.d !== x.gu || P.gu.length === 0).sort((a, b) => b.n - a.n)[0];
+        if (dn) ex.push(dn.d);
+        ex.push("신축 역세권");
+        const li = el("li", "ac-try");
+        li.setAttribute("role", "presentation");
+        li.append(el("span", "ac-try-h", "이렇게 찾아보세요"));
+        ex.forEach(t => {
+          const b = el("button", "chip sm", t);
+          b.type = "button";
+          b.tabIndex = -1;
+          b.addEventListener("mousedown", e => { e.preventDefault(); input.value = t; render(t); });
+          li.append(b);
         });
-        if (!items.length) list.append(el("li", "ac-empty", "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
-        list.hidden = false;
+        list.append(li);
+      }
+      show(list.children.length > 0);
+    }
+
+    function render(raw) {
+      DJ.data().then(d => {
+        region = d.region || "";
+        list.replaceChildren();
+        rows = []; active = -1;
+        input.removeAttribute("aria-activedescendant");
+        const text = String(raw || "").trim();
+        if (!text) { if (opts.recent !== false) empty(d); else show(false); return; }
+        const cond = wide ? DJ.parseCond(text) : null;
+        const q = norm(cond ? cond.rest : text);
+        const P = wide ? places(d) : null;
+        if (cond) {
+          const gu = q && P.guAll.find(g => norm(g) === q || norm(g).replace(/[구군시동읍면]$/, "") === q);
+          const n = condCount(d.complexes, cond, gu);
+          group("조건으로 찾기");
+          item({ kind: "cond", label: (gu ? gu + " · " : "") + cond.label.join(" · "),
+                 sub: n ? `맞는 단지 ${n.toLocaleString()}곳 · 조건을 더 고를 수 있어요` : "조건에 맞는 아파트가 없습니다 · 지역이나 예산을 조정해 보세요",
+                 go: "조건으로 찾기", href: DJ.condHref(cond, gu) });
+          if (gu || !q) { show(true); return; }
+        }
+        if (wide && q) {
+          const starts = (s, x) => norm(s).startsWith(x) || norm(s).replace(/(동|가|읍|면|역)$/, "") === x;
+          const areas = [
+            ...P.gu.filter(g => starts(g.gu, q)).map(g => ({ kind: "gu", label: g.gu, sub: `단지 ${g.n.toLocaleString()}곳 · 목록에서 보기`,
+              href: ROOT + "index.html?area=" + encodeURIComponent(g.gu) + "#list", n: g.n })),
+            ...P.dong.filter(x => starts(x.d, q)).map(x => ({ kind: "dong", label: x.d,
+              sub: (x.gu !== x.d ? x.gu + " · " : "") + `단지 ${x.n.toLocaleString()}곳 · 목록에서 보기`,
+              href: ROOT + "index.html?area=" + encodeURIComponent(x.gu) + (x.gu !== x.d ? "&dong=" + encodeURIComponent(x.d) : "") + "#list", n: x.n })),
+          ].sort((a, b) => (norm(b.label) === q) - (norm(a.label) === q) || b.n - a.n).slice(0, 3);
+          if (areas.length) { group("동네"); areas.forEach(item); }
+          const sts = P.stn.filter(x => starts(x.s, q) || norm(x.s).includes(q) && q.length >= 2)
+            .sort((a, b) => b.n - a.n).slice(0, 3);
+          if (sts.length) {
+            group("역");
+            sts.forEach(x => item({ kind: "stn", label: x.s, sub: `${STN_R}m 안 단지 ${x.n.toLocaleString()}곳`,
+              href: ROOT + "stations.html?st=" + encodeURIComponent(x.s) }));
+          }
+        }
+        const apts = d.complexes.filter(c => norm(c.n).includes(q) || norm(c.d).includes(q) || norm(c.gu).includes(q))
+          .sort((a, b) => (norm(b.n).startsWith(q) - norm(a.n).startsWith(q)) || (norm(b.n).includes(q) - norm(a.n).includes(q)) || ((b.i || 0) - (a.i || 0)))
+          .slice(0, wide && rows.length ? 6 : 8);
+        if (apts.length) { if (wide && rows.length) group("단지"); apts.forEach(c => item(aptRow(c))); }
+        if (!rows.length) {
+          list.append(el("li", "ac-empty", wide
+            ? "검색 결과가 없습니다. 단지·동·역 이름이나 '7억 이하 30평대' 같은 조건으로 찾아보세요."
+            : "찾는 단지가 없습니다. 동 이름으로도 검색해 보세요."));
+        }
+        show(true);
       });
     }
     function pick(k) {
-      const c = items[k];
-      if (!c) return;
-      list.hidden = true;
-      input.value = c.n;
-      onPick(c);
+      const r = rows[k];
+      if (!r) return;
+      show(false);
+      if (wide) remember(r, region);
+      if (r.c) { input.value = r.c.n; onPick(r.c); return; }
+      if (r.href) location.href = r.href;
+    }
+    function mark(k) {
+      const lis = list.querySelectorAll(".ac-item");
+      active = k;
+      lis.forEach((li, i) => li.classList.toggle("active", i === k));
+      if (lis[k]) { input.setAttribute("aria-activedescendant", lis[k].id); lis[k].scrollIntoView({ block: "nearest" }); }
     }
     input.addEventListener("input", () => render(input.value));
-    input.addEventListener("focus", () => input.value && render(input.value));
-    input.addEventListener("blur", () => setTimeout(() => { list.hidden = true; }, 150));
+    input.addEventListener("focus", () => render(input.value));
+    input.addEventListener("blur", () => setTimeout(() => show(false), 150));
     input.addEventListener("keydown", e => {
-      const lis = list.querySelectorAll(".ac-item");
+      const n = list.querySelectorAll(".ac-item").length;
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
-        active = (active + (e.key === "ArrowDown" ? 1 : -1) + lis.length) % Math.max(1, lis.length);
-        lis.forEach((li, k) => li.classList.toggle("active", k === active));
+        if (list.hidden) { render(input.value); return; }
+        if (n) mark((active + (e.key === "ArrowDown" ? 1 : -1) + n) % n);
       } else if (e.key === "Enter") {
         e.preventDefault();
-        pick(active >= 0 ? active : 0);
-      } else if (e.key === "Escape") { list.hidden = true; }
+        if (rows.length && input.value.trim() || active >= 0) pick(active >= 0 ? active : 0);
+      } else if (e.key === "Escape") { show(false); }
     });
+    DJ.data().then(d => { region = d.region || ""; });
+    return { render, list };
   };
 
   // ---------- 게임 카드 ----------
@@ -288,6 +735,20 @@
     foot.append(el("span", "", c.pt ? "84㎡ " + c.pt : "가격 정보 없음"));
     if (c.dd != null && c.dd <= -5) foot.append(el("span", "", "고점 대비 " + Math.round(c.dd) + "%"));
     if (c.h) foot.append(el("span", "badge-high", "신고가"));
+    // opts.fav: 카드에서 바로 관심 단지에 담기 (조건으로 찾기 결과처럼 여러 곳을 훑어볼 때)
+    if (opts.fav) {
+      const b = el("button", "gfav");
+      b.type = "button";
+      b.append(DJ.icon("star"));
+      const paint = () => { const on = DJ.isFav(c.s); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? `${c.n} 관심 단지에서 빼기` : `${c.n} 관심 단지에 담기`); b.title = on ? "관심 단지에서 빼기" : "관심 단지에 담기"; };
+      b.addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        DJ.toggleFav(c.s); paint();
+        if (!DJ.calm) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+      });
+      paint();
+      foot.append(b);
+    }
     card.append(foot);
     return card;
   };
@@ -305,6 +766,10 @@
   DJ.memo = function (c) {
     const out = [], f = c.f || {};
     if (c.stn && f.subway != null) out.push(["역", `${c.stn} 직선 ${f.subway < 1000 ? Math.round(f.subway) + "m" : (f.subway / 1000).toFixed(1) + "km"}`]);
+    // 언덕(위성 지형 어림): 역보다 꽤 높거나 주변이 비탈이면 걸어 볼 것
+    const hl = c.hl || [];
+    if (hl[1] != null && hl[1] >= 12) out.push(["언덕", `역보다 약 ${Math.round(hl[1])}m 높아요`]);
+    else if (hl[0] != null && hl[0] >= 35) out.push(["언덕", `주변 고저차 약 ${Math.round(hl[0])}m`]);
     if (c.h) out.push(["시세", `최근 신고가${c.lp ? " " + c.lp : ""}`]);
     else if (c.dd != null && c.dd <= -5) out.push(["시세", `고점 대비 ${Math.round(c.dd)}%`]);
     if (c.jr) out.push(["전세가율", c.jr + "%"]);
@@ -387,46 +852,46 @@
   const most = arr => { const m = {}; arr.forEach(k => { m[k] = (m[k] || 0) + 1; }); return Math.max(0, ...Object.values(m)); };
   DJ.BADGES = [
     { id: "first", group: "둘러보기", icon: "home", name: "첫 단지", goal: 1, n: st => seenList(st).length,
-      how: "단지 페이지를 하나 열어 봐요.", why: "한 곳을 숫자와 지도로 제대로 보고 나면, 현장에서 무엇을 확인할지가 정해져요.",
+      how: "단지 페이지를 하나 열어 보세요.", why: "한 곳을 숫자와 지도로 꼼꼼히 보고 나면 현장에서 무엇을 확인할지가 정해집니다.",
       tip: "현장에서 볼 것이 정해져요", go: ["랭킹에서 고르기", "rank.html"] },
     { id: "dong", group: "둘러보기", icon: "map", name: "동네 한 바퀴", goal: 3,
       n: st => most(seenList(st).filter(([, v]) => v[2]).map(([s, v]) => DJ.sido(s) + v[1] + v[2])),
-      how: "같은 동의 단지 세 곳을 열어 봐요.", why: "임장은 한 단지가 아니라 동네 안에서 견줘 보는 일이에요. 옆 단지와 값 차이가 보여야 적정가가 보여요.",
-      tip: "옆 단지와 견줘야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
+      how: "같은 동의 단지 세 곳을 열어 보세요.", why: "임장은 한 단지가 아니라 동네 안에서 비교하는 일입니다. 옆 단지와의 가격 차이를 알아야 적정 가격을 가늠할 수 있습니다.",
+      tip: "옆 단지와 비교해야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
     { id: "ten", group: "둘러보기", icon: "walk", name: "발품 10곳", goal: 10, n: st => seenList(st).length,
-      how: "단지 열 곳을 열어 봐요.", why: "많이 볼수록 '이 동네에서 이 값이면 싸다·비싸다'를 가늠하는 눈이 생겨요.",
+      how: "단지 열 곳을 열어 보세요.", why: "여러 단지를 볼수록 '이 동네에서 이 가격이면 높은지 낮은지'를 가늠하는 기준이 생깁니다.",
       tip: "많이 볼수록 시세 감이 생겨요", go: ["랭킹에서 고르기", "rank.html"] },
     { id: "gus", group: "둘러보기", icon: "pin", name: "세 동네 시세", goal: 3,
       n: st => new Set(seenList(st).filter(([, v]) => v[1]).map(([s, v]) => DJ.sido(s) + v[1])).size,
-      how: "서로 다른 구(세종은 동) 세 곳의 단지를 열어 봐요.", why: "다른 지역 시세를 알아야 내 후보 지역이 어디쯤인지, 같은 돈으로 어디까지 갈 수 있는지 보여요.",
+      how: "서로 다른 구(세종은 동) 세 곳의 단지를 열어 보세요.", why: "다른 지역 시세를 알아야 후보 지역이 어느 수준인지, 같은 예산으로 어디까지 고를 수 있는지 보입니다.",
       tip: "내 후보 지역의 위치가 보여요", go: ["지역별 요약 보기", "index.html#world"] },
     { id: "top", group: "둘러보기", icon: "rank", name: "상급지 기준", goal: 3, n: st => seenList(st).filter(([, v]) => v[0] === "S").length,
-      how: "S등급 단지 세 곳을 열어 봐요.", why: "지역 최상위 단지를 알아야 다른 단지가 그보다 무엇이 모자라고 얼마나 싼지 가늠할 기준이 생겨요.",
+      how: "S등급 단지 세 곳을 열어 보세요.", why: "지역 상위 단지를 알아 두면 다른 단지와 무엇이 다르고 가격 차이가 얼마인지 비교할 기준이 생깁니다.",
       tip: "다른 단지를 잴 기준이 생겨요", go: ["랭킹 보기", "rank.html"] },
     { id: "trade", group: "따져보기", icon: "receipt", name: "실거래 확인", goal: 1, n: st => st.acts.trade || 0,
-      how: "단지 페이지에서 실거래 표나 가격 그래프의 기간·보기 방식을 바꿔 봐요.", why: "호가가 아니라 실제로 계약된 값이 판단의 출발점이에요. 언제, 몇 층이, 얼마에 팔렸는지가 협상 근거가 돼요.",
+      how: "단지 페이지에서 실거래 표나 가격 그래프의 기간·보기 방식을 바꿔 보세요.", why: "호가가 아니라 실제로 계약된 가격이 판단의 출발점입니다. 언제, 몇 층이, 얼마에 거래됐는지가 협상 근거가 됩니다.",
       tip: "실제 계약된 값이 협상 근거예요" },
     { id: "jeonse", group: "따져보기", icon: "coin", name: "전세가율 체크", goal: 1, n: st => st.acts.jeonse || 0,
-      how: "실거래 표의 전세 탭이나 그래프의 '전세·갭'을 열어 봐요.", why: "전세가율은 매매가를 받쳐 주는 힘이에요. 너무 낮으면 하락에 약하고, 높으면 필요한 자기 돈(갭)이 작아요.",
-      tip: "매매가를 받쳐 주는 힘을 봐요" },
+      how: "실거래 표의 전세 탭이나 그래프의 '전세·갭'을 열어 보세요.", why: "전세가율은 매매가 대비 전세가 수준입니다. 높을수록 매매가와 전세가의 차이(갭)가 작고, 낮을수록 매수에 필요한 자기자본이 커집니다.",
+      tip: "매매가와 전세가 차이를 확인해요" },
     { id: "loc", group: "따져보기", icon: "train", name: "입지 동선", goal: 1, n: st => st.acts.loc || 0,
-      how: "단지 페이지의 '입지는 어떤가' 지도를 마지막 단계까지 넘겨 봐요.", why: "역까지 걸어 보고, 학교 가는 길과 마트·병원을 확인하는 게 현장 임장의 기본 동선이에요. 지도로 먼저 동선을 짜 두면 하루에 더 많이 봐요.",
+      how: "단지 페이지의 '교통·학군·생활 입지' 지도를 마지막 단계까지 넘겨 보세요.", why: "역까지 걸어 보고 학교 가는 길과 마트·병원을 확인하는 것이 임장의 기본 동선입니다. 지도로 동선을 미리 정해 두면 현장에서 시간을 아낄 수 있습니다.",
       tip: "현장 동선을 미리 짤 수 있어요" },
     { id: "cmp", group: "따져보기", icon: "compare", name: "나란히 비교", goal: 1, n: st => st.acts.cmp || 0,
-      how: "단지 비교에서 두 곳 이상을 견줘 봐요.", why: "후보를 나란히 놓아야 값 차이의 이유(연식·입지·세대수)가 보여요.",
-      tip: "값 차이의 이유가 보여요", go: ["단지 비교", "compare.html"] },
+      how: "단지 비교에서 두 곳 이상을 견줘 보세요.", why: "후보를 나란히 놓아야 가격 차이의 이유(연식·입지·세대수)가 보입니다.",
+      tip: "가격 차이의 이유가 보여요", go: ["단지 비교", "compare.html"] },
     { id: "hot", group: "따져보기", icon: "fire", name: "시장 흐름", goal: 3, n: st => seenList(st).filter(([, v]) => v[3]).length,
-      how: "최근 신고가가 난 단지 세 곳을 열어 봐요.", why: "신고가가 나오는 곳은 지금 수요가 몰리는 곳이에요. 현장 분위기와 매물 상황을 먼저 확인할 곳이에요.",
-      tip: "수요가 몰리는 곳을 먼저 봐요", go: ["동네 온도 보기", "index.html#heat"] },
+      how: "최근 신고가가 난 단지 세 곳을 열어 보세요.", why: "신고가 거래가 나온 단지는 매물과 호가가 빠르게 바뀔 수 있습니다. 현장에서 실제 매물 상황을 확인해 볼 곳입니다.",
+      tip: "최근 거래가 활발한 곳을 확인해요", go: ["동네 온도 보기", "index.html#heat"] },
     { id: "find", group: "정리하기", icon: "filter", name: "내 조건 정리", goal: 1, n: st => st.acts.find || 0,
-      how: "조건으로 찾기에서 예산이나 생활 조건을 골라 봐요.", why: "예산과 출퇴근·학군 조건을 먼저 정해야 임장 갈 지역이 좁혀져요.",
+      how: "조건으로 찾기에서 예산이나 생활 조건을 골라 보세요.", why: "예산과 출퇴근·학군 조건을 먼저 정해야 임장 갈 지역이 좁혀집니다.",
       tip: "임장 갈 지역이 좁혀져요", go: ["조건으로 찾기", "finder.html"] },
     { id: "fav", group: "정리하기", icon: "star", name: "임장 후보 3곳", goal: 3, n: st => st.favs.length,
-      how: "관심 단지를 세 곳 저장해 봐요.", why: "후보를 추려 두면 가까운 단지끼리 묶어 하루 동선으로 돌 수 있어요.",
+      how: "관심 단지를 세 곳 저장해 보세요.", why: "후보를 추려 두면 가까운 단지끼리 묶어 하루 동선으로 둘러볼 수 있습니다.",
       tip: "하루 동선으로 묶어 돌 수 있어요" },
     { id: "days", group: "정리하기", icon: "calendar", name: "꾸준한 시세 확인", goal: 5, n: st => st.days.length,
-      how: "서로 다른 날 다섯 번, 카드첩의 오늘의 임장 후보를 열어 봐요.", why: "시세는 한 번이 아니라 꾸준히 봐야 흐름이 보여요. 자주 볼수록 급매도 알아봐요.",
-      tip: "꾸준히 봐야 흐름이 보여요", go: ["오늘의 임장 후보", "cards.html#today"] },
+      how: "서로 다른 날 다섯 번, 카드첩의 오늘의 비교 후보를 열어 보세요.", why: "시세는 꾸준히 봐야 흐름이 보입니다. 자주 확인할수록 시세보다 낮은 매물도 알아보기 쉽습니다.",
+      tip: "꾸준히 봐야 흐름이 보여요", go: ["오늘의 비교 후보", "cards.html#today"] },
     { id: "dongall", group: "정리하기", icon: "flag", name: "동네 완주", goal: 1,
       n: st => {   // 세 곳 이상인 동의 단지 카드를 모두 모음 (단지 자료가 있을 때만 셈)
         if (!st.data) return null;
@@ -434,13 +899,14 @@
         st.data.complexes.forEach(c => { const k = c.gu + "|" + c.d; (g[k] || (g[k] = [])).push(c.s); });
         return Object.values(g).filter(v => v.length >= 3 && v.every(s => st.album[s])).length;
       },
-      how: "단지가 세 곳 이상인 동 하나의 카드를 모두 모아 봐요.", why: "한 동네를 빠짐없이 보면 그 동네 시세표가 머릿속에 그려지고, 매물이 나왔을 때 바로 싼지 비싼지 알아봐요.",
+      how: "단지가 세 곳 이상인 동 하나의 단지를 모두 살펴보세요.", why: "한 동네를 빠짐없이 보면 동네 시세가 정리되어, 매물이 나왔을 때 가격 수준을 바로 판단할 수 있습니다.",
       tip: "동네 시세표가 머릿속에 그려져요", go: ["카드첩 보기", "cards.html#album"] },
   ];
   DJ.badgeState = data => ({ seen: DJ.seen(), favs: DJ.favs(), acts: load("acts", {}), days: load("days", []), album: DJ.album(), data });
   DJ.earned = () => load("badges", {});
   // 새로 받은 배지가 있으면 저장하고 알림. 여러 개면 한 번에 묶어서
   DJ.checkBadges = function (data) {
+    if (DJ.locked()) return [];
     const st = DJ.badgeState(data), got = DJ.earned(), fresh = [];
     DJ.BADGES.forEach(b => {
       if (got[b.id]) return;
@@ -449,7 +915,7 @@
     });
     if (!fresh.length) return fresh;
     save("badges", got);
-    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 볼 수 있어요");
+    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 확인할 수 있어요");
     else DJ.toast(`임장 배지 ${fresh.length}개를 받았어요`, fresh.map(b => b.name).join(", "));
     document.dispatchEvent(new Event("dj:badges"));
     return fresh;
@@ -469,14 +935,27 @@
     const apt = document.querySelector("[data-apt]");
     if (apt) {
       const c = { s: apt.dataset.apt, gu: apt.dataset.gu, g: apt.dataset.grade, n: apt.dataset.name, i: apt.dataset.score,
-        p: apt.dataset.price, r: apt.dataset.region, u: location.pathname };
+        p: apt.dataset.price, r: apt.dataset.region, u: window.DJ_PATH || location.pathname };
+      // 관심 단지 새 소식용 지금 상태 (거래 수·마지막 거래·84㎡ 시세)
+      const now = { s: c.s, tc: +apt.dataset.tc || 0, ld: apt.dataset.ld || "", lp: apt.dataset.lp || "", lr: +apt.dataset.lr || 0,
+        p: +apt.dataset.p || 0, h: apt.dataset.high === "1" };
+      if (DJ.isFav(c.s)) {
+        const n = DJ.news(now), box = document.querySelector("[data-watch-news]");
+        if (n && box) {
+          box.querySelector("[data-watch-text]").textContent = DJ.newsText(n, true).join(" · ") + (n.high ? " · 신고가" : "");
+          box.title = `${n.since.replace(/-/g, ".")}에 확인한 뒤 바뀐 것`;
+          box.hidden = false;
+          save("watchN", Math.max(0, load("watchN", 0) - 1));
+        }
+        DJ.watchSeen(now);
+      }
       // 카드첩에 모으기 (최근 본 목록에 넣기 전에: 처음 쓰는 기기에서 이 단지가 '첫 카드'로 세어지게)
       const got = DJ.collect(c.s);
       DJ.addRecent(c);
       DJ.note(c.s, c.g, c.gu, apt.dataset.dong, apt.dataset.high === "1");
       // 배지 알림이 뜨면 카드 알림은 생략 (두 개가 한꺼번에 뜨지 않게)
       if (!DJ.checkBadges().length && got && ALBUM_MARKS.includes(got))
-        DJ.toast(got === 1 ? "첫 카드를 카드첩에 모았어요" : `카드첩에 ${got}번째 카드를 모았어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 위)에서 모아 볼 수 있어요");
+        DJ.toast(got === 1 ? "카드첩에 첫 단지를 저장했어요" : `카드첩에 ${got}번째 단지를 저장했어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 안)에서 다시 볼 수 있어요");
       const fav = document.querySelector("[data-fav]");
       if (fav) {
         const label = fav.querySelector("span"); // 아이콘만 있는 버튼이면 글자 대신 aria-label 로 상태를 알립니다
@@ -490,9 +969,10 @@
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
           const on = DJ.toggleFav(c.s);
+          if (on) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
           paint(on);
           if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
-          if (on) { DJ.toast("관심 단지에 저장했습니다", "아래 '관심' 메뉴에서 모아 볼 수 있습니다"); DJ.checkBadges(); }
+          if (on) { DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"); DJ.checkBadges(); }
         });
       }
     }
@@ -506,7 +986,7 @@
     document.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", () =>
       DJ.share(document.title, b.dataset.share || "", b.dataset.url || location.href)));
     // 검색창: 고르면 단지 페이지로 이동
-    document.querySelectorAll("[data-search-go]").forEach(inp => DJ.search(inp, c => { location.href = DJ.href(c); }));
+    document.querySelectorAll("[data-search-go]").forEach(inp => DJ.search(inp, c => { location.href = DJ.href(c); }, { grouped: true }));
   });
 
   // ---------- 모션: 화면에 들어올 때 펼치기, 숫자 올라가기 ----------
@@ -673,6 +1153,53 @@
       });
     }));
   }
+  // 검색에서 역을 고르고 오면 (stations.html?st=둔산역) 그 역을 펼쳐서 보여줍니다
+  function stationFocus() {
+    const name = new URLSearchParams(location.search).get("st");
+    if (!name) return;
+    const box = Array.from(document.querySelectorAll("details.station")).find(x => x.dataset.stName === name);
+    if (!box) return;
+    box.open = true;
+    box.classList.add("hit");
+    requestAnimationFrame(() => box.scrollIntoView({ block: "start", behavior: DJ.calm ? "auto" : "smooth" }));
+    setTimeout(() => box.classList.remove("hit"), 2400);
+  }
+  // 위쪽 검색 버튼: 어느 화면에서든 단지·동·역·조건을 찾는 창. '/' 키로도 열립니다.
+  // 휴대폰은 위에서 내려오는 창(키보드가 아래를 가려서), 넓은 화면은 가운데 위쪽 창.
+  function headerSearch() {
+    const pop = document.getElementById("hs-pop"), btn = document.querySelector("[data-hs-open]");
+    if (!pop || !btn) return;
+    const q = pop.querySelector("input");
+    let back = null;
+    function open() {
+      if (!pop.hidden) return;
+      pop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      back = el("div", "sheet-back hs-back");
+      back.addEventListener("click", close);
+      document.body.append(back);
+      requestAnimationFrame(() => { pop.classList.add("on"); back.classList.add("on"); });
+      q.focus({ preventScroll: true });
+    }
+    function close() {
+      if (pop.hidden) return;
+      pop.classList.remove("on");
+      btn.setAttribute("aria-expanded", "false");
+      if (back) { back.remove(); back = null; }
+      setTimeout(() => { if (!pop.classList.contains("on")) pop.hidden = true; }, 200);
+      btn.focus({ preventScroll: true });
+    }
+    btn.addEventListener("click", e => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    pop.querySelector("[data-hs-close]").addEventListener("click", close);
+    pop.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+    document.addEventListener("keydown", e => {
+      const t = e.target;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      open();
+    });
+  }
   // 붙어 다니는 바로가기: 지금 보고 있는 칸을 표시하고, 휴대폰에선 그 버튼이 보이게 옆으로 밀어 줌
   function scrollSpy(nav) {
     const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
@@ -680,7 +1207,9 @@
     if (!pairs.length || !("IntersectionObserver" in window)) return;
     const mark = a => {
       links.forEach(x => x.classList.toggle("on", x === a));
-      if (a && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: a.offsetLeft - 16, behavior: DJ.calm ? "auto" : "smooth" });
+      // 맨 앞에 붙어 있는 버튼(현장 모드)이 있으면 그 너비만큼 비켜서 보이게
+      const pin = nav.querySelector(".jump-field"), off = pin ? pin.offsetWidth + 24 : 16;
+      if (a && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: a.offsetLeft - off, behavior: DJ.calm ? "auto" : "smooth" });
     };
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) mark(pairs.find(p => p[1] === e.target)[0]);
@@ -740,7 +1269,7 @@
     const base = new URL(ROOT || "./", location.href).pathname;
     const narrow = matchMedia("(max-width: 720px)");
     let back = null;
-    const items = () => DJ.recent().filter(r => r.n && r.u && r.u !== location.pathname).slice(0, 8);
+    const items = () => DJ.recent().filter(r => r.n && r.u && r.u !== (window.DJ_PATH || location.pathname)).slice(0, 8);
     function paint() {
       const list = items();
       dock.hidden = !list.length;
@@ -887,7 +1416,138 @@
     if ("IntersectionObserver" in window)
       new IntersectionObserver(es => es.forEach(e => { seen = e.isIntersecting; arm(); }), { threshold: 0.35 }).observe(sec);
   }
+  // 공유받아 들어온 사람에게 (주소에 from=share): 무엇을 받았는지, 이 사이트가 무엇인지 한 줄과 바로 해 볼 일.
+  // 처음 온 사람도 '이게 뭐지?' 하지 않고 써 보고 싶게. 한 번 보이면 주소에서 from 을 지워 새로 고쳐도 다시 뜨지 않음
+  const FROM = new URLSearchParams(location.search).get("from");
+  function welcome() {
+    if (FROM !== "share") return;
+    const q = new URLSearchParams(location.search);
+    q.delete("from");
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    const main = document.querySelector("main"), page = document.body.dataset.page, region = document.body.dataset.region || "";
+    if (!main || page === "course" || page === "share") return;   // 받은 코스·함께 보기 화면은 따로
+    const KIND = {
+      apt: ["공유받은 단지 카드예요", `${region} 아파트의 실거래가와 입지, 가격 흐름을 정리한 S~D 등급 카드예요. 관심 단지에 저장해 두면 임장 코스로 묶어 볼 수 있어요.`],
+      compare: ["공유받은 단지 비교예요", "항목별로 상대적으로 유리한 값에 표시돼요. 단지를 바꾸거나 추가해 직접 비교해 보세요."],
+    };
+    const [title, sub] = KIND[page] || [`집감에 오신 걸 환영해요`, `${region} 아파트의 실거래가와 입지, 가격 흐름을 S~D 등급 카드로 정리했어요.`];
+    const box = el("aside", "welcome");
+    box.setAttribute("aria-label", "처음 오셨나요");
+    const mark = el("span", "welcome-mark", "D");
+    mark.setAttribute("aria-hidden", "true");
+    const txt = el("div", "welcome-t");
+    txt.append(el("b", "", title), el("span", "", sub));
+    const acts = el("div", "welcome-acts");
+    const fav = page === "apt" && document.querySelector("[data-fav]");
+    if (fav && fav.getAttribute("aria-pressed") !== "true") {
+      const b = el("button", "btn primary sm", "관심 단지에 담기");
+      b.type = "button";
+      b.addEventListener("click", () => { fav.click(); b.textContent = "담았어요 ✓"; b.disabled = true; });
+      acts.append(b);
+    }
+    const intro = el("a", "btn sm", "1분 소개");
+    intro.href = (window.DJ_ROOT || "") + "intro.html";
+    acts.append(intro);
+    if (acts.children.length < 2) {   // 단추는 둘까지 (담기가 없으면 찾기)
+      const find = el("button", "btn ghost sm", "우리 단지 찾기");
+      find.type = "button";
+      find.addEventListener("click", () => { const h = document.querySelector("[data-hs-open]"); if (h) h.click(); });
+      acts.append(find);
+    }
+    const x = el("button", "welcome-x", "×");
+    x.type = "button"; x.setAttribute("aria-label", "닫기");
+    x.addEventListener("click", () => box.remove());
+    box.append(mark, txt, acts, x);
+    main.prepend(box);
+  }
+
+  // 단지 페이지 위쪽 '임장 코스에 넣기' (누르면 넣고, 다시 누르면 빼기). 현장 모드에서 넣거나 빼도 같이 바뀜
+  function courseButton() {
+    const b = document.querySelector("[data-course-add]");
+    if (!b) return;
+    const slug = b.dataset.courseAdd;
+    const paint = () => DJ.data().then(d => {
+      const { stops } = DJ.courseStops(d), on = stops.some(x => x.s === slug);
+      b.setAttribute("aria-pressed", String(on));
+      b.title = on ? `임장 코스에 있어요 (${stops.length}곳) · 누르면 빼기` : "임장 코스에 넣기";
+      b.setAttribute("aria-label", b.title);
+    });
+    b.addEventListener("click", () => {
+      if (DJ.askLogin("임장 코스")) return;
+      if (b.getAttribute("aria-pressed") === "true") {
+        DJ.removeFromCourse(slug);
+        DJ.toast("임장 코스에서 뺐어요", "관심 단지에서는 빠지지 않아요");
+      } else if (DJ.addToCourse([slug]) < 0) {
+        DJ.toast("임장 코스가 꽉 찼어요", "하루에 둘러보기 알맞은 8곳까지 추가할 수 있어요. 관심 화면의 코스에서 한 곳을 빼 주세요");
+        return;
+      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 정리했어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요");
+      paint();
+      document.dispatchEvent(new CustomEvent("dj:course"));
+    });
+    document.addEventListener("dj:course", paint);
+    paint();
+  }
+
+  // 첫 화면 '이어서': 다시 온 사람이 하던 임장 준비(관심 단지·새 소식·코스·마지막에 본 단지)로 바로
+  function resume() {
+    const box = document.querySelector("[data-resume]");
+    if (!box) return;
+    const favs = DJ.favs(), rec = DJ.recent(), news = favs.length ? load("watchN", 0) : 0;
+    if (!favs.length && !rec.length) return;
+    DJ.data().then(d => {
+      const chip = (href, icon, text, cls) => {
+        const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
+        a.href = ROOT + href;
+        a.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#${icon}"/></svg>`;
+        a.append(el("span", "", text));
+        box.append(a);
+      };
+      box.append(el("span", "resume-k", "이어서"));
+      if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
+      if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
+      const n = DJ.courseStops(d).stops.length;
+      if (n >= 2) chip("my.html#course", "i-route", `임장 코스 ${n}곳`);
+      const last = rec.map(r => d.bySlug[r.s]).find(Boolean);
+      if (last) chip("apt/" + last.s + ".html", "i-clock", last.n);
+      box.hidden = false;
+    });
+  }
+
+  // ---------- 앱처럼 쓰기 (서비스 워커, 홈 화면에 추가) ----------
+  // 현장에서 데이터가 약해도 관심 단지·임장 코스 단지 화면과 현장 모드가 열리도록, 그 화면들을 미리 저장해 둡니다.
+  function pwa() {
+    if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return;
+    navigator.serviceWorker.register(ROOT + "sw.js").then(() => navigator.serviceWorker.ready).then(reg => {
+      if (DJ.locked()) return;
+      const slugs = new Set(DJ.favs());
+      try { Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")).forEach(k => slugs.add(k.slice(12))); } catch (e) { /* 저장소 없음 */ }
+      const course = load("course", {});
+      (Array.isArray(course.list) ? course.list : []).forEach(s => slugs.add(s));
+      const urls = [...slugs].map(s => new URL(ROOT + "apt/" + s + ".html", location.href).href);
+      if (urls.length && reg.active) reg.active.postMessage({ type: "precache", urls });
+    }).catch(() => {});
+    // 홈 화면에 추가: 안드로이드·PC 크롬은 버튼으로 바로, 아이폰 사파리는 공유 → '홈 화면에 추가' 안내
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    if (standalone) return;
+    let ask = null;
+    addEventListener("beforeinstallprompt", e => {
+      e.preventDefault(); ask = e;
+      document.querySelectorAll("[data-install]").forEach(box => { box.hidden = false; box.querySelector("[data-install-ios]").hidden = true; });
+    });
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/crios|fxios|kakaotalk|naver|instagram/i.test(navigator.userAgent))
+      document.querySelectorAll("[data-install]").forEach(box => { box.hidden = false; box.querySelector("[data-install-btn]").hidden = true; });
+    document.querySelectorAll("[data-install-btn]").forEach(b => b.addEventListener("click", () => {
+      if (!ask) return;
+      ask.prompt();
+      ask.userChoice.finally(() => { ask = null; document.querySelectorAll("[data-install]").forEach(box => { box.hidden = true; }); });
+    }));
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    pwa();
+    welcome();
+    courseButton();
+    resume();
     regionPicker();
     recentDock();
     document.querySelectorAll("[data-hot]").forEach(hotRoll);
@@ -895,6 +1555,8 @@
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();
     stationSort();
+    stationFocus();
+    headerSearch();
     document.querySelectorAll("table[data-trades]").forEach(tradeTable);
     DJ.onView(document.querySelectorAll("[data-reveal]"), e => e.classList.add("in"));
     DJ.onView(document.querySelectorAll("[data-count]"), e => DJ.countUp(e));

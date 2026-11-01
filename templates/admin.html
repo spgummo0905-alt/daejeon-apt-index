@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}관리자 · 집감{% endblock %}
+{% block description %}운영 도구: 회원과 권한, 사이트 설정, 멤버십 등급, 관리 기록.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+{# 관리자 화면 (카카오 로그인을 켰을 때만 만듦, 검색 제외). 권한 확인은 모두 서버 함수(scripts/supabase_setup.sql)가 하고,
+   이 화면은 그 결과만 보여 줌. 역할: 운영자 > 관리자 > 스태프(보기만) (admin.js) #}
+<section class="me-gate" data-when-out>
+  <span class="me-gate-ic" aria-hidden="true"><svg class="ic"><use href="#i-shield"/></svg></span>
+  <h1>관리자 화면이에요</h1>
+  <p>권한을 받은 카카오 계정으로 로그인해 주세요.</p>
+  <button type="button" class="kakao-btn" data-login>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
+    <span>카카오 로그인</span></button>
+</section>
+
+<div data-when-in hidden>
+  <p class="muted ad-wait" data-ad-wait>권한을 확인하는 중…</p>
+  <section class="me-gate" data-ad-deny hidden>
+    <span class="me-gate-ic" aria-hidden="true"><svg class="ic"><use href="#i-shield"/></svg></span>
+    <h1>권한이 없는 계정이에요</h1>
+    <p>운영자에게 아래 회원 번호를 보내 권한을 받아 주세요.</p>
+    <p class="ad-uid"><code data-ad-uid></code> <button type="button" class="btn ghost sm" data-ad-copy>복사</button></p>
+    <a class="me-gate-back" href="index.html">처음 화면으로 →</a>
+  </section>
+
+  <div class="ad" data-ad hidden>
+    <section class="me-hero ad-hero">
+      <span class="me-av" data-user-av aria-hidden="true"></span>
+      <div class="me-id"><p class="me-kicker">관리자</p><h1>운영 도구</h1><span class="me-state" data-ad-role></span></div>
+    </section>
+    <nav class="ad-tabs" role="tablist" aria-label="관리 메뉴">
+      <button type="button" role="tab" data-ad-go="overview" aria-selected="true">한눈에</button>
+      <button type="button" role="tab" data-ad-go="members" aria-selected="false">회원·권한</button>
+      <button type="button" role="tab" data-ad-go="settings" aria-selected="false">설정</button>
+      <button type="button" role="tab" data-ad-go="plans" aria-selected="false">멤버십</button>
+      <button type="button" role="tab" data-ad-go="logs" aria-selected="false" data-ad-min="admin">기록</button>
+    </nav>
+
+    <section class="panel ad-pane" data-ad-pane="overview" role="tabpanel">
+      <ul class="me-stats ad-kpis" data-ad-kpis></ul>
+      <div class="ad-split">
+        <div><h3>역할</h3><p class="ad-chips" data-ad-roles></p><h3>등급</h3><p class="ad-chips" data-ad-plans></p></div>
+        <div><h3>새로 가입한 회원</h3><ul class="ad-recent" data-ad-recent></ul></div>
+      </div>
+    </section>
+
+    <section class="panel ad-pane" data-ad-pane="members" role="tabpanel" hidden>
+      <div class="panel-head"><h2>회원·권한</h2>
+        <p class="muted">역할: 운영자(모든 권한) · 관리자(회원 등급·사이트 설정) · 스태프(보기만) · 회원. 관리자를 주고 빼는 건 운영자만 해요.
+          등급은 기간을 정해 직접 줄 수 있어요 (베타 테스터·지인 등).</p></div>
+      <input type="search" class="ad-search" data-ad-q placeholder="닉네임이나 회원 번호로 찾기" aria-label="회원 찾기">
+      <ul class="ad-members" data-ad-members></ul>
+      <button type="button" class="btn ad-more" data-ad-more hidden>더 보기</button>
+    </section>
+
+    <section class="panel ad-pane" data-ad-pane="settings" role="tabpanel" hidden>
+      <div class="panel-head"><h2>사이트 설정</h2><p class="muted">저장하면 바로 모든 방문자에게 반영돼요 (몇 분 안에).</p></div>
+      <form class="ad-form" data-ad-notice>
+        <h3>공지 띠</h3>
+        <label class="ad-switch"><input type="checkbox" name="on"> <span>화면 위쪽에 공지 보이기</span></label>
+        <label class="ad-field"><span>문구 (80자까지)</span><input type="text" name="text" maxlength="80" placeholder="예: 10월 30일 새벽 2시~3시 점검이 있어요"></label>
+        <label class="ad-field"><span>누르면 갈 주소 (없으면 비워 두기)</span><input type="url" name="link" placeholder="https://"></label>
+        <button type="submit" class="btn primary">공지 저장</button>
+      </form>
+      <form class="ad-form" data-ad-features>
+        <h3>기능 켜고 끄기</h3>
+        <label class="ad-switch"><input type="checkbox" name="photos"> <span><b>현장 사진 올리기</b><small>끄면 현장 모드에서 사진 칸을 감춰요 (올린 사진은 그대로)</small></span></label>
+        <label class="ad-switch"><input type="checkbox" name="share"> <span><b>가족과 함께 보기</b><small>끄면 내 정보에서 링크 만들기를 감춰요</small></span></label>
+        <label class="ad-switch"><input type="checkbox" name="membership"> <span><b>멤버십 안내</b><small>켜면 내 정보에 등급이 보여요 (결제는 아직)</small></span></label>
+        <button type="submit" class="btn primary">기능 저장</button>
+      </form>
+    </section>
+
+    <section class="panel ad-pane" data-ad-pane="plans" role="tabpanel" hidden>
+      <div class="panel-head"><h2>멤버십 등급</h2>
+        <p class="muted">등급마다 이름·한 달 가격·한도를 정해 둬요. 지금은 결제 없이 관리자가 회원에게 기간을 정해 줄 수 있고,
+          결제를 붙이면 결제 알림이 같은 등급을 자동으로 바꾸게 돼요. 등급표 고치기는 운영자만 해요.</p></div>
+      <div class="ad-plans" data-ad-plan-list></div>
+      <details class="ad-next">
+        <summary>구독제로 바꿀 때 할 일</summary>
+        <ol>
+          <li>사업자등록과 통신판매업 신고</li>
+          <li>결제사 계약 (토스페이먼츠·포트원 등, 정기 결제)</li>
+          <li>결제 알림을 받는 서버 함수(Supabase Edge Function)가 구독 표와 회원 등급을 고치게</li>
+          <li>이용약관·환불 규정, 개인정보처리방침에 결제 정보 처리 추가</li>
+          <li>멤버십 안내 켜기 (사이트 설정)</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="panel ad-pane" data-ad-pane="logs" role="tabpanel" hidden>
+      <div class="panel-head"><h2>관리 기록</h2><p class="muted">누가 언제 무엇을 바꿨는지 최근 50개.</p></div>
+      <ul class="ad-logs" data-ad-logs></ul>
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="static/admin.js?v={{ v }}"></script>{% endblock %}

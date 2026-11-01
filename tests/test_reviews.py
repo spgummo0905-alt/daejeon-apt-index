@@ -49,8 +49,130 @@ def test_naver_posts_skip_listings_and_other_complexes():
              {"title": "둔산 크로바 후기", "description": "다른 단지", "link": "u2"},
              {"title": "<b>열매7단지</b> 3년 살아 보니", "description": "조용하고 &amp; 주차 넉넉", "link": "u3",
               "bloggername": "동네 기록", "postdate": "20260912"}]
-    got = reviews._posts(_Sess(items), "blog", "q", "열매7단지현대")
-    assert got == [{"t": "열매7단지 3년 살아 보니", "d": "조용하고 & 주차 넉넉", "u": "u3", "s": "동네 기록", "at": "20260912"}]
+    c = {"name": "열매7단지현대", "dong": "노은동", "gu": "유성구"}
+    got = reviews._posts(_Sess(items), "blog", "q", c, 3, "대전")
+    assert got == []   # '열매7단'만 맞고 동·구·지역 이름이 없으면 같은 이름의 다른 지역 단지일 수 있음
+    items[2]["description"] = "노은동 조용하고 &amp; 주차 넉넉"
+    got = reviews._posts(_Sess(items), "blog", "q", c, 3, "대전")
+    assert got == [{"t": "열매7단지 3년 살아 보니", "d": "노은동 조용하고 & 주차 넉넉", "u": "u3", "s": "동네 기록", "at": "20260912"}]
+
+
+def test_naver_posts_keep_only_lived_stories():
+    """단지 이름만 들어간 시공·수리 업체, 가게 홍보, 다른 지역 글은 빼고 사는 이야기만 (실제로 걸렸던 글들)."""
+    c = {"name": "누리", "dong": "월평동", "gu": "서구"}
+    items = [
+        {"title": "대전 월평동 주방후드 교체 누리아파트 하츠 후드", "description": "누리아파트 주방 후드 교체 시공했습니다", "link": "a"},
+        {"title": "대전변기교체 대전세면대교체 월평동 누리아파트", "description": "욕실 리모델링 문의 주세요", "link": "b"},
+        {"title": "잠실에서 비타스틱 파는 곳", "description": "누리 약국 월평동 지점", "link": "c"},
+        {"title": "누리아파트 거실 인테리어", "description": "월평동 누리아파트 32평", "link": "d"},
+        {"title": "서울 누리아파트 살아보니", "description": "강서구 누리아파트 장단점", "link": "e"},
+        {"title": "누리아파트 근처 맛집", "description": "월평동 누리아파트 앞", "link": "f"},
+        {"title": "월평동 누리아파트 5년 살아 보니", "description": "갑천 산책이 좋고 주차는 조금 빠듯", "link": "g", "bloggername": "갑천 산책"},
+        {"title": "누리아파트 3년 살아 보니", "description": "월평동이라 조용해요", "link": "k"},   # 짧은 이름은 제목에 동네도
+        {"title": "월평동 누리아파트 임장 다녀왔어요", "description": "언덕이 조금 있고 초등학교가 가까워요", "link": "h", "bloggername": "주말 임장"},
+        {"title": "누리아파트 이사 왔어요", "description": "월평동 첫 집, 층간소음은 아직 없어요", "link": "i", "bloggername": "갑천 산책"},
+        {"title": "누리 마을 산책", "description": "누리 공원", "link": "j"},
+    ]
+    got = reviews._posts(_Sess(items), "blog", "q", c, 5, "대전")
+    assert sorted(x["u"] for x in got) == ["g", "h"]   # 같은 블로그(갑천 산책)는 한 글만, 이름이 짧은데 동네가 안 나온 글도 뺌
+    # 한 번 받아 둔 글도 화면에 낼 때 다시 거름
+    assert reviews._story("대전 월평동 주방후드 교체 누리아파트", "") == 0
+    assert reviews._story("누리아파트 5년 살아 보니", "주차는 조금 빠듯") > 0
+    assert reviews._story("트리풀시티 9단지", "단지 사진") == 0   # 사는 이야기 낱말이 없음
+
+
+def test_names_need_the_same_complex():
+    """흔한 이름은 동·구가 함께, 다른 이름 속에 묻히면 안 되고, 단지 번호가 다르면 다른 단지 (실제로 걸렸던 글들)."""
+    hy = {"name": "한양아파트", "dong": "송파동", "gu": "송파구"}
+    assert reviews._names("아파트 임장 투어 서울 송파구 송파동 송파한양1차", hy) == 2
+    assert reviews._names("하남 감이동 감일한양수자인을 소개합니다 송파", hy) == 0
+    assert reviews._names("송파 방이한양3차 재건축", hy) == 0
+    cr = {"name": "크로바", "dong": "둔산동", "gu": "서구"}
+    assert reviews._names("둔산크로바 1632세대", cr) == reviews._names("크로바를 보면 둔산", cr) == 2
+    assert reviews._names("크로바 아파트 임장", cr) == 0   # 동네 이름이 없으면 다른 지역 크로바일 수 있음
+    assert reviews._names("(대전 서구 은하수점) 둔산", {"name": "은하수", "dong": "둔산동", "gu": "서구"}) == 0
+    ga = {"name": "가온마을 1단지 (2-1,힐스테이트)", "dong": "다정동", "gu": ""}
+    assert reviews._names("가온마을1단지 힐스테이트2차 분석｜다정초·중·고 학세권", ga) == 2   # 괄호 속 생활권 번호는 없어도
+    assert reviews._names("중계건영3차, 13억", {"name": "건영3", "dong": "중계동", "gu": "노원구"}) == 2
+    mk = {"name": "목동신시가지10", "dong": "신정동", "gu": "양천구"}
+    assert reviews._names("6년 전 임장한 목동 신시가지7단지 신정동", mk) == 0
+    assert reviews._names("목동 신시가지 9단지 10단지 13단지 임장 신정동", mk) == 1
+    assert reviews._names("힐스테이트e편한세상문정 21평", {"name": "e-편한세상", "dong": "역삼동", "gu": "강남구"}) == 0
+    ep = {"name": "은평뉴타운 제각말 푸르지오(5-4단지)", "dong": "진관동", "gu": "은평구"}
+    assert reviews._names("[은평뉴타운]이동네는 아파트 주소가 이상해 진관동", ep) == 0   # 동네 이름으로 시작하는 긴 이름
+    assert reviews._names("진관동 은평뉴타운 제각말 푸르지오 살아보니", ep) == 2
+
+
+def test_keep_needs_this_complex_in_title_or_a_local_visit():
+    c = {"name": "공작한양", "dong": "탄방동", "gu": "서구"}
+    assert reviews._keep("대전 탄방동 아파트: 한가람, 공작한양 임장 후기", "학군 탄방초", c, "대전")
+    # 제목에 이 단지가 없으면 이 동네(탄방) 임장·거주기여야: 옆 동네 단지 글은 요약에 이름이 나와도 뺌
+    assert not reviews._keep("둔산자이아이파크 실거주 후기 및 투자 가치", "공작한양 탄방동 바로 옆", c, "대전")
+    assert reviews._keep("대전 탄방동 임장", "공작한양 한가람 둘러봄", c, "대전")
+    assert not reviews._keep("대전 둔산동 목련아파트 205동 41평 편리한 동선", "", {"name": "목련", "dong": "둔산동"}, "대전")
+    assert not reviews._keep("대덕구 법동 삼호아파트 매매", "매물 정보 매물 [14198] 입주일협의", {"name": "삼호", "dong": "법동", "gu": "대덕구"}, "대전")
+    assert not reviews._keep("세종시 도담동 도램마을3단지아파트 전세 있어여~!", "도담동 살기 좋아요", {"name": "도램마을3단지", "dong": "도담동"}, "세종")
+    assert reviews._keep("30대 직장인 지인의 둔산동 한마루 아파트 매매계약 후기", "", {"name": "한마루아파트", "dong": "둔산동"}, "대전")
+    ex = {"name": "금강엑슬루타워", "dong": "석봉동", "gu": "대덕구"}
+    assert not reviews._keep("대전시 대덕구 석봉동 금강엑슬루타워 107동 43층 48평형 / 사건번호20", "법원경매정보", ex, "대전")
+    assert reviews._keep("법동삼호아파트 1층 20년거주", "20년이넘는시간동안 거주중", {"name": "삼호", "dong": "법동", "gu": "대덕구"}, "대전")
+    # 같은 동 이름이 다른 구에도 있음: 마포구 신정동 임장기는 양천구 신정동 단지 글이 아님
+    sj = {"name": "현대", "dong": "신정동", "gu": "양천구"}
+    assert not reviews._keep("마포구 광흥창역(신수동, 현석동, 신정동) 임장 2탄", "신정 현대", sj, "서울", frozenset({"양천구", "마포구"}))
+    assert reviews._keep("[양천구 임장] 신정동 구축 3단지 솔직 후기", "신정 현대 아파트", sj, "서울", frozenset({"양천구", "마포구"}))
+
+
+def test_store_and_agent_posts_that_name_the_complex():
+    """이 단지 이름과 '입주민'이 나와도 가게 홍보·업체 블로그 글은 뺌 (실제로 화면에 걸렸던 글)."""
+    c = {"name": "e편한세상 대전에코포레", "dong": "용운동", "gu": "동구"}
+    item = {"title": "대전 동구 용운동e편한세상,동구 신흥동 SK뷰아파트 입주민 여러분 ....",
+            "description": "추천드립니다 ✓동구 용운동 e편한세상에코포레 입주민 ✓ 입주... 하이마트 판암점 방문 안내 "
+                           "위치 : 대전 동구 옥천로87 롯데하이마트 판암점 042)271-2580 신흥역 4번",
+            "link": "x", "bloggername": "가전 파는 오빠"}
+    assert reviews._pick([item], c, 5, "대전") == []
+    assert not reviews._keep(item["title"], "", c, "대전")             # 제목만으로도 ('여러분')
+    assert reviews.AD_BODY.search("문의 042)271-2580") and reviews.AD_BODY.search("010-1234-5678")
+    # 블로그 이름: 중개사무소·이삿짐센터는 업체, 개인 투자 블로그의 임장기는 남김
+    for who in ("부동산 문의 1533-8170", "나성일진부동산", "다정yes공인중개사사무소", "명품만복이사 1551-2435", "대전 디자인미래 인테리어"):
+        assert reviews.SELLER.search(who), who
+    for who in ("맹맹구리의 부동산", "[출근은 덤] 부동산ㅣ주식ㅣ재테크", "주말 임장", "이사 온 새댁"):
+        assert not reviews.SELLER.search(who), who
+    ok = {"title": "대전 둔산지구 13구역 임장후기 (둔산동 크로바 아파트)", "description": "대장아파트를 구경하고 왔다",
+          "link": "y", "bloggername": "맹맹구리의 부동산"}
+    assert reviews._pick([ok], {"name": "크로바", "dong": "둔산동", "gu": "서구"}, 5, "대전")
+
+
+def test_load_drops_seller_posts_saved_before(tmp_path):
+    p = tmp_path / "reviews.json"
+    p.write_text(json.dumps({"A": {"posts": [
+        {"t": "월평동 누리아파트 단지 내 이사 후기", "u": "u1", "s": "명품만복이사 1551-2435"},
+        {"t": "월평동 누리아파트 5년 살아 보니", "u": "u2", "s": "갑천 산책"}]}}, ensure_ascii=False))
+    got = reviews.load(p, "대전", {"A": {"name": "누리", "dong": "월평동", "gu": "서구"}})
+    assert [x["u"] for x in got["A"]["posts"]] == ["u2"]
+
+
+def test_naver_posts_refetch_after_rule_change(tmp_path, monkeypatch):
+    """글 고르는 방법이 바뀌면(NV_VERSION) 일주일이 안 지났어도 다시 받고, 모자라면 '살아보니'로 한 번 더 찾음."""
+    path = tmp_path / "reviews.json"
+    path.write_text(json.dumps({"A": {"nv_at": "2999-01-01", "posts": [{"t": "옛 글", "u": "x"}]},
+                                "B": {"nv_at": "2999-01-01", "nv_v": reviews.NV_VERSION, "posts": []}}))
+    queries = []
+
+    class S(_Sess):
+        headers = {}
+
+        def get(self, url, params=None, **k):
+            queries.append(params["query"])
+            return _Resp([{"title": "도안 트리풀시티 9단지 2년 살아 보니", "description": "주차 넉넉", "link": "p" + str(len(queries))}])
+
+    monkeypatch.setattr(reviews.requests, "Session", lambda: S([]))
+    monkeypatch.setattr(reviews.time, "sleep", lambda *_: None)
+    cx = [{"complex_id": "A", "name": "트리풀시티9단지", "dong": "도안동", "gu": "유성구"},
+          {"complex_id": "B", "name": "가람", "dong": "도안동", "gu": "유성구"}]
+    reviews.naver_posts(cx, path, "id", "sec", log=lambda *_: None, region="대전")
+    assert queries == ["도안동 트리풀시티9단지 아파트 후기", "도안동 트리풀시티9단지 아파트 살아보니"]   # B 는 이미 새 방법으로 받음
+    got = json.loads(path.read_text())["A"]
+    assert got["nv_v"] == reviews.NV_VERSION and [p["u"] for p in got["posts"]] == ["p1", "p2"]
 
 
 def test_load_drops_cafe_posts_that_need_login(tmp_path):
@@ -58,10 +180,10 @@ def test_load_drops_cafe_posts_that_need_login(tmp_path):
     p = tmp_path / "reviews.json"
     p.write_text(json.dumps({
         "A": {"kp": ["1", "가"], "nv_at": "2026-10-01",
-              "posts": [{"t": "카페 글", "u": "https://cafe.naver.com/x/1"}] + [{"t": f"블로그 {i}", "u": f"https://blog.naver.com/a/{i}"} for i in range(7)]},
+              "posts": [{"t": "카페 글", "u": "https://cafe.naver.com/x/1"}] + [{"t": f"블로그 {i} 살아 보니", "u": f"https://blog.naver.com/a/{i}"} for i in range(7)]},
         "B": {"nv_at": "2026-10-01", "posts": [{"t": "카페만", "u": "https://cafe.naver.com/x/2"}]}}, ensure_ascii=False))
     got = reviews.load(p)
-    assert got["A"]["kp"] == ["1", "가"] and [x["t"] for x in got["A"]["posts"]] == [f"블로그 {i}" for i in range(5)]
+    assert got["A"]["kp"] == ["1", "가"] and [x["t"] for x in got["A"]["posts"]] == [f"블로그 {i} 살아 보니" for i in range(5)]
     assert "B" not in got   # 카페 글만 있던 단지는 보여 줄 글이 없음
 
 

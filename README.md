@@ -99,7 +99,7 @@ python -m djdex all
   3. 받은 태그의 `content="..."` 값만 `config.toml` 의 `google_site_verification`, `naver_site_verification` 에 넣고 다시 배포한 뒤 확인 버튼을 누릅니다.
   4. 두 곳 모두 사이트맵 제출 메뉴에 `sitemap.xml` 주소를 넣습니다.
 - **배포 주소가 바뀌면** `config.toml` 의 `base_url` 을 새 주소로 바꿉니다. 미리보기와 사이트맵이 이 값을 씁니다.
-- **단지 페이지 지도**: 카카오 개발자 콘솔의 앱 설정에서 웹 플랫폼 도메인에 `https://spgummo0905-alt.github.io` 를 등록하고, JavaScript 키를 `KAKAO_JS_KEY` 시크릿으로 넣으면 단지 페이지에 카카오맵이 뜹니다.
+- **단지 페이지 지도**: 카카오 개발자 콘솔의 앱 설정에서 웹 플랫폼 도메인에 `https://www.jipgam.kr` 를 등록하고, JavaScript 키를 `KAKAO_JS_KEY` 시크릿으로 넣으면 단지 페이지에 카카오맵이 뜹니다.
 
 ## 구조
 
@@ -122,3 +122,7 @@ tests/             pytest
 - 학군 지표: 학교알리미의 학업성취도, 학생 수
 - 전세가율: 국토부 아파트 전월세 실거래가 API
 - 동일 단지 이름 변경, 재건축 전후 단지 묶기
+
+## 권리
+
+코드·디자인·점수 산출 방식과 결과 데이터의 권리는 운영자에게 있어요 (All rights reserved). 자세한 내용은 [LICENSE](LICENSE)와 사이트의 이용약관(terms.html)을 봐 주세요.

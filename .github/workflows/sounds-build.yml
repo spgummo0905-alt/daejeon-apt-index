@@ -1,0 +1,32 @@
+name: sounds-build
+
+# 옥상 자연 소리 파일(static/sounds)을 위키미디어 커먼즈의 자유 이용 녹음으로 만들어 sounds-build 가지에 올립니다 (수동 실행)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && pip install numpy
+      - name: 소리 만들기
+        run: python scripts/sounds_build.py "$RUNNER_TEMP/sounds"
+      - name: sounds-build 가지에 올리기
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan sounds-tmp
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          mkdir -p static && cp -r "$RUNNER_TEMP/sounds" static/sounds
+          git add static/sounds
+          git commit -qm "sounds $(date -u +%FT%TZ)"
+          git push -f origin sounds-tmp:sounds-build

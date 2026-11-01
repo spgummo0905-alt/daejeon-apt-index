@@ -1,0 +1,45 @@
+name: online
+
+# 지금 접속 중인 사람 수를 5분마다 online.json 한 장으로 online-data 가지에 올립니다 (주소로 열어 볼 수 있는 접속자 수 API)
+# https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/online-data/online.json
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: online
+  cancel-in-progress: true
+
+jobs:
+  online:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q websockets
+      - name: 접속자 수 읽기
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          git fetch -q --depth 1 origin online-data 2>/dev/null && git show FETCH_HEAD:online.json > "$RUNNER_TEMP/prev.json" 2>/dev/null || echo "{}" > "$RUNNER_TEMP/prev.json"
+          python scripts/online_fetch.py "$RUNNER_TEMP/online.json" "$RUNNER_TEMP/prev.json"
+      - name: online-data 가지에 올리기
+        run: |
+          if [ ! -s "$RUNNER_TEMP/online.json" ]; then echo "올릴 자료가 없어요"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan online-tmp
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp "$RUNNER_TEMP/online.json" online.json
+          git add online.json
+          git commit -qm "online $(date -u +%FT%TZ)"
+          git push -f origin online-tmp:online-data

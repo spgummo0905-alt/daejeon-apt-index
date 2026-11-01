@@ -146,7 +146,7 @@
       lines.forEach(l => { const w = l.get(i); if (w != null) vals.push(w); });
     }
     if (plain) typeTr.forEach(t => { if (!(t[5] & F_CANCEL)) { const c = conv(t[3], t[0], base); if (c != null) vals.push(c); } });
-    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 보여 줄 거래가 없어요.")); return; }
+    if (!vals.length) { plot.replaceChildren(el("p", "muted", "이 평형은 아직 거래가 없습니다.")); return; }
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const padV = (hi - lo) * 0.08 || hi * 0.05;
     lo = Math.max(0, lo - padV); hi += padV;
@@ -254,6 +254,12 @@
     let vmax = 1;
     for (let q = q0; q <= q1; q++) vmax = Math.max(vmax, (qa[q] || 0) + (gapMode ? 0 : (qb[q] || 0)));
     const vg = s("g", { class: "pc-vol" }, svg);
+    // 분기 막대는 그래프 칸 안으로 자름: 보는 기간이 분기 중간에서 시작·끝나면 막대가 축 바깥(왼쪽 눈금·오른쪽 여백)으로 나가서
+    const xl = x(i0), xr = x(i1);
+    const bar = (cx, w, yy, h, cls) => {
+      const l = Math.max(xl, cx - w / 2), r = Math.min(xr, cx + w / 2);
+      if (r - l > 0.5 && h > 0) s("rect", { x: l, y: yy, width: r - l, height: h, class: cls }, vg);
+    };
     if (gapMode) {
       // 위 = 이 평형 매매, 아래 = 전세 계약(신규·갱신·미표기). 눈금은 따로
       const rq = {};
@@ -272,12 +278,12 @@
       const qw = Math.max(1.5, (x(i0 + 3) - x(i0)) - 2);
       for (let q = q0; q <= q1; q++) {
         const cx = x(q * 3 + 1 - D.m0), a = qa[q] || 0, h = a / vmax * upH;
-        if (a) s("rect", { x: cx - qw / 2, y: mid - 2 - h, width: qw, height: h, class: "pc-va" }, vg);
+        if (a) bar(cx, qw, mid - 2 - h, h, "pc-va");
         let yy = mid + 1;
         (rq[q] || [0, 0, 0]).forEach((v, k) => {
           if (!v) return;
           const hh = v / rmax * dnH;
-          s("rect", { x: cx - qw / 2, y: yy, width: qw, height: hh, class: "pc-rn" + k }, vg);
+          bar(cx, qw, yy, hh, "pc-rn" + k);
           yy += hh;
         });
       }
@@ -292,8 +298,8 @@
       const cx = x(q * 3 + 1 - D.m0), a = qa[q] || 0, b = qb[q] || 0;
       const ha = a / vmax * volH, hb = b / vmax * volH;
       const cls = q === q1 && partial ? " part" : "";
-      if (b) s("rect", { x: cx - qw / 2, y: vTop + volH - ha - hb, width: qw, height: hb, class: "pc-vb" + cls }, vg);
-      if (a) s("rect", { x: cx - qw / 2, y: vTop + volH - ha, width: qw, height: ha, class: (market ? "pc-vm" : "pc-va") + cls }, vg);
+      if (b) bar(cx, qw, vTop + volH - ha - hb, hb, "pc-vb" + cls);
+      if (a) bar(cx, qw, vTop + volH - ha, ha, (market ? "pc-vm" : "pc-va") + cls);
     }
     }
     // 금리 (시장 흐름, 자료가 있을 때)
@@ -439,7 +445,7 @@
     const meta = head.querySelector("[data-pc-meta]"), badge = head.querySelector("[data-pc-badge]");
     const real = head.querySelector("[data-pc-real]");
     head.hidden = false;
-    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "시세를 추정할 거래가 부족해요."; badge.hidden = true; return; }
+    if (li < 0) { nowB.textContent = "-"; rng.textContent = ""; meta.textContent = "시세를 추정할 거래가 부족합니다."; badge.hidden = true; return; }
     nowB.textContent = eok(T.est[li]);
     rng.textContent = T.lo[li] != null ? `예상 거래 범위 ${eok(T.lo[li])} ~ ${eok(T.hi[li])} (10건 중 8건)` : "";
     const yr = D.tr.filter(t => t[2] === state.type && t[0] > D.n - 13 && !(t[5] & F_CANCEL));

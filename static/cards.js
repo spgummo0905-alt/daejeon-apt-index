@@ -23,7 +23,7 @@
   const KIND = {
     cmp: { label: "비교 후보", icon: "compare" },
     hot: { label: "흐름 확인", icon: "fire" },
-    val: { label: "가성비 후보", icon: "coin" },
+    val: { label: "입지 대비 가격", icon: "coin" },
     top: { label: "기준 단지", icon: "rank" },
     more: { label: "둘러보기", icon: "walk" },
   };
@@ -45,8 +45,8 @@
   function whyCmp(c, b) {
     const where = c.gu === b.gu && c.d === b.d ? `${DJ.josa(b.n, "과/와")} 같은 동` : `${b.n}에서 ${km(c, b).toFixed(1)}km`;
     const diff = c.p - b.p;
-    const val = Math.abs(diff) < 1000 ? "84㎡ 값이 비슷해요" : `84㎡가 ${money(Math.abs(diff))} ${diff < 0 ? "낮아요" : "높아요"}`;
-    return `${where}, ${val}. 나란히 놓고 차이의 이유를 봐요.`;
+    const val = Math.abs(diff) < 1000 ? "84㎡ 환산가가 비슷합니다" : `84㎡ 환산가가 ${money(Math.abs(diff))} ${diff < 0 ? "낮습니다" : "높습니다"}`;
+    return `${where} · ${val}. 차이가 어디서 오는지 비교해 보세요.`;
   }
   function pickToday(d, all, rand) {
     const album = DJ.album();
@@ -68,27 +68,27 @@
       const gus = new Set(base.map(b => b.gu));
       const hot = pool.filter(c => c.h && gus.has(c.gu));
       const h = one(hot.length ? hot : pool.filter(c => c.h));
-      if (h) out.push({ c: h, k: "hot", w: `${h.gu}에서 최근 신고가가 난 곳이에요. 요즘 수요가 몰리는지 현장 분위기를 확인해 봐요.` });
+      if (h) out.push({ c: h, k: "hot", w: `${h.gu}에서 최근 신고가 거래가 나온 단지입니다. 현장에서 매물과 호가 분위기를 확인해 보세요.` });
       const ps = base.map(b => b.p).sort((x, y) => x - y), mid = ps[Math.floor(ps.length / 2)];
       const band = left(pool.filter(c => c.p && Math.abs(c.p / mid - 1) <= 0.2 && c.st && c.st[0] != null)).sort((x, y) => y.st[0] - x.st[0]);
       const v = one(band.slice(0, 5));
-      if (v) out.push({ c: v, k: "val", w: `내가 본 단지들과 비슷한 값(${money(mid)} 안팎)인데 입지 점수가 ${v.st[0]}점이에요.` });
+      if (v) out.push({ c: v, k: "val", w: `살펴본 단지들과 비슷한 가격대(${money(mid)} 안팎)이며 입지 점수는 ${v.st[0]}점입니다.` });
     }
     if (!has("cmp") && out.length < 3) {
       const t = one(pool.filter(c => c.g === "S")) || one(pool.filter(c => c.g === "A"));
-      if (t) out.push({ c: t, k: "top", w: `${t.gu}의 상위 등급 단지예요. 다른 단지를 잴 기준이 되니 먼저 봐 둬요.` });
+      if (t) out.push({ c: t, k: "top", w: `${t.gu}의 상위 등급 단지입니다. 주변 단지를 비교할 때 기준으로 삼기 좋습니다.` });
     }
     if (!has("hot") && out.length < 3) {
       const h = one(pool.filter(c => c.h));
-      if (h) out.push({ c: h, k: "hot", w: `${h.gu}에서 최근 신고가가 난 곳이에요. 요즘 수요가 몰리는지 현장 분위기를 확인해 봐요.` });
+      if (h) out.push({ c: h, k: "hot", w: `${h.gu}에서 최근 신고가 거래가 나온 단지입니다. 현장에서 매물과 호가 분위기를 확인해 보세요.` });
     }
     if (!has("val") && out.length < 3) {
       const v = one(left(pool.filter(c => c.st && c.st[3] != null)).sort((x, y) => y.st[3] - x.st[3]).slice(0, 10));
-      if (v) out.push({ c: v, k: "val", w: `입지에 비해 값이 낮은 편이에요 (가성비 ${v.st[3]}점). 왜 싼지 현장에서 확인해 봐요.` });
+      if (v) out.push({ c: v, k: "val", w: `입지 점수에 비해 가격이 낮은 편입니다 (입지 대비 가격 ${v.st[3]}점). 가격이 낮은 이유를 현장에서 확인해 보세요.` });
     }
     while (out.length < 3 && left(pool).length) {
       const c = one(pool);
-      out.push({ c, k: "more", w: "아직 안 본 단지예요. 시세 감을 넓혀 봐요." });
+      out.push({ c, k: "more", w: "아직 살펴보지 않은 단지입니다. 비교 범위를 넓혀 보세요." });
     }
     return out;
   }
@@ -128,13 +128,13 @@
       inner.append(back, front);
       slot.append(inner);
       const why = el("p", "tc-why pending");   // 열기 전엔 어떤 후보인지만, 열면 왜 골랐는지
-      const whyText = document.createTextNode(" 카드를 뒤집으면 왜 골랐는지 보여요.");
+      const whyText = document.createTextNode(" 카드를 뒤집으면 선정 이유가 표시됩니다.");
       why.append(el("b", "", kind.label), whyText);
       col.append(slot, why);
       row.append(col);
       const show = () => {
         const n = st.n[i];
-        tag.textContent = n ? `새 카드 · ${n.toLocaleString()}장째` : "이미 모은 카드";
+        tag.textContent = n ? `새 카드 · ${n.toLocaleString()}장째` : "이미 살펴본 단지";
         tag.classList.toggle("new", !!n);
         slot.classList.add("open");
         back.inert = true;   // 뒤집힌 뒷면은 화면엔 남지만(돌아가는 동안) 누르거나 읽히지 않게
@@ -209,7 +209,7 @@
     const medal = el("span", "badge-medal " + GROUP_CLS[b.group] + (on ? " on" : ""));
     medal.append(DJ.icon(b.icon));
     const t = el("div", "");
-    t.append(el("b", "", b.name), el("span", "muted", on ? `${got[b.id].replace(/-/g, ".")} 받음` : `${prog(b)}/${b.goal} · 아직 받지 않았어요`));
+    t.append(el("b", "", b.name), el("span", "muted", on ? `${got[b.id].replace(/-/g, ".")} 받음` : `${prog(b)}/${b.goal} · 진행 중`));
     head.append(medal, t);
     const how = el("p", "bd-row"), why = el("p", "bd-row");
     how.append(el("span", "", "어떻게 받나요"), document.createTextNode(b.how));
@@ -287,11 +287,11 @@
     const next = sec.querySelector("[data-album-next]");
     next.replaceChildren();
     const left = all.filter(c => !a[c.s]);
-    if (!left.length) { next.textContent = "이 지역 카드를 모두 모았어요."; next.hidden = false; return; }
+    if (!left.length) { next.textContent = "이 지역 단지를 모두 살펴봤습니다."; next.hidden = false; return; }
     const g = GRADES.find(x => left.some(c => c.g === x));
     const pool = left.filter(c => c.g === g);
     const pick = pool[Math.floor(Math.random() * pool.length)];
-    next.append(el("span", "", `아직 못 모은 ${g}카드 ${pool.length.toLocaleString()}장`));
+    next.append(el("span", "", `아직 살펴보지 않은 ${g}등급 ${pool.length.toLocaleString()}곳`));
     const go = el("a", "btn", "하나 열어 보기 →");
     go.href = DJ.href(pick);
     next.append(go);

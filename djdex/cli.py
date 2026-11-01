@@ -20,7 +20,7 @@ import requests
 
 from . import config as config_mod
 from . import demo as demo_mod
-from . import bldg, ecos, fee, kakao, kapt, location, metrics, molit, osm, reviews, school, site
+from . import bldg, ecos, elev, fee, kakao, kapt, location, metrics, molit, movein, noise, osm, points, reviews, school, site
 from .cpi import CPI
 from .config import ROOT
 
@@ -122,7 +122,7 @@ def _log_complex_sizes(table: pd.DataFrame) -> None:
 
 
 def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=None, macro=None, rents=None,
-                     kinfo=None, supply=None, outside=None):
+                     kinfo=None, supply=None, outside=None, hill=None, noise=None, movein_rows=None):
     cpi = CPI.load(cfg.paths.cpi)
     if cfg.raw["region"].get("group_by") == "dong":
         # 구가 없는 지역(세종)은 동을 '구' 자리에 넣어 구별 비교·필터를 동 단위로 봅니다.
@@ -156,6 +156,11 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
             poi_df = poi_df.drop(columns=[f["key"], f["key"] + "_name"], errors="ignore").join(near)
             if not stops:
                 print(f"::warning::{f['label']}: 정류장 정보가 없어 이 항목을 빼고 계산합니다")
+        if f.get("points") and not demo and not poi_df.empty and geo:
+            # 정해 둔 곳(오송역·청주역 등)까지 거리: 받아 둔 좌표로 매번 계산 (카카오 조회 없음)
+            pts = points.resolve(f["points"], cfg.paths.points)
+            near = osm.nearest(geo, pts, f["key"], f["radius"])
+            poi_df = poi_df.drop(columns=[f["key"], f["key"] + "_name"], errors="ignore").join(near)
     if not poi_df.empty and geo and cfg.school and any(f["kind"] == "value" for f in cfg.location_factors):
         sch = school.load(cfg.paths.school, cfg.school, cfg.region_name)
         if not sch.empty:
@@ -184,7 +189,8 @@ def _score_and_build(cfg, trades, poi_df, geo, out, demo=False, kakao_js_key=Non
     n = site.build(table, hist, trades, meta, cfg, out, demo=demo,
                    kakao_js_key=kakao_js_key or os.environ.get("KAKAO_JS_KEY") or None, geo=geo,
                    macro=macro if macro is not None else ecos.load(cfg.paths.macro), rents=rents, kinfo=kinfo,
-                   supply=supply, outside=outside)
+                   supply=supply, outside=outside, hill=hill, noise=noise,
+                   movein_rows=movein_rows if movein_rows is not None else movein.load(cfg.paths.movein))
     return table, meta, n
 
 
@@ -245,9 +251,16 @@ def cmd_build(cfg, args) -> None:
         ratios = sorted(e / s for v in hit for e, s in v)
         print(f"공급면적(건축물대장) {len(supply):,}곳 중 {len(hit):,}곳을 실거래 단지에 이음 (실거래 단지 {len(ids):,}곳)"
               + (f", 전용률 중간 {ratios[len(ratios) // 2]:.3f} · 범위 {ratios[0]:.2f}~{ratios[-1]:.2f}" if ratios else ""))
-    outside = reviews.load(cfg.paths.kapt / "reviews.json")
+    outside = reviews.load(cfg.paths.kapt / "reviews.json", region=cfg.region_name,
+                           complexes={c["complex_id"]: c for c in _complex_list(trades)})
+    hill = elev.load(cfg.paths.elev)
+    if hill:
+        print(f"언덕(고저차) {len(hill):,}곳 (역 단면 {sum(1 for v in hill.values() if v.get('pf')):,}곳)")
+    noise_d = noise.load(cfg.paths.noise)
+    if noise_d:
+        print(f"소음 체크(큰길·철도 거리) {len(noise_d):,}곳")
     table, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, rents=rents, kinfo=kinfo, supply=supply,
-                                      outside=outside)
+                                      outside=outside, hill=hill, noise=noise_d)
     table.to_csv(cfg.paths.scores)
     print(f"단지 {n}개, 기준 {meta['asof']} → {out}")
 
@@ -263,7 +276,8 @@ def _outside_reviews(cfg) -> None:
         reviews.kakao_places(cx, geo, path, kakao.Kakao(os.environ["KAKAO_REST_KEY"]), time_limit=900)
         nid, nsec = os.environ.get("NAVER_CLIENT_ID", "").strip(), os.environ.get("NAVER_CLIENT_SECRET", "").strip()
         if nid and nsec:
-            reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)))
+            reviews.naver_posts(cx, path, nid, nsec, budget=int(cfg.collect.get("naver_calls_per_run", 4000)),
+                               region=cfg.region_name, time_limit=600)
     except Exception as e:   # 바깥 후기는 없어도 사이트는 만듭니다
         print(f"::warning::바깥 후기 잇기 실패, 검색 버튼만 둡니다: {e!r}")
 
@@ -277,24 +291,30 @@ def cmd_slow(cfg, args) -> None:
     if cfg.collect.get("max_calls_per_run") and not (cfg.paths.data / "READY").exists():
         return   # 실거래를 다 모으기 전인 지역(서울)
     key = _need("DATA_GO_KR_KEY")
-    if cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
+    # 몰아받기(catchup.yml): 고른 단계만, 평소보다 많은 호출·긴 시간으로 (하루 호출 한도가 남은 날)
+    only = set((getattr(args, "only", None) or "fee,kapt,reviews,bldg").split(","))
+    mins = lambda v, default: v * 60 if v else default
+    if "fee" in only and cfg.collect.get("collect_fee") and cfg.paths.kapt.exists():
         try:
-            fee.collect(key, cfg.paths.kapt, cfg.districts, budget=int(cfg.collect.get("fee_calls_per_run", 2400)),
-                        time_limit=480)
+            fee.collect(key, cfg.paths.kapt, cfg.districts,
+                        budget=getattr(args, "fee_calls", None) or int(cfg.collect.get("fee_calls_per_run", 2400)),
+                        time_limit=mins(getattr(args, "fee_minutes", None), 480))
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::관리비 수집 실패, 관리비 없이 진행합니다: {e}")
-    if cfg.collect.get("collect_kapt"):
+    if "kapt" in only and cfg.collect.get("collect_kapt"):
         # 배포 전 단계에서 시간 안에 다 못 받은 단지 정보(세대수·주차 등)를 이어서
         try:
-            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=kapt.SLOW_TIME, cools=kapt.SLOW_COOLS)
+            kapt.collect(key, cfg.districts, cfg.paths.kapt, time_limit=mins(getattr(args, "kapt_minutes", None), kapt.SLOW_TIME),
+                         cools=kapt.SLOW_COOLS)
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::단지 정보(K-apt) 이어 받기 실패: {e}")
-    if os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
+    if "reviews" in only and os.environ.get("KAKAO_REST_KEY") and cfg.paths.trades.exists():
         _outside_reviews(cfg)
-    if cfg.collect.get("collect_bldg"):
+    if "bldg" in only and cfg.collect.get("collect_bldg"):
         try:
             bldg.collect(key, [cfg.paths.raw, cfg.paths.raw_presale], cfg.paths.bldg,
-                         budget=int(cfg.collect.get("bldg_calls_per_run", 4500)), time_limit=900)
+                         budget=getattr(args, "bldg_calls", None) or int(cfg.collect.get("bldg_calls_per_run", 4500)),
+                         time_limit=mins(getattr(args, "bldg_minutes", None), 900))
         except (molit.MolitError, requests.RequestException) as e:
             print(f"::warning::공급면적(건축물대장) 수집 실패, 전용면적만 보여 줍니다: {e}")
 
@@ -311,6 +331,19 @@ def cmd_feeprobe(cfg, args) -> None:
     fee.probe(key, pick)
 
 
+def cmd_elev(cfg, args) -> None:
+    """언덕(고저차): 새 단지만 지형 타일로 계산 (키 없이). 역 좌표는 카카오 키가 있을 때 찾습니다."""
+    if not cfg.paths.geo.exists():
+        print("단지 좌표(geo.json)가 없어 언덕 계산을 건너뜁니다")
+        return
+    geo = json.loads(cfg.paths.geo.read_text(encoding="utf-8"))
+    poi = json.loads(cfg.paths.poi.read_text(encoding="utf-8")) if cfg.paths.poi.exists() else {}
+    f = next((f for f in cfg.location_factors if f["key"] == "subway"), None)
+    stops = osm.load(cfg.paths.osm_stops) if f and f.get("osm_route") else None
+    key = os.environ.get("KAKAO_REST_KEY", "").strip()
+    elev.collect(geo, poi, cfg.paths.elev, client=kakao.Kakao(key) if key and not stops else None, stops=stops)
+
+
 def cmd_all(cfg, args) -> None:
     cmd_collect(cfg, args)
     if os.environ.get("KAKAO_REST_KEY"):
@@ -324,11 +357,33 @@ def cmd_all(cfg, args) -> None:
             detail = getattr(getattr(e, "response", None), "text", "")[:300]
             print(f"::warning::카카오 입지 수집 실패, 입지점수 없이 진행합니다: {e} {detail}")
     for f in cfg.location_factors:
+        if f.get("points") and os.environ.get("KAKAO_REST_KEY"):   # 정해 둔 곳 좌표 (처음 한 번만 찾음)
+            try:
+                points.resolve(f["points"], cfg.paths.points, kakao.Kakao(os.environ["KAKAO_REST_KEY"]))
+            except requests.RequestException as e:
+                print(f"::warning::{f['label']} 좌표 찾기 실패: {type(e).__name__}")
         if f.get("osm_route") and cfg.paths.geo.exists():
             try:
                 osm.collect(f["osm_route"], json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.osm_stops)
             except (ValueError, OSError) as e:  # 정류장을 못 받아도 사이트는 만듭니다 (그 항목만 빠짐)
                 print(f"::warning::OSM 정류장 수집 실패: {e}")
+    if os.environ.get("DATA_GO_KR_KEY"):   # 입주 예정 물량 (청약홈 분양 공고, 활용신청 전이면 건너뜀)
+        try:
+            # 청약홈은 시·도 이름(충북 등)으로 묶어 있어, 시 하나인 지역은 movein_area 와 주소(movein_addr)로 거름
+            movein.collect(os.environ["DATA_GO_KR_KEY"], cfg.raw["region"].get("movein_area", cfg.region_name),
+                           list(cfg.districts.values()), cfg.paths.movein,
+                           addr_has=cfg.raw["region"].get("movein_addr", ""))
+        except (ValueError, OSError) as e:
+            print(f"::warning::입주 예정 물량 수집 실패, 이번에는 빼고 만듭니다: {e!r}")
+    if cfg.paths.geo.exists():   # 소음 체크: 큰길·철도까지 거리 (키 없이, 못 받으면 지난번 선으로)
+        try:
+            noise.collect(json.loads(cfg.paths.geo.read_text(encoding="utf-8")), cfg.paths.noise, cfg.paths.noise_lines)
+        except (ValueError, OSError) as e:
+            print(f"::warning::소음 체크(도로·철도) 수집 실패, 이번에는 빼고 만듭니다: {e!r}")
+    try:
+        cmd_elev(cfg, args)
+    except Exception as e:   # 언덕 자료가 없어도 사이트는 만듭니다
+        print(f"::warning::언덕(고저차) 계산 실패, 이번에는 빼고 만듭니다: {e!r}")
     cmd_school(cfg, args)
     cmd_build(cfg, args)
 
@@ -355,12 +410,14 @@ def cmd_demo(cfg, args) -> None:
     _, meta, n = _score_and_build(cfg, trades, poi_df, geo, out, demo=True,
                                   kakao_js_key=os.environ.get("KAKAO_JS_KEY") or None, macro=demo_mod.macro(),
                                   rents=demo_mod.rents(trades), kinfo=demo_mod.kinfo(trades),
-                                  supply=demo_mod.supply(trades), outside=demo_mod.outside(trades))
+                                  supply=demo_mod.supply(trades), outside=demo_mod.outside(trades),
+                                  hill=demo_mod.hill(trades), noise=demo_mod.noise(trades),
+                                  movein_rows=demo_mod.movein(cfg.districts))
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(prog="djdex", description="대전 아파트 지수")
+    p = argparse.ArgumentParser(prog="djdex", description="집감: 아파트 실거래가·입지 지수")
     p.add_argument("--config", type=Path, help="설정 파일 (기본: config.toml)")
     p.add_argument("--data", type=Path, help="데이터 폴더 (기본: data/)")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -370,13 +427,20 @@ def main(argv: list[str] | None = None) -> None:
         s.add_argument("--end", help="수집 끝 YYYYMM (기본: 이번 달)")
         s.add_argument("--out", help="사이트 출력 폴더")
     sub.add_parser("locate")
-    sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    s = sub.add_parser("slow", help="공급면적·관리비·후기 이어 받기 (배포 뒤에)")
+    s.add_argument("--only", help="받을 단계만 쉼표로: fee,kapt,reviews,bldg (기본: 모두)")
+    for k in ("fee", "bldg"):
+        s.add_argument(f"--{k}-calls", type=int, help="이번 실행의 호출 수 상한 (기본: 설정 값)")
+    for k in ("fee", "kapt", "bldg"):
+        s.add_argument(f"--{k}-minutes", type=float, help="이 단계의 시간 상한(분) (기본: 평소 값)")
     sub.add_parser("feeprobe", help="관리비 API 점검 (응답을 한 줄씩)")
     sub.add_parser("school", help="학교알리미 중학교 전출입과 물가·금리만 받기 (빠름)")
+    sub.add_parser("elev", help="언덕(고저차)만 계산 (지형 타일, 새 단지만)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
     args = p.parse_args(argv)
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
-     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe}[args.cmd](cfg, args)
+     "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe,
+     "elev": cmd_elev}[args.cmd](cfg, args)

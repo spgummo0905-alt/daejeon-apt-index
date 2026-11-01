@@ -1,0 +1,11 @@
+{# 로그인해야 열리는 화면(관심 단지·카드첩)의 로그인 전 안내. 기록이 카카오 계정에 저장돼 어느 기기에서든 이어 보게 (sync.js 가 로그인 뒤 숨김) #}
+<section class="me-gate" data-when-out>
+  <span class="me-gate-ic" aria-hidden="true"><svg class="ic"><use href="#{{ gate_icon }}"/></svg></span>
+  <h1>{{ gate_title }}</h1>
+  <p>{{ gate_text }}</p>
+  <button type="button" class="kakao-btn" data-login>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
+    <span>카카오 로그인</span></button>
+  <p class="me-fine">로그인에는 닉네임과 프로필 사진만 사용합니다. 이 기기에 저장해 둔 단지는 로그인할 때 계정으로 옮겨집니다. <a href="privacy.html">개인정보처리방침</a></p>
+  <a class="me-gate-back" href="index.html">로그인 없이 아파트 둘러보기 →</a>
+</section>

@@ -1,0 +1,16 @@
+name: images-probe
+
+# 옥상 배경으로 쓸 자유 이용 야경·노을 사진 후보를 위키미디어 커먼즈에서 찾아 로그에 보여 줍니다 (수동 실행)
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/images_probe.py

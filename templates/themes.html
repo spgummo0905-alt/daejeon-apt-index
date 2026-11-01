@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}테마로 찾는 {{ region }} 아파트 · {{ region }} 아파트 지수{% endblock %}
+{% block title %}생활 조건으로 아파트 찾기 · 집감{% endblock %}
 {% block description %}{{ region }} 아파트를 초품아, {{ transit.tab }}, 학원가 도보권, 학군, 신축, 입지 대비 가격 테마로 모았습니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">테마 모음</p>
-  <h1>생활 조건으로 고르는<br>{{ region }} 아파트</h1>
-  <p class="lead">테마마다 조건에 맞는 단지를 종합 지수가 높은 순으로 모았습니다. 관심 있는 {{ unit }}만 골라 볼 수도 있어요.</p>
+  <h1>원하는 생활 조건으로<br>아파트 찾기</h1>
+  <p class="lead">학교와 학원가, {{ transit.stop }} 접근성, 준공 연도 등 원하는 조건으로 {{ region }} 아파트를 살펴보세요. 조건마다 종합 지수가 높은 순이며, {{ unit }}별로 좁혀 볼 수 있습니다.</p>
   {% if area_groups %}
   <label class="select-pill"><span class="sr-only">{{ unit }} 고르기</span>
     <select data-area-filter>
@@ -39,7 +39,7 @@
     </a></li>
     {% endfor %}
   </ol>
-  <p class="th-empty muted" hidden>이 {{ unit }}에는 조건에 맞는 단지가 없어요.</p>
+  <p class="th-empty muted" hidden>이 {{ unit }}에는 조건에 맞는 단지가 없습니다. 다른 {{ unit }}를 선택해 보세요.</p>
   <button type="button" class="more-btn" data-theme-more hidden></button>
 </section>
 {% endfor %}

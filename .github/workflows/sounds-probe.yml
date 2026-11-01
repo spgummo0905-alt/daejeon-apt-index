@@ -1,0 +1,16 @@
+name: sounds-probe
+
+# 옥상 자연 소리용 자유 이용 녹음 후보를 위키미디어 커먼즈에서 찾아 로그에 보여 줍니다 (수동 실행)
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/sounds_probe.py

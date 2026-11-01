@@ -3,33 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ region }} 아파트 지수{% endblock %}</title>
+<title>{% block title %}집감 · {{ region }} 아파트 실거래가·입지 비교{% endblock %}</title>
 <meta name="description" content="{% block description %}{{ region }} 아파트를 실거래가, 입지점수, 실질수익률로 비교합니다.{% endblock %}">
 {% set base = site.base_url %}
+{# 주소창엔 .html 없이 (예: /rooftop). 파일 이름은 그대로라 예전 .html 링크도 계속 열려요 #}
+{% set cpath = '' if page_path == 'index.html' else (page_path[:-5] if page_path.endswith('.html') else page_path) %}
+<script>(function(){var p=location.pathname,q=/\/$|\.html$/.test(p)?p:p+".html";window.DJ_PATH=q;var c=q.replace(/(^|\/)index\.html$/,"$1").replace(/\.html$/,"");if(c!==p&&location.protocol==="https:")try{history.replaceState(history.state,"",c+location.search+location.hash)}catch(e){}})();</script>
 {% if base %}
-<link rel="canonical" href="{{ base }}{{ page_path }}">
+<link rel="canonical" href="{{ base }}{{ cpath }}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="{{ region }} 아파트 지수">
+<meta property="og:site_name" content="집감">
 <meta property="og:locale" content="ko_KR">
 <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
 <meta property="og:description" content="{{ self.description() }}">
-<meta property="og:url" content="{{ base }}{{ page_path }}">
-<meta property="og:image" content="{{ base }}{{ site.og_image or 'static/og/daejeon.jpg' }}">
+<meta property="og:url" content="{{ base }}{{ cpath }}">
+<meta property="og:image" content="{{ base }}{% block og_image %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endblock %}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{ region }} 아파트 지수: 실거래가, 입지, 수익률로 보는 단지 비교">
+<meta property="og:image:alt" content="{% block og_alt %}집감 {{ region }}: 실거래가, 입지, 수익률로 보는 단지 비교{% endblock %}">
 <meta name="twitter:card" content="summary_large_image">
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
-<link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="{{ root }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="{{ root }}static/brand/favicon-96.png" type="image/png" sizes="96x96">
+<link rel="manifest" href="{{ root }}manifest.webmanifest">
+<link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f1b33">
+<meta name="apple-mobile-web-app-title" content="집감">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
 {% block head_extra %}{% endblock %}
 </head>
-<body data-unit="{{ unit }}" data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">
+<body data-unit="{{ unit }}" data-region="{{ region }}"{% if kakao_js_key %} data-kakao="{{ kakao_js_key }}"{% endif %} data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">
 {% if demo %}
 <div class="demo-banner">데모 화면입니다. 아래 숫자는 무작위로 만든 가짜 데이터이며 실제 단지와 무관합니다.</div>
 {% endif %}
@@ -60,11 +68,19 @@
   <symbol id="i-coin" viewBox="0 0 24 24"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/></symbol>
   <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 4h11l-2 4 2 4H6"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c.8-3.7 3.9-6 7.5-6s6.7 2.3 7.5 6"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2.2h5.6L16.3 7h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.3"/><path d="M2.8 19.5c.6-3.3 3.1-5.3 6.2-5.3s5.6 2 6.2 5.3M15.6 5.4a3.2 3.2 0 0 1 0 6.2M17.4 14.5c2 .6 3.4 2.4 3.8 5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5zM10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M19.5 9.5A7.8 7.8 0 0 0 5.6 7.2L4 9M4 4.5V9h4.5M4.5 14.5a7.8 7.8 0 0 0 13.9 2.3L20 15M20 19.5V15h-4.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2 5 6v5.6c0 4.4 3 8 7 9.2 4-1.2 7-4.8 7-9.2V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
 </svg>
 <header class="site">
-  {# 지역이 여럿이면 이름 대신 '아파트 지수' + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
-  <a class="brand" href="{{ root }}index.html"><span class="brand-mark">D</span><span>{% if regions | length > 1 %}아파트 지수{% else %}{{ region }} 아파트 지수{% endif %}</span></a>
+  {# 브랜드 '집감'(집 + 감각) + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
+  <a class="brand" href="{{ root }}index.html" aria-label="집감 {{ region }} 첫 화면"><img class="brand-sym" src="{{ root }}static/brand/symbol-96.png" width="30" height="30" alt=""><span class="brand-word">집감<i class="brand-dot" aria-hidden="true"></i></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
   {% if regions | length > 1 %}
   <div class="rg">
     <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="지역 바꾸기, 지금 {{ region }}">
@@ -86,16 +102,67 @@
     </div>
   </div>
   {% endif %}
-  <nav class="top-nav">
-    <a href="{{ root }}index.html#map">지도</a>
-    <a href="{{ root }}rank.html">랭킹</a>
-    <a href="{{ root }}themes.html">테마</a>
-    <a href="{{ root }}stations.html">{{ transit.tab }}</a>
-    <a href="{{ root }}compare.html">단지 비교</a>
-    <a href="{{ root }}finder.html">조건으로 찾기</a>
-    <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span></a>
-    <a href="{{ root }}cards.html">카드첩</a>
-  </nav>
+  <div class="hd-end">
+    <nav class="top-nav">
+      <a href="{{ root }}index.html#map">지도</a>
+      <a href="{{ root }}rank.html">랭킹</a>
+      <a href="{{ root }}themes.html">테마</a>
+      {% if transit.page %}<a href="{{ root }}stations.html">{{ transit.tab }}</a>{% endif %}
+      <a href="{{ root }}compare.html">단지 비교</a>
+      <a href="{{ root }}finder.html">조건으로 찾기</a>
+      <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span>{% if account %}<span class="nav-lock" data-when-out role="img" aria-label="로그인하면 열려요"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span>{% endif %}</a>
+      <a href="{{ root }}cards.html">카드첩{% if account %}<span class="nav-lock" data-when-out role="img" aria-label="로그인하면 열려요"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span>{% endif %}</a>
+    </nav>
+    <button type="button" class="hs-btn" data-hs-open aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pop" aria-label="검색: 단지·동·역 이름이나 가격 조건" title="검색 ( / )">
+      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
+    <div class="hs-pop" id="hs-pop" role="dialog" aria-label="검색" hidden>
+      <div class="hs-head">
+        <div class="hero-search hs-box"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+          <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search"></div>
+        <button type="button" class="link-btn hs-close" data-hs-close>닫기</button>
+      </div>
+    </div>
+    {% if account %}{# 카카오 로그인: 어느 화면에서든 위쪽 버튼으로. 로그인 전엔 '로그인', 뒤엔 프로필 사진.
+       누르면 작은 창(로그인 전: 왜 로그인하는지 + 카카오 버튼, 뒤: 저장 상태와 내 기록 바로가기). 스크립트가 없으면 관심 화면 계정 칸으로 (sync.js) #}
+    <div class="acct-wrap">
+      <a class="acct-btn" href="{{ root }}my.html#account" data-acct aria-haspopup="dialog" aria-expanded="false" aria-controls="acct-pop" aria-label="카카오 로그인 · 기록 이어 보기" title="카카오 로그인">
+        <svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="acct-label">로그인</span><span class="acct-face" data-acct-face hidden></span></a>
+      <div class="acct-pop" id="acct-pop" role="dialog" aria-label="내 임장 기록" hidden>
+        <div class="ap-out" data-when-out>
+          <p class="ap-ask" data-pop-why hidden></p>
+          <p class="ap-kicker">임장 기록, 어디서든 이어서</p>
+          <b class="ap-title">현장에서 남긴 기록을<br>집에서도 확인하세요</b>
+          <ul class="ap-why">
+            <li><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>관심 단지·임장 코스·카드첩을 모든 기기에서</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>휴대폰에 적은 호가와 메모를 PC에서도 확인</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>현장 사진을 임장 노트에 저장</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>가족과 보기 전용 링크 공유</li>
+          </ul>
+          <button type="button" class="kakao-btn ap-login" data-login>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z"/></svg>
+            <span>카카오 로그인</span></button>
+          <p class="ap-fine">카카오 로그인에는 닉네임과 프로필 사진을 사용합니다. 로그인 없이도 아파트 검색과 지도·랭킹은 이용할 수 있습니다. · <a href="{{ root }}privacy.html">개인정보처리방침</a></p>
+        </div>
+        <div class="ap-in" data-when-in hidden>
+          {# 내 정보(로그인한 사람만): 나의 임장·가족과 함께 보기·내 설정·계정 #}
+          <a class="ap-me" href="{{ root }}me.html"><span class="acct-av" data-user-av aria-hidden="true"></span>
+            <b data-user-name></b><span class="ap-me-go">내 정보<svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></span>
+            <span class="acct-state" data-user-state></span></a>
+          <p class="ap-count" data-pop-count></p>
+          <nav class="ap-links" aria-label="내 기록">
+            <a href="{{ root }}my.html#my-favs"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>관심 단지·임장 노트</a>
+            <a href="{{ root }}my.html#course"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg>임장 코스</a>
+            <a href="{{ root }}me.html#share" data-feature="share"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>가족과 함께 보기</a>
+            <a href="{{ root }}me.html#prefs"><svg class="ic" aria-hidden="true"><use href="#i-filter"/></svg>내 설정</a>
+            {# 운영자·관리자·스태프에게만 보임 (sync.js paintMember) #}
+            <a href="{{ root }}admin.html" data-admin-link hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>관리자 화면</a>
+          </nav>
+          <button type="button" class="link-btn ap-logout" data-logout>로그아웃</button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
   {% block header_extra %}{% endblock %}
 </header>
 <main>
@@ -103,14 +170,17 @@
 </main>
 <footer>
   국토교통부 아파트 매매·분양권·전월세 실거래가 기준 ({{ meta.asof }}) · 단지 정보 공동주택관리정보시스템(K-apt) · 공급면적 건축물대장 · 위치 정보 카카오 로컬 ·{% if factors and factors | selectattr("osm_route", "defined") | list %} {{ transit.stop }} © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 기여자 ·{% endif %}
-  광고 없음 · 공개 데이터만 사용 · 지수와 점수는 참고용이며 투자 권유가 아닙니다. · <a href="{{ root }}methodology.html">산출 방법</a> · <a href="{{ root }}intro.html">서비스 소개</a>
+  광고 없음 · 공개 데이터만 사용 · 지수와 점수는 참고용이며 투자 권유가 아닙니다. · <a href="{{ root }}methodology.html">산출 방법</a> · <a href="{{ root }}intro.html">서비스 소개</a> · <a href="{{ root }}rooftop.html">집감 옥상</a> · <a href="{{ root }}terms.html">이용약관</a>{% if account %} · <a href="{{ root }}privacy.html"><b>개인정보처리방침</b></a>{% endif %}
+  <p class="ft-brand"><img src="{{ root }}static/brand/symbol-96.png" width="22" height="22" alt=""><b>집감<i class="brand-dot" aria-hidden="true"></i></b><span>집 볼 때도 감이 필요하니까</span></p>
+  <p class="ft-online" data-online hidden>지금 <b>1</b>명이 보고 있어요</p>
+  <p class="ft-legal">© 2026 집감. 점수·등급·화면의 무단 복제와 자동 수집을 금지합니다.</p>
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">
   <a href="{{ root }}index.html" data-tab="index"><svg class="ic"><use href="#i-home"/></svg>홈</a>
   <a href="{{ root }}rank.html" data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>랭킹</a>
   <a href="{{ root }}compare.html" data-tab="compare"><svg class="ic"><use href="#i-compare"/></svg>비교</a>
   <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-filter"/></svg>찾기</a>
-  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심<span class="fav-count" data-fav-count hidden></span></a>
+  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심<span class="fav-count" data-fav-count hidden></span>{% if account %}<span class="nav-lock" data-when-out role="img" aria-label="로그인하면 열려요"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span>{% endif %}</a>
 </nav>
 {# 최근 본 단지: 어느 화면에서든 오른쪽 아래 작은 버튼으로. 내려 읽을 때는 숨고 올리면 다시 (app.js recentDock) #}
 <div class="rcd" data-rcd hidden>
@@ -126,6 +196,9 @@
 <div class="toast-zone" id="toast-zone" aria-live="polite"></div>
 <script>window.DJ_ROOT = "{{ root }}";</script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>
+{% if account %}<script>window.DJ_SB = {{ {"url": account.url, "key": account.key, "provider": account.provider or "kakao"} | tojson }};</script>
+<script src="{{ root }}static/sync.js?v={{ v }}"></script>
+<script src="{{ root }}static/rooftop-net.js?v={{ v }}"></script><script src="{{ root }}static/online.js?v={{ v }}"></script>{% endif %}
 <script src="{{ root }}static/charts.js?v={{ v }}"></script>
 <script src="{{ root }}static/holo.js?v={{ v }}"></script>
 {% block scripts %}{% endblock %}

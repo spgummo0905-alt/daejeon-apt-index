@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}조건으로 찾기 · {{ region }} 아파트 지수{% endblock %}
-{% block description %}상황, 지역, 직장, 예산, 평형, 연식, 역과 학교, 꼭 필요한 조건을 차례로 고르면 {{ region }} 아파트를 바로 추려 드려요. 연소득과 자기자본으로 대출 한도도 계산해 볼 수 있어요.{% endblock %}
+{% block title %}조건으로 찾기 · 집감{% endblock %}
+{% block description %}예산과 평형, 지역, 직장, 연식, 역·학교 거리 같은 조건을 고르면 맞는 {{ region }} 아파트만 남습니다. 연소득과 자기자본으로 대략적인 대출 한도도 계산해 볼 수 있습니다.{% endblock %}
 {% block body %}
 <section class="page-hero">
   <p class="eyebrow">조건으로 찾기</p>
-  <h1>내 예산으로 갈 수 있는<br>{{ region }} 아파트</h1>
-  <p class="lead">질문에 답할 때마다 단지를 추려 드려요. 잘 모르겠는 질문은 건너뛰어도 괜찮아요.</p>
+  <h1>내 예산에 맞는<br>아파트 찾기</h1>
+  <p class="lead">예산과 평형, 생활 조건을 선택하면 맞는 {{ region }} 단지를 좁혀 볼 수 있습니다. 모르는 항목은 건너뛰어도 됩니다.</p>
   <p class="sv-basis">{{ meta.asof }} 실거래까지 반영 · 가격은 평형별 추정 시세 · 거리는 직선거리</p>
 </section>
 
-<section class="panel sv" id="survey" data-stop="{{ transit.stop }}" data-stop-short="{{ transit.short }}" data-region="{{ region }}" data-unit="{{ unit }}">
+<section class="panel sv" id="survey" data-stop="{{ transit.stop }}" data-stop-short="{{ transit.short }}"{% if not transit.page %} data-no-stop{% endif %} data-region="{{ region }}" data-unit="{{ unit }}">
   <div class="sv-top">
     <div>
-      <h2>질문으로 좁히기</h2>
-      <p class="muted">고를 때마다 남는 단지 수가 바로 바뀌어요.</p>
+      <h2>원하는 조건 선택하기</h2>
+      <p class="muted">조건을 선택할 때마다 결과 수가 바로 바뀝니다.</p>
     </div>
     <div class="sv-count-box">
-      <a class="sv-count" href="#results" data-sv-go><b data-sv-n>-</b><span>곳 결과 보기</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></a>
+      <a class="sv-count" href="#results" data-sv-go><small data-sv-all hidden>{{ region }} 전체</small><b data-sv-n>-</b><span data-sv-unit>곳 결과 보기</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></a>
       <p class="sv-delta" data-sv-delta aria-live="polite"></p>
     </div>
   </div>
@@ -48,11 +48,15 @@
       <button type="button" class="seg-btn" data-sort="p" aria-pressed="false">가격 낮은 순</button>
     </div>
   </div>
+  <div class="sv-wait" data-sv-wait hidden>
+    <p>아직 선택한 조건이 없습니다. 지역·예산·평형 중 하나만 골라도 맞는 단지가 여기에 표시됩니다.</p>
+    <a class="btn" href="#survey">조건 설정하기</a>
+  </div>
   <div class="card-grid" id="finder-results"></div>
   <button type="button" class="more-btn" id="finder-more" hidden></button>
-  <p class="muted small sv-foot">대출 한도는 원리금균등 상환, DSR {{ "%.0f" | format((finder.dsr or 0.4) * 100) }}% 기준으로 대략 계산한 값이에요.
-  스트레스 DSR, 은행 심사, 정책 대출, 취득세·중개보수는 빠져 있고, 상황별 LTV는 정책에 따라 바뀔 수 있어요.
-  {% if finder.loan_caps %}{{ region }}은 집값 구간별 대출 한도({% for hi, cap in finder.loan_caps %}{% if loop.last %}그 위는 {{ (cap / 10000) | round(1) | replace('.0', '') }}억{% else %}{{ (hi / 10000) | round(1) | replace('.0', '') }}억 이하 {{ (cap / 10000) | round(1) | replace('.0', '') }}억, {% endif %}{% endfor %})도 함께 적용했어요.{% endif %}</p>
+  <p class="muted small sv-foot">대출 한도는 원리금균등 상환, DSR {{ "%.0f" | format((finder.dsr or 0.4) * 100) }}% 기준의 참고용 추정치이며 실제 승인 금액이 아닙니다.
+  스트레스 DSR, 은행 심사, 정책 대출, 취득세·중개보수는 반영하지 않았고, 상황별 LTV는 정책에 따라 달라질 수 있습니다.
+  {% if finder.loan_caps %}{{ region }}은 집값 구간별 대출 한도({% for hi, cap in finder.loan_caps %}{% if loop.last %}그 위는 {{ (cap / 10000) | round(1) | replace('.0', '') }}억{% else %}{{ (hi / 10000) | round(1) | replace('.0', '') }}억 이하 {{ (cap / 10000) | round(1) | replace('.0', '') }}억, {% endif %}{% endfor %})도 함께 적용했습니다.{% endif %}</p>
 </section>
 {% endblock %}
 {% block scripts %}<script id="finder-cfg" type="application/json">{{ finder_cfg | safe }}</script>

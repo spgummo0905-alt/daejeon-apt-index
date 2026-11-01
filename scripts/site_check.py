@@ -10,19 +10,23 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "https://spgummo0905-alt.github.io/daejeon-apt-index/"
-REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/"}
+BASE = sys.argv[1] if len(sys.argv) > 1 else "https://www.jipgam.kr/"
+REGIONS = {"대전": "", "세종": "sejong/", "서울": "seoul/", "청주": "cheongju/"}
 # 단지 페이지에 있어야 하는 화면 요소 (한눈에 보기 타일, 관련 점수 줄, 평형별 시세)
-MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"'}
+MARKS = {"한눈에 보기 타일": 'class="pt-grid"', "관련 점수 아래 줄": 'class="apt-more"', "평형별 시세": 'class="quotes"',
+         "바로가기 탭": 'apt-jump', "층별 시세": "data-floors"}
 # 모든 화면에 있어야 하는 요소 (지역 고르기 버튼, 최근 본 단지 버튼)
-COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "메뉴에 카드첩": 'href="cards.html"'}
+COMMON = {"지역 고르기": 'class="rg"', "최근 본 버튼": "data-rcd", "메뉴에 카드첩": 'href="cards.html"', "위쪽 검색 버튼": "data-hs-open",
+          "지도 가격 거르기": 'id="kmap-ctl"'}
 # 수집 자료가 단지 페이지에 반영된 수 (전체 단지 페이지를 열어 셉니다)
 FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
           "공급면적": lambda h: "공급면적 정보가 없어" not in h,
           "카카오맵 장소": lambda h: "place.map.kakao.com/" in h,
           "네이버 글": lambda h: 'class="rv-posts"' in h,
           "관리비": lambda h: "<dt>관리비</dt>" in h,
-          "후기가 입지 아래": lambda h: 0 < h.find("입지는 어떤가") < h.find('id="reviews"')}
+          "후기가 입지 아래": lambda h: 0 < h.find("교통·학군·생활 입지") < h.find('id="reviews"'),
+          "언덕 체크": lambda h: 'id="hill"' in h,
+          "언덕 역 단면": lambda h: 'class="hl-svg"' in h}
 
 
 def text(html: str, pat: str) -> str:
@@ -66,6 +70,12 @@ def main() -> None:
                 top = sorted((c for c in rows if c.get("i") is not None), key=lambda c: -c["i"])[:3]
                 out["지수 TOP 3"] = [f"{c.get('n')} {c.get('i')}점 {c.get('pt') or ''}".strip() for c in top]
                 out["전세 시세 있는 단지"] = sum(1 for c in rows if c.get("j"))
+                # 수익률(흐름) 점수: 오래된 단지인데 5년 수익률이 비어 있으면 예전 거래가 빠졌다는 뜻이에요
+                old = [c for c in rows if (c.get("y") or 9999) <= 2015]
+                out["10년 수익률 있는 단지"] = sum(1 for c in rows if c.get("c10") is not None)
+                out["5년 수익률 있는 단지"] = sum(1 for c in rows if c.get("c5") is not None)
+                out["2015년 이전 준공인데 5년 수익률 없음"] = f"{sum(1 for c in old if c.get('c5') is None)} / {len(old)}"
+                out["준공 연도 분포(~2015/2016~20/2021~)"] = [len(old), sum(1 for c in rows if 2016 <= (c.get("y") or 0) <= 2020), sum(1 for c in rows if (c.get("y") or 0) >= 2021)]
             sm = s.get(url + "sitemap.xml", timeout=30)
             apts = re.findall(r"<loc>[^<]*/apt/([^<]*)</loc>", sm.text) if sm.ok else []
             out["단지 페이지"] = len(apts)
@@ -73,8 +83,22 @@ def main() -> None:
             cards = s.get(url + "cards.html", timeout=30)
             out["카드첩 화면"] = cards.ok and all(k in cards.text for k in ('id="today"', 'id="badges"', 'id="album"'))
             out["메인에 오늘의 카드 없음"] = 'id="today"' not in html
+            out["가까운데 값이 다른 곳"] = "data-cliffs" in html and "data-m3d-seg" not in html
+            # 배포본은 화면 코드를 압축해 함수 이름이 바뀌므로 문구·속성 이름으로 확인 (scripts/minify_site.sh)
             js = s.get(url + "static/cards.js", timeout=30)
-            out["임장 후보 코드"] = js.ok and "pickToday" in js.text
+            out["임장 후보 코드"] = js.ok and "요즘 수요가 몰리는지" in js.text
+            app = s.get(url + "static/app.js", timeout=30)
+            out["동·역·조건 검색 코드"] = app.ok and ".parseCond=" in app.text.replace(" ", "")
+            css = s.get(url + "static/style.css", timeout=30)
+            out["화면 코드 압축"] = {"권리 표시": app.ok and app.text.startswith("/*! © 2026") and css.ok and css.text.startswith("/*! © 2026"),
+                                 "설명 주석 없음": app.ok and "// ----------" not in app.text,
+                                 "app.js 크기(KB)": round(len(app.content) / 1024) if app.ok else None}
+            terms = s.get(url + "terms.html", timeout=30)
+            out["이용약관"] = terms.ok and "리버스 엔지니어링" in terms.text and 'href="terms.html">이용약관</a>' in html
+            st = s.get(url + "stations.html", timeout=30)
+            out["역 검색 연결"] = st.ok and "data-st-name=" in st.text
+            my = s.get(url + "my.html", timeout=30)
+            out["임장 코스"] = my.ok and 'id="course"' in my.text
             intro = s.get(url + "intro.html", timeout=30)
             out["인트로"] = {"상태": intro.status_code, "제목": text(intro.text, r"<title>(.*?)</title>") if intro.ok else "",
                            "뜨거운 동네 넘기기": "data-hot-json" in intro.text}

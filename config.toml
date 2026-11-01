@@ -1,4 +1,4 @@
-# 대전 아파트 지수 설정 파일
+# 집감 설정 파일 (대전 기본, 다른 지역은 config.<지역>.toml)
 # 숫자를 바꾸면 다음 `python -m djdex score` 실행부터 반영됩니다.
 
 [region]
@@ -9,22 +9,41 @@ districts = { "30110" = "동구", "30140" = "중구", "30170" = "서구", "30200
 [site]
 # 배포 주소. 링크 미리보기(카카오톡 등)와 사이트맵은 절대 주소가 필요합니다.
 # 내 도메인을 연결하면 이 값을 그 주소로 바꾸세요. 끝에 / 를 붙입니다.
-base_url = "https://spgummo0905-alt.github.io/daejeon-apt-index/"
+base_url = "https://www.jipgam.kr/"
 # 링크 미리보기(카카오톡 등) 이미지. scripts/og 에서 지역마다 만듭니다.
 og_image = "static/og/daejeon.jpg"
 # 검색 등록 확인 코드: 네이버 서치어드바이저 / 구글 서치 콘솔에서 'HTML 태그' 방식으로 받은
 # content="..." 안의 값만 넣으세요. 비워 두면 태그를 넣지 않습니다.
-naver_site_verification = ""
-google_site_verification = ""
+naver_site_verification = "ffb371c396da76d1bb43d727523fbb50b1079361"
+google_site_verification = "ih0mjE1xK4FiqFC_zBSPhggbr7LM-IztpDvm3yzQGyU"
 # 위쪽 지역 고르기 (각 지역 사이트 주소). 세종은 config.sejong.toml 로 /sejong/ 에 만듭니다.
 # group 은 고르기 창에서 묶는 권역(적힌 순서대로), desc 는 이름 아래 한 줄, badge 는 이름 옆 작은 표시.
 # ready 가 있으면 그 파일이 있을 때만 보여줍니다 (서울은 실거래를 다 모은 뒤 공개).
 # 지역이 늘어도 위쪽에는 버튼 하나만 두고, 7곳이 넘으면 고르기 창에 검색칸이 생깁니다.
 regions = [
-  { name = "서울", group = "수도권", desc = "25개 구", badge = "NEW", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/seoul/", ready = "data/seoul/READY" },
-  { name = "대전", group = "충청권", desc = "5개 구", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/" },
-  { name = "세종", group = "충청권", desc = "세종시 전역", url = "https://spgummo0905-alt.github.io/daejeon-apt-index/sejong/" },
+  { name = "서울", group = "수도권", desc = "25개 구", badge = "NEW", url = "https://www.jipgam.kr/seoul/", ready = "data/seoul/READY" },
+  { name = "대전", group = "충청권", desc = "5개 구", url = "https://www.jipgam.kr/" },
+  { name = "세종", group = "충청권", desc = "세종시 전역", url = "https://www.jipgam.kr/sejong/" },
+  { name = "청주", group = "충청권", desc = "4개 구", badge = "NEW", url = "https://www.jipgam.kr/cheongju/", ready = "data/cheongju/READY" },
 ]
+
+[app]
+# 안드로이드 앱(android/ 폴더, TWA). 앱 소유 확인 파일(/.well-known/assetlinks.json)에 들어갈 서명 인증서 지문(SHA-256).
+# 비어 있으면 파일을 만들지 않아요. Play Console → 앱 무결성(앱 서명)의 'SHA-256 인증서 지문'을 적습니다 (여러 개 가능).
+android_package = "kr.jipgam.app"
+android_sha256 = []
+
+[account]
+# 카카오 로그인으로 기록 이어 보기 (Supabase). 저장소 주소와 공개용 키는 GitHub Secrets 의
+# SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY 에 넣고, 표·함수는 scripts/supabase_setup.sql 로 만듭니다.
+# 아래는 개인정보처리방침(privacy.html)에 적는 값. 책임자와 연락처가 비어 있으면 로그인을 넣지 않습니다.
+# Supabase 의 로그인 연결 이름. 기본 카카오 연결은 이메일을 꼭 요청해(비즈 앱만 가능) 쓰지 않고,
+# '맞춤 연결(Custom OIDC)'로 카카오를 닉네임·프로필 사진만 요청하게 만들어 씁니다.
+provider = "custom:kakao"
+owner = "집감 운영자"   # 개인정보 보호책임자 (이름 또는 운영자명)
+email = "t0mango@gmail.com"   # 문의·열람·삭제 요청을 받을 이메일
+storage = "일본(도쿄)"  # Supabase 서버 위치 (프로젝트를 만들 때 고른 곳)
+since = "2026-10-26"   # 처리방침 시행일
 
 [collect]
 # 국토부 아파트 매매 실거래가는 2006년 1월부터 공개됩니다.

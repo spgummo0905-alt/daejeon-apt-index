@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -14,6 +16,7 @@ import shapely
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from . import movein as movein_mod
 from . import charts, heatmap, kapt, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
@@ -136,10 +139,20 @@ def area_name(name) -> Markup:
     return Markup(f'<span class="area-sub">{escape(head)}</span>{escape(tail)}')
 
 
+# 걷는 시간 어림: 직선거리의 1.3배를 시속 4.5km(분당 75m)로 걷는다고 봄.
+# 화면 어디서나 같은 계산 (static/app.js 의 DJ.SPEED.walk · DJ.walkMin 과 같은 값)
+WALK_DETOUR, WALK_M_PER_MIN = 1.3, 75
+
+
+def walk_min(m) -> int:
+    """직선거리(m) → 걸어서 약 몇 분."""
+    return max(1, round(float(m) * WALK_DETOUR / WALK_M_PER_MIN))
+
+
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html"]))
-    env.filters.update(price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
+    env.filters.update(walk_min=walk_min, price=fmt_price, pct=fmt_pct, score=fmt_score, eok=eok, place=place, area=area_name, share=share,
                        pyeong=pyeong, man=man, fee_word=fee_word, wol=lambda w: fmt_wol(*w[:2]) if w else "-")
     # 면적: ar(c, 전용㎡[, 소수 자리]) → 공급(전용) 표시. 공급면적은 c.sup ([[전용, 공급], ...])에서 찾습니다
     env.globals["ar"] = lambda c, ex, dec=0: area_html(ex, supply_of(c.get("sup"), ex), dec)
@@ -166,7 +179,7 @@ def man(won: float) -> str:
 
 
 def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dict | None = None) -> list[dict]:
-    """단지 페이지 '한눈에 보기' 타일. 메인 카드에 이미 있는 지수·순위·최근 거래·수익률은 빼고
+    """단지 페이지 '이 아파트의 주요 특징' 타일. 메인 카드에 이미 있는 지수·순위·최근 거래·수익률은 빼고
     카드에 없는 강점과 비교만 짧은 값으로. bar: 막대 길이(0~1), mid: 막대 위 기준선 자리(0~1), tone: up/down."""
     out = []
     if not _nan(c.get("location_top")):
@@ -183,10 +196,10 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
                     "bar": min(ratio / 2, 1), "mid": 0.5, "tone": "up" if ratio >= 1.03 else "down" if ratio <= 0.97 else None})
     if leader and not c["small"] and not _nan(c.get("price_ref")):
         if leader["complex_id"] == c["complex_id"]:
-            out.append({"k": f"{c['gu']} 대장 단지", "v": "1위", "s": "84㎡ 환산가가 가장 높아요", "bar": 1})
+            out.append({"k": f"{c['gu']} 84㎡ 환산가", "v": "1위", "s": f"{c['gu']}에서 84㎡ 환산가가 가장 높은 단지", "bar": 1})
         else:
             ratio = c["price_ref"] / leader["price"]
-            out.append({"k": f"{c['gu']} 대장 단지 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
+            out.append({"k": f"{c['gu']} 환산가 1위 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
                         "bar": min(ratio, 1)})
     if c.get("hh"):
         size = "대단지" if c["hh"] >= 1000 else "중간 규모" if c["hh"] >= 500 else "작은 단지"
@@ -202,12 +215,76 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
+def write_assetlinks(out_dir: Path, cfg) -> None:
+    """안드로이드 앱 소유 확인 파일 (/.well-known/assetlinks.json). 앱이 이 사이트의 주인이라는 증명이라
+    사이트 맨 위 주소(루트)에만 두고, 서명 지문(config.toml [app] android_sha256)이 있을 때만 만듭니다.
+    지문은 Play Console 의 '앱 서명 키 인증서'(스토어 배포)와 업로드 키(시험 설치)를 함께 적어요."""
+    import json
+    from urllib.parse import urlsplit
+    app = cfg.raw.get("app", {})
+    fps = [f.strip().upper() for f in app.get("android_sha256", []) if f.strip()]
+    if not fps or urlsplit(cfg.site.get("base_url", "")).path not in ("", "/"):
+        return
+    d = out_dir / ".well-known"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "assetlinks.json").write_text(json.dumps([{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {"namespace": "android_app", "package_name": app.get("android_package", "kr.jipgam.app"),
+                   "sha256_cert_fingerprints": fps}}], indent=1), encoding="utf-8")
+
+
+def write_pwa(out_dir: Path, cfg, version: str) -> None:
+    """앱처럼 쓰기: 홈 화면에 추가할 때의 이름·아이콘(manifest)과, 끊겨도 본 화면이 열리게 하는 서비스 워커(sw.js).
+    sw.js 는 사이트 맨 위에 있어야 그 아래 화면을 맡을 수 있습니다. 같은 주소 아래 다른 지역 폴더(sejong/ 등)는
+    그 지역 워커가 맡도록 빼 둡니다."""
+    import json
+    base = cfg.site.get("base_url", "")
+    other = []
+    for g in cfg.site.get("regions", []):
+        u = g.get("url", "")
+        if base and u.startswith(base) and u != base:
+            other.append(u[len(base):].strip("/"))
+    name = f"집감 {cfg.region_name}"
+    manifest = {
+        "name": name, "short_name": "집감", "lang": "ko",
+        "description": f"{cfg.region_name} 아파트 실거래가·입지 비교와 임장 기록",
+        "start_url": "index.html?skip=1", "scope": "./", "display": "standalone",
+        "background_color": "#f4f2ee", "theme_color": "#0f1b33",
+        "icons": [{"src": "static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+                  {"src": "static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+                  {"src": "static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
+    }
+    write_assetlinks(out_dir, cfg)
+    (out_dir / "manifest.webmanifest").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    sw = (ROOT / "static" / "sw.js").read_text(encoding="utf-8")
+    sw = sw.replace("__VERSION__", version).replace("__OTHER__", json.dumps(other))
+    (out_dir / "sw.js").write_text(sw, encoding="utf-8")
+    (out_dir / "static" / "sw.js").unlink(missing_ok=True)   # 원본은 사이트에 두지 않음 (맨 위 sw.js 만)
+
+
+def _account(cfg) -> dict | None:
+    """카카오 로그인·기록 이어 보기 (Supabase). 주소와 공개용 키는 GitHub Secrets(환경 변수)에서,
+    개인정보처리방침의 책임자·연락처는 설정 [account] 에서. 하나라도 없으면 로그인을 넣지 않습니다."""
+    # 주소는 'https://○○○○.supabase.co' 까지만 씀 (Data API 화면에서 복사하면 끝에 /rest/v1 이 붙어 옴)
+    u = urlparse(os.environ.get("SUPABASE_URL", "").strip())
+    url = f"{u.scheme}://{u.netloc}" if u.netloc else ""
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    acc = cfg.account
+    if not (url.startswith("https://") and key and acc.get("owner") and acc.get("email")):
+        return None
+    return dict(acc, url=url, key=key)
+
+
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
-          kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None) -> int:
+          kinfo: dict | None = None, supply: dict | None = None, outside: dict | None = None,
+          hill: dict | None = None, noise: dict | None = None, movein_rows: list | None = None) -> int:
     """supply: 단지별 [[전용㎡, 공급㎡], ...] (건축물대장). 있으면 면적을 '공급(전용)'으로 보여 줍니다.
-    outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load)."""
+    outside: 단지별 바깥 후기 {kp: [카카오맵 장소 id, 이름], posts: [네이버 글]} (reviews.load).
+    hill: 단지별 언덕 자료 {e, rf, st, pf} (elev.load).
+    noise: 단지별 큰길·철도까지 거리 {road, road_kind, road_name, rail, rail_name} (noise.load).
+    movein_rows: 청약홈 분양 공고의 입주 예정 단지 (movein.load). 첫 화면 '입주 예정 물량'."""
     env = _env()
     charts.REGION = cfg.region_name
     # 사이트를 만든 날 (한국 시각). 실거래는 매일 새로 받아 반영합니다.
@@ -223,6 +300,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         if f.is_file():
             h.update(f.read_bytes())
     env.globals["v"] = h.hexdigest()[:8]
+    write_pwa(out_dir, cfg, env.globals["v"])
 
     ref = cfg.metrics["reference_area"]
     years = cfg.metrics["cagr_years"]
@@ -234,7 +312,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     main_t = table[~table["small"].astype(bool)]
     table["index_top"] = _top_share(main_t["index"]).reindex(table.index)
     table["location_top"] = _top_share(main_t["location_score"]).reindex(table.index)
-    n_total = len(main_t)
+    # 순위에 든 단지 수 (거래가 적어 지수를 못 매긴 단지는 빼고): 카드의 'N곳 중 M위'·등급 분포의 분모
+    n_total = int(main_t["index"].notna().sum())
+    meta = {**meta, "n_ranked": n_total}
     table = add_game_stats(table, trades, meta)
     # 입지 묶음(교통·학군·생활) 점수: 묶음 안 항목들의 가중평균. 입지점수 계산은 그대로입니다.
     loc_groups = _loc_groups(cfg, table)
@@ -252,7 +332,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         # 결측이 섞이면 pandas가 정수 열을 float로 바꾸므로 표시용으로 되돌립니다.
         d["build_year"] = None if _nan(d.get("build_year")) else int(d["build_year"])
         d["grade"], d["grade_name"] = grade(d.get("index"))
-        d["rank"] = None if _nan(d.get("rank")) else int(d["rank"])
+        # 지수를 못 매긴 단지(거래 부족)는 순위 없이 ('N곳 중 M위'의 N은 지수를 매긴 단지 수)
+        d["rank"] = None if _nan(d.get("rank")) or _nan(d.get("index")) else int(d["rank"])
         asof_year = int(meta["asof"][:4])
         d["is_new"] = bool((not _nan(d.get("build_year")) and d.get("build_year") and d["build_year"] >= asof_year - 5)
                            or "분양권" in str(d.get("price_basis") or ""))
@@ -274,6 +355,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         d["fee_ym"] = f"{fe['ym'][:4]}.{fe['ym'][4:]}" if d["fee_m2"] else None
         d["sup"] = (supply or {}).get(cid) or []
         d["ext"] = (outside or {}).get(cid) or {}
+        d["hill"] = (hill or {}).get(cid) or {}
+        d["noise"] = (noise or {}).get(cid) or {}
         rows.append(d)
     # 세대수·세대당 주차·관리비(㎡당)가 지역에서 어디쯤인지 (정보가 있는 단지끼리). 관리비는 '상위' = 비싼 쪽
     for key in ("hh", "ppu", "fee_m2"):
@@ -281,6 +364,11 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         top = _top_share(vals) if vals.notna().sum() >= RANK_MIN else pd.Series(dtype=float)
         for r in rows:
             r[key + "_top"] = top.get(r["complex_id"], float("nan"))
+    # 주변 고저차가 지역에서 어디쯤인지 ('상위' = 더 비탈진 쪽)
+    vals = pd.Series({r["complex_id"]: r["hill"].get("rf") for r in rows if not r["small"]}, dtype=float)
+    top = _top_share(vals) if vals.notna().sum() >= RANK_MIN else pd.Series(dtype=float)
+    for r in rows:
+        r["hill_top"] = top.get(r["complex_id"], float("nan"))
 
     # 구별 통계
     gus = list(cfg.districts.values())
@@ -342,7 +430,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     news = sorted([r for r in rows if not r["small"] and r["is_new"] and not _nan(r.get("location_score"))],
                   key=lambda r: -r["location_score"])[:5]
     if news:
-        tops.append({"title": "신축·분양권 단지 입지 순위", "tab": "신축 입지", "items": news,
+        tops.append({"title": "신축·분양권 단지의 입지 점수", "tab": "신축 입지", "items": news,
                      "value": lambda r: f"입지 {r['location_score']:.0f}" + (f" · {r['build_year']}년" if r.get("build_year") else "")})
     if highs:
         tops.insert(0, {"title": "최근 신고가", "tab": "신고가", "items": highs,
@@ -357,10 +445,14 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
                   transit=_transit(cfg), regions=_regions(cfg), region_groups=region_groups(_regions(cfg)),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
+                  # 단지 화면 '한 달에 얼마' 계산 (pay.js): 조건으로 찾기와 같은 기준
+                  pay_rules={k: cfg.raw.get("finder", {}).get(s) for k, s in (("ltv", "ltv"), ("ltv_by", "ltv_by"), ("dsr", "dsr"),
+                             ("rate", "default_rate"), ("years", "default_years"), ("caps", "loan_caps"))},
                   example_dong=cfg.raw["region"].get("example_dong", "둔산동"),
                   window=cfg.metrics["window_months"], years=years, factors=factors, gus=gus, area_groups=area_groups,
                   grades=charts.GRADES, grade_legend=charts.grade_legend(), site=cfg.site, stats=STATS,
                   exclude_direct=bool(cfg.filters.get("exclude_direct", False)), loc_groups=loc_groups,
+                  account=_account(cfg), kakao_js_key=kakao_js_key,
                   loc_weight=sum(f["weight"] for g in loc_groups for f in g["factors"]) or 1)
 
     month = _month_view(trades, main_t, rows, by_id, meta, cfg)
@@ -368,12 +460,15 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     themes = _themes(main_t, by_id, cfg, meta)
     (out_dir / "themes.html").write_text(env.get_template("themes.html").render(
         root="", page_path="themes.html", themes=themes, **common), encoding="utf-8")
+    # 지도 대체 그림(카카오맵이 안 뜰 때만 보임)은 크기가 커서, 카카오맵을 쓰면 따로 두고 필요할 때만 받음 (home.js)
+    if kakao_js_key and index_charts.get("map"):
+        (out_dir / "map-fallback.html").write_text(index_charts["map"], encoding="utf-8")
     (out_dir / "index.html").write_text(env.get_template("index.html").render(
         rows=rows, root="", page_path="", charts=index_charts, tops=tops, gu_stats=gu_stats, gu_boards=gu_boards,
         value_list=value_list, value_ref=value_ref, board=month["board"], ticker=month["ticker"],
-        leaders=month["leaders"], pulse=month["pulse"],
+        leaders=month["leaders"], pulse=month["pulse"], movein=movein_mod.view(movein_rows or [], gus),
         hero_cards=sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])[:3],
-        kakao_js_key=kakao_js_key, **common), encoding="utf-8")
+        **common), encoding="utf-8")
     # 인트로: 처음 온 사람에게 한 번 보여 주는 소개 (첫 화면이 이리로 한 번 보냄). 등급 분포·1위 카드·뜨거운 동네는 실제 자료
     ranked = sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])
     grade_dist = [{"g": g, "name": gname, "n": sum(1 for r in ranked if r["grade"] == g)} for _, g, gname in charts.GRADES]
@@ -383,9 +478,28 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         root="", page_path="intro.html", hero_cards=ranked[:3], grade_dist=grade_dist, hot=hot_roll(month["board"]),
         **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
-        root="", page_path="rank.html", ranks=month["ranks"], **common), encoding="utf-8")
+        root="", page_path="rank.html", ranks=month["ranks"],
+        tops=[t for t in tops if t["tab"] != "신고가"], **common), encoding="utf-8")
+    if common["account"]:
+        (out_dir / "privacy.html").write_text(
+            env.get_template("privacy.html").render(root="", page_path="privacy.html", **common), encoding="utf-8")
+        # 가족과 함께 보기 (공유 링크로 들어오는 보기 전용 화면, 검색에는 넣지 않음)
+        (out_dir / "share.html").write_text(
+            env.get_template("share.html").render(root="", page_path="share.html", **common), encoding="utf-8")
+        # 내 정보 (로그인한 사람만: 나의 임장·가족과 함께 보기·내 설정·계정, 검색에는 넣지 않음)
+        (out_dir / "me.html").write_text(
+            env.get_template("me.html").render(root="", page_path="me.html", **common), encoding="utf-8")
+        # 관리자 화면 (권한은 서버 함수가 확인, 검색에는 넣지 않음)
+        (out_dir / "admin.html").write_text(
+            env.get_template("admin.html").render(root="", page_path="admin.html", **common), encoding="utf-8")
+    # 받은 임장 코스 (공유 링크로 들어오는 화면, 검색에는 넣지 않음)
+    (out_dir / "course.html").write_text(
+        env.get_template("course.html").render(root="", page_path="course.html", **common), encoding="utf-8")
     (out_dir / "methodology.html").write_text(
         env.get_template("methodology.html").render(root="", page_path="methodology.html", cfg=cfg, **common), encoding="utf-8")
+    # 이용약관 (권리와 하지 말아 주실 일, 늘 만듦). 문의처는 개인정보처리방침과 같은 곳
+    (out_dir / "terms.html").write_text(env.get_template("terms.html").render(
+        root="", page_path="terms.html", contact=cfg.account.get("email", ""), **common), encoding="utf-8")
     import json as _json
     finder_cfg = _json.dumps(cfg.raw.get("finder", {}), ensure_ascii=False)
     for name in APP_PAGES:
@@ -393,8 +507,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", finder_cfg=finder_cfg,
                                                        finder=cfg.raw.get("finder", {}), **common),
             encoding="utf-8")
-    (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
-        root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
+    if _transit(cfg)["page"]:
+        (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
+            root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
 
     # 단지 페이지
     trades = trades.copy()
@@ -443,9 +558,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         lead = next((t for t in tr_list if not t.get("cancelled") and not (t.get("direct") and cfg.filters.get("exclude_direct"))),
                     tr_list[0] if tr_list else None)
         has_loc_c = not _nan(c.get("location_score"))
-        # 카드의 항목 이름(입지·성장성·상승세)과 같게
+        # 카드의 항목 이름(입지·장기 흐름·5년 흐름)과 같게
         comps = [("입지", c.get("location_score"), fmt_score(c.get("location_score")))]
-        comps += [(f"{'성장성' if n == years[0] else '상승세'} · {n}년 수익률", c.get(f"cagr_{n}y_pct"),
+        comps += [(f"{'장기 흐름' if n == years[0] else '5년 흐름'} · {n}년 수익률", c.get(f"cagr_{n}y_pct"),
                    fmt_score(c.get(f"cagr_{n}y_pct"))) for n in years]
         c_charts = {
             "components": charts.responsive(charts.hbar, [(k, v, s) for k, v, s in comps], vmax=100,
@@ -473,9 +588,10 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
-            kakao_js_key=kakao_js_key, loc_sets=loc_sets, neighbors=neighbors,
+            loc_sets=loc_sets, neighbors=neighbors,
             points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
-            n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1), **common)
+            n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1),
+            hill=hill_view(c), noise=noise_view(c), **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)
     tot = sum(r.get("n_trades") or 0 for r in rows) or 1
@@ -488,8 +604,10 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
                     {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
                      "url": cfg.site.get("base_url", "")})
+    # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
+    write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + ["stations", "rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
@@ -662,9 +780,12 @@ def _regions(cfg) -> list[dict]:
 
 
 def _transit(cfg) -> dict:
-    """역세권 화면 문구: 대전은 지하철역, 세종은 BRT 정류장처럼 지역마다 다릅니다."""
+    """역세권 화면 문구: 대전은 지하철역, 세종은 BRT 정류장처럼 지역마다 다릅니다.
+    page: 걸어서 가는 역·정류장 항목(subway)이 있을 때만 역세권 화면·테마·조건을 둡니다
+    (청주처럼 기차역까지 거리로 보는 지역은 km 단위라 '역 700m 안' 같은 조건이 맞지 않음)."""
     t = {"tab": "역세권", "stop": "지하철역", "short": "역"}
     t.update(cfg.site.get("transit", {}))
+    t.setdefault("page", any(f["key"] == "subway" for f in cfg.location_factors))
     return t
 
 
@@ -713,23 +834,23 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
     highs = main_t[main_t.get("new_high_recent", pd.Series(False, index=main_t.index)).fillna(False).astype(bool)]
     highs = highs.sort_values(["last_date", "last_price"], ascending=False).head(10) if not highs.empty else highs
     ranks = [
-        {"key": "up", "tab": "많이 오른", "title": "1년 전보다 많이 오른 단지",
+        {"key": "up", "tab": "가격 상승", "title": "1년 전보다 가격이 오른 단지",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
-         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "up") for c, v in up.items()]},
-        {"key": "high", "tab": "신고가", "title": "최근 신고가 단지",
-         "note": "마지막 거래가 같은 면적대 이전 최고가를 넘은 단지 (최근 90일)",
+         "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "up") for c, v in up.items()]},
+        {"key": "high", "tab": "최근 신고가", "title": "최근 90일 신고가 단지",
+         "note": "마지막 거래(최근 90일)가 같은 면적대(±3㎡)의 이전 최고가를 넘은 단지",
          "items": [item(c, eok(r["last_price"]), f"{int(r['last_area'])}㎡ · {r['last_date']:%m.%d}", "up")
                    for c, r in highs.iterrows()]},
-        {"key": "busy", "tab": "거래 활발", "title": "최근 3개월 거래가 많은 단지",
-         "note": "최근 3개월 매매 신고 건수 (해제 거래 제외)",
-         "items": [item(c, f"{int(v)}건", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡") for c, v in busy.items()]},
-        {"key": "deal", "tab": "최고가 거래", "title": "최근 3개월 가장 비싼 거래",
-         "note": "단지마다 가장 비싼 한 건 (실거래 금액 그대로, 84㎡ 환산 아님)",
+        {"key": "busy", "tab": "거래량 상위", "title": "최근 3개월 거래가 많은 단지",
+         "note": "최근 3개월 매매 신고 건수 (계약 해제 거래 제외)",
+         "items": [item(c, f"{int(v)}건", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}") for c, v in busy.items()]},
+        {"key": "deal", "tab": "최고 거래금액", "title": "최근 3개월 거래금액 상위",
+         "note": "단지마다 가장 비싼 한 건 · 실제 거래금액 그대로 (84㎡ 환산 아님)",
          "items": [item(r["complex_id"], eok(r["price"]), f"{r['area']:.0f}㎡ · {pd.Timestamp(r['date']):%m.%d}")
                    for _, r in deals.iterrows()]},
-        {"key": "down", "tab": "많이 내린", "title": "1년 전보다 많이 내린 단지",
+        {"key": "down", "tab": "가격 하락", "title": "1년 전보다 가격이 내린 단지",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
-         "items": [item(c, f"{v * 100:+.1f}%", f"{eok(main_t.at[c, 'price_ref'])} · 84㎡", "down") for c, v in down.items()]},
+         "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "down") for c, v in down.items()]},
     ]
     ranks = [r for r in ranks if r["items"]]
 
@@ -833,20 +954,22 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
     tr = _transit(cfg)
     col = lambda k: t[k] if k in t else pd.Series(float("nan"), index=t.index)
     defs = [
-        ("school", "초품아", "초등학교까지 400m 안", col("elementary_raw") <= 400,
+        ("school", "초품아", "초등학교까지 직선 400m 이내 · 실제 배정 학교는 학구도로 확인", col("elementary_raw") <= 400,
          lambda c: f"초등학교 {t.at[c, 'elementary_raw']:.0f}m"),
-        ("transit", tr["tab"], f"{tr['stop']}까지 700m 안", col("subway_raw") <= 700,
+        ("transit", tr["tab"], f"{tr['stop']}까지 직선 700m 이내", col("subway_raw") <= 700,
          lambda c: f"{station_name(t.at[c, 'subway_name_raw']) or tr['stop']} {t.at[c, 'subway_raw']:.0f}m"),
-        ("hub", "학원가 도보권", "주요 학원가까지 15분 안 (도보·지하철)", col("hub_min_raw") <= 15,
+        ("hub", "학원가 도보권", "주요 학원가까지 도보·지하철 15분 이내 (추정)", col("hub_min_raw") <= 15,
          lambda c: f"{t.at[c, 'hub_name_raw']} {t.at[c, 'hub_min_raw']:.0f}분"),
         ("district", "학군 상위", "학군 점수(중학교 전입·학원가·주변 수학 학원) 상위 20%", col("grp_edu_top") <= 20,
          lambda c: f"학군 {t.at[c, 'grp_edu']:.0f}점"),
         ("new", "신축 10년", f"{asof_year - 9}년 이후 준공", col("build_year") >= asof_year - 9,
          lambda c: f"{int(t.at[c, 'build_year'])}년 준공"),
-        ("value", "입지 대비 가격", "가성비 점수 상위 20%", col("stat_value") >= 80,
+        ("value", "입지 대비 가격", "입지 대비 가격 점수 상위 20% · 저평가를 뜻하지는 않아요", col("stat_value") >= 80,
          lambda c: f"84㎡ {eok(t.at[c, 'price_ref'])}"),
     ]
     out = []
+    if not tr["page"]:   # 걸어서 가는 역이 없는 지역(청주 등)은 역세권 테마를 두지 않음
+        defs = [d for d in defs if d[0] != "transit"]
     for key, title, desc, mask, fact in defs:
         sel = t[mask.fillna(False)].dropna(subset=["index"]).sort_values("index", ascending=False)
         if sel.empty:
@@ -866,7 +989,7 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
 
 
 THEME_ROWS = 400  # 구별로 걸러도 끝까지 볼 수 있게 넉넉히 (화면엔 12곳씩, 나머지는 숨겨 둠)
-APP_PAGES = ["compare", "finder", "my", "cards"]
+APP_PAGES = ["compare", "finder", "my", "cards", "rooftop"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 
 
@@ -881,10 +1004,10 @@ def _card_badges(c: dict) -> list[dict]:
     if stn and not _nan(dist):
         short = f"{dist / 1000:.1f}km" if dist >= 1000 else f"{dist:.0f}m"
         out.append({"icon": "train", "short": short, "title": stn,
-                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {max(1, round(dist * 1.3 / 80))}분"})
+                    "tip": f"직선거리 {dist:,.0f}m · 걸어서 약 {walk_min(dist)}분 (추정)"})
     hub, mins = c.get("hub_name_raw"), c.get("hub_min_raw")
     if isinstance(hub, str) and not _nan(mins) and mins <= 25:
-        out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 {mins:.0f}분"})
+        out.append({"icon": "book", "short": f"{mins:.0f}분", "title": hub, "tip": f"걸어서·지하철로 약 {mins:.0f}분 (추정)"})
     if c.get("hh"):
         ki, more = c.get("ki") or {}, []
         if ki.get("dongs"):
@@ -896,6 +1019,100 @@ def _card_badges(c: dict) -> list[dict]:
     return out
 
 
+# 언덕: 주변 300m 고저차(m) 구간. 지형 타일에 건물 높이가 섞여 평지 고층 단지도 20m 남짓 나올 수 있어 넉넉히 잡음
+HILL_BANDS = [(22, "flat", "평지에 가까워요"), (35, "slope", "완만한 비탈이 있어요"), (float("inf"), "hill", "언덕 지형이에요")]
+FLOOR_M = 2.9   # 아파트 한 층 높이 어림
+HILL_STATION_M = 1500   # 역이 이보다 멀면 역과 높이 비교·단면은 빼요
+
+
+def noise_view(c: dict) -> dict | None:
+    """단지 화면 '소음 체크': 큰길·철도까지 거리와 구간 (거리만 본 어림, 실제 소음은 현장에서)."""
+    from . import noise as noise_mod
+    n = c.get("noise") or {}
+    lv = noise_mod.level(n)
+    if not lv:
+        return None
+    m = lambda v: f"{v:,}m" if v < 1000 else f"{v / 1000:.1f}km"
+    out = {"cls": lv[0], "label": lv[1], "rows": []}
+    if "road" in n:
+        out["rows"].append((f"가까운 {n['road_kind']}", f"{n['road_name'] or n['road_kind']} {m(n['road'])}"))
+    if "rail" in n:
+        out["rows"].append(("철도", f"{n['rail_name'] or '철도'} {m(n['rail'])}"))
+    return out
+
+
+def hill_view(c: dict) -> dict | None:
+    """단지 페이지 '언덕 체크' 칸에 쓸 값. 자료가 없으면 None."""
+    h = c.get("hill") or {}
+    if h.get("rf") is None:
+        return None
+    rf = h["rf"]
+    cls, label = next((k, t) for lim, k, t in HILL_BANDS if rf < lim)
+    out = {"cls": cls, "label": label, "rf": round(rf), "top": c.get("hill_top")}
+    st, pf = h.get("st"), h.get("pf")
+    name = station_name(c.get("subway_name_raw"))
+    dist = c.get("subway_raw")
+    if dist is None or _nan(dist) or dist > HILL_STATION_M:   # 역이 멀면 걸어서 비교할 길이 아님
+        st = pf = None
+    if st is not None and st >= 15 and cls == "flat":
+        out["cls"], out["label"] = "slope", "역 쪽으로 오르막이 있어요"
+    if st is not None and name:
+        out["name"] = name
+        if abs(st) < 4:
+            last = name[-1]
+            batchim = "가" <= last <= "힣" and (ord(last) - 0xAC00) % 28 != 0
+            out["st"] = f"{name}{'과' if batchim else '와'} 땅 높이가 비슷해요"
+        elif st > 0:
+            out["st"] = f"{name}보다 약 {st:.0f}m 높아요 · 오르막 (아파트 약 {max(1, round(st / FLOOR_M))}층 높이)"
+        else:
+            out["st"] = f"{name}보다 약 {-st:.0f}m 낮아요 · 내리막"
+        out["st_v"] = st
+    if pf and name and dist is not None and not _nan(dist):
+        climb = sum(max(0.0, b - a) for a, b in zip(pf, pf[1:]))
+        over = max(pf) - max(pf[0], pf[-1])
+        out["climb"] = round(climb) if climb >= 8 else None
+        out["over"] = round(over) if over >= 10 else None
+        out["svg"] = hill_svg(pf, float(dist), name)
+        out["dist"] = f"{dist:.0f}m" if dist < 1000 else f"{dist / 1000:.1f}km"
+    return out
+
+
+def hill_svg(pf: list[float], dist: float, name: str) -> Markup:
+    """역 → 단지 직선 단면 (땅 높이). 잡음이 산처럼 보이지 않게 세로 범위는 최소 20m."""
+    W, H, L, R, T, B = 560, 170, 44, 16, 14, 30
+    lo, hi = min(pf), max(pf)
+    span = max(20.0, hi - lo)
+    mid = (lo + hi) / 2
+    y0, y1 = mid - span / 2 - 2, mid + span / 2 + 2
+    X = lambda k: L + (W - L - R) * k / (len(pf) - 1)
+    Y = lambda v: T + (H - T - B) * (1 - (v - y0) / (y1 - y0))
+    pts = [(X(k), Y(v)) for k, v in enumerate(pf)]
+    line = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area = f"M{pts[0][0]:.1f},{H - B} L" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + f" L{pts[-1][0]:.1f},{H - B} Z"
+    step = 10 if span <= 40 else 20 if span <= 100 else 50
+    grid = []
+    v = math.ceil(y0 / step) * step
+    while v <= y1:
+        y = Y(v)
+        grid.append(f'<line class="hl-grid" x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}"/>'
+                    f'<text class="hl-ax" x="{L - 6}" y="{y + 4:.1f}" text-anchor="end">{v:.0f}m</text>')
+        v += step
+    marks = []
+    for k, (x, y) in enumerate(pts):
+        d = round(dist * k / (len(pf) - 1))
+        marks.append(f'<circle class="hl-hit" cx="{x:.1f}" cy="{y:.1f}" r="10"><title>{d}m 지점 · 해발 약 {pf[k]:.0f}m</title></circle>')
+    end = lambda x, y, cls: f'<circle class="hl-pt {cls}" cx="{x:.1f}" cy="{y:.1f}" r="5"/>'
+    svg = (f'<svg class="hl-svg" viewBox="0 0 {W} {H}" role="img" aria-label="{escape(name)}에서 단지까지 직선 단면: '
+           f'해발 {pf[0]:.0f}m에서 {pf[-1]:.0f}m, 직선 {dist:.0f}m">'
+           + "".join(grid)
+           + f'<path class="hl-area" d="{area}"/><polyline class="hl-line" points="{line}"/>'
+           + end(*pts[0], "st") + end(*pts[-1], "apt")
+           + f'<text class="hl-lb" x="{pts[0][0]:.1f}" y="{H - 10}" text-anchor="start">{escape(name)}</text>'
+           + f'<text class="hl-lb" x="{pts[-1][0]:.1f}" y="{H - 10}" text-anchor="end">이 단지</text>'
+           + "".join(marks) + "</svg>")
+    return Markup(svg)
+
+
 def station_name(raw) -> str | None:
     """카카오 장소 이름 '정부청사역 대전1호선' → '정부청사역'."""
     if raw is None or (isinstance(raw, float) and raw != raw) or not str(raw).strip():
@@ -904,11 +1121,11 @@ def station_name(raw) -> str | None:
 
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
-    ("location_score", "입지", "교통·학군·생활 편의 (아래 '입지는 어떤가')"),
-    ("stat_growth", "성장성", "10년 수익률 백분위 (없으면 5년)"),
-    ("stat_momentum", "상승세", "최근 5년 수익률 백분위"),
-    ("stat_value", "가성비", "입지에 비해 가격이 얼마나 낮은지"),
-    ("stat_activity", "거래량", "최근 3년 거래가 얼마나 활발한지"),
+    ("location_score", "입지", "교통·학군·생활 편의 점수 (아래 '교통·학군·생활 입지')"),
+    ("stat_growth", "장기 흐름", "10년 연평균 수익률의 백분위 (10년 거래가 없으면 5년)"),
+    ("stat_momentum", "5년 흐름", "최근 5년 연평균 수익률의 백분위 (단기 흐름은 아님)"),
+    ("stat_value", "입지 대비 가격", "입지 점수에 비해 84㎡ 환산가가 낮을수록 높음 (저평가를 뜻하지는 않음)"),
+    ("stat_activity", "거래량", "최근 3년 매매 건수의 백분위"),
     ("stat_new", "신축도", "준공 1년차 100점, 30년 이상 0점 (분양권 100점)"),
 ]
 NEW_SPAN = 30  # 신축도가 0점이 되는 연차
@@ -969,7 +1186,8 @@ def _r(x, nd=0):
     return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
 
 
-def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None) -> None:
+def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None,
+                    name: str = "complexes.json") -> None:
     import json
     data = []
     for r in rows:
@@ -992,12 +1210,21 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "ed": _r(r.get("grp_edu")),
             "lp": eok(r.get("last_price"), 2) if not _nan(r.get("last_price")) else None,
             "ld": r["last_date"].strftime("%Y.%m.%d") if not _nan(r.get("last_date")) and r.get("last_date") is not None else None,
+            "lr": _r(r.get("last_area")),
+            "tc": int(r.get("n_trades") or 0) if not _nan(r.get("n_trades")) else 0,   # 관심 단지 새 소식: 지난번 확인 뒤 새 거래 수
+            # 현장 모드 체크리스트: 관리비(㎡당, 비싼 쪽부터 상위 %)·주차(많은 쪽부터 상위 %)
+            **({"fm": r["fee_m2"], "fq": _r(r.get("fee_m2_top"))} if r.get("fee_m2") else {}),
+            **({"pq": _r(r.get("ppu_top"))} if r.get("ppu") and not _nan(r.get("ppu_top")) else {}),
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
+            **({"sm": 1, "sr": r.get("small_reason") or "소규모"} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
+            **({"hl": [_r(r["hill"].get("rf")), _r(r["hill"].get("st"))]} if (r.get("hill") or {}).get("rf") is not None else {}),
+            # 소음 체크(현장 모드): [큰길까지 m, 큰길 종류, 철도까지 m] (1km 밖은 비움)
+            **({"nz": [r["noise"].get("road"), r["noise"].get("road_kind"), r["noise"].get("rail")]} if r.get("noise") else {}),
         })
     meta = {"stats": [{"k": k, "n": n, "desc": d} for k, n, d in STATS], "complexes": data, **(info or {})}
-    (out_dir / "complexes.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out_dir / name).write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[str] | None = None) -> None:
@@ -1008,7 +1235,8 @@ def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[s
     from xml.sax.saxutils import escape as xml_escape
 
     today = date.today().isoformat()
-    entries = [("", "1.0"), ("methodology.html", "0.3")] + [(p, "0.5" if "/" not in p else "0.7") for p in apt_paths]
+    clean = lambda p: p[:-5] if p.endswith(".html") else p      # 주소는 .html 없이 (canonical 과 같게)
+    entries = [("", "1.0"), ("methodology", "0.3")] + [(clean(p), "0.5" if "/" not in p else "0.7") for p in apt_paths]
     urls = "".join(
         f"<url><loc>{xml_escape(base + path)}</loc><lastmod>{today}</lastmod><priority>{pri}</priority></url>\n"
         for path, pri in entries)

@@ -33,12 +33,17 @@ jobs:
       - run: python -m djdex demo
       - run: python -m djdex --config config.sejong.toml demo --out site-demo/sejong
       - run: python -m djdex --config config.seoul.toml demo --out site-demo/seoul
+      - run: python -m djdex --config config.cheongju.toml demo --out site-demo/cheongju
 
   publish:
     # 실제 데이터 수집과 배포는 예약 실행이나 수동 실행 때만
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
+    # 몰아받기(catchup.yml)와 같은 이름: 둘이 겹치면 뒤에 온 쪽이 기다림 (같은 호출 한도·캐시를 나눠 쓰고 덮어쓰지 않게)
+    concurrency:
+      group: data-collect
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
@@ -86,6 +91,36 @@ jobs:
           restore-keys: |
             djdex-bldg2-
             djdex-bldg-
+      # 언덕(고저차)도 따로 캐시합니다 (공개 지형 타일로 새 단지만 계산). 세종·서울은 각 지역 캐시 안에 있습니다.
+      - name: 언덕 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: data/elev.json
+          key: djdex-elev-${{ github.run_id }}
+          restore-keys: djdex-elev-
+      # 소음 체크(OSM 큰길·철도 선과 단지별 거리)도 따로 캐시합니다 (선은 일주일에 한 번만 새로 받음)
+      - name: 소음 체크 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/noise.json
+            data/noise_lines.json
+          key: djdex-noise-${{ github.run_id }}
+          restore-keys: djdex-noise-
+      # 입주 예정 물량(청약홈 분양 공고)도 캐시: 새로 받지 못한 날은 지난번 것을 씁니다
+      - name: 입주 물량 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: data/movein.json
+          key: djdex-movein-${{ github.run_id }}
+          restore-keys: djdex-movein-
+      # 청주 자료도 대전보다 먼저 복원합니다. 한 번이라도 사이트를 만들었으면(data/cheongju/READY) 지역 메뉴에 청주가 나옵니다.
+      - name: 청주 수집 캐시 복원
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cheongju
+          key: djdex-cheongju-${{ github.run_id }}
+          restore-keys: djdex-cheongju-
       # 서울 자료는 먼저 복원합니다. 실거래를 다 모았으면(data/seoul/READY) 대전·세종 지역 메뉴에 서울이 나오고
       # 아래에서 서울 사이트도 만듭니다.
       - name: 서울 수집 캐시 복원
@@ -100,6 +135,8 @@ jobs:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -131,6 +168,26 @@ jobs:
         with:
           path: data/bldg
           key: djdex-bldg2-${{ github.run_id }}
+      - name: 언덕 캐시 저장
+        if: ${{ always() && hashFiles('data/elev.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/elev.json
+          key: djdex-elev-${{ github.run_id }}
+      - name: 소음 체크 캐시 저장
+        if: ${{ always() && hashFiles('data/noise_lines.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/noise.json
+            data/noise_lines.json
+          key: djdex-noise-${{ github.run_id }}
+      - name: 입주 물량 캐시 저장
+        if: ${{ always() && hashFiles('data/movein.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/movein.json
+          key: djdex-movein-${{ github.run_id }}
       # 세종은 대전 사이트 안 /sejong/ 에 만듭니다. 세종이 실패해도 대전은 배포합니다.
       # 캐시는 대전과 따로 둡니다 (대전 캐시의 경로 목록을 바꾸면 캐시를 못 찾아 처음부터 다시 받기 때문).
       - name: 세종 수집 캐시 복원
@@ -148,6 +205,8 @@ jobs:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -159,6 +218,30 @@ jobs:
         with:
           path: data/sejong
           key: djdex-sejong2-${{ github.run_id }}
+      # 청주: 처음에는 2006년부터 나눠 받습니다(config.cheongju.toml max_calls_per_run). 실패해도 다른 지역은 배포합니다.
+      # 사이트를 만들면 READY 를 남겨 다음 배포부터 지역 메뉴에 나오게 합니다 (첫 배포 때는 주소로만 열림).
+      - name: 청주 수집, 계산, 사이트 생성
+        continue-on-error: true
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
+          ECOS_KEY: ${{ secrets.ECOS_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          python -m djdex --config config.cheongju.toml all --out site/cheongju
+          if [ -f site/cheongju/index.html ]; then touch data/cheongju/READY; fi
+      - name: 청주 수집 캐시 저장
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/cheongju
+          key: djdex-cheongju-${{ github.run_id }}
       # 서울: 실거래를 다 모은 뒤부터 /seoul/ 에 만듭니다. 실패해도 대전·세종은 배포합니다.
       # 서울은 단지가 많아 수집(최근 거래·전월세·단지 정보·입지)을 배포 뒤로 미루고, 여기서는 받아 둔 자료로 사이트만 만듭니다.
       # 학교알리미(중학교 순전입률)·물가는 호출이 적어 여기서 받습니다 (이미 받은 해는 건너뜀).
@@ -169,6 +252,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SCHOOLINFO_KEY: ${{ secrets.SCHOOLINFO_KEY }}
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
         run: |
@@ -177,11 +262,36 @@ jobs:
           # 학교 자료를 새로 받았으면 아래에서 서울 캐시를 저장해 다음 배포 때 다시 받지 않게
           if [ "$(ls data/seoul/school 2>/dev/null | wc -l)" != "$before" ]; then echo "fresh=true" >> "$GITHUB_OUTPUT"; fi
           python -m djdex --config config.seoul.toml build --out site/seoul
+      # 배포본 화면 코드 압축: 설명 주석을 지우고 이름을 줄여 그대로 가져다 쓰기 어렵게 (저장소 원본은 그대로).
+      # 압축에 실패하면 압축하지 않은 채로 배포합니다
+      - name: 화면 코드 압축
+        continue-on-error: true
+        run: bash scripts/minify_site.sh site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - id: deploy
         uses: actions/deploy-pages@v4
+      # 카카오 로그인 저장소(Supabase 무료)는 7일 동안 아무 요청이 없으면 잠듭니다. 배포 때마다 한 번 깨워 둡니다.
+      - name: 기록 보관함 깨우기
+        if: always()
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: python scripts/account_check.py --ping
+      # 관심 단지 새 소식 알림: 배포가 끝난 뒤 알림을 켠 회원에게 새 거래·시세 변화를 보냅니다 (scripts/push_send.py).
+      # Secrets 에 SUPABASE_SECRET_KEY 가 없거나 알림 표가 아직 없으면 건너뜁니다. 실패해도 배포에는 영향이 없습니다.
+      - name: 관심 단지 새 소식 알림
+        if: ${{ steps.deploy.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          python -c "import cryptography" 2>/dev/null || pip install -q cryptography
+          python scripts/push_send.py site
       # 서울 이어 받기: 매일 예약 실행 때 (또는 수동 실행에서 고르면) 배포가 끝난 뒤 하루 호출 한도 안에서 받습니다.
       # 실거래를 다 모으기 전에는 매매와 그 단지의 입지(카카오)를, 다 모은 뒤에는 최근 거래 새로 받기·전월세·단지 정보·
       # 새 단지 입지·학교·물가를 받아 두고 다음 배포 때 화면에 냅니다. 실패해도 배포에는 영향이 없습니다.
@@ -249,6 +359,25 @@ jobs:
         with:
           path: data/sejong
           key: djdex-sejong2-${{ github.run_id }}-slow
+      # 청주도 세종처럼 관리비·카카오맵 장소·네이버 글·공급면적을 하루 몫씩 이어 받습니다 (빠져 있어서 청주 단지 화면에 관리비·후기가 비어 있었음)
+      - name: 청주 공급면적·관리비·후기 이어 받기
+        id: slow_cj
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || inputs.slow_collect) && hashFiles('data/cheongju/READY') != '' }}
+        continue-on-error: true
+        timeout-minutes: 45
+        env:
+          PYTHONUNBUFFERED: "1"
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python -m djdex --config config.cheongju.toml slow
+      - name: 청주 이어 받은 자료 저장
+        if: ${{ always() && (steps.slow_cj.outcome == 'success' || steps.slow_cj.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/cheongju
+          key: djdex-cheongju-${{ github.run_id }}-slow
       # 서울 관리비·카카오맵 장소·네이버 글·공급면적: 단지가 많아 대전·세종을 먼저 받고 맨 뒤에서 하루 몫씩 이어 받습니다.
       - name: 서울 관리비·후기 이어 받기
         id: slow_se

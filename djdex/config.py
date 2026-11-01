@@ -52,6 +52,31 @@ class Paths:
         return self.data / "school"
 
     @property
+    def elev(self) -> Path:
+        """언덕(고저차): 지형 타일로 계산한 단지·역 높이 (elev.py 가 씀)"""
+        return self.data / "elev.json"
+
+    @property
+    def movein(self) -> Path:
+        """입주 예정 물량: 청약홈 분양 공고의 입주 예정월·공급 세대수 (movein.py 가 씀)"""
+        return self.data / "movein.json"
+
+    @property
+    def noise(self) -> Path:
+        """소음 체크: 단지에서 큰길·철도까지 거리 (noise.py 가 씀)"""
+        return self.data / "noise.json"
+
+    @property
+    def noise_lines(self) -> Path:
+        """소음 체크에 쓰는 OSM 도로·철도 선 (받지 못한 날 다시 씀)"""
+        return self.data / "noise_lines.json"
+
+    @property
+    def points(self) -> Path:
+        """교통 항목의 '정해 둔 곳'(예: 오송역·청주역) 좌표 (points.py 가 씀)"""
+        return self.data / "points.json"
+
+    @property
     def osm_stops(self) -> Path:
         return self.data / "osm_stops.json"
 
@@ -97,6 +122,11 @@ class Config:
         base = site.get("base_url", "") or ""
         site["base_url"] = base if not base or base.endswith("/") else base + "/"
         return site
+
+    @property
+    def account(self) -> dict:
+        """카카오 로그인·기록 이어 보기 [account] (지역 설정은 대전 것을 물려받음)."""
+        return dict(self.raw.get("account", {}))
 
     @property
     def collect(self) -> dict:

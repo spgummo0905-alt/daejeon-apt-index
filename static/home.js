@@ -9,12 +9,17 @@
       if (!list.length) return;
       const b = document.getElementById(box);
       b.textContent = "";
+      // 관심 단지 줄: 지난번 확인한 뒤 새 거래·시세 변화가 있는 단지는 빨간 점, 제목 옆에 '새 소식 N곳'
+      const news = sec === "my-strip" ? new Set(DJ.watchSync(d.bySlug).map(x => x.c.s)) : new Set();
       list.forEach(c => {
-        const a = el("a", "strip-item");
-        a.href = DJ.href(c);
+        const a = el("a", "strip-item" + (news.has(c.s) ? " has-news" : ""));
+        a.href = DJ.href(c) + (news.has(c.s) ? "#trades" : "");
         a.append(el("span", "grade g-" + c.g, c.g), el("strong", "", c.n), el("span", "muted", (c.i ?? "-") + "점"));
+        if (news.has(c.s)) a.setAttribute("aria-label", c.n + ", 새 소식 있음");
         b.append(a);
       });
+      const tag = document.querySelector("[data-strip-news]");
+      if (tag && news.size) { tag.textContent = `새 소식 ${news.size}곳`; tag.hidden = false; }
       document.getElementById(sec).hidden = false;
     });
   };
@@ -22,6 +27,18 @@
   strip(DJ.recent().map(r => r.s), "recent-strip", "recent-strip-list");
   const clr = document.getElementById("recent-clear");
   if (clr) clr.addEventListener("click", () => { DJ.save("recent", []); document.getElementById("recent-strip").hidden = true; dispatchEvent(new Event("dj:recent")); });
+  // 지도 대체 그림: 카카오맵이 몇 초 안에 뜨지 않으면 그때 받아서 넣음 (평소엔 받지 않아 첫 화면이 가벼움)
+  const fb = document.querySelector(".map-fallback[data-src]");
+  if (fb) {
+    const wrap = document.getElementById("kmap-wrap");
+    const load = () => {
+      if (fb.dataset.done || (wrap && wrap.classList.contains("kmap-on"))) return;
+      fb.dataset.done = "1";
+      fetch(fb.dataset.src).then(r => r.ok ? r.text() : "").then(h => { if (h && !(wrap && wrap.classList.contains("kmap-on"))) fb.innerHTML = h; }).catch(() => {});
+    };
+    if (document.readyState === "complete") setTimeout(load, 4000);
+    else addEventListener("load", () => setTimeout(load, 4000));
+  }
   // 첫 화면 카드 덱: 휴대폰에선 세 장 모두 넘겨 보고 누를 수 있게, 넓은 화면에선 뒤 카드는 장식
   const mq = matchMedia("(max-width: 900px)");
   const deck = () => document.querySelectorAll("[data-deck-back]").forEach(a => {
@@ -30,27 +47,17 @@
   });
   deck();
   if (mq.addEventListener) mq.addEventListener("change", deck);
-  // 주목할 단지 탭 (화살표 키로도)
-  const tabs = Array.from(document.querySelectorAll(".top-tabs [role=tab]"));
-  const pick = t => tabs.forEach(b => {
-    const on = b === t;
-    b.classList.toggle("active", on); b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
-    document.getElementById(b.getAttribute("aria-controls")).hidden = !on;
-  });
-  tabs.forEach((b, i) => {
-    b.addEventListener("click", () => pick(b));
-    b.addEventListener("keydown", e => {
-      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-      if (!step) return;
-      e.preventDefault();
-      const n = tabs[(i + step + tabs.length) % tabs.length];
-      pick(n); n.focus();
-    });
-  });
   document.querySelectorAll("[data-gu-jump]").forEach(a => a.addEventListener("click", e => {
     if (!DJ.showArea) return;
     e.preventDefault();
     DJ.showArea(a.dataset.guJump);
+  }));
+  // 구별 비교: 요약 · 항목별 순위 · 84㎡ 최고가 단지 (숨겨 둔 옆 넘김 줄은 보일 때 크기를 다시 잼)
+  const views = document.querySelectorAll("[data-gu-view]");
+  views.forEach(btn => btn.addEventListener("click", () => {
+    views.forEach(b => { const on = b === btn; b.classList.toggle("active", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    document.querySelectorAll("[data-gu-panel]").forEach(p => { p.hidden = p.dataset.guPanel !== btn.dataset.guView; });
+    window.dispatchEvent(new Event("resize"));
   }));
   document.querySelectorAll(".gu-tabs .chip").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".gu-tabs .chip").forEach(b => {
