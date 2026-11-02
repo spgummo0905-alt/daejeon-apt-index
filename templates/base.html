@@ -36,6 +36,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
+<script src="{{ root }}static/workspace-embed.js?v={{ v }}"></script>
 {% block head_extra %}{% endblock %}
 </head>
 <body data-unit="{{ unit }}" data-region="{{ region }}"{% if kakao_js_key %} data-kakao="{{ kakao_js_key }}"{% endif %} data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">

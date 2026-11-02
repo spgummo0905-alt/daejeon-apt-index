@@ -6,7 +6,7 @@
 <section class="page-hero">
   <p class="eyebrow">집 찾기 프로젝트</p>
   <h1>집을 찾는 이유마다,<br>후보도 따로.</h1>
-  <p class="lead">신혼집부터 부모님 이사까지. 목적별로 후보를 모으고, 비교와 임장을 이어가세요.</p>
+  <p class="lead">검색하고, 비교하고, 다녀온 느낌까지. 집을 고르는 과정을 이 작업 화면에서 이어가세요.</p>
   <p class="muted" data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 관심 화면에서 파일로 백업하세요.</p>
   <a class="btn ghost" href="my.html">← 관심 단지·임장 기록</a>
 </section>
@@ -32,6 +32,7 @@
     <section class="panel pj-editor" data-pj-editor hidden aria-labelledby="pj-title">
       <div class="panel-head"><p class="eyebrow" data-pj-state></p><h2 id="pj-title" data-pj-title></h2><p class="muted" data-pj-goal></p></div>
       <div class="pj-tools">
+        <button class="btn ghost sm" type="button" data-pj-history>날짜별 방문 기록</button>
         <details data-pj-settings><summary>이름·조건 수정</summary>
           <form data-pj-edit>
             <label>프로젝트 이름<input name="name" required maxlength="50" autocomplete="off"></label>
@@ -41,24 +42,52 @@
         </details>
         <button class="btn ghost sm" type="button" data-pj-toggle></button>
       </div>
-      <div data-pj-add>
-        <label class="pj-search-label" for="pj-search">이 프로젝트에 후보 추가</label>
-        <input class="pj-search" id="pj-search" type="search" placeholder="단지 이름으로 검색" autocomplete="off">
-        <p class="sv-note">검색하거나 관심 단지에서 골라 추가하세요.</p>
+      <details class="pj-discover" data-pj-add open>
+        <summary>1. 아파트 찾기 · 검색 조건은 패널을 닫아도 그대로</summary>
+        <label class="pj-search-label" for="pj-search">단지·동·역 이름으로 검색</label>
+        <input class="pj-search" id="pj-search" type="search" placeholder="단지·동·역 이름" autocomplete="off">
+        <div class="pj-filters">
+          <label>지역 좁히기<select data-pj-district><option value="">전체</option></select></label>
+          <label>84㎡ 기준 가격 상한 · 억원<input type="number" min="0.1" step="0.1" max="1000" placeholder="제한 없음" data-pj-budget></label>
+          <button class="btn ghost sm" type="button" data-pj-finder>직장·평형 등 상세 조건</button>
+        </div>
+        <p class="sv-note">빠른 검색은 84㎡ 기준 가격, 상세 조건은 평형별 추정 시세 기준입니다. 가격 상한을 정하면 가격 정보가 없는 단지는 제외합니다. 상세 조건은 기존 '조건으로 찾기' 설정을 이어 씁니다.</p>
+        <p class="sv-note" data-pj-results-count role="status"></p>
+        <div class="pj-results" data-pj-results></div>
+        <button class="btn ghost sm" type="button" data-pj-more hidden>검색 결과 더 보기</button>
+        <p class="sv-note">관심 단지에서도 바로 담을 수 있어요.</p>
         <div class="chips" data-pj-favs></div>
-      </div>
+      </details>
       <div class="pj-actions" data-pj-actions>
+        <h3>2. 후보를 골라, 한 화면에서 이어보기</h3>
         <p data-pj-selection role="status">후보를 선택해 비교·코스로 이어가세요.</p>
         <button class="btn sm" type="button" data-pj-all>전체 선택</button>
         <button class="btn ghost sm" type="button" data-pj-none>선택 해제</button>
-        <a class="btn primary sm" data-pj-compare>단지 비교</a>
-        <a class="btn sm" data-pj-course>임장 코스 보기</a>
+        <button type="button" class="btn primary sm" data-pj-compare>단지 비교</button>
+        <button type="button" class="btn sm" data-pj-course>임장 코스 보기</button>
+        <button type="button" class="btn sm" data-pj-history>방문 기록 남기기·보기</button>
       </div>
       <p class="sv-note" data-pj-help>비교는 2~4곳, 코스는 위치 정보가 있는 2~8곳을 선택하세요. 코스 미리보기는 기존 내 코스를 덮어쓰지 않습니다.</p>
+      <div class="pj-selection-dock" data-pj-dock hidden role="group" aria-label="선택한 후보 작업"><b data-pj-dock-count></b><button type="button" class="btn primary sm" data-pj-quick-compare>비교</button><button type="button" class="btn sm" data-pj-quick-course>임장 코스</button></div>
       <div class="card-grid pj-candidates" data-pj-candidates></div>
-      <p class="sv-note">현장 기록은 단지별 공통 기록입니다. 같은 단지를 여러 프로젝트에 담아도 기록을 복사하거나 분리하지 않습니다. 후보에서 빼거나 프로젝트를 보관해도 관심 단지와 임장 노트는 남습니다.</p>
+      <p class="sv-note">단지를 누르면 상세 정보와 현장 체크를 작업 패널에서 엽니다. 기존 현장 메모는 단지별 공통 기록이며, 날짜별 기록은 이 프로젝트에 따로 남길 수 있어요. 후보에서 빼거나 프로젝트를 보관해도 기록은 남습니다.</p>
+      <dialog class="pw-dialog" data-pj-workspace aria-labelledby="pw-title">
+        <header class="pw-head"><div><p class="eyebrow">집 찾기 작업 패널</p><h2 id="pw-title" data-pw-title></h2></div><button type="button" class="btn ghost sm" data-pw-close>닫고 검색·후보로</button></header>
+        <div class="pw-tabs" aria-label="프로젝트 작업">
+          <button type="button" class="btn sm" data-pw-tab="finder">조건 검색</button>
+          <button type="button" class="btn sm" data-pw-tab="detail">단지 상세</button>
+          <button type="button" class="btn sm" data-pw-tab="compare">후보 비교</button>
+          <button type="button" class="btn sm" data-pw-tab="course">임장 코스</button>
+          <button type="button" class="btn sm" data-pw-tab="field">현장 체크</button>
+          <button type="button" class="btn sm" data-pw-tab="history">방문 기록</button>
+        </div>
+        <div class="pw-context"><select aria-label="작업할 단지" data-pw-apt hidden></select><button type="button" class="btn sm" data-pw-add hidden>후보로 담기</button><span class="sv-note">패널을 바꿔도 메모는 그대로. 닫으면 검색 조건과 후보 선택으로 돌아갑니다.</span></div>
+        <p class="sv-note" role="status" data-pw-status></p>
+        <div class="pw-frames" data-pw-frames></div>
+        <div id="project-visit-history" class="pw-history" data-pj-journal hidden></div>
+      </dialog>
     </section>
   </div>
 </div>
 {% endblock %}
-{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/projects.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/visit-log-ui.js?v={{ v }}"></script><script src="static/project-flow.js?v={{ v }}"></script><script src="static/project-workspace.js?v={{ v }}"></script><script src="static/projects.js?v={{ v }}"></script>{% endblock %}

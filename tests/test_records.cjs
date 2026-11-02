@@ -236,3 +236,30 @@ test('same project ID from a restored guest backup preserves both versions and r
   assert.ok(keys.some(k => retry.R.get(k).name === '기기에서 고침'));
   assert.equal(s.getItem('djdex:project:same-id'), null);
 });
+
+test('guest visit logs follow copied projects instead of silently attaching to a different account project', async () => {
+  const project = { version: 1, id: 'same-id', name: '기기 프로젝트', region: '대전', slugs: ['apt-1'] };
+  const log = { version: 1, id: 'log-id', projectId: 'same-id', memo: '기기 방문 기록' };
+  // 방문 기록이 먼저 들어간 백업 파일도 프로젝트 사본을 먼저 결정해야 합니다.
+  const s = storage({ 'djdex:visitlog:log-id': log, 'djdex:project:same-id': project, 'djdex-pkce': { v: 'test' } });
+  const server = { A: [{ k: 'project:same-id', v: { ...project, name: '계정 프로젝트' }, t: 1, updated_at: '2026-01-01' }] };
+  const fail = browser(s, server, { login: 'A', failPush: true }); await fail.start();
+  const copy = fail.R.keys().find(k => k.startsWith('project:') && k !== 'project:same-id');
+  assert.equal(fail.R.get('visitlog:log-id').projectId, copy.slice(8));
+  assert.notEqual(s.getItem('djdex:visitlog:log-id'), null);
+  const retry = browser(s, server); await retry.start();
+  assert.equal(retry.R.keys().filter(k => k.startsWith('visitlog:')).length, 1);
+  assert.equal(retry.R.get('visitlog:log-id').projectId, copy.slice(8));
+});
+
+test('restored visit-log ID conflicts preserve both versions, and remote deletion does not revive', async () => {
+  const log = { version: 1, id: 'log-id', memo: '기기 원본', created: 1 };
+  const s = storage({ 'djdex:visitlog:log-id': log, 'djdex-pkce': { v: 'test' } });
+  const server = { A: [{ k: 'visitlog:log-id', v: { ...log, memo: '계정 원본' }, t: 1, updated_at: '2026-01-01' }] };
+  const b = browser(s, server, { login: 'A' }); await b.start();
+  assert.equal(b.R.keys().filter(k => k.startsWith('visitlog:')).length, 2);
+  assert.equal(b.R.get('visitlog:log-id').memo, '계정 원본');
+  server.A = [{ k: 'visitlog:log-id', v: { version: 1, id: 'log-id', deleted: true, created: 1 }, t: Date.now() + 100, updated_at: '2026-11-02' }];
+  const again = browser(s, server); await again.start();
+  assert.equal(again.R.get('visitlog:log-id').deleted, true);
+});

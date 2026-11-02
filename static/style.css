@@ -1850,6 +1850,97 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pj-item.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 .pj-item span { font-size: 12px; color: var(--muted); }
 .pj-editor { min-width: 0; }
+.pj-discover { margin: 18px 0; border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+.pj-discover > summary { font-size: 15px; font-weight: 700; cursor: pointer; }
+.pj-discover[open] > summary { margin-bottom: 18px; }
+.pj-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.pj-filters label { flex: 1 1 150px; display: grid; gap: 7px; font-size: 13px; font-weight: 700; min-width: 0; }
+.pj-filters select, .pj-filters input, .pw-context select { width: 100%; min-width: 0; height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0 10px; font: inherit; font-size: 16px; }
+.pj-results { display: grid; gap: 8px; margin-bottom: 10px; }
+.pj-result { display: flex; gap: 12px; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.pj-result > div { min-width: 0; }
+.pj-result p { margin: 4px 0 0; overflow-wrap: anywhere; }
+.pj-result-name { border: 0; padding: 0; background: none; text-align: left; font: inherit; font-weight: 700; color: var(--text); cursor: pointer; overflow-wrap: anywhere; }
+.pj-result > .btn { flex-shrink: 0; margin: 0; }
+.pj-actions { background: var(--surface); padding: 14px 0; }
+.pj-actions h3 { flex-basis: 100%; margin: 0; font-size: 16px; }
+#projects { padding-bottom: 110px; }
+/* 프로젝트에는 후보 목록과 작업 패널이 있어 최근 본 플로팅 창을 겹쳐 띄우지 않습니다. */
+body[data-page="projects"] .rcd { display: none; }
+.pj-selection-dock { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 20; width: min(680px, calc(100vw - 24px)); box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 6px 30px #0002; }
+.pj-selection-dock[hidden] { display: none; }
+.pj-selection-dock b { margin-right: auto; font-size: 14px; }
+.pj-selection-dock .btn { margin: 0; }
+.pj-candidate { scroll-margin-top: 88px; scroll-margin-bottom: 150px; }
+@media (max-width: 720px) { .pj-selection-dock { bottom: calc(70px + env(safe-area-inset-bottom)); gap: 8px; } }
+.pw-open { overflow: hidden; }
+.pw-dialog { width: min(1180px, 96vw); height: min(960px, 94dvh); max-width: none; max-height: none; box-sizing: border-box; padding: 0; border: 1px solid var(--border); border-radius: 18px; background: var(--bg); color: var(--text); box-shadow: 0 16px 80px #0004; }
+.pw-dialog[open] { display: flex; flex-direction: column; }
+.pw-dialog::backdrop { background: #0f1b3380; backdrop-filter: blur(3px); }
+.pw-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 16px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.pw-head .eyebrow { margin: 0 0 3px; font-size: 11px; }
+.pw-head h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+.pw-head > .btn { flex-shrink: 0; margin: 0; }
+.pw-tabs { display: flex; overflow-x: auto; gap: 6px; padding: 10px 16px; background: var(--surface); flex-shrink: 0; }
+.pw-tabs .btn { margin: 0; white-space: nowrap; flex-shrink: 0; }
+.pw-tabs .btn, .pj-result-name, .pj-selection-dock .btn, .pj-result > .btn { min-height: 44px; }
+.pw-tabs [aria-pressed="true"] { color: var(--on-navy); background: var(--navy); border-color: var(--navy); }
+.pw-context { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+.pw-context select { width: auto; max-width: 48%; }
+.pw-context .sv-note { flex: 1 1 250px; margin: 0; font-size: 12px; }
+.pw-dialog > [data-pw-status] { margin: 0 16px 8px; font-size: 12px; }
+.pw-dialog > [data-pw-status]:empty { display: none; }
+.pw-frames { flex: 1; min-height: 0; display: flex; }
+.pw-frame { flex: 1; width: 100%; height: 100%; min-width: 0; border: 0; background: var(--bg); }
+.pw-frame[hidden], .pw-frames[hidden], .pw-history[hidden] { display: none; }
+.pw-history { flex: 1; min-height: 0; overflow: auto; padding: 0 20px 24px; overscroll-behavior: contain; }
+.pw-history .vl-section { margin: 0; border-top: 0; padding-top: 12px; }
+.pw-candidate { margin: 12px; }
+.pj-embed body { padding-bottom: 0; }
+.pj-embed header.site, .pj-embed body > footer, .pj-embed .tabbar, .pj-embed .rcd, .pj-embed .page-hero, .pj-embed .rc-about { display: none !important; }
+.pj-embed main { max-width: none; width: 100%; box-sizing: border-box; margin: 0; padding: 16px; }
+.pj-embed body[data-page="compare"] main > .panel { display: none; }
+.pj-embed-field main > *:not(#field-sheet), .pj-embed-field .sheet-back { display: none !important; }
+.pj-embed-field #field-sheet { position: static; width: auto; max-width: none; max-height: none; transform: none !important; opacity: 1; margin: 0; border: 0; box-shadow: none; border-radius: 0; }
+.pj-embed-field #field-sheet[hidden] { display: none; }
+.pj-embed-field .fm-body { overflow: visible; max-height: none; }
+.pj-embed-field .fm-top { position: static; }
+.pj-embed-field [data-fm-close], .pj-embed-field .sheet-grab { display: none; }
+@media (max-width: 600px) {
+  .pw-dialog { width: 100vw; height: 100dvh; border-radius: 0; border: 0; margin: 0; }
+  .pw-head { padding: 12px; align-items: start; }
+  .pw-head h2 { font-size: 15px; }
+  .pw-head > .btn { max-width: 105px; white-space: normal; text-align: center; }
+  .pw-context { padding: 6px 12px; }
+  .pw-context .sv-note { font-size: 11px; }
+  .pw-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; gap: 6px; padding: 8px 12px; }
+  .pw-tabs .btn { min-width: 0; padding: 9px 6px; justify-content: center; font-size: 13px; }
+  .pj-discover { padding: 12px; }
+  .pj-result { flex-wrap: wrap; }
+}
+/* 날짜별 방문 기록: 현장 시트·프로젝트에서 같은 입력 방식을 씁니다. */
+.vl-section { min-width: 0; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+.vl-section h4 { margin: 0 0 8px; font-size: 19px; }
+.vl-section .vl-form { display: grid; align-items: stretch; gap: 12px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.vl-section .vl-form label { display: grid; gap: 7px; min-width: 0; font-size: 13px; font-weight: 700; }
+.vl-section .vl-form input:not([type="checkbox"]), .vl-form select, .vl-form textarea { min-width: 0; width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 10px; padding: 11px; background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.vl-form textarea { resize: vertical; min-height: 100px; }
+.vl-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.vl-section .vl-form .vl-check { display: flex; align-items: center; gap: 8px; }
+.vl-section .vl-form .vl-check input { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--accent); }
+.vl-form .btn { margin: 0; justify-self: start; }
+.vl-form .primary { width: 100%; justify-content: center; }
+.vl-form .sv-note { margin: 0; }
+.vl-history { display: grid; gap: 10px; margin-top: 16px; }
+.vl-entry { padding: 14px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; }
+.vl-entry summary { cursor: pointer; line-height: 1.6; overflow-wrap: anywhere; font-weight: 700; }
+.vl-entry > summary { display: flex; justify-content: space-between; gap: 10px; }
+.vl-entry > summary::after { content: "펼치기"; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.vl-entry[open] > summary::after { content: "접기"; }
+.vl-memo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; }
+.vl-checks { margin: 12px 0; font-size: 13px; }
+.vl-checks li { margin: 6px 0; }
+@media (max-width: 420px) { .vl-row { grid-template-columns: minmax(0, 1fr); } }
 .pj-editor h2, .pj-editor .panel-head p { overflow-wrap: anywhere; }
 .pj-tools { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
 .pj-tools details { flex: 1; min-width: 160px; }

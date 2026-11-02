@@ -127,11 +127,17 @@
         const next = Object.assign({}, state, { list: got.list.slice(), mode: got.mode, auto: false });
         if (!DJ.save("course", next)) return;
         state = next;
+        if (window.DJWorkspaceEmbed) {
+          keep.textContent = "내 코스에 저장됨";
+          DJ.toast("내 코스로 저장했어요", "작업 패널에서 계속 확인하고 기록할 수 있어요.");
+          return;
+        }
         if (RECV) { location.href = base + "my.html#course"; return; }   // 저장 성공 후에만 이동
         clearGot(); draw();
         DJ.toast("내 코스로 저장했습니다", "단지마다 체크리스트와 메모를 남길 수 있습니다");
       });
       mine.addEventListener("click", () => { if (RECV) { location.href = base + "my.html#course"; return; } clearGot(); draw(); });
+      if (window.DJWorkspaceEmbed) mine.hidden = true;
       const acts = el("div", "cs-got-acts");
       acts.append(keep, mine);
       bar.append(el("p", "", RECV ? "지금은 코스 미리보기입니다. 저장하면 관심 화면의 내 코스를 이 구성으로 바꿉니다. 단지별 현장 기록은 그대로 유지됩니다."

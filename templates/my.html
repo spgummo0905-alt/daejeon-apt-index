@@ -12,12 +12,13 @@
 <nav class="jump my-jump" aria-label="관심 화면 바로가기" data-my-jump>
   <a href="#my-favs">관심 단지<b data-mj="favs"></b></a>
   <a href="#course">임장 코스<b data-mj="course"></b></a>
+  <a href="#visit-history" data-mj-history hidden>방문 기록</a>
   <a href="#notes" data-mj-notes hidden>임장 노트<b data-mj="notes"></b></a>
   <a href="#visit-cmp" data-mj-vc hidden>다녀온 단지 비교</a>
   <a href="#recent-sec">최근 본<b data-mj="recent"></b></a>
   <a href="#prefs">설정·백업</a>
 </nav>
-<a class="pj-entry" href="projects.html"><span><b>집 찾기 프로젝트</b><span>신혼집, 부모님 이사… 목적별로 후보를 모아보세요.</span></span><span aria-hidden="true">→</span></a>
+<a class="pj-entry" href="projects.html"><span><b>집 찾기 프로젝트</b><span>검색·비교·임장 코스·기록을 한 작업 화면에서 이어보세요.</span></span><span aria-hidden="true">→</span></a>
 {# 카드첩·임장 배지는 따로 (cards.html). 휴대폰 아래 메뉴엔 자리가 없어 여기서 들어갑니다 #}
 <section class="panel" id="my-favs">
   <div class="panel-head row-between"><h2>관심 단지</h2><a class="btn" id="fav-battle" hidden><svg class="ic"><use href="#i-compare"/></svg><span>관심 단지끼리 비교</span></a></div>
@@ -51,6 +52,10 @@
 {% endif %}
 {% include "_course.html" %}
 {# 임장 노트: 단지 페이지 '현장 모드'와 임장 코스에서 남긴 체크·호가·메모 #}
+<section class="panel" id="visit-history" data-visit-history hidden>
+  <div class="panel-head"><h2>날짜별 방문 기록</h2><p class="muted">같은 단지도 방문할 때마다 따로 남긴 기록입니다. 단지를 눌러 지난 방문을 확인하세요.</p></div>
+  <ul class="nt-list" data-visit-history-list></ul>
+</section>
 <section class="panel" id="notes" data-notes hidden>
   <div class="panel-head"><h2>임장 노트</h2>
     <p class="muted">현장 모드와 임장 코스에서 남긴 체크·호가·메모입니다. 항목을 누르면 그 단지의 현장 모드가 열립니다.</p>
@@ -94,7 +99,7 @@
   <button type="button" class="btn primary" data-install-btn>홈 화면에 추가</button>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/my.js?v={{ v }}"></script>
+{% block scripts %}<script src="static/visit-log.js?v={{ v }}"></script><script src="static/my.js?v={{ v }}"></script>
 <script src="static/prefs.js?v={{ v }}"></script>
 <script src="static/course.js?v={{ v }}"></script>
 <script src="static/sharekit.js?v={{ v }}" defer></script>{% endblock %}
