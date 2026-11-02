@@ -3710,6 +3710,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .sec-head > a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
   .mc-stats > div[data-stat] { min-height: 44px; }
   .jump a { display: inline-flex; align-items: center; min-height: 44px; }
+  .hs-step, .hc-step, .hr-item { min-height: 44px; }
 }
 
 /* ===== 입주 예정 물량: 결론 한 줄 → 연도 막대 → 구별 색 칸 → 다가오는 입주 ===== */
