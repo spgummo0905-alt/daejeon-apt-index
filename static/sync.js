@@ -331,7 +331,13 @@
   DJ.logout = async function (wipe) {
     if (S.linking) { DJ.toast("기록을 연결하고 있어요", "연결이 끝난 뒤 로그아웃해 주세요."); return; }
     S.linking = true;
-    try { await push(); } catch (e) { /* 못 보낸 기록은 이 기기에 남음 */ }
+    try { await push(); } catch (e) {
+      if (wipe) {
+        S.linking = false; setState("error");
+        DJ.toast("아직 계정에 보내지 못한 기록이 있어요", "기기 기록은 지우지 않았어요. 연결 상태를 확인한 뒤 다시 시도해 주세요.");
+        return;
+      }
+    }
     if (!owns()) { location.reload(); return; }
     const a = ls.get(AUTH, null);
     if (a) call("/auth/v1/logout?scope=local", { method: "POST", body: {} }, a.at).catch(() => {});

@@ -187,3 +187,12 @@ test('an autosave timer cannot unlock a pending initial account connection', asy
   release(); await started;
   assert.equal(b.ctx.DJ.sync.linking, false);
 });
+
+test('wipe logout preserves unsent records when the server is unavailable', async () => {
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 }, 'djdex@A:visit:one': { m: 'unsent' }, 'djdex@A:_sync': { uid: 'A', since: '', sent: {} } });
+  const b = browser(s, {}, { failPush: true }); await b.start();
+  await b.ctx.DJ.logout(true);
+  assert.notEqual(s.getItem('djdex-auth'), null);
+  assert.equal(JSON.parse(s.getItem('djdex@A:visit:one')).m, 'unsent');
+  assert.equal(b.ctx.DJ.sync.linking, false);
+});

@@ -1449,7 +1449,7 @@
       });
       acts.append(b);
     }
-    const intro = el("a", "btn sm", "1분 소개");
+    const intro = el("a", "btn sm", "집감 살펴보기");
     intro.href = (window.DJ_ROOT || "") + "intro.html";
     acts.append(intro);
     if (acts.children.length < 2) {   // 단추는 둘까지 (담기가 없으면 찾기)
