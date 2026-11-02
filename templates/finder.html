@@ -54,8 +54,8 @@
   </div>
   <div class="card-grid" id="finder-results"></div>
   <button type="button" class="more-btn" id="finder-more" hidden></button>
-  <p class="muted small sv-foot">대출 한도는 원리금균등 상환, DSR {{ "%.0f" | format((finder.dsr or 0.4) * 100) }}% 기준의 참고용 추정치이며 실제 승인 금액이 아닙니다.
-  스트레스 DSR, 은행 심사, 정책 대출, 취득세·중개보수는 반영하지 않았고, 상황별 LTV는 정책에 따라 달라질 수 있습니다.
+  <p class="muted small sv-foot">대출 한도는 원리금균등 상환, 소득 대비 대출 상환 한도(DSR) {{ "%.0f" | format((finder.dsr or 0.4) * 100) }}% 기준의 참고용 추정치이며 실제 승인 금액이 아닙니다.
+  은행 심사, 정책 대출, 취득세·중개보수는 반영하지 않았고, 상황별 집값 대비 대출 비율(LTV)은 정책에 따라 달라질 수 있습니다.
   {% if finder.loan_caps %}{{ region }}은 집값 구간별 대출 한도({% for hi, cap in finder.loan_caps %}{% if loop.last %}그 위는 {{ (cap / 10000) | round(1) | replace('.0', '') }}억{% else %}{{ (hi / 10000) | round(1) | replace('.0', '') }}억 이하 {{ (cap / 10000) | round(1) | replace('.0', '') }}억, {% endif %}{% endfor %})도 함께 적용했습니다.{% endif %}</p>
 </section>
 {% endblock %}

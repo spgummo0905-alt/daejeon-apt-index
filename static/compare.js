@@ -9,7 +9,7 @@
   // 비교 표의 행: 값, 표시, 좋은 쪽(high/low/null)
   const ROWS = [
     ["종합 지수", c => c.i, c => c.i == null ? "-" : c.i + "점", "high"],
-    ["84㎡ 환산가", c => c.p, c => c.pt || "-", null],   // 싼 게 늘 낫다고 볼 수 없어 표시하지 않음
+    ["84㎡ 기준 가격", c => c.p, c => c.pt || "-", null],   // 싼 게 늘 낫다고 볼 수 없어 표시하지 않음
     ["84㎡ 환산 전세", c => c.j, c => c.jt || "-", null],
     ["전세가율", c => c.jr, c => c.jr == null ? "-" : c.jr + "%", null],
     ["입지", c => c.st[0], c => c.st[0] ?? "-", "high"],
@@ -18,9 +18,9 @@
     ["입지 대비 가격", c => c.st[3], c => c.st[3] ?? "-", "high"],
     ["거래량", c => c.st[4], c => c.st[4] ?? "-", "high"],
     ["신축도", c => c.st[5], c => c.st[5] ?? "-", "high"],
-    ["10년 연평균", c => c.c10, c => c.c10 == null ? "-" : (c.c10 > 0 ? "+" : "") + c.c10 + "%", "high"],
-    ["5년 연평균", c => c.c5, c => c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "%", "high"],
-    ["전고점 대비", c => c.dd, c => c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%" + (c.py ? " (" + c.py + ")" : ""), null],
+    ["10년 평균 상승률(해마다)", c => c.c10, c => c.c10 == null ? "-" : (c.c10 > 0 ? "+" : "") + c.c10 + "%", "high"],
+    ["5년 평균 상승률(해마다)", c => c.c5, c => c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "%", "high"],
+    ["최고가 대비", c => c.dd, c => c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%" + (c.py ? " (" + c.py + ")" : ""), null],
     ["지하철역", c => c.f.subway, c => c.f.subway == null ? "-" : (c.stn ? c.stn + " " : "") + c.f.subway + "m", "low"],
     ["기차역", c => c.f.rail, c => c.f.rail == null ? "-" : (c.f.rail / 1000).toFixed(1) + "km", "low"],   // 청주: 오송역·청주역 중 가까운 곳
     ["학군 점수", c => c.ed, c => c.ed == null ? "-" : c.ed + "점", "high"],
@@ -103,7 +103,7 @@
     thead.append(hr); table.append(thead);
     const tb = el("tbody");
     // 항목별 1위 세기: 가격·종합 지수, 좋고 나쁨이 없는 줄, 학군 세부(·로 시작)는 빼고 셉니다
-    const counted = (name, better) => better && name !== "84㎡ 환산가" && name !== "종합 지수" && !name.startsWith("· ");
+    const counted = (name, better) => better && name !== "84㎡ 기준 가격" && name !== "종합 지수" && !name.startsWith("· ");
     const rows = ROWS.filter(([, get]) => !cs.every(c => get(c) == null));  // 모두 값이 없는 줄(아직 자료 없는 항목)은 빼기
     const nCounted = rows.filter(([n, , , b]) => counted(n, b)).length;
     rows.forEach(([name, get, show, better]) => {

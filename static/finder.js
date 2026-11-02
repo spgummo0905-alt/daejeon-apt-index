@@ -39,8 +39,8 @@
     { id: "mart", label: "대형마트", sub: "1km 안", test: c => c.f.mart != null && c.f.mart <= 1000 },
     { id: "hospital", label: "병원 많은 곳", sub: "반경 1km 병원 수 상위 30%", test: c => c.f.hospital != null && c.f.hospital >= ctx.hospQ },
     { id: "top", label: "A등급 이상", sub: "종합 지수 65점 이상", test: c => c.i != null && c.i >= 65 },
-    { id: "rising", label: "5년 흐름 상위", sub: "최근 5년 연평균 수익률 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
-    { id: "dip", label: "고점 대비 하락", sub: "전고점보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
+    { id: "rising", label: "5년 흐름 상위", sub: "최근 5년 해마다 평균 상승률이 상위 40%", test: c => c.st[2] != null && c.st[2] >= 60 },
+    { id: "dip", label: "최고가보다 내림", sub: "역대 최고가보다 10% 이상 낮음", test: c => c.dd != null && c.dd <= -10 },
     { id: "high", label: "최근 신고가", sub: "최근 90일 안에 같은 면적대 신고가", test: c => !!c.h },
     { id: "big", label: "대단지", sub: "1,000세대 이상", test: c => c.hh != null && c.hh >= 1000 },
     { id: "mid", label: "500세대 이상", sub: "중간 규모 이상 단지", test: c => c.hh != null && c.hh >= 500 },
@@ -147,7 +147,7 @@
   function drawStatus() {
     q.append(grid("c4", ...STATUS.map(st => option(st.label, st.sub, null, S.status === st.id,
       () => { S.status = S.status === st.id ? "" : st.id; }))));
-    if (S.status) q.append(el("p", "sv-note", `LTV ${Math.round(LTV[S.status] * 100)}% 기준의 참고용 계산입니다. 실제 한도는 은행 심사와 정책에 따라 달라집니다.`));
+    if (S.status) q.append(el("p", "sv-note", `집값 대비 대출 비율(LTV) ${Math.round(LTV[S.status] * 100)}% 기준의 참고용 계산입니다. 실제 한도는 은행 심사와 정책에 따라 달라집니다.`));
   }
   function drawGu() {
     const n = {};
@@ -253,8 +253,8 @@
       const lim = maxPrice(equity, loanDsr, ltv), max = lim.p, loan = Math.max(0, max - equity);
       const why = lim.why === "cap" ? `집값 ${eok(lim.hi)} 이하 대출 한도(${eok(lim.cap)}) 기준`
         : lim.why === "edge" ? `${DJ.josa(eok(lim.hi), "을/를")} 넘으면 대출 한도가 ${eok(lim.next)}으로 줄어 이 금액이 상한`
-        : lim.why === "dsr" ? `소득(DSR ${Math.round(DSR * 100)}%) 기준`
-        : lim.why === "ltv" ? `LTV ${Math.round(ltv * 100)}% 기준` : "대출 없이 자기자본 기준";
+        : lim.why === "dsr" ? `소득 기준(DSR ${Math.round(DSR * 100)}%)`
+        : lim.why === "ltv" ? `집값 대비 대출 비율(LTV ${Math.round(ltv * 100)}%) 기준` : "대출 없이 자기자본 기준";
       const pay = r > 0 ? loan * r / (1 - Math.pow(1 + r, -n)) : loan / n;
       const big = el("div", "af-big");
       big.append(el("span", "label", "매수 가능 가격 (참고용 추정)"), el("strong", "", eok(max)));

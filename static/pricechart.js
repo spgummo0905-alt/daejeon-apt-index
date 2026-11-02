@@ -399,7 +399,7 @@
     if (v != null) {
       out.push(`추정 시세 ${eok(v)}${T.sp[i] ? " (거래가 드문 달)" : ""}`);
       if (state.mode !== "mkt" && T.lo[i] != null) out.push(`예상 범위 ${eok(conv(T.lo[i], i, base))} ~ ${eok(conv(T.hi[i], i, base))}`);
-      if (state.mode === "real") out.push(`명목 ${eok(T.est[i])}`);
+      if (state.mode === "real") out.push(`실제 금액 ${eok(T.est[i])}`);
     }
     if (state.mode === "gap") {
       const j = T.je && T.je[i];
@@ -478,8 +478,8 @@
     badge.hidden = pk == null || pi === li;
     if (!badge.hidden) {
       const r = cur / pk - 1;
-      badge.textContent = r > -0.005 ? `지금이 가장 높아요${useReal ? " (실질)" : ""}`
-        : `고점 대비 ${pct(r)} (${useReal ? "실질, " : ""}${ym(pi)} 고점)`;
+      badge.textContent = r > -0.005 ? `지금이 가장 높아요${useReal ? " (물가 뺀 값)" : ""}`
+        : `최고가 대비 ${pct(r)} (${useReal ? "물가 뺀 값, " : ""}${ym(pi)} 최고가)`;
       badge.classList.toggle("near", r > -0.05);
     }
   }
@@ -503,8 +503,8 @@
       items.push(item("k-bar m", "지역 거래량"));
       if (rates) { items.push(item("k-line navy", "기준금리")); items.push(item("k-line s1 thin", "주담대 금리")); }
     } else {
-      items.push(item("k-line s1", state.mode === "real" ? "실질 추정 시세" : "추정 시세"));
-      if (state.mode === "real") items.push(item("k-line ghost", "명목 추정 시세"));
+      items.push(item("k-line s1", state.mode === "real" ? "물가 뺀 추정 시세" : "추정 시세"));
+      if (state.mode === "real") items.push(item("k-line ghost", "실제 금액 추정 시세"));
       items.push(item("k-dash s1", "거래가 드문 달"));
       items.push(item("k-band", "예상 거래 범위(80%)"));
       items.push(item("k-dot", "실거래"));
@@ -535,7 +535,7 @@
         const rows = [["이 단지 " + T.k + "㎡", estAt, "s1"], [region, i => mk(M.region.idx, i), "s2"]];
         if (M.gu && M.gu[gu] && gu !== region) rows.push([gu, i => mk(M.gu[gu].idx, i), "s3"]);
         const defl = real ? (cpiAt(st + 2) && cpiAt(e) ? cpiAt(e) / cpiAt(st + 2) : null) : null;
-        const t = table(["구분", "명목", ...(defl ? ["실질"] : []), "연평균" + (defl ? "(실질)" : "")]);
+        const t = table(["구분", "실제 금액", ...(defl ? ["물가 뺀 값"] : []), "해마다 평균" + (defl ? "(물가 뺀 값)" : "")]);
         rows.forEach(([name, get, cls]) => {
           const a = avg3(get, st + 2), b = avg3(get, e);
           if (a == null || b == null) return;

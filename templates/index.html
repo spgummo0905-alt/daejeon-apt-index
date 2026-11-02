@@ -101,7 +101,7 @@
 <section id="map" class="panel">
   <div class="panel-head">
     <h2>지도로 보는 {{ region }} 아파트</h2>
-    <p class="muted">지도에서 단지별 84㎡ 환산가와 등급을 비교해 보세요. 빨간 테두리는 최근 신고가가 나온 단지입니다. 조건을 고르면 원하는 단지만 남깁니다.</p>
+    <p class="muted">지도에서 단지별 84㎡ 기준 가격과 등급을 비교해 보세요. 빨간 테두리는 최근 신고가가 나온 단지입니다. 조건을 고르면 원하는 단지만 남깁니다.</p>
   </div>
   <div class="kmap-wrap" id="kmap-wrap">
     {# 지도 위 거르기 (카카오맵이 뜰 때만 보임, kmap.js) #}
@@ -109,7 +109,7 @@
       <div class="seg km-show" role="group" aria-label="핀에 보일 값">
         <button type="button" class="seg-btn active" data-km-show="p" aria-pressed="true">84㎡ 가격</button>
         <button type="button" class="seg-btn" data-km-show="i" aria-pressed="false">지수</button>
-        <button type="button" class="seg-btn" data-km-show="j" aria-pressed="false">전세가율</button>
+        <button type="button" class="seg-btn" data-km-show="j" aria-pressed="false">전세 비율</button>
       </div>
       <div class="km-chips" role="group" aria-label="가격대 (84㎡)" data-km-price></div>
       <div class="km-chips" role="group" aria-label="조건">
@@ -124,10 +124,10 @@
     <div class="kmap-card" id="kmap-card"><span class="muted">지도에서 단지를 누르면 요약이 표시됩니다.</span></div>
     <div class="map-fallback"{% if kakao_js_key %} data-src="map-fallback.html"></div>{% else %}>{{ charts.map | safe }}</div>{% endif %}
   </div>
-  {# 가까운 동네, 다른 아파트 가격: 직선 600m 안인데 84㎡ 환산가가 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
+  {# 가까운 동네, 다른 아파트 가격: 직선 600m 안인데 84㎡ 기준 가격이 크게 다른 두 단지 (cliffs.js). 임장 때 차이의 이유를 확인 #}
   <div class="cliffs" data-cliffs hidden>
     <h3>가까운 동네, 다른 아파트 가격</h3>
-    <p class="muted">직선거리 600m 이내인데도 84㎡ 환산가가 1.4배 이상 차이 나는 단지들입니다. 연식과 교통, 학군, 언덕 등 어떤 차이가 있는지 비교해 보세요.</p>
+    <p class="muted">직선거리 600m 이내인데도 84㎡ 기준 가격이 1.4배 이상 차이 나는 단지들입니다. 연식과 교통, 학군, 언덕 등 어떤 차이가 있는지 비교해 보세요.</p>
     <ol></ol>
     <button type="button" class="more-btn" data-cliffs-more hidden></button>
   </div>
@@ -289,7 +289,7 @@
   </div>
   {% if leaders %}
   <div data-gu-panel="top" hidden>
-  <p class="muted gv-note">{{ unit }}마다 84㎡ 환산가가 가장 높은 단지입니다. 막대는 {{ unit }} 중간 가격이 이 단지의 몇 %인지 보여 줍니다.</p>
+  <p class="muted gv-note">{{ unit }}마다 84㎡ 기준 가격이 가장 높은 단지입니다. 막대는 {{ unit }} 중간 가격이 이 단지의 몇 %인지 보여 줍니다.</p>
   {% set rail = true %}{# 다 들어가면 화살표는 숨김 (app.js rail) #}
   {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
   <div class="leader-row{% if rail %} rail{% endif %}">
@@ -314,7 +314,7 @@
 <section id="value" class="panel">
   <div class="panel-head">
     <h2>입지 대비 가격이 낮은 단지</h2>
-    <p class="muted">입지 점수는 {{ region }} 중간({{ value_ref.loc_med | score }}점) 이상, 84㎡ 환산가는 중간({{ value_ref.price_med | eok }}) 이하인 단지를 입지 순으로 모았습니다. 환산가는 실거래로 계산한 비교용 추정치입니다.</p>
+    <p class="muted">입지 점수는 {{ region }} 중간({{ value_ref.loc_med | score }}점) 이상, 84㎡ 기준 가격은 중간({{ value_ref.price_med | eok }}) 이하인 단지를 입지 순으로 모았습니다. 기준 가격은 실거래로 84㎡에 맞춰 계산한 비교용 추정치입니다.</p>
   </div>
   {% set n_villa = value_list | selectattr("small") | list | length %}
   <div class="chips type-chips" id="value-type" role="group" aria-label="단지 종류">
@@ -372,7 +372,7 @@
       <th data-sort="num" class="sorted-desc">지수</th>
       <th data-sort="text" class="col-place">위치</th>
       <th data-sort="num" class="col-year">준공</th>
-      <th data-sort="num">{{ ref_area }}㎡ 환산가</th>
+      <th data-sort="num">{{ ref_area }}㎡ 기준 가격</th>
       {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
       <th data-sort="num">입지</th>
     </tr></thead>

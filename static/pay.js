@@ -26,7 +26,7 @@
     out.replaceChildren();
     if (!eq.value) { out.append(el("p", "muted", "자기자본을 입력하면 필요한 대출과 한 달 상환액을 계산합니다.")); return; }
     const need = Math.max(0, price - equity);
-    let limit = price * (LTV[st.value] || 0.7), why = `LTV ${Math.round((LTV[st.value] || 0.7) * 100)}%`;
+    let limit = price * (LTV[st.value] || 0.7), why = `집값 대비 대출 비율(LTV) ${Math.round((LTV[st.value] || 0.7) * 100)}%`;
     if (CAPS) {   // 집값 구간별 대출 한도 (서울)
       const cap = (CAPS.find(([hi]) => price <= hi) || CAPS[CAPS.length - 1])[1];
       if (cap < limit) { limit = cap; why = `집값 구간 한도 ${eok(cap)}`; }
@@ -39,7 +39,7 @@
       row("필요한 대출", need ? eok(need) : "없음"),
       row("대출 한도 어림", `${eok(limit)} (${why})`));
     if (need > limit) out.append(row("자기자본 부족", "약 " + eok(need - limit), "warn"));
-    if (loan) out.append(row("필요한 연소득 (DSR " + Math.round(DSR * 100) + "%)", "약 " + eok(pay * 12 / DSR) + " 이상"),
+    if (loan) out.append(row("필요한 연소득 (소득 대비 상환 한도 DSR " + Math.round(DSR * 100) + "%)", "약 " + eok(pay * 12 / DSR) + " 이상"),
       row(Math.round(n / 12) + "년간 낼 이자", "약 " + eok(pay * n - loan)));
   }
   [py, st, eq, rate, yr].forEach(x => x.addEventListener("input", calc));
