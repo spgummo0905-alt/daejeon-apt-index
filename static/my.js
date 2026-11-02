@@ -163,7 +163,7 @@
     };
     const ROWS = [
       ["등급·지수", ({ c }) => (c.g && c.g !== "-" ? c.g + "등급 · " : "") + (c.i == null ? "-" : c.i + "점")],
-      ["84㎡ 환산가", ({ c }) => c.pt || "-"],
+      ["84㎡ 기준 가격", ({ c }) => c.pt || "-"],
       ["공통 기록 방문일", ({ c, v }) => (v.d ? v.d.replace(/-/g, ".") : DJVisitLog.list({ region, slug: c.s }).length ? "날짜별 방문 기록 참고" : "방문 전")],
       ["현장 체크", ({ c, v }) => { const [n, all] = DJ.visitDone(v, DJ.visitItems(c, region)); return `${n} / ${all}`; }],
       ["확인 못 한 것", ({ c, v }) => {

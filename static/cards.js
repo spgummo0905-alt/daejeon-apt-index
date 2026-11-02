@@ -45,7 +45,7 @@
   function whyCmp(c, b) {
     const where = c.gu === b.gu && c.d === b.d ? `${DJ.josa(b.n, "과/와")} 같은 동` : `${b.n}에서 ${km(c, b).toFixed(1)}km`;
     const diff = c.p - b.p;
-    const val = Math.abs(diff) < 1000 ? "84㎡ 환산가가 비슷합니다" : `84㎡ 환산가가 ${money(Math.abs(diff))} ${diff < 0 ? "낮습니다" : "높습니다"}`;
+    const val = Math.abs(diff) < 1000 ? "84㎡ 기준 가격이 비슷합니다" : `84㎡ 기준 가격이 ${money(Math.abs(diff))} ${diff < 0 ? "낮습니다" : "높습니다"}`;
     return `${where} · ${val}. 차이가 어디서 오는지 비교해 보세요.`;
   }
   function pickToday(d, all, rand) {

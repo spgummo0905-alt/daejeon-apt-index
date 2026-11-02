@@ -120,9 +120,42 @@ def view(rows: list[dict], areas: list[str], today: date | None = None, years: i
             by[a][int(r["ym"][:4])] += r["hh"]
     total = {y: sum(r["hh"] for r in up if int(r["ym"][:4]) == y) for y in yrs}
     mx = max([v for a in by.values() for v in a.values()] + [1])
-    table = [{"area": a, "vals": [by[a][y] for y in yrs], "w": [round(by[a][y] / mx * 100, 1) for y in yrs]}
+    table = [{"area": a, "vals": [by[a][y] for y in yrs], "w": [round(by[a][y] / mx * 100, 1) for y in yrs],
+              "t": [_tier(by[a][y] / mx) for y in yrs]}
              for a in areas if any(by[a].values())]
     table.sort(key=lambda x: -sum(x["vals"]))
-    soon = [dict(r, when=f"{r['ym'][:4]}.{r['ym'][4:]}") for r in up][:8]
-    return {"years": yrs, "total": [total[y] for y in yrs], "table": table, "soon": soon,
+    # 다가오는 입주: 잔여 몇 세대짜리는 빼고(목록이 묻힘), 달이 바뀔 때만 달 이름을 붙임
+    big = [r for r in up if r["hh"] >= SOON_MIN]
+    shown = big[:8]
+    hmax = max([r["hh"] for r in shown] + [1])
+    soon, prev = [], None
+    for r in shown:
+        y, m = int(r["ym"][:4]), int(r["ym"][4:])
+        soon.append(dict(r, when=f"{r['ym'][:4]}.{r['ym'][4:]}", bw=round(r["hh"] / hmax * 100),
+                         mlabel=(f"{y}년 {m}월" if y != t.year else f"{m}월") if r["ym"] != prev else ""))
+        prev = r["ym"]
+    # 한눈에 읽는 결론: 이 3년 안에서 비교한 사실만 (예측·판단 문구 없음)
+    tmax = max(total.values())
+    peak = yrs.index(next(y for y in yrs if total[y] == tmax))
+    nonzero = [y for y in yrs if total[y]]
+    head = (f"{yrs[peak]}년에 가장 많이 입주해요" if len(nonzero) > 1 else f"{nonzero[0]}년에 입주 예정이에요")
+    head2 = ""
+    if table and sum(table[0]["vals"]) and len(table) > 1:
+        head2 = f"구별로는 3년 합계 {table[0]['area']}가 가장 많아요 ({sum(table[0]['vals']):,}세대)"
+    notes = [""] * len(yrs)
+    if t.month > 1:
+        notes[0] = f"남은 {13 - t.month}달"   # 올해는 이미 지난 달이 빠져 있어 열두 달치와 바로 비교하면 안 됨
+    notes[-1] = "공고된 것만"                # 먼 해는 분양 공고가 아직 덜 나옴
+    bars = [{"y": y, "v": total[y], "h": max(round(total[y] / tmax * 100), 3) if total[y] else 0, "note": notes[i],
+             "peak": i == peak and len(nonzero) > 1} for i, y in enumerate(yrs)]
+    return {"years": yrs, "total": [total[y] for y in yrs], "table": table, "soon": soon, "bars": bars,
+            "head": head, "head2": head2, "soon_cut": len(up) - len(big), "notes": notes,
             "from": f"{t.year}.{t.month:02d}"}
+
+
+SOON_MIN = 30   # '다가오는 입주' 목록에서 뺄 작은 물량(세대)
+
+
+def _tier(ratio: float) -> int:
+    """칸 색 진하기 0(없음)~5. 전체 최댓값 대비 비율을 5단계로."""
+    return 0 if ratio <= 0 else min(5, int(ratio * 5 - 1e-9) + 1)

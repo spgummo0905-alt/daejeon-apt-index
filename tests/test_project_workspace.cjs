@@ -22,22 +22,23 @@ function setup() {
   dialog.querySelector = s => nodes[s.slice(1, -1)];
   dialog.showModal = () => { dialog.open = true; }; dialog.close = () => { dialog.open = false; };
   const focus = new Node(), events = {}, added = [];
-  const c = { URLSearchParams, location: { origin: 'https://jipgam.test' }, document: { activeElement: focus },
+  const c = { URLSearchParams, scrollY: 480, scrollTo: (x, y) => { c.scrollY = y; }, location: { origin: 'https://jipgam.test' }, document: { activeElement: focus },
     addEventListener: (name, fn) => { events[name] = fn; }, confirm: () => false, DJ: { el: () => new Node() } };
   c.window = c; vm.createContext(c);
   for (const file of ['project-flow.js', 'project-workspace.js']) vm.runInContext(readFileSync(join(__dirname, '../static', file), 'utf8'), c);
   const context = { project: { id: 'p-1', name: '내 집', slugs: ['a', 'b'], archived: false },
     selected: ['a', 'b'], data: { bySlug: { a: { s: 'a', n: 'A', la: 36, ln: 127 }, b: { s: 'b', n: 'B', la: 36, ln: 128 } } } };
   const W = c.DJProjectWorkspace({ dialog, context: () => context, onAdd: s => added.push(s) });
-  return { W, nodes, tabs, dialog, focus, events, added, context };
+  return { W, nodes, tabs, dialog, focus, events, added, context, c };
 }
 test('tools open lazily without replacing the parent, and re-opening preserves each iframe and its state', () => {
-  const { W, nodes, dialog, focus } = setup();
+  const { W, nodes, dialog, focus, c } = setup();
   assert.equal(nodes['data-pw-frames'].children.length, 0);
   assert.equal(W.open('compare'), true); const frame = nodes['data-pw-frames'].children[0]; frame.state = { scroll: 340 };
   W.open('history'); assert.equal(frame.hidden, true); assert.equal(nodes['data-pj-journal'].hidden, false);
   W.open('compare'); assert.equal(nodes['data-pw-frames'].children.length, 1); assert.equal(frame.state.scroll, 340);
-  nodes['data-pw-close'].listeners.click(); assert.equal(dialog.open, false); assert.equal(frame.removed, undefined); assert.equal(focus.focused, true);
+  c.scrollY = 700;
+  nodes['data-pw-close'].listeners.click(); assert.equal(dialog.open, false); assert.equal(frame.removed, undefined); assert.equal(focus.focused, true); assert.equal(c.scrollY, 480);
 });
 test('hidden visit drafts are retained across tools and closing, and switching apartments can be cancelled', () => {
   const { W, nodes } = setup(); W.open('field', 'a'); const frame = nodes['data-pw-frames'].children[0], before = frame.src;

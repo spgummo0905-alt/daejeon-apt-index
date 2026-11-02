@@ -144,7 +144,7 @@
     result.slice(0, searchLimit).forEach(c => {
       const row = el("article", "pj-result"), title = el("button", "pj-result-name", c.n); title.type = "button";
       title.addEventListener("click", () => workspace.open("detail", c.s));
-      const info = el("div"); info.append(title, el("p", "muted small", `${DJ.place(c)} · 84㎡ ${c.pt || "가격 정보 없음"}`));
+      const info = el("div"); info.append(title, el("p", "muted small", `${DJ.place(c)} · 84㎡ 기준 ${c.pt || "가격 정보 없음"}`));
       const addButton = el("button", "btn sm", current.slugs.includes(c.s) ? "후보에 담김" : "후보로 담기"); addButton.type = "button";
       addButton.disabled = current.archived || current.slugs.includes(c.s); addButton.setAttribute("aria-label", c.n + " " + addButton.textContent);
       addButton.addEventListener("click", () => add(c)); row.append(info, addButton); box.append(row);

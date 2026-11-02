@@ -5,7 +5,7 @@
     const host = dialog.querySelector("[data-pw-frames]"), history = dialog.querySelector("[data-pj-journal]");
     const status = dialog.querySelector("[data-pw-status]"), select = dialog.querySelector("[data-pw-apt]");
     const labels = { detail: "단지 상세", field: "현장 체크", compare: "후보 비교", course: "임장 코스", finder: "조건으로 찾기", history: "방문 기록" };
-    let active = "", lastFocus = null, activeSlug = "";
+    let active = "", lastFocus = null, activeSlug = "", returnScroll = 0;
     const frameDirty = frame => {
       try { const d = frame.contentWindow.DJ; return !!(d?.hasVisitLogDraft?.() || d?.hasProjectDraft?.()); }
       catch (_) { return false; }
@@ -34,7 +34,9 @@
       frames.forEach(send);
     }
     function close() {
-      dialog.close(); if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
+      dialog.close(); document.documentElement?.classList.remove("pw-open");
+      window.scrollTo?.(0, returnScroll);
+      if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
     }
     function open(kind, slug) {
       const ctx = context(); if (!ctx) return false;
@@ -52,7 +54,10 @@
         frame.addEventListener("load", () => { status.textContent = ""; send(frame); });
         host.append(frame); frames.set(kind, frame);
       }
-      if (!dialog.open) { lastFocus = document.activeElement; dialog.showModal(); }
+      if (!dialog.open) {
+        lastFocus = document.activeElement; returnScroll = window.scrollY || 0;
+        document.documentElement?.classList.add("pw-open"); dialog.showModal();
+      }
       if (frame && frame.dataset.url !== url) {
         status.textContent = "불러오는 중… 연결이 느리면 잠시 기다리거나 닫고 다시 열어 주세요.";
         frame.dataset.url = url; frame.src = url;

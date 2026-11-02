@@ -92,4 +92,14 @@
     more.addEventListener("click", () => { vlimit += 10; draw(); });
     draw();
   }
+  // 입주 예정 물량: '다가오는 입주' 더 보기 (모바일에서만 4개 뒤를 접어 둠)
+  document.querySelectorAll("[data-mv-toggle]").forEach(btn => {
+    const list = btn.previousElementSibling;
+    btn.addEventListener("click", () => {
+      const open = list.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = open ? "접기" : btn.dataset.more;
+    });
+    btn.dataset.more = btn.textContent;
+  });
 })();

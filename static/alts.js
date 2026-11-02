@@ -37,7 +37,7 @@
     list = list.sort((a, b) => a.k - b.k).slice(0, 3);
     if (!list.length) return;
     box.querySelector("[data-alts-sub]").textContent =
-      `84㎡ 환산가 ${eok(me.p)} 안팎(±10%)이고 직선 ${list[list.length - 1].k <= 3 ? "3km" : "5km"} 안에 있는 단지입니다. 가격대가 비슷한데 어떤 차이가 있는지 함께 비교해 보세요.`;
+      `84㎡ 기준 가격 ${eok(me.p)} 안팎(±10%)이고 직선 ${list[list.length - 1].k <= 3 ? "3km" : "5km"} 안에 있는 단지입니다. 가격대가 비슷한데 어떤 차이가 있는지 함께 비교해 보세요.`;
     const ul = box.querySelector("[data-alts-list]");
     list.forEach(({ c, k }) => {
       const li = el("li", "alt");

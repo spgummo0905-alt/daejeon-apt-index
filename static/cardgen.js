@@ -209,9 +209,9 @@
     ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(56, cy - 26); ctx.lineTo(W - 56, cy - 26); ctx.stroke();
     const cells = [
-      ["84㎡ 환산", c.pt || "-"],
-      ["10년 연평균", c.c10 == null ? (c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "% (5년)") : (c.c10 > 0 ? "+" : "") + c.c10 + "%"],
-      ["전고점 대비", c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%"],
+      ["84㎡ 기준가", c.pt || "-"],
+      ["10년 평균 상승", c.c10 == null ? (c.c5 == null ? "-" : (c.c5 > 0 ? "+" : "") + c.c5 + "% (5년)") : (c.c10 > 0 ? "+" : "") + c.c10 + "%"],
+      ["최고가 대비", c.dd == null ? "-" : (c.dd > 0 ? "+" : "") + Math.round(c.dd) + "%"],
     ];
     cells.forEach(([label, value], k) => {
       const cx = 56 + (W - 112) * (k + 0.5) / 3;
