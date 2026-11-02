@@ -196,3 +196,15 @@ test('wipe logout preserves unsent records when the server is unavailable', asyn
   assert.equal(JSON.parse(s.getItem('djdex@A:visit:one')).m, 'unsent');
   assert.equal(b.ctx.DJ.sync.linking, false);
 });
+
+test('failure to persist sync metadata cannot clear guest originals', async () => {
+  const s = storage({ 'djdex:visit:one': { m: 'original' }, 'djdex-pkce': { v: 'test' } });
+  const limited = new Proxy(s, { get(target, key) {
+    if (key === 'setItem') return (k, v) => { if (k.endsWith(':_sync')) throw new Error('quota'); target.setItem(k, v); };
+    return Reflect.get(target, key);
+  } });
+  const b = browser(limited, {}, { login: 'A' }); await b.start();
+  assert.equal(JSON.parse(s.getItem('djdex:visit:one')).m, 'original');
+  assert.ok(!b.requests.some(r => r.path === '/rest/v1/rpc/sync_put'));
+  assert.equal(b.R.get('_importGuest'), true);
+});

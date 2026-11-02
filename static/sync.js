@@ -231,7 +231,7 @@
         await call("/rest/v1/rpc/sync_put", { method: "POST", body: { items: part }, keepalive }, at);
         const m2 = meta() || m;
         part.forEach(x => { m2.sent[x.k] = x.t; });
-        if (owns()) R.setMeta(m2);
+        if (owns() && !R.setMeta(m2)) throw new Error("기기 저장 공간이 부족해요");
       }
       S.at = Date.now();
     })().finally(() => { pushing = null; });
@@ -246,9 +246,10 @@
     rows.forEach(r => {
       if (r.updated_at > (m.since || "")) m.since = r.updated_at;
       if (r.k.startsWith("_") || DJ.LOCAL_ONLY.includes(r.k) || !((t[r.k] || 0) < r.t || getLocal(r.k) === undefined)) return;
-      if (putLocal(r.k, r.v)) { t[r.k] = r.t; m.sent[r.k] = r.t; changed.push(r.k); }
+      if (!putLocal(r.k, r.v)) throw new Error("기기 저장 공간이 부족해요");
+      t[r.k] = r.t; m.sent[r.k] = r.t; changed.push(r.k);
     });
-    R.setTimes(t); R.setMeta(m);
+    R.setTimes(t); if (!R.setMeta(m)) throw new Error("기기 저장 공간이 부족해요");
     S.at = Date.now();
     return changed;
   }
@@ -295,7 +296,7 @@
       if (!putLocal("favs", favs)) throw new Error("기기 저장 공간이 부족해요");
       t.favs = Math.max(now, (t.favs || 0) + 1); delete m.sent.favs;
     }
-    R.setTimes(t); R.setMeta(m);
+    R.setTimes(t); if (!R.setMeta(m)) throw new Error("기기 저장 공간이 부족해요");
     await push();
     if (bringGuest && owns()) { R.clearGuest(guest); R.remove("_importGuest"); } // 전송 성공 전에는 원본 보존
     return changed;
