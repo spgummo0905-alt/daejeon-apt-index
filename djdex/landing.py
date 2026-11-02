@@ -111,6 +111,13 @@ def build(cfg, out_dir: Path) -> int:
         html = html.replace(f'href="{base}{folder}/landing"', f'href="{base}"').replace(
             f'content="{base}{folder}/landing"', f'content="{base}"')
         html = re.sub(r'(<meta property="og:image" content=")[^"]*(")', rf'\g<1>{base}static/og/jipgam.jpg\g<2>', html)
+        # 사이트 이름은 도메인 첫 화면에서 선언합니다. 지역 자료를 전국 합계나 전국 순위로 표현하지 않습니다.
+        website = {"@context": "https://schema.org", "@type": "WebSite", "@id": base + "#website",
+                   "name": "집감", "alternateName": "Jipgam", "url": base, "inLanguage": "ko-KR",
+                   "description": "아파트 실거래가·입지 비교, 임장 코스와 현장 기록을 한곳에서 준비하는 플랫폼"}
+        # JSON 문자열 안의 HTML 종료 태그가 script 요소를 닫지 못하게 이스케이프합니다.
+        schema = json.dumps(website, ensure_ascii=False).replace("<", "\\u003c")
+        html = html.replace("</head>", f'<script type="application/ld+json">{schema}</script>\n</head>', 1)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
     # 링크 미리보기 이미지 (맨 앞 주소용 '전국')
