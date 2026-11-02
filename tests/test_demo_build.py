@@ -46,7 +46,7 @@ def test_share_tags_and_sitemap(tmp_path):
 
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
-    base = "https://www.jipgam.kr/"
+    base = "https://www.jipgam.kr/daejeon/"
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert f'<meta property="og:url" content="{base}apt/DEMO-0001">' in page
     assert f'<meta property="og:image" content="{base}static/og/daejeon.jpg">' in page
@@ -143,7 +143,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     stations = (out / "stations.html").read_text(encoding="utf-8")
     assert "BRT 정류장 주변" in stations and "지하철" not in stations
     robots = (out / "robots.txt").read_text(encoding="utf-8")
-    assert "jipgam.kr/sitemap.xml" in robots and "sejong/sitemap.xml" in robots
+    assert "jipgam.kr/daejeon/sitemap.xml" in robots and "sejong/sitemap.xml" in robots
 
 
 def test_month_pages_built(tmp_path):
@@ -796,7 +796,7 @@ def test_pwa_manifest_icons_and_service_worker(tmp_path):
     for ic in man["icons"]:
         assert (out / ic["src"]).exists()
     sw = (out / "sw.js").read_text(encoding="utf-8")
-    assert "__VERSION__" not in sw and '"sejong"' in sw and "precache" in sw and not (out / "static" / "sw.js").exists()
+    assert "__VERSION__" not in sw and 'const OTHER = [];' in sw and "precache" in sw and not (out / "static" / "sw.js").exists()
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'rel="manifest" href="manifest.webmanifest"' in index and "apple-touch-icon" in index
     assert "data-install" in (out / "my.html").read_text(encoding="utf-8")
@@ -850,3 +850,30 @@ def test_movein_supply_by_area(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'id="movein"' in index and "입주 예정 물량" in index and 'href="#movein"' in index and "조합원 몫" in index
+
+
+def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
+    """맨 앞 주소는 지역 고르기 화면. 예전 대전 주소(/apt/○○.html 등)는 /daejeon/ 같은 화면으로 넘김"""
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out / "daejeon")])
+    cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out / "sejong")])
+    cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert 'href="daejeon/"' in page and 'href="sejong/"' in page and 'href="seoul/"' not in page   # 만든 지역만
+    assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and "static/og/jipgam.jpg" in page
+    assert 'name="naver-site-verification"' in page and "아파트<b>51곳</b>" in page
+    assert (out / "static" / "og" / "jipgam.jpg").exists() and (out / "static" / "bg" / "sky.webp").exists()
+    stub = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
+    assert 'location.replace("/daejeon/apt/DEMO-0001.html"+location.search+location.hash)' in stub
+    assert 'href="https://www.jipgam.kr/daejeon/apt/DEMO-0001"' in stub and 'content="noindex"' in stub
+    assert (out / "rank.html").exists() and not (out / "sejong" / "rank.html").read_text(encoding="utf-8").startswith("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><title>집감 대전")
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert "unregister" in sw and "fetch" not in sw
+    smap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<sitemapindex" in smap and "daejeon/sitemap.xml" in smap and "sejong/sitemap.xml" in smap
+    assert "Sitemap: https://www.jipgam.kr/sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
+    # 지역 사이트는 각자 폴더 주소를 씀 (대전 → /daejeon/)
+    dj = (out / "daejeon" / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://www.jipgam.kr/daejeon/">' in dj

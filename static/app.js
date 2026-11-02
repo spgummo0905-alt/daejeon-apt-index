@@ -1516,6 +1516,11 @@
   // ---------- 앱처럼 쓰기 (서비스 워커, 홈 화면에 추가) ----------
   // 현장에서 데이터가 약해도 관심 단지·임장 코스 단지 화면과 현장 모드가 열리도록, 그 화면들을 미리 저장해 둡니다.
   function pwa() {
+    // 맨 앞 지역 고르기 화면(jipgam.kr)이 '지난번에 본 지역'을 먼저 보여 주도록 지금 지역과 첫 화면 주소를 기억
+    try {
+      const rg = document.body.dataset.region;
+      if (rg) localStorage.setItem("dj-last-region", JSON.stringify({ name: rg, url: new URL(ROOT || "./", location.href).pathname }));
+    } catch (e) {}
     if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return;
     navigator.serviceWorker.register(ROOT + "sw.js").then(() => navigator.serviceWorker.ready).then(reg => {
       if (DJ.locked()) return;

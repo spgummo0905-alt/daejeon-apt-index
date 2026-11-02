@@ -215,7 +215,7 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
-def write_assetlinks(out_dir: Path, cfg) -> None:
+def write_assetlinks(out_dir: Path, cfg, root: bool = False) -> None:
     """안드로이드 앱 소유 확인 파일 (/.well-known/assetlinks.json). 앱이 이 사이트의 주인이라는 증명이라
     사이트 맨 위 주소(루트)에만 두고, 서명 지문(config.toml [app] android_sha256)이 있을 때만 만듭니다.
     지문은 Play Console 의 '앱 서명 키 인증서'(스토어 배포)와 업로드 키(시험 설치)를 함께 적어요."""
@@ -223,7 +223,8 @@ def write_assetlinks(out_dir: Path, cfg) -> None:
     from urllib.parse import urlsplit
     app = cfg.raw.get("app", {})
     fps = [f.strip().upper() for f in app.get("android_sha256", []) if f.strip()]
-    if not fps or urlsplit(cfg.site.get("base_url", "")).path not in ("", "/"):
+    # root: 맨 앞 지역 고르기 화면(landing.py)이 사이트 맨 위에 만들 때. 지역 폴더(/daejeon/ 등)에는 두지 않음
+    if not fps or (not root and urlsplit(cfg.site.get("base_url", "")).path not in ("", "/")):
         return
     d = out_dir / ".well-known"
     d.mkdir(parents=True, exist_ok=True)

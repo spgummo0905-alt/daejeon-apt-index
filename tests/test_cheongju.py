@@ -48,10 +48,12 @@ def test_cheongju_demo_has_no_station_pages(tmp_path):
 def test_assetlinks_only_at_root_with_fingerprints(tmp_path):
     from djdex import config, site
     cfg = config.load(config.ROOT / "config.toml")
-    site.write_assetlinks(tmp_path, cfg)
+    site.write_assetlinks(tmp_path, cfg, root=True)
     assert not (tmp_path / ".well-known").exists()            # 지문이 없으면 만들지 않음
     cfg.raw.setdefault("app", {})["android_sha256"] = ["aa:bb:cc"]
-    site.write_assetlinks(tmp_path, cfg)
+    site.write_assetlinks(tmp_path / "dj", cfg)                # 대전 폴더(/daejeon/)에는 두지 않음
+    assert not (tmp_path / "dj").exists()
+    site.write_assetlinks(tmp_path, cfg, root=True)           # 맨 앞 지역 고르기 화면이 만들 때만
     j = json.loads((tmp_path / ".well-known" / "assetlinks.json").read_text(encoding="utf-8"))
     assert j[0]["target"]["package_name"] == "kr.jipgam.app" and j[0]["target"]["sha256_cert_fingerprints"] == ["AA:BB:CC"]
     sub = config.load(config.ROOT / "config.sejong.toml")     # 지역 폴더(/sejong/)에는 두지 않음

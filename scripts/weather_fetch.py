@@ -14,7 +14,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 BASE = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/"
-SITES = ["https://www.jipgam.kr/", "https://www.jipgam.kr/sejong/", "https://www.jipgam.kr/seoul/", "https://www.jipgam.kr/cheongju/"]
+SITES = ["https://www.jipgam.kr/daejeon/", "https://www.jipgam.kr/sejong/", "https://www.jipgam.kr/seoul/", "https://www.jipgam.kr/cheongju/"]
 KST = timezone(timedelta(hours=9))
 
 
