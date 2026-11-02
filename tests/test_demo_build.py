@@ -622,7 +622,7 @@ def test_my_settings_and_note_export(tmp_path):
     for s in ('id="prefs"', 'data-pf="mode"', 'data-pf="dp"', "data-pf-checks", "data-pf-backup", "data-pf-restore",
               'data-area-unit="py"', "data-nt-csv", "data-nt-print", "static/prefs.js"):
         assert s in my, s
-    assert my.index('id="prefs"') < my.index('id="favs"')
+    assert my.index('id="favs"') < my.index('id="prefs"')
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.prefs = () =>" in app and "const dp = DJ.prefs().dp" in app and '"my:" + DJ.hash(t)' in app
     js = (out / "static" / "prefs.js").read_text(encoding="utf-8")

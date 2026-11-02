@@ -24,11 +24,11 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
       <p class="it-lead">눈여겨본 아파트를 비교하고, 가 볼 곳을 정하고, 현장에서 느낀 차이까지 남겨 보세요. 집감이 실거래가와 입지부터 임장 코스·현장 기록까지 한곳에 모아 드립니다.</p>
       <div class="it-cta">
         {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 시작하기 <span aria-hidden="true">→</span></button>{% else %}<a class="it-btn primary" href="index.html">아파트 찾아보기 <span aria-hidden="true">→</span></a>{% endif %}
-        <a class="it-btn ghost" href="my.html#course">내 임장 준비하기</a>
+        <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'my.html#course' }}">{{ '임장 도구 살펴보기' if landing else '내 임장 준비하기' }}</a>
       </div>
       <dl class="it-nums">
-        <div><dt>지수 산정 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
-        <div><dt>반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
+        <div><dt>{% if landing %}{{ region }} 예시 · {% endif %}지수 산정 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
+        <div><dt>{% if landing %}{{ region }} 예시 · {% endif %}반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
         <div><dt>마지막 반영</dt><dd>{{ meta.updated or meta.asof }}</dd></div>
       </dl>
     </div>
@@ -136,7 +136,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {# 4-2. 임장 도구: 가기 전 → 현장에서 → 다녀와서. 집은 결국 직접 가 보고 정하니까, 발품 판 기록을 흘리지 않게.
    사진·이어 보기·함께 보기는 카카오 로그인을 켰을 때만 (account) #}
 {% set apt_top = ("apt/" ~ top.slug ~ ".html") if top else "index.html" %}
-<section class="it-sec it-tools">
+<section class="it-sec it-tools" id="it-tools">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>04 · 임장 도구</p>
     <h2 data-reveal>현장에서 확인한 것까지,<br><em>한곳에 기록하세요</em></h2>
