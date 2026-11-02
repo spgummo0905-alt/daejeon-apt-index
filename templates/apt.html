@@ -27,11 +27,11 @@
   </div>
   <div class="mc-art" data-mc-art>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
-    {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
+    {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ c.rank }}위/{{ n_total }} · {{ region }} {{ n_total }}곳 중 {{ c.rank }}위 (종합 지수 순위)"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
     {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{% if c.small %}{{ c.small_reason or '소규모' }} 단지는 일반 아파트와 가격 구조가 달라 순위에서 제외합니다{% else %}입지·거래 자료가 부족해 지수를 산정하지 않았습니다{% endif %}">순위 제외</button>{% endif %}
     <p class="mc-tip" data-mc-tip role="status" hidden></p>
     <div class="mc-badges">
-      {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="최근 실거래 {{ t0.price | price }}, 거래 내역 펼치기">
+      {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="{% if t0.high %}신고가 {% endif %}{{ t0.price | price }} 실거래 {{ t0.date.strftime('%m.%d') }}, 거래 내역 펼치기">
         {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span>실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span></button>{% endif %}
       <div class="mc-medals">
         {% for b in badges %}<button type="button" class="mc-medal" data-badge data-title="{{ b.title }}" data-desc="{{ b.tip }}" aria-label="{{ b.title }} {{ b.short }}"><svg class="ic" aria-hidden="true"><use href="#i-{{ b.icon }}"/></svg><span>{{ b.short }}{% if b.unit %}<small>{{ b.unit }}</small>{% endif %}</span></button>{% endfor %}
@@ -249,11 +249,11 @@
   </div>
   <dl class="ki-grid">
     {% if k.hh %}<div class="ki-main"><dt>세대수</dt><dd>{{ "{:,}".format(k.hh) }}<small>세대</small></dd>
-      <p>{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</p></div>{% endif %}
+      <dd class="ki-note">{% if k.dongs %}{{ k.dongs }}개 동{% endif %}{% if c.hh_top is not nan %}{% if k.dongs %} · {% endif %}{{ region }} {{ c.hh_top | share }}{% endif %}</dd></div>{% endif %}
     {% if k.ppu %}<div class="ki-main"><dt>주차</dt><dd><small>세대당</small> {{ "%.1f" | format(k.ppu) }}<small>대</small></dd>
-      <p>총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</p></div>{% endif %}
+      <dd class="ki-note">총 {{ "{:,}".format(k.park) }}대{% if k.park_dn %} (지하 {{ "{:,}".format(k.park_dn) }}){% endif %}{% if c.ppu_top is not nan %} · {{ region }} {{ c.ppu_top | share }}{% endif %}</dd></div>{% endif %}
     {% if c.fee_m2 %}<div class="ki-main"><dt>관리비</dt><dd><small>㎡당</small> {{ "{:,}".format(c.fee_m2) }}<small>원</small></dd>
-      <p>84㎡ 한 달 약 {{ (c.fee_m2 * 84) | man }}{% if c.fee_m2_top is not nan %} · {{ region }}에서 {{ c.fee_m2_top | fee_word }}{% endif %} · {{ c.fee_ym }} 공용관리비</p></div>{% endif %}
+      <dd class="ki-note">84㎡ 한 달 약 {{ (c.fee_m2 * 84) | man }}{% if c.fee_m2_top is not nan %} · {{ region }}에서 {{ c.fee_m2_top | fee_word }}{% endif %} · {{ c.fee_ym }} 공용관리비</dd></div>{% endif %}
   </dl>
   <details class="ki-more">
     <summary>건물·관리 정보 더 보기</summary>
