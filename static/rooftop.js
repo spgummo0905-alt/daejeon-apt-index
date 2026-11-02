@@ -22,7 +22,7 @@
   const ADJ = ["고요한", "포근한", "느긋한", "다정한", "반짝이는", "든든한", "말랑한", "은은한"], NOUN = ["구름", "달빛", "별", "바람", "노을", "온기", "새벽", "솜사탕"];
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const DEF = { last: "", streak: 0, days: 0, m: { fw: 0, bbq: 0, star: 0, wish: 0 }, done: "", sound: false, town: "", nick: "",
-    sky: "night", wx: false, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true }, vol: { amb: 50, fw: 60, fx: 60 },
+    sky: "night", wx: false, hour: true, bg: false, q: "auto", amb: ["cricket"], on: { amb: true, fw: true, fx: true, mu: true }, vol: { amb: 50, fw: 60, fx: 60, mu: 45 }, look: { c: 0, a: 0 },
     stars: { d: "", idx: [] }, starTotal: 0, wishes: [], layout: null, net: false, id: "", arrive: true, zen: true };
   let st = Object.assign({}, DEF, DJ.load("roof", {}));
   st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
@@ -72,7 +72,7 @@
     A.master = c.createGain(); A.master.gain.value = 0;
     const comp = c.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 5; comp.attack.value = .004; comp.release.value = .25;
     A.master.connect(comp); comp.connect(c.destination);
-    ["amb", "fw", "fx"].forEach(k => { const g = c.createGain(); g.gain.value = 0; g.connect(A.master); A.buses[k] = g; });
+    ["amb", "fw", "fx", "mu"].forEach(k => { const g = c.createGain(); g.gain.value = 0; g.connect(A.master); A.buses[k] = g; });
     const len = Math.floor(c.sampleRate * 3.4), ir = c.createBuffer(2, len, c.sampleRate);   // 넓게 울리는 공간 (불꽃 소리가 멀리 퍼지게)
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let p = 0; for (let i = 0; i < len; i++) { const n = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4); p = p * .55 + n * .45; d[i] = p; } }
     A.verb = c.createConvolver(); A.verb.buffer = ir; const vg = c.createGain(); vg.gain.value = .9; A.verb.connect(vg); vg.connect(A.master);
@@ -90,6 +90,7 @@
     const t = A.c.currentTime;
     A.master.gain.setTargetAtTime(st.sound ? .9 : 0, t, .5);
     ["amb", "fw", "fx"].forEach(k => A.buses[k].gain.setTargetAtTime(st.on[k] ? vol(k) : 0, t, .15));
+    A.buses.mu.gain.setTargetAtTime(st.on.mu && inParty() ? vol("mu") * .9 : 0, t, .3);   // 파티 음악은 파티 옥상에서만
     Object.entries(A.layers).forEach(([k, L]) => L.set(st.sound && st.on.amb && st.amb.includes(k)));
   }
   // 환경음 층: 켜질 때 처음 한 번만 만들고, 이후엔 크기만 올리고 내림
@@ -165,7 +166,7 @@
   }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
   $("[data-roof-bg]").addEventListener("click", () => { st.bg = !st.bg; saveSt(); paintSettings(); });
-  $("[data-roof-wx]").addEventListener("click", () => { st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 }); stat(); } });
+  $("[data-roof-wx]").addEventListener("click", () => { if (inParty()) return; st.wx = !st.wx; saveSt(); paintSettings(); if (st.wx) loadWeather(); else if (api) { api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 }); stat(); } });
   $("[data-roof-hour]").addEventListener("click", () => { st.hour = !st.hour; saveSt(); paintSettings(); });
   $("[data-roof-arrset]").addEventListener("click", () => { st.arrive = !st.arrive; saveSt(); paintSettings(); });
   $("[data-roof-zenset]").addEventListener("click", () => { st.zen = !st.zen; saveSt(); paintSettings(); });
@@ -180,7 +181,7 @@
   $("[data-roof-glow]").addEventListener("input", e => { st.glow = +e.target.value; $("[data-roof-glowv]").textContent = e.target.value + "%"; if (api) api.setGlow(st.glow); saveSt(); });
   $$("[data-roof-vol]").forEach(r => r.addEventListener("input", () => { st.vol[r.dataset.roofVol] = +r.value; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = r.value + "%"; applyGains(); }));
   $$("[data-roof-vol]").forEach(r => r.addEventListener("change", saveSt));
-  $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); stat(); }));
+  $$("[data-roof-sky]").forEach(b => b.addEventListener("click", () => { if (inParty()) return; st.sky = b.dataset.roofSky; saveSt(); paintSettings(); if (api) api.setSky(st.sky); stat(); }));
   $$("[data-roof-q]").forEach(b => b.addEventListener("click", () => { st.q = b.dataset.roofQ; saveSt(); paintSettings(); if (api) api.setQuality(st.q === "auto" ? (matchMedia("(pointer: coarse)").matches ? "mid" : "high") : st.q); }));
   let creditsDone = false;
   function paintCredits() {   // 설정 '정보'에 쓴 녹음의 저작자와 라이선스를 보여 줘요
@@ -291,6 +292,7 @@
   $("[data-roof-reset]").addEventListener("click", () => { if (api) { api.resetView(); $("[data-roof-reset]").hidden = true; } });
   $$("[data-roof-menu]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofMenu, el = $(`[data-roof-sub="${k}"]`), open = el.hidden;
+    if (k === "deco" && inParty()) { closeSubs(); say("꾸미기는 내 옥상에서만 할 수 있어요", "파티 옥상의 물건은 모두 함께 써요"); hint("🏠 위쪽 👥 함께에서 '내 옥상'으로 가면 마음껏 꾸밀 수 있어요."); return; }
     if (k === "grill" && api) { api.setFocus(open ? "grill" : null); return; }
     subs.forEach(s => { s.hidden = true; }); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false"));
     if (open) { el.hidden = false; b.setAttribute("aria-expanded", "true"); }
@@ -314,8 +316,9 @@
     { a: "🌙", t: "집감 옥상에 오신 걸 환영해요", d: "도시 야경이 보이는 옥탑방 캠핑 공간이에요. 잠깐 쉬어 가세요." },
     { a: touch ? "🕹" : "⌨️", t: "걷고 둘러보기", d: touch ? "바닥을 누르면 그쪽으로 걸어가요. 왼쪽 아래 패드를 밀어도 걸을 수 있어요. 화면을 끌면 360도로 둘러보고, 두 손가락으로 가까이·멀리 볼 수 있어요." : "바닥을 누르거나 W A S D·방향키로 걸어요. 화면을 끌면 360도로 둘러보고, 휠로 가까이·멀리 볼 수 있어요.", el: null },
     { a: "🎆", t: "불꽃놀이와 고기 굽기", d: "하늘을 누르면 불꽃이 터져요. 🍖 굽기에서는 고기를 뒤집어 가며 노릇하게 구워 먹어요.", el: '[data-roof-menu="fire"]' },
-    { a: "⛺", t: "꾸미기와 동물 친구", d: "의자·소파·타프·화로를 놓고, 옮기고, 돌릴 수 있어요. 강아지·고양이·앵무새도 꺼내 보세요. 가구를 누르면 앉기·눕기 같은 동작이 나와요.", el: '[data-roof-menu="deco"]' },
-    { a: "✨", t: "쉬기와 함께 있기", d: "🌙 쉬기에서 별 세기·누워서 보기·소원 빌기를 해요. 위쪽 👥 함께를 누르면 다른 사람과 같은 서버 옥상에 있을 수 있어요.", el: '[data-roof-menu="sky"]' },
+    { a: "🎉", t: "별빛옥상 파티", d: "들어오면 1서버부터 차례로 다 같이 모여요. 가운데 모닥불에 장작을 넣고, 주크박스로 음악을 바꾸고, 댄스 플로어에서 춤춰요. 놓인 물건은 모두 함께 써요." },
+    { a: "🏠", t: "내 옥상 꾸미기", d: "의자·소파·타프·화로를 놓고 옮기는 꾸미기는 내 옥상에서 해요. 위쪽 👥 함께에서 '내 옥상'으로 갈 수 있어요. 가구를 누르면 앉기·눕기 같은 동작이 나와요.", el: '[data-roof-menu="deco"]' },
+    { a: "✨", t: "쉬기와 내 집콩이", d: "🌙 쉬기에서 별 세기·누워서 보기·소원 빌기를 해요. 위쪽 👥 함께에서 내 집콩이의 목도리 색과 모자를 골라 보세요.", el: '[data-roof-menu="sky"]' },
   ];
   let tourI = 0;
   const tourEl = $("[data-roof-tour]");
@@ -388,7 +391,7 @@
   $("[data-roof-wishgo]").addEventListener("click", () => {
     const t = wt.value.trim(); if (!t) { wt.focus(); return; }
     st.wishes.push({ t, d: today }); st.wishes = st.wishes.slice(-30); saveSt(); wt.value = ""; closeModal(); paintWish();
-    if (api) api.wish(t); SND.wish(); bump("wish"); say("풍등을 띄웠어요 🏮", "소원이 하늘로 올라가요");
+    if (api) { api.wish(t); if (net && net.isOpen()) net.send("lan", api.myPos()); } SND.wish(); bump("wish"); say("풍등을 띄웠어요 🏮", "소원이 하늘로 올라가요");
   });
 
   // ---------- 동네·날씨 ----------
@@ -402,7 +405,7 @@
   const stat = () => {
     const now = window.DJ && DJ.online ? Math.max(1, DJ.online.count()) : 1;
     $("[data-roof-now]").textContent = now.toLocaleString(); $("[data-roof-todayw]").hidden = !todayN; $("[data-roof-today]").textContent = Math.max(todayN, now).toLocaleString();
-    const SKY_T = { night: ["🌙", "맑은 밤"], dusk: ["🌇", "노을"], galaxy: ["🌌", "은하수"] }, [ic, w] = st.sky !== "real" && SKY_T[st.sky] ? SKY_T[st.sky] : when(kstHour());   // 고른 하늘을 그대로 (실제 시간과 다른 하늘이면 헷갈려요)
+    const SKY_T = { night: ["🌙", "맑은 밤"], dusk: ["🌇", "노을"], galaxy: ["🌌", "은하수"] }, sky_ = inParty() ? "night" : st.sky, [ic, w] = sky_ !== "real" && SKY_T[sky_] ? SKY_T[sky_] : when(kstHour());   // 고른 하늘을 그대로 (실제 시간과 다른 하늘이면 헷갈려요)
     $("[data-roof-when]").textContent = `${ic} ${w}${st.wx && wxLine ? " · " + wxLine : ""}`;
     const f = box.dataset.focus, spin = api && api.getSpin && api.getSpin(), mins = Math.floor((Date.now() - arrived) / 60e3);
     const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
@@ -480,79 +483,186 @@
     }, "image/png");
   });
 
-  // ---------- 함께 있기 (번호 서버 하나로: 1서버·2서버…, 이모지 인사만) ----------
+  // ---------- 함께 있기: 들어오면 1서버부터 차례로 모여요 (별빛옥상 파티) ----------
+  //  · 공용 서버(파티 옥상)는 모두 같은 파티장 배치: 놓인 물건은 다 같이 쓰고, 옮기거나 꾸밀 수는 없어요 (꾸미기는 내 옥상에서만)
+  //  · 친구 방은 예전처럼 함께 꾸며요. 이모지 인사만, 글은 주고받지 않아요
   const SB = window.DJ_SB, canNet = !!(SB && SB.url && SB.key && window.RoofNet);
-  let net = null, names = [], roomLabel = "", roomMode = "", friendCode = "";
+  let net = null, names = [], roomLabel = "", roomMode = "", friendCode = "", joinedAt = 0, greetT = 0;
+  function inParty() { try { return !!net && roomMode === "srv"; } catch (e) { return false; } }   // 맨 위 코드가 먼저 불러도 안전하게
   // 대기실: 옥상에 있는 모두가 '몇 번 서버에 있는지'만 알려 주는 곳 → 서버마다 몇 명인지 보여 줘요
-  const SRV_MAX = 20; let lobby = null, curSrv = 0, srvCounts = {};
+  const SRV_MAX = 20; let lobby = null, curSrv = 0, srvCounts = {}, lobbyReady = false;
   function connectLobby() {
     if (!canNet) return; if (lobby) lobby.leave();
     lobby = RoofNet.connect({ url: SB.url, key: SB.key, topic: "roof:lobby", me: { id: st.id, n: st.nick, s: curSrv } }, {
-      peers: list => { srvCounts = {}; list.forEach(x => { if (x.s) srvCounts[x.s] = (srvCounts[x.s] || 0) + 1; }); if (curSrv) srvCounts[curSrv] = (srvCounts[curSrv] || 0) + 1; paintServers(); } });
+      peers: list => { lobbyReady = true; srvCounts = {}; list.forEach(x => { if (x.s) srvCounts[x.s] = (srvCounts[x.s] || 0) + 1; }); if (curSrv) srvCounts[curSrv] = (srvCounts[curSrv] || 0) + 1; paintServers(); paintArrParty(); } });
     srvCounts = curSrv ? { [curSrv]: 1 } : {}; paintServers();
   }
   const cnt = k => k === curSrv && net ? names.length + 1 : (srvCounts[k] || 0);
+  const showIn = () => { const d = new Date(), m = 60 - d.getMinutes(); return m >= 60 ? "지금 정각 쇼" : `정각 쇼 ${m}분 뒤`; };
   function paintServers() {
     const top = Math.max(3, ...Object.keys(srvCounts).map(Number).filter(Boolean).map(k => k + 1), curSrv + 1);
     const ul = $("[data-roof-servers]"); if (!ul) return;
     ul.replaceChildren(...Array.from({ length: Math.min(top, 12) }, (_, i) => { const k = i + 1, n = cnt(k), here = k === curSrv && !!net, li = document.createElement("li");
       const lvl = n >= SRV_MAX ? "full" : n >= SRV_MAX * .7 ? "busy" : n ? "on" : "off";
-      li.className = "srv srv-" + lvl + (here ? " here" : ""); li.innerHTML = `<span class="srv-dot"></span><span class="srv-t"><b>${k}서버</b><small>${here ? "지금 여기 있어요" : n >= SRV_MAX ? "가득 찼어요" : n ? "함께 있는 사람이 있어요" : "비어 있어요"}</small></span><span class="srv-n"><b>${n}</b>/${SRV_MAX}</span>`;
+      li.className = "srv srv-" + lvl + (here ? " here" : ""); li.innerHTML = `<span class="srv-dot"></span><span class="srv-t"><b>${k}서버</b><small>${here ? "지금 여기서 파티 중" : n >= SRV_MAX ? "가득 찼어요" : n ? "파티 중이에요" : "비어 있어요"}</small></span><span class="srv-n"><b>${n}</b>/${SRV_MAX}</span>`;
       const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn srv-go"; b.textContent = here ? "✓" : "입장"; b.disabled = here || n >= SRV_MAX; b.setAttribute("aria-label", `${k}서버 ${here ? "지금 여기" : "들어가기"}`);
       b.addEventListener("click", () => joinRoom("srv", k)); li.append(b); if (here) li.classList.add("ok"); return li; }));
-    const pill = $("[data-roof-srv]"); if (pill) { pill.hidden = !(curSrv && net); pill.textContent = `🌐 ${curSrv}서버 · ${cnt(curSrv)}명`; }
+    const pill = $("[data-roof-srv]"); if (pill) { pill.hidden = !(curSrv && net); pill.textContent = `🎉 ${curSrv}서버 파티 · ${cnt(curSrv)}명 · ${showIn()}`; }
+  }
+  function paintArrParty() {   // 들어올 때 인사 화면: 지금 파티에 몇 명이 있는지
+    const el = $("[data-roof-arrparty]"); if (!el || !canNet) return; const n = Object.values(srvCounts).reduce((a, b) => a + b, 0);
+    el.hidden = false; el.textContent = n ? `🎉 지금 별빛옥상 파티에 ${n}명이 모여 있어요` : "🎉 별빛옥상 파티에 제일 먼저 올라가 보세요";
   }
   const roomBtn = $("[data-roof-roombtn]"), emoBar = $("[data-roof-emobar]"), roomStat = $("[data-roof-roomstat]");
   function paintNet(msg) {
-    const n = names.length + 1, on = !!net;
+    const n = names.length + 1, on = !!net, pty = inParty();
     $("[data-roof-pc]").textContent = on ? n + "명" : "함께";
     emoBar.hidden = !on;
-    roomStat.textContent = msg || (on ? `${roomLabel} · ${n}명이 함께 있어요` : "혼자 있어요. 들어갈 서버를 골라 보세요."); paintServers();
+    roomStat.textContent = msg || (pty ? `🎉 ${roomLabel} 파티 · ${n}명이 함께 있어요. 놓인 물건은 모두 같이 써요.` : on ? `${roomLabel} · ${n}명이 함께 있어요` : "🏠 내 옥상이에요. 마음껏 꾸미고 쉬어요.");
+    paintServers();
     $("[data-roof-members]").replaceChildren(...[[st.nick, 1], ...names.map(x => [x.n, 0])].map(([t, me_]) => { const li = document.createElement("li"); li.className = me_ ? "me" : ""; li.textContent = t + (me_ ? " · 나" : ""); return li; }));
-    $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; });
+    $$("[data-roof-join=off]").forEach(b => { b.hidden = !on; }); $$("[data-roof-invite]").forEach(b => { b.hidden = !pty; }); $$("[data-roof-join=auto]").forEach(b => { b.hidden = pty; });
+    paintParty();
   }
-  // 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
+  // 파티 옥상 켜고 끄기: 정해진 파티장 배치·동물·맑은 밤하늘로. 나오면 내 옥상(내 배치·하늘·동물)으로 돌아와요
+  function setParty(on) {
+    if (!api) return; api.setParty(on);
+    if (on) { api.setPets(["dog", "cat", "parrot"]); api.setSky("night"); api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 }); deco = null; paintDeco(); closeSubs(); stopVideo(); stopMusic(); }
+    else { api.setLayout(st.layout); api.setPets(st.pets || ["dog", "cat"]); api.setSky(st.sky); if (st.wx) loadWeather(); else api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 }); }
+    box.classList.toggle("is-party", on); music.on = on; tickMusic(); applyGains(); paintParty(); try { stat(); } catch (e) { /* 준비 전 */ }
+  }
+  function paintParty() {
+    const on = inParty(), dk = $('[data-roof-menu="deco"]');
+    if (dk) { dk.classList.toggle("is-locked", on); dk.setAttribute("aria-label", on ? "꾸미기 (내 옥상에서만 할 수 있어요)" : "꾸미기"); }
+    $$("[data-roof-sky], [data-roof-wx]").forEach(b => { b.disabled = on; });
+    const nt = $("[data-roof-partynote]"); if (nt) nt.hidden = !on;
+    const sg = $("[data-roof-song]"); if (sg) sg.hidden = !on;
+  }
+  function greet(list) {   // 새로 올라온 사람 알림 (잦으면 묶어서)
+    if (Date.now() - greetT < 5000) return; greetT = Date.now();
+    const n = list.map(x => x.n).slice(0, 2).join(", ") + (list.length > 2 ? ` 외 ${list.length - 2}명` : "");
+    hint(`${n}님이 옥상에 올라왔어요 👋 이모지로 인사해 보세요`);
+  }
+  // 친구 방 함께 꾸미기: 같은 방에 있으면 꾸민 옥상이 모두에게 똑같이 보여요. 방을 나오면 내 옥상으로 돌아와요
   let roomDeco = { v: 0, l: null }, helloT = 0;
-  const sendDeco = () => { if (net && net.isOpen()) net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick, lv: LAYOUT_V }); };
-  function leaveRoom(stay) { const was = !!net; if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
+  const sendDeco = () => { if (net && net.isOpen() && roomMode === "friend") net.send("roomDeco", { v: roomDeco.v, l: roomDeco.l, by: st.nick, lv: LAYOUT_V }); };
+  function leaveRoom(stay, keepParty) { const was = !!net, wasParty = inParty(); if (net) { net.leave(); net = null; } if (api) names.forEach(x => api.removePeer(x.id)); names = []; clearTimeout(helloT);
     if (!stay && curSrv) { curSrv = 0; connectLobby(); }
-    if (was && roomDeco.v && api) { api.setLayout(st.layout); } roomDeco = { v: 0, l: null }; }
+    if (wasParty && !keepParty) setParty(false);
+    else if (was && roomDeco.v && api) { api.setLayout(st.layout); } roomDeco = { v: 0, l: null }; }
+  function onNetEvent(ev, b, id) {
+    if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b);
+    else if (ev === "lan") api.remoteLantern(b.x, b.z);
+    else if (ev === "log" && inParty()) { api.addLog(); }
+    else if (ev === "it" && Number.isInteger(b.i) && typeof b.on === "boolean") api.itemSet(b.i, b.on);
+    else if (ev === "song" && inParty()) setSong(b);
+    else if (ev === "hello") { if (inParty()) { if (music.ov && Date.now() < music.ov.t0 + SONG_MS) net.send("song", music.ov); } else sendDeco(); }   // 새로 온 사람에게 지금 곡·꾸미기를 알려 줘요
+    else if (ev === "roomDeco" && roomMode === "friend" && Array.isArray(b.l) && b.lv === LAYOUT_V && +b.v > roomDeco.v) {   /* 옛 버전 화면이 보낸 배치는 받지 않아요 */ const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
+      if (!first || b.by) hint(first ? `${String(b.by || "누군가").slice(0, 12)}님의 옥상이에요. 함께 꾸며 보세요.` : `${String(b.by || "누군가").slice(0, 12)}님이 옥상을 꾸몄어요.`); }
+  }
   function joinRoom(mode, code) {
     if (!canNet || !api) return;
-    if (mode === "auto") { const ks = Array.from({ length: 12 }, (_, i) => i + 1).filter(k => cnt(k) < SRV_MAX); code = ks.sort((a, b) => cnt(b) - cnt(a) || a - b)[0] || 1; mode = "srv"; }   // 사람이 있는 서버로 (가득 찬 곳은 빼고)
-    leaveRoom(true); roomMode = mode;
+    if (mode === "auto") { code = Array.from({ length: 12 }, (_, i) => i + 1).find(k => cnt(k) < SRV_MAX) || 1; mode = "srv"; }   // 1서버부터 차례로 채워요 (가득 차면 다음 서버)
+    leaveRoom(true, mode === "srv"); roomMode = mode;
     const k = mode === "srv" ? Math.max(1, Math.min(12, code | 0)) : 0, id = mode === "friend" ? "f-" + code : `srv-${k}`;
     roomLabel = mode === "friend" ? "친구 방" : `${k}서버`;
-    if (curSrv !== k) { curSrv = k; connectLobby(); } st.srv = k || st.srv;
+    if (curSrv !== k) { curSrv = k; connectLobby(); } st.srv = k || st.srv; joinedAt = Date.now();
     net = RoofNet.connect({ url: SB.url, key: SB.key, topic: "roof:" + id, me: { id: st.id, n: st.nick } }, {
       status: t => paintNet(t === "연결됨" ? null : t),
       fail: () => { leaveRoom(); paintNet("지금은 함께 있기를 열 수 없어요. 잠시 뒤 다시 해 주세요."); },
       peers: list => {
+        const before = new Set(names.map(x => x.id)), fresh = list.filter(x => !before.has(x.id));
         names.filter(x => !list.some(y => y.id === x.id)).forEach(x => api.removePeer(x.id)); names = list; paintNet();
+        if (fresh.length && Date.now() - joinedAt > 4000) greet(fresh);
         if (mode === "srv" && list.length >= SRV_MAX && k < 12) joinRoom("srv", k + 1);   // 가득 차면 다음 서버로
       },
-      leave: id => { api.removePeer(id); },
-      event: (ev, b, id) => { if (ev === "pos") api.setPeer(id, b); else if (ev === "emo") api.peerEmote(id, b.e); else if (ev === "fw") api.remoteShell(b);
-        else if (ev === "hello") sendDeco();   // 새로 온 사람에게 지금 방의 꾸미기를 알려 줘요
-        else if (ev === "roomDeco" && Array.isArray(b.l) && b.lv === LAYOUT_V && +b.v > roomDeco.v) {   /* 옛 버전 화면이 보낸 배치는 받지 않아요 */ const first = !roomDeco.v; roomDeco = { v: +b.v, l: b.l }; api.setLayout(b.l);
-          if (!first || b.by) hint(first ? `${String(b.by || "누군가").slice(0, 12)}님의 옥상이에요. 함께 꾸며 보세요.` : `${String(b.by || "누군가").slice(0, 12)}님이 옥상을 꾸몄어요.`); } },
+      leave: pid => { api.removePeer(pid); },
+      event: onNetEvent,
     });
+    if (mode === "srv") { if (!api.isParty()) setParty(true); else paintParty(); try { sessionStorage.removeItem("djdex:roofsolo"); } catch (e) { /* 괜찮아요 */ } }
     st.net = mode === "srv"; saveSt(); paintNet("연결하는 중…");
-    // 들어가면 '안녕'을 보내 방의 꾸미기를 받아요. 아무도 답이 없으면 내 꾸미기가 이 방의 꾸미기가 돼요
-    clearTimeout(helloT); helloT = setTimeout(function hi(k) { if (!net) return; if (!net.isOpen()) { helloT = setTimeout(() => hi(k), 800); return; }
-      net.send("hello", {}); helloT = setTimeout(() => { if (net && !roomDeco.v) { roomDeco = { v: 1 + Math.random(), l: api.getLayout() }; sendDeco(); /* 아주 작은 번호: 먼저 있던 방의 꾸미기나 누가 새로 꾸민 게 항상 이겨요 */ } }, 2500); }, 900);
+    // 들어가면 '안녕'을 보내 지금 곡(파티)·방의 꾸미기(친구 방)를 받아요. 친구 방에 아무도 답이 없으면 내 꾸미기가 이 방의 꾸미기가 돼요
+    clearTimeout(helloT); helloT = setTimeout(function hi() { if (!net) return; if (!net.isOpen()) { helloT = setTimeout(hi, 800); return; }
+      net.send("hello", {}); if (mode !== "friend") return;
+      helloT = setTimeout(() => { if (net && !roomDeco.v) { roomDeco = { v: 1 + Math.random(), l: api.getLayout() }; sendDeco(); /* 아주 작은 번호: 먼저 있던 방의 꾸미기나 누가 새로 꾸민 게 항상 이겨요 */ } }, 2500); }, 900);
   }
+  // 들어오면 자동으로 파티 옥상에: 대기실에서 서버별 인원을 받은 뒤 1서버부터 빈자리가 있는 곳으로
+  function autoJoin() { const t0 = Date.now(); (function w() { if (net || !api) { if (!api && Date.now() - t0 < 15000) setTimeout(w, 400); return; }
+    if (lobbyReady || Date.now() - t0 > 5000) { joinRoom("auto"); say("🎉 별빛옥상 파티에 왔어요", `${curSrv}서버 · 모닥불·주크박스·댄스 플로어를 함께 써요`); } else setTimeout(w, 300); })(); }
   $$("[data-roof-join]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.roofJoin;
-    if (k === "off") { leaveRoom(); st.net = false; saveSt(); paintNet(); return; }
-    if (k === "auto") { joinRoom("auto"); return; }
+    if (k === "off") { leaveRoom(); st.net = false; saveSt(); try { sessionStorage.setItem("djdex:roofsolo", "1"); } catch (e) { /* 괜찮아요 */ } paintNet(); say("🏠 내 옥상이에요", "꾸미기로 마음껏 꾸며 보세요"); return; }
+    if (k === "auto") { joinRoom("auto"); closeModal(); say("🎉 별빛옥상 파티", `${curSrv}서버에 들어왔어요`); return; }
     friendCode = friendCode || Math.random().toString(36).slice(2, 8); joinRoom("friend", friendCode);
     const link = location.origin + location.pathname.replace(/[^/]*$/, "") + "rooftop?room=" + friendCode;
     if (navigator.share) navigator.share({ title: "집감 옥상에서 만나요", text: "같이 불꽃놀이 봐요 🎆", url: link }).catch(() => { });
     else if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => say("초대 링크를 복사했어요", "친구에게 보내 주세요"));
   }));
-  $$("[data-roof-emo]").forEach(b => b.addEventListener("click", () => { if (net && net.isOpen()) net.send("emo", { e: b.dataset.roofEmo }); if (api) api.emote(b.dataset.roofEmo); }));
+  $$("[data-roof-invite]").forEach(b => b.addEventListener("click", () => {   // 지금 파티에 친구 부르기 (같은 서버로 바로)
+    const link = location.origin + location.pathname.replace(/[^/]*$/, "") + "rooftop?srv=" + curSrv;
+    if (navigator.share) navigator.share({ title: "집감 별빛옥상 파티", text: `${curSrv}서버에서 모닥불 피워 놨어요 🔥 같이 불꽃놀이 봐요`, url: link }).catch(() => { });
+    else if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => say("파티 초대 링크를 복사했어요", `친구가 누르면 바로 ${curSrv}서버로 와요`));
+  }));
+  $$("[data-roof-emo]").forEach(b => b.addEventListener("click", () => { const e = b.dataset.roofEmo; if (net && net.isOpen()) net.send("emo", { e }); if (api) { api.emote(e); if (e === "💃" && api.isParty()) hint("💃 댄스 플로어를 누르면 같이 춤출 수 있어요"); } }));
   window.addEventListener("pagehide", () => { if (net) net.leave(); if (lobby) lobby.leave(); });
+  setInterval(() => { if (net) paintServers(); }, 15000);
+
+  // ---------- 내 집콩이: 목도리 색과 모자 (같은 방 사람들에게도 그대로 보여요) ----------
+  const LOOK_C = ["#f2b48a", "#e86a6a", "#4fb08a", "#f0b040", "#6a8ae8", "#b06ae8", "#40b8c8", "#e88ab0"], LOOK_A = ["🍑 홍시 베레모", "🥳 파티 고깔", "🎧 헤드폰", "🌼 꽃 화관", "🧶 털모자"];
+  function paintLook() {
+    const lc = $("[data-roof-lookc]"), la = $("[data-roof-looka]"); if (!lc || !la) return; const L = st.look || { c: 0, a: 0 };
+    lc.replaceChildren(...LOOK_C.map((c, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "roof-swatch"; b.style.setProperty("--c", c); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String((L.c | 0) === i)); b.setAttribute("aria-label", `목도리 색 ${i + 1}`);
+      b.addEventListener("click", () => setLook({ c: i, a: L.a | 0 })); return b; }));
+    la.replaceChildren(...LOOK_A.map((t, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "roof-chip"; b.textContent = t; b.setAttribute("aria-pressed", String((L.a | 0) === i));
+      b.addEventListener("click", () => setLook({ c: L.c | 0, a: i })); return b; }));
+  }
+  function setLook(l) { st.look = l; saveSt(); if (api) api.setLook(l); paintLook(); }
+  paintLook();
+
+  // ---------- 파티 음악 (주크박스) ----------
+  // 이 기기에서 바로 만드는 잔잔한 곡이에요 (녹음 파일 없음, 아무것도 올리지 않아요). 곡과 박자는 시계로 정해서
+  // 같은 서버 사람은 같은 곡을 같은 박자로 들어요. 누가 '다음 곡'을 누르면 모두 함께 바뀌어요
+  const SONGS = [
+    { n: "별빛 산책", bpm: 82, r: 48, p: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]] },
+    { n: "모닥불 앞에서", bpm: 72, r: 50, p: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]] },
+    { n: "옥탑방 라디오", bpm: 90, r: 45, p: [[0, 3, 7, 10], [5, 8, 12, 15], [10, 14, 17, 21], [3, 7, 10, 14]] },
+    { n: "은하수 드라이브", bpm: 96, r: 52, p: [[0, 4, 7, 11], [4, 7, 11, 14], [9, 12, 16, 19], [5, 9, 12, 16]] },
+    { n: "새벽 네 시 로파이", bpm: 76, r: 47, p: [[0, 3, 7, 10], [5, 8, 12, 15], [8, 12, 15, 19], [7, 10, 14, 17]] },
+    { n: "풍등 날리는 밤", bpm: 86, r: 53, p: [[0, 4, 7, 11], [2, 5, 9, 12], [4, 7, 11, 14], [5, 9, 12, 16]] }];
+  const SONG_MS = 150000, ARP = [0, 1, 2, 3, 2, 1, 3, 2];
+  const music = { on: false, ov: null, key: "", next: 0, timer: 0 };
+  const songAt = now => { const o = music.ov; if (o && now >= o.t0 && now < o.t0 + SONG_MS) return o; const slot = Math.floor(now / SONG_MS); return { i: (slot * 5 + 2) % SONGS.length, t0: slot * SONG_MS }; };
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  function tone(at, m, dur, type, g, pan, wet, att, cut) { const c = A.c, o = c.createOscillator(), e = c.createGain(), lp = c.createBiquadFilter(); o.type = type; o.frequency.value = mtof(m); lp.type = "lowpass"; lp.frequency.value = cut || 2200;
+    e.gain.setValueAtTime(.0001, at); e.gain.linearRampToValueAtTime(g, at + (att || .008)); e.gain.exponentialRampToValueAtTime(.0001, at + dur); o.connect(lp); lp.connect(e); e.connect(out(pan, A.buses.mu, wet)); o.start(at); o.stop(at + dur + .05); }
+  function kick(at) { const c = A.c, o = c.createOscillator(), e = c.createGain(); o.frequency.setValueAtTime(110, at); o.frequency.exponentialRampToValueAtTime(42, at + .18); e.gain.setValueAtTime(.3, at); e.gain.exponentialRampToValueAtTime(.0001, at + .32); o.connect(e); e.connect(out(0, A.buses.mu, 0)); o.start(at); o.stop(at + .35); }
+  function hat(at, g) { const c = A.c, n = noiseSrc(A.white, false), hp = c.createBiquadFilter(), e = c.createGain(); hp.type = "highpass"; hp.frequency.value = 7000; e.gain.setValueAtTime(g, at); e.gain.exponentialRampToValueAtTime(.0001, at + .05); n.connect(hp); hp.connect(e); e.connect(out(.15, A.buses.mu, .1)); n.start(at, Math.random()); n.stop(at + .07); }
+  function playStep(S, k, at, spb) {
+    const bar = Math.floor(k / 8), b8 = ((k % 8) + 8) % 8, ch = S.p[((bar % 4) + 4) % 4], R = S.r;
+    if (b8 === 0) ch.forEach((x, j) => tone(at, R + 12 + x, spb * 4.2, "triangle", .042, j % 2 ? -.35 : .35, .9, .5, 1300));   // 패드: 마디마다 화음
+    if (b8 % 4 === 0) { tone(at, R - 12 + ch[0], spb * 1.8, "sine", .24, 0, .1, .01, 800); if (bar % 16 > 1) kick(at); }   // 베이스·킥 (처음 두 마디는 킥 없이 잔잔하게)
+    if (b8 % 2 === 1 && bar % 16 > 3) hat(at, .045);
+    if ((k * 7 + bar * 3) % 11) tone(at, R + 24 + ch[ARP[b8]] + (bar % 8 >= 4 && b8 === 6 ? 12 : 0), spb * 1.1, "triangle", .065, (b8 - 3.5) / 6, .7, .005, 3200);   // 반짝이는 아르페지오
+  }
+  function paintSong(cur) { const sg = $("[data-roof-song]"); if (!sg || !cur) return; const S = SONGS[cur.i]; sg.textContent = `🎵 ${S.n}${st.sound && st.on.mu ? "" : " · 🔇 눌러서 듣기"}`; }
+  function tickMusic() {
+    clearInterval(music.timer); music.timer = 0; music.key = "";
+    const cur = songAt(Date.now()); paintSong(cur); if (api) api.setBeat(music.on ? SONGS[cur.i].bpm : 0, cur.t0, music.on);
+    if (!music.on) return;
+    music.timer = setInterval(() => {
+      const now = Date.now(), cur = songAt(now), S = SONGS[cur.i], spb = 60 / S.bpm, em = spb * 500, key = cur.i + ":" + cur.t0;
+      if (key !== music.key) { music.key = key; music.next = cur.t0 + Math.ceil((now - cur.t0) / em) * em; paintSong(cur); if (api) api.setBeat(S.bpm, cur.t0, true); }
+      if (!(ready() && st.on.mu && A.buses.mu)) { music.next = cur.t0 + Math.ceil((now - cur.t0) / em) * em; return; }   // 소리를 끈 동안에는 박자만 따라가요
+      while (music.next < now + 350) { const at = A.c.currentTime + Math.max(0, (music.next - now) / 1000); playStep(S, Math.round((music.next - cur.t0) / em), at, spb); music.next += em; }
+    }, 120);
+  }
+  function nextSong() { const now = Date.now(), cur = songAt(now); music.ov = { i: (cur.i + 1) % SONGS.length, t0: now }; if (net && net.isOpen()) net.send("song", music.ov); tickMusic();
+    say("🎵 다음 곡", SONGS[music.ov.i].n + (st.sound ? "" : " · 소리를 켜면 들려요")); }
+  function setSong(b) { const i = b && b.i, t0 = b && +b.t0; if (!Number.isInteger(i) || i < 0 || i >= SONGS.length || !Number.isFinite(t0) || Math.abs(Date.now() - t0) > 6e5) return;
+    if (music.ov && music.ov.i === i && Math.abs(music.ov.t0 - t0) < 50) return; music.ov = { i, t0 }; tickMusic(); hint(`🎵 주크박스에서 '${SONGS[i].n}'이 흘러나와요`); }
+  function toggleMusic() { if (!st.sound) { st.on.mu = true; setSound(true); } else { st.on.mu = !st.on.mu; saveSt(); applyGains(); paintSettings(); }
+    paintSong(songAt(Date.now())); say(st.sound && st.on.mu ? "🎵 파티 음악을 들어요" : "🔇 파티 음악을 껐어요", st.sound && st.on.mu ? "다른 사람과 같은 곡을 같은 박자로 들어요" : "다시 누르면 들려요"); }
+  $$("[data-roof-song]").forEach(b => b.addEventListener("click", toggleMusic));
   if (canNet) { roomBtn.hidden = false; setTimeout(connectLobby, 1500); }
   paintNet();
 
@@ -586,6 +696,10 @@
       if (n === 10) hint("별을 열 개 세었어요. 이제 소원을 빌어 볼까요?");
     },
     moved: s => { if (net) net.sendPos(s); }, fwOut: p => { if (net) net.send("fw", p); }, peerCount: () => paintNet(),
+    itemSync: (i, on) => { if (net && net.isOpen() && i >= 0) net.send("it", { i, on }); },
+    party: k => { if (k === "log") { if (net && net.isOpen()) net.send("log", {}); hint("🪵 장작을 넣었어요. 불이 활활 타올라요"); } else if (k === "dance") hint("💃 춤추는 중 · 걸어가면 멈춰요"); },
+    jukebox: k => { if (k === "next") nextSong(); else toggleMusic(); },
+    photo: () => { setTimeout(() => $("[data-roof-photo]").click(), 1600); },
     menu: (pos, acts, pick) => {   // 소품을 누르면 그 옆에 할 수 있는 동작이 떠요
       closeAct(); const el = document.createElement("div"); el.className = "roof-act"; el.setAttribute("role", "menu");
       acts.forEach(x => { const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn"; b.textContent = x.label; b.addEventListener("click", ev => { ev.stopPropagation(); closeAct(); pick(x.id); }); el.append(b); });
@@ -602,7 +716,7 @@
       if (!id) { closeSubs(); $$("[data-roof-menu]").forEach(x => x.setAttribute("aria-expanded", "false")); if (counting) { counting = false; paintCount(); } }
     },
     look: dev => { $("[data-roof-reset]").hidden = !dev; if (api) spinBtn.setAttribute("aria-pressed", String(api.getSpin())); },
-    seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { if (net && roomDeco.v) { roomDeco = { v: Date.now(), l }; sendDeco(); } else { st.layout = l; saveSt(); } }, /* 방에서는 함께 꾸미기, 혼자일 땐 내 옥상에 저장 */ lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
+    seated: on => { $("[data-roof-stand]").hidden = !on; }, meteor: n => { hint("🌠 별똥별을 잡았어요 (" + n + "개) · 소원을 빌어 보세요"); }, layout: l => { if (inParty()) return; if (net && roomDeco.v) { roomDeco = { v: Date.now(), l }; sendDeco(); } else { st.layout = l; saveSt(); } }, /* 방에서는 함께 꾸미기, 혼자일 땐 내 옥상에 저장 */ lie: () => { hint("누워서 밤하늘을 보세요. 별 세기도 해 볼까요?"); }, view: () => { },
     showStart: () => { /* 쇼 시작 */ }, showEnd: () => { hint("멋진 불꽃이었어요. 오늘도 수고했어요."); },
     sky: () => { }, quality: q => { try { if (sessionStorage.getItem("djdex:roofq")) return; sessionStorage.setItem("djdex:roofq", "1"); } catch (e) { /* 그냥 보여 줌 */ } hint("화면이 무거워 보여서 화질을 조금 낮췄어요"); },
   };
@@ -610,12 +724,14 @@
     if (!hasGL) { $("[data-roof-nogl]").hidden = false; return; }
     try {
       const m = await import("./rooftop3d.js?v=" + (document.querySelector("script[src*='rooftop.js']").src.split("v=")[1] || "1"));
-      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, stars: st.stars.idx, glow: st.glow ?? 20, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
+      api = m.start(box, cb, { reduced: calmMQ.matches, nick: st.nick, look: st.look, stars: st.stars.idx, glow: st.glow ?? 20, pets: st.pets || ["dog", "cat"], layout: st.layout, quality: st.q === "auto" ? undefined : st.q });
       api.setSky(st.sky); if (!st.wx) api.setWeather({ cloud: .04, rain: 0, fog: 0, wind: .8 });   // 맑은 밤: 구름·비·안개 없이
       if (pendingTown) pendingTown();
       const inv = new URLSearchParams(location.search).get("room");
       if (canNet && inv && /^[a-z0-9]{4,12}$/.test(inv)) { friendCode = inv; setTimeout(() => { joinRoom("friend", inv); say("친구 방에 들어왔어요", "이모지로 인사해 보세요 👋"); }, 1500); }
-      else if (canNet && st.net) setTimeout(() => joinRoom(st.srv ? "srv" : "auto", st.srv), 2500);
+      else if (canNet) {   // 들어오면 1서버부터 차례로 파티 옥상에 모여요 (이번 방문에 '내 옥상'을 고르면 그대로 있어요). ?srv=3 초대 링크면 그 서버로
+        const want = +new URLSearchParams(location.search).get("srv"); let solo = false; try { solo = !!sessionStorage.getItem("djdex:roofsolo"); } catch (e) { /* 파티로 */ }
+        if (want >= 1 && want <= 12) setTimeout(() => { joinRoom("srv", want); say("🎉 별빛옥상 파티에 왔어요", `${want}서버 · 친구가 기다리고 있어요`); }, 1400); else if (!solo) autoJoin(); }
       new ResizeObserver(() => api.resize()).observe(box);
     } catch (e) { console.error(e); $("[data-roof-nogl]").hidden = false; return; }
     if (arriveReq) { arriveReq = false; api.arrive(); }

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}집감 옥상 · 잠깐 쉬어가는 곳{% endblock %}
-{% block description %}지금 이 시각의 하늘과 도시가 보이는 옥상에서 불꽃놀이를 보고 별을 세고 소원을 띄우며 잠깐 쉬어가세요.{% endblock %}
+{% block title %}집감 별빛옥상 · 함께 쉬어가는 옥상 파티{% endblock %}
+{% block description %}별빛 아래 옥상 파티장에서 모닥불에 장작을 넣고, 같은 음악을 듣고, 불꽃놀이를 함께 봐요. 별을 세고 소원을 띄우며 잠깐 쉬어가세요.{% endblock %}
 {% block og_image %}static/og/rooftop.jpg{% endblock %}
 {% block og_alt %}달빛 아래 옥상에서 고양이들이 쉬는 모습: 쉿, 옥상에 작은 비밀이 있어요{% endblock %}
 {% block body %}
@@ -13,6 +13,7 @@
       <p class="roof-arrive-time" data-roof-arrt></p>
       <h2 class="roof-arrive-h" data-roof-arrh>오늘 하루도 수고했어요</h2>
       <p class="roof-arrive-s" data-roof-arrs>잠깐 숨 돌리고 가요</p>
+      <p class="roof-arrive-party" data-roof-arrparty hidden></p>
       <div class="roof-arrive-orb" aria-hidden="true"><i></i></div>
       <p class="roof-arrive-b" aria-hidden="true" data-roof-arrb>천천히 들이쉬고</p>
       <div class="roof-arrive-go">
@@ -32,6 +33,7 @@
     <div class="roof-status" aria-live="polite">
       <span class="roof-pill" data-roof-who>👥 지금 <b data-roof-now>1</b>명<span data-roof-todayw hidden><i aria-hidden="true"></i>오늘 <b data-roof-today>1</b>명</span></span>
       <span class="roof-pill" data-roof-srv hidden></span>
+      <button type="button" class="roof-pill roof-song" data-roof-song hidden aria-label="파티 음악 듣기·끄기"></button>
       <span class="roof-pill" data-roof-when>🌙 밤</span>
       <span class="roof-pill" data-roof-stay>☕ 방금 왔어요</span>
     </div>
@@ -149,23 +151,29 @@
 
   <div class="roof-emo" data-roof-emobar hidden role="group" aria-label="이모지 인사">
     <button type="button" data-roof-emo="👋" aria-label="손 흔들기">👋</button><button type="button" data-roof-emo="❤️" aria-label="하트">❤️</button><button type="button" data-roof-emo="😂" aria-label="웃음">😂</button>
-    <button type="button" data-roof-emo="👏" aria-label="박수">👏</button><button type="button" data-roof-emo="🙏" aria-label="감사">🙏</button><button type="button" data-roof-emo="🎆" aria-label="불꽃">🎆</button>
+    <button type="button" data-roof-emo="👏" aria-label="박수">👏</button><button type="button" data-roof-emo="🙏" aria-label="감사">🙏</button><button type="button" data-roof-emo="🎆" aria-label="불꽃">🎆</button><button type="button" data-roof-emo="🥂" aria-label="건배">🥂</button><button type="button" data-roof-emo="💃" aria-label="춤">💃</button>
   </div>
 
   <div class="roof-modal" data-roof-modal="room" hidden>
     <div class="roof-card" role="dialog" aria-label="함께 있기">
       <div class="roof-sheet-head"><b>함께 있기</b><button type="button" class="roof-x" data-roof-mclose aria-label="닫기">×</button></div>
-      <p class="roof-room-stat" data-roof-roomstat>혼자 있어요.</p>
+      <p class="roof-room-stat" data-roof-roomstat>🏠 내 옥상이에요.</p>
+      <div class="rs-chips">
+        <button type="button" class="roof-btn fw roof-wide" data-roof-join="auto">🎉 별빛옥상 파티로 (1서버부터 자동)</button>
+        <button type="button" class="roof-btn" data-roof-join="off" hidden>🏠 내 옥상 (혼자 꾸미기)</button>
+        <button type="button" class="roof-btn" data-roof-invite hidden>🔗 이 파티에 친구 부르기</button>
+        <button type="button" class="roof-btn" data-roof-join="friend">💌 친구 방 만들기</button>
+      </div>
+      <p class="rs-h">내 집콩이</p>
+      <div class="roof-look">
+        <div class="roof-swatches" data-roof-lookc role="radiogroup" aria-label="목도리 색"></div>
+        <div class="rs-chips" data-roof-looka role="group" aria-label="모자"></div>
+      </div>
       <p class="rs-h">서버</p>
       <ul class="roof-servers" data-roof-servers aria-label="서버 현황"></ul>
       <p class="rs-h">지금 같이 있는 사람</p>
       <ul class="roof-members" data-roof-members></ul>
-      <p class="roof-note">같은 서버 사람들과 한 옥상에서 불꽃을 보고, 함께 꾸미고, 이모지로 인사해요. 말은 주고받지 않고, 닉네임과 위치는 저장되지 않아요.</p>
-      <div class="rs-chips">
-        <button type="button" class="roof-btn fw roof-wide" data-roof-join="auto">⚡ 사람 있는 서버로 바로 들어가기</button>
-        <button type="button" class="roof-btn" data-roof-join="friend">💌 친구 방 만들기</button>
-        <button type="button" class="roof-btn" data-roof-join="off" hidden>🚪 혼자 있기</button>
-      </div>
+      <p class="roof-note">들어오면 1서버부터 차례로 별빛옥상 파티에 모여요. 파티 옥상의 모닥불·주크박스·댄스 플로어·의자는 모두 함께 쓰고, 꾸미기는 🏠 내 옥상에서 해요. 말은 주고받지 않고 이모지로만 인사해요. 닉네임과 위치는 저장되지 않아요.</p>
     </div>
   </div>
 
@@ -240,10 +248,16 @@
           <button type="button" class="rs-pill" data-roof-bus="fx" aria-pressed="true">켜짐</button></div>
         <label class="rs-vol"><input type="range" min="0" max="100" data-roof-vol="fx" aria-label="효과음 크기"><i data-roof-volv="fx"></i></label>
       </div>
+      <div class="rs-card">
+        <div class="rs-row"><div><b>파티 음악</b><span>파티 옥상 주크박스의 잔잔한 곡 (같은 서버 사람과 같은 박자)</span></div>
+          <button type="button" class="rs-pill" data-roof-bus="mu" aria-pressed="true">켜짐</button></div>
+        <label class="rs-vol"><input type="range" min="0" max="100" data-roof-vol="mu" aria-label="파티 음악 크기"><i data-roof-volv="mu"></i></label>
+      </div>
       <div class="rs-main"><div><b>백그라운드 재생</b><span>다른 화면으로 가도 소리가 이어져요</span></div>
         <button type="button" class="rs-sw" data-roof-bg role="switch" aria-checked="false" aria-label="백그라운드 재생"><i></i></button></div>
 
       <p class="rs-h">하늘</p>
+      <p class="roof-note" data-roof-partynote hidden>🎉 파티 옥상에서는 모두 같은 맑은 별빛 밤하늘이에요. 하늘과 날씨는 🏠 내 옥상에서 바꿀 수 있어요.</p>
       <div class="rs-chips">
         <button type="button" class="roof-chip" data-roof-sky="real">지금 하늘</button>
         <button type="button" class="roof-chip" data-roof-sky="dusk">노을</button>
