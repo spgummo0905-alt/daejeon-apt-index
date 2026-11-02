@@ -629,7 +629,7 @@ def test_my_settings_and_note_export(tmp_path):
     assert '"\\uFEFF"' in js and "imjang-notes-" in js and 'dispatchEvent(new CustomEvent("dj:mode"' in js
     assert 'addEventListener("dj:mode"' in (out / "static" / "course.js").read_text(encoding="utf-8")
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert 'localStorage.getItem("djdex:prefs")' in index   # 처음 볼 지역
+    assert 'localStorage.getItem(prefsKey)' in index and '"djdex@"+auth.user.id+":prefs"' in index  # 현재 계정의 처음 볼 지역
 
 
 def test_family_share_and_field_photos(tmp_path, monkeypatch):
