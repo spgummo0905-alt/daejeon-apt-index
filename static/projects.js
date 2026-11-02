@@ -102,7 +102,7 @@
     const loc = slugs.every(s => D.bySlug[s].la != null && D.bySlug[s].ln != null), n = slugs.length;
     find("[data-pj-selection]").textContent = `후보 ${current.slugs.length}곳 중 ${n}곳 선택${!loc ? " · 위치 정보가 없는 후보는 코스에 넣을 수 없어요" : ""}`;
     link(find("[data-pj-compare]"), "compare.html?s=" + slugs.map(encodeURIComponent).join(","), n >= 2 && n <= 4, "선택한 단지 비교");
-    link(find("[data-pj-course]"), "course.html?c=" + slugs.map(encodeURIComponent).join(",") + "&m=walk", n >= 2 && n <= 8 && loc, "선택한 후보로 임장 코스");
+    link(find("[data-pj-course]"), "course.html?c=" + slugs.map(encodeURIComponent).join(",") + "&m=walk&from=project", n >= 2 && n <= 8 && loc, "선택한 후보로 임장 코스");
   }
   find("[data-pj-all]").addEventListener("click", () => {
     if (!current) return;
