@@ -668,6 +668,7 @@ def test_project_workspace_keeps_full_tools_inside_a_lazy_same_origin_panel(tmp_
     assert page.index('static/project-flow.js') < page.index('static/project-workspace.js') < page.index('static/projects.js')
     css = (out / 'static/style.css').read_text(encoding='utf-8')
     assert '.pw-dialog[open]' in css and '.pw-frame[hidden]' in css and '.pj-embed-field' in css
+    assert 'body[data-page="projects"] .rcd { display: none; }' in css
     assert 'href="projects.html"' in (out / 'index.html').read_text(encoding='utf-8')
     assert '한 화면에서 집 찾기' in (out / 'intro.html').read_text(encoding='utf-8')
 

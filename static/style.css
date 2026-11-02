@@ -1865,6 +1865,8 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pj-actions { background: var(--surface); padding: 14px 0; }
 .pj-actions h3 { flex-basis: 100%; margin: 0; font-size: 16px; }
 #projects { padding-bottom: 110px; }
+/* 프로젝트에는 후보 목록과 작업 패널이 있어 최근 본 플로팅 창을 겹쳐 띄우지 않습니다. */
+body[data-page="projects"] .rcd { display: none; }
 .pj-selection-dock { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 20; width: min(680px, calc(100vw - 24px)); box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 6px 30px #0002; }
 .pj-selection-dock[hidden] { display: none; }
 .pj-selection-dock b { margin-right: auto; font-size: 14px; }
