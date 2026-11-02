@@ -282,13 +282,32 @@
     const guest = bringGuest ? R.guest() : {};
     Object.keys(guest).filter(k => !DJ.LOCAL_ONLY.includes(k) && k !== "oid").forEach(k => {
       const mine = getLocal(k), j = JOIN[k];
-      let v = guest[k];
+      let v = guest[k], target = k;
       if (mine !== undefined && j && j[0](mine) && j[0](v)) v = j[1](v, mine);
       else if (k.startsWith("visit:") && isObj(mine) && isObj(v)) v = R.mergeVisit(v, mine);
       else if (k === "course" && mine && v) v = Object.assign({}, mine, v, { list: uniq([...(v.list || []), ...(mine.list || [])]).slice(0, 8), auto: false });
+      else if (k.startsWith("project:") && isObj(mine) && isObj(v)) {
+        // 계정 백업을 비회원 상태로 수정한 뒤 로그인하면 같은 ID가 겹칠 수 있습니다.
+        // 다른 내용은 별도 사본으로 보관합니다. 목적·후보를 합쳐 버리거나 한쪽을 지우지 않습니다.
+        const stable = x => JSON.stringify(x, (_, value) => value && typeof value === "object" && !Array.isArray(value)
+          ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
+        if (stable(mine) === stable(v)) return;
+        const source = stable(v);
+        let hash = 2166136261, hash2 = 5381;
+        for (const ch of source) { hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619); hash2 = Math.imul(hash2, 33) ^ ch.charCodeAt(0); }
+        const suffix = (hash >>> 0).toString(16) + (hash2 >>> 0).toString(16);
+        let found = false;
+        for (let i = 0; i < 100; i++) {
+          const id = k.slice(8, 38) + "-copy-" + suffix + "-" + i;
+          target = "project:" + id; v = Object.assign({}, guest[k], { id });
+          const existing = getLocal(target);
+          if (existing === undefined || (isObj(existing) && stable(existing) === stable(v))) { found = true; break; }
+        }
+        if (!found) throw new Error("프로젝트 사본을 보관하지 못했어요");
+      }
       else if (mine !== undefined) return; // 설정 등은 기존 계정 값을 유지
-      if (!putLocal(k, v)) throw new Error("기기 저장 공간이 부족해요");
-      t[k] = Math.max(now, t[k] + 1 || now); delete m.sent[k]; changed = true;
+      if (!putLocal(target, v)) throw new Error("기기 저장 공간이 부족해요");
+      t[target] = Math.max(now, t[target] + 1 || now); delete m.sent[target]; changed = true;
     });
     // 코스가 8곳을 넘으면 나머지 후보도 관심 단지에 남겨 다시 고를 수 있게 합니다.
     if (guest.course && Array.isArray(guest.course.list)) {
@@ -308,7 +327,10 @@
     if (DJ.applyPrefs && (changed.includes("prefs") || changed.includes("*"))) DJ.applyPrefs();   // 다른 기기의 면적 단위 등
     const page = document.body.dataset.page;
     const last = +ss.get("djdex-reload") || 0;
-    if ((hello || ["my", "cards", "me"].includes(page)) && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게
+    if (page === "projects" && DJ.hasProjectDraft && DJ.hasProjectDraft()) {
+      window.dispatchEvent(new CustomEvent("dj:projects-updated")); return; // 작성 중인 이름·조건을 새로고침으로 잃지 않게
+    }
+    if ((hello || ["my", "cards", "me"].includes(page) || page === "projects") && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게
       ss.set("djdex-reload", String(Date.now()));
       location.reload();
       return;

@@ -538,6 +538,8 @@ def test_course_share_link_and_print_sheet(tmp_path):
     course = (out / "static" / "course.js").read_text(encoding="utf-8")
     assert 'course.html?c=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}' in course
     assert 'q.get("c") || q.get("course")' in course and "내 코스로 저장" in course and 'if (!got) DJ.save("course", state)' in course
+    assert 'q.get("from") === "project"' in course and "프로젝트에서 고른 임장 코스" in course
+    assert course.index('if (!DJ.save("course", next)) return;') < course.index('if (RECV) { location.href = base + "my.html#course"; return; }')
     assert "DJ.printSheet(sheet())" in course and "window.print" not in course
     assert "state.auto = true" in course   # 빈 코스가 저장돼 있어도 관심 단지를 따라감
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
@@ -618,6 +620,20 @@ def test_compare_fill_finder_fav_and_card_flip_target(tmp_path):
     assert "if (opts.fav)" in (out / "static" / "app.js").read_text(encoding="utf-8")
     css = (out / "static" / "style.css").read_text(encoding="utf-8")
     assert ".mcard-turn::before" in css and ".gfav {" in css
+
+
+def test_project_page_preserves_existing_records_and_is_not_indexed(tmp_path):
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "projects.html").read_text(encoding="utf-8")
+    assert 'name="robots" content="noindex"' in page and 'data-pj-create' in page
+    assert page.index("static/records.js") < page.index("static/project-store.js") < page.index("static/projects.js")
+    assert 'class="me-gate"' not in page
+    assert "기존 내 코스를 덮어쓰지 않습니다" in page and "단지별 공통 기록" in page
+    assert 'href="projects.html"' in (out / "my.html").read_text(encoding="utf-8")
+    assert "projects" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert '"projects.html"' in sw and "static/project-store.js" in sw
 
 
 def test_my_settings_and_note_export(tmp_path):

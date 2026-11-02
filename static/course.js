@@ -13,6 +13,7 @@
   // 받은 코스 (course.html?c=a,b,c&m=walk, 예전 링크 my.html?course=…): 내 코스를 덮지 않고 보여 주다가 '내 코스로 저장'을 누르면 저장
   const q = new URLSearchParams(location.search);
   const RECV = document.body.dataset.page === "course";   // 받은 코스 화면
+  const FROM_PROJECT = RECV && q.get("from") === "project";
   const given = q.get("c") || q.get("course");
   let got = given ? { list: given.split(",").slice(0, MAX), mode: q.get("m") === "car" ? "car" : "walk" } : null;
   const base = location.origin + location.pathname.replace(/[^/]*$/, "");
@@ -49,6 +50,7 @@
   function hero(p) {
     const t = document.querySelector("[data-rc-title]"), l = document.querySelector("[data-rc-lead]");
     if (!t) return;
+    if (FROM_PROJECT) document.querySelector(".rc-kicker").textContent = "프로젝트에서 고른 임장 코스";
     if (!p) {
       t.textContent = "코스를 열 수 없습니다";
       l.textContent = "다른 지역의 코스이거나 링크가 잘렸어요. 보낸 분께 다시 받아 주세요.";
@@ -119,15 +121,20 @@
       const keep = el("button", "btn primary sm", "내 코스로 저장"), mine = el("button", "btn ghost sm", "내 코스 보기");
       keep.type = mine.type = "button";
       keep.addEventListener("click", () => {
-        state = Object.assign(state, { list: got.list.slice(), mode: got.mode, auto: false });
-        if (RECV) { DJ.save("course", state); location.href = base + "my.html#course"; return; }   // 관심 화면의 내 코스로
+        if (DJ.askLogin("임장 코스")) return;
+        if (state.list.length && (state.list.join(",") !== got.list.join(",") || state.mode !== got.mode)
+          && !confirm("지금 내 코스를 이 구성으로 바꿀까요? 단지별 현장 기록은 그대로 유지됩니다.")) return;
+        const next = Object.assign({}, state, { list: got.list.slice(), mode: got.mode, auto: false });
+        if (!DJ.save("course", next)) return;
+        state = next;
+        if (RECV) { location.href = base + "my.html#course"; return; }   // 저장 성공 후에만 이동
         clearGot(); draw();
         DJ.toast("내 코스로 저장했습니다", "단지마다 체크리스트와 메모를 남길 수 있습니다");
       });
       mine.addEventListener("click", () => { if (RECV) { location.href = base + "my.html#course"; return; } clearGot(); draw(); });
       const acts = el("div", "cs-got-acts");
       acts.append(keep, mine);
-      bar.append(el("p", "", RECV ? "저장하면 관심 화면의 내 코스에 추가되고 단지마다 체크리스트·메모를 남길 수 있습니다. 지금 내 코스는 그대로입니다."
+      bar.append(el("p", "", RECV ? "지금은 코스 미리보기입니다. 저장하면 관심 화면의 내 코스를 이 구성으로 바꿉니다. 단지별 현장 기록은 그대로 유지됩니다."
         : "받은 임장 코스입니다. 저장하기 전에는 내 코스가 바뀌지 않습니다."), acts);
       sec.querySelector(".panel-head").after(bar);
     }
