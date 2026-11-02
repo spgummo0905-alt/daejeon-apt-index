@@ -964,7 +964,7 @@
           fav.setAttribute("aria-pressed", on ? "true" : "false");
           const text = on ? "관심 단지에서 빼기" : "관심 단지 저장";
           fav.setAttribute("aria-label", text); fav.title = text;
-          if (label) label.textContent = on ? "관심 단지에 저장됨" : "관심 단지 저장";
+          if (label) label.textContent = label.hasAttribute("data-action-label") ? (on ? "저장됨" : "관심") : (on ? "관심 단지에 저장됨" : "관심 단지 저장");
         };
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
@@ -1442,7 +1442,11 @@
     if (fav && fav.getAttribute("aria-pressed") !== "true") {
       const b = el("button", "btn primary sm", "관심 단지에 담기");
       b.type = "button";
-      b.addEventListener("click", () => { fav.click(); b.textContent = "담았어요 ✓"; b.disabled = true; });
+      b.addEventListener("click", () => {
+        fav.click();
+        if (fav.getAttribute("aria-pressed") !== "true") return;   // 로그인 안내만 열린 경우에는 저장 완료로 표시하지 않음
+        b.textContent = "담았어요 ✓"; b.disabled = true;
+      });
       acts.append(b);
     }
     const intro = el("a", "btn sm", "1분 소개");
@@ -1471,6 +1475,8 @@
       b.setAttribute("aria-pressed", String(on));
       b.title = on ? `임장 코스에 있어요 (${stops.length}곳) · 누르면 빼기` : "임장 코스에 넣기";
       b.setAttribute("aria-label", b.title);
+      const label = b.querySelector("[data-action-label]");
+      if (label) label.textContent = on ? "코스에 있음" : "코스";
     });
     b.addEventListener("click", () => {
       if (DJ.askLogin("임장 코스")) return;

@@ -59,7 +59,7 @@
     const head = sec.querySelector(".panel-head");   // 위 소개와 겹치는 설명 대신
     head.querySelector("h2").textContent = "코스 자세히";
     head.querySelector("p").textContent = "단지 이름을 누르면 등급 카드가, '현장 체크리스트'를 펼치면 현장에서 확인할 항목이 표시됩니다.";
-    l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지 가장 짧은 순서로 이은 임장 코스입니다. 단지마다 현장 확인 항목도 함께 담았습니다.`;
+    l.textContent = `${p.stops[0].n}에서 ${p.stops[p.stops.length - 1].n}까지 단지 간 직선거리로 방문 순서를 정한 코스입니다. 단지마다 현장 확인 항목도 함께 담았습니다.`;
     document.title = `임장 코스 ${p.stops.length}곳 · 집감`;
   }
   const cur = () => got || state;   // 지금 보여 주는 코스
@@ -146,7 +146,7 @@
     const { stops, legs, total, move } = plan();
     const sum = sec.querySelector("[data-cs-sum]");
     sum.replaceChildren();
-    [["단지", stops.length + "곳"], ["총 거리", dist(total)], [SPEED[st.mode].label, "약 " + hm(move)], ["둘러보기 포함", "약 " + hm(move + VISIT * stops.length)]]
+    [["단지", stops.length + "곳"], ["직선거리 합계", dist(total)], [SPEED[st.mode].label + " 예상", "약 " + hm(move)], ["둘러보기 포함", "약 " + hm(move + VISIT * stops.length)]]
       .forEach(([k, v]) => { const d = el("div", "cs-kv"); d.append(el("span", "", k), el("b", "", v)); sum.append(d); });
     map(stops);
     const list = sec.querySelector("[data-cs-list]");
@@ -167,7 +167,7 @@
       if (k === 0) li.append(link("이 단지까지 길찾기", `https://map.kakao.com/link/to/${encodeURIComponent(c.n)},${c.la},${c.ln}`, "cs-first"));
       if (k < stops.length - 1) {
         const nx = stops[k + 1], d = legs[k];
-        li.append(link(`다음 단지까지 ${dist(d)} · ${SPEED[st.mode].label} 약 ${hm(mins(d))} · 카카오맵 길찾기`,
+        li.append(link(`다음 단지까지 직선 ${dist(d)} · ${SPEED[st.mode].label} 예상 ${hm(mins(d))} · 카카오맵 길찾기`,
           `https://map.kakao.com/link/from/${encodeURIComponent(c.n)},${c.la},${c.ln}/to/${encodeURIComponent(nx.n)},${nx.la},${nx.ln}`, "cs-leg"));
       }
       list.append(li);
@@ -179,8 +179,9 @@
     const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
     const out = el("section", "cs-print");
     out.append(el("h2", "", "임장 코스"),
-      el("p", "cs-p-sub", `집감 ${region} · ${DJ.today().replace(/-/g, ".")} · ${SPEED[st.mode].label} · ${stops.length}곳 · 총 ${dist(total)} · ` +
+      el("p", "cs-p-sub", `집감 ${region} · ${DJ.today().replace(/-/g, ".")} · ${SPEED[st.mode].label} · ${stops.length}곳 · 직선거리 합계 ${dist(total)} · ` +
         `이동 약 ${hm(move)} (둘러보기 포함 약 ${hm(move + VISIT * stops.length)})`));
+    out.append(el("p", "cs-p-sub", "이동 시간은 추정치입니다. 실제 도로·교통·주차 상황은 카카오맵에서 확인하세요."));
     const top = el("div", "cs-p-top"), svg = sec.querySelector("[data-cs-map] svg");
     if (svg) top.append(svg.cloneNode(true));
     const ol = el("ol", "cs-p-order");
