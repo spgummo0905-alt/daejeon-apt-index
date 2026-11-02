@@ -11,7 +11,7 @@ function storage(initial = {}) {
   const s = {};
   Object.defineProperties(s, {
     getItem: { value(k) { return Object.hasOwn(this, k) ? this[k] : null; } },
-    setItem: { value(k, v) { this[k] = String(v); } },
+    setItem: { configurable: true, value(k, v) { this[k] = String(v); } },
     removeItem: { value(k) { delete this[k]; } },
     key: { value(i) { return Object.keys(this)[i] ?? null; } },
     length: { get() { return Object.keys(this).length; } },
