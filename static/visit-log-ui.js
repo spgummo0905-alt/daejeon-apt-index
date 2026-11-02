@@ -3,7 +3,7 @@
   addEventListener("beforeunload", e => {
     if (DJ.hasVisitLogDraft?.() || DJ.hasProjectDraft?.()) { e.preventDefault(); e.returnValue = ""; }
   });
-  window.DJVisitLogUI = function ({ region, slug, projectId = "", candidates = [], names = {}, archived = false, data }) {
+  window.DJVisitLogUI = function ({ region, slug, projectId = "", candidates = [], names = {}, archived = false, data, defaultProjectId = "" }) {
     const s = el("section", "vl-section"), title = el("h4", "", "날짜별 방문 기록");
     const status = el("p", "sv-note"); status.setAttribute("role", "status");
     s.append(title, el("p", "sv-note", "낮에 본 집과 밤에 본 집, 느낌이 달랐나요? 방문할 때마다 따로 남겨 비교해 보세요."));
@@ -16,12 +16,15 @@
     const period = el("select"); DJVisitLog.periods.forEach(p => { const o = el("option", "", p || "시간대 선택 · 선택사항"); o.value = p; period.append(o); });
     row.append(label("방문 날짜", date), label("시간대", period)); form.append(row);
     const project = el("select");
+    let projectTouched = false;
+    project.addEventListener("change", () => { projectTouched = true; });
     if (slug && !projectId) {
       const o = el("option", "", "프로젝트 없이 기록"); o.value = ""; project.append(o);
       DJProjects.list(region).filter(p => !p.archived && p.slugs.includes(slug)).forEach(p => {
         const o = el("option", "", p.name); o.value = p.id; project.append(o);
       });
       form.append(label("연결할 프로젝트 · 선택사항", project));
+      if ([...project.options].some(o => o.value === defaultProjectId)) project.value = defaultProjectId;
     }
     const memo = el("textarea"); memo.rows = 3; memo.maxLength = 2000;
     memo.placeholder = "예: 저녁 7시 주차 여유가 적었음. 다음에는 출근 시간 소음 확인하기.";
@@ -85,6 +88,12 @@
     if (!archived && (slug || candidates.length)) s.append(form);
     else s.append(el("p", "sv-note", archived ? "보관한 프로젝트의 방문 기록이에요. 새로 기록하려면 프로젝트를 다시 시작하세요." : "프로젝트에 후보를 추가하면 방문 기록을 남길 수 있어요."));
     s.append(status, history); draw();
-    return { element: s, dirty, refresh: draw };
+    return { element: s, dirty, refresh: draw, connectProject(id) {
+      if (!slug || projectId || !id) return;
+      const p = DJProjects.read(id);
+      if (!p || p.region !== region || p.archived || !p.slugs.includes(slug)) return;
+      if (![...project.options].some(o => o.value === id)) { const o = el("option", "", p.name); o.value = id; project.append(o); }
+      if (!projectTouched && !project.value) project.value = id;
+    } };
   };
 })();

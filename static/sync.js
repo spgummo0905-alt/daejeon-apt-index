@@ -333,8 +333,8 @@
     const page = document.body.dataset.page;
     const last = +ss.get("djdex-reload") || 0;
     if (DJ.hasVisitLogDraft?.()) return; // 현장에서 작성 중인 방문 기록을 새로고침으로 잃지 않게
-    if (page === "projects" && DJ.hasProjectDraft && DJ.hasProjectDraft()) {
-      window.dispatchEvent(new CustomEvent("dj:projects-updated")); return; // 작성 중인 이름·조건을 새로고침으로 잃지 않게
+    if (page === "projects") {
+      window.dispatchEvent(new CustomEvent("dj:projects-updated")); return; // 검색 조건·선택·패널을 새로고침으로 잃지 않게
     }
     if ((hello || ["my", "cards", "me"].includes(page) || page === "projects") && Date.now() - last > 4000) {   // 연달아 새로 열지는 않게
       ss.set("djdex-reload", String(Date.now()));

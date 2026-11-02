@@ -87,7 +87,9 @@
       b.addEventListener("click", () => { picked = [...picked, s].slice(-MAX); render(d); });
       qbox.append(b);
     });
-    history.replaceState(null, "", picked.length ? "?s=" + picked.map(encodeURIComponent).join(",") : location.pathname);
+    params.delete("a"); params.delete("b");
+    if (picked.length) params.set("s", picked.join(",")); else params.delete("s");
+    history.replaceState(null, "", location.pathname + (params.size ? "?" + params : ""));
     const cs = picked.map(s => d.bySlug[s]);
     out.replaceChildren();
     shareBtn.hidden = cs.length < 2;

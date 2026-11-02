@@ -8,6 +8,7 @@ const OTHER = __OTHER__;
 const CACHE = "djdex-" + VERSION;
 const SCOPE = new URL(self.registration.scope).pathname;
 const CORE = ["index.html", "my.html", "projects.html", "static/project-store.js?v=" + VERSION, "static/projects.js?v=" + VERSION, "static/visit-log.js?v=" + VERSION, "static/visit-log-ui.js?v=" + VERSION, "static/style.css?v=" + VERSION, "static/records.js?v=" + VERSION, "static/app.js?v=" + VERSION, "static/field.js?v=" + VERSION,
+  "static/project-flow.js?v=" + VERSION, "static/project-workspace.js?v=" + VERSION, "static/workspace-embed.js?v=" + VERSION,
   "static/charts.js?v=" + VERSION, "static/holo.js?v=" + VERSION, "complexes.json", "static/icons/icon-192.png"];
 const OFFLINE = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
   '<title>연결 없음</title><body style="font-family:system-ui,sans-serif;padding:40px 24px;line-height:1.6;color:#1b2333">' +

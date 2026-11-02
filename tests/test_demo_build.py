@@ -653,6 +653,25 @@ def test_dated_visit_logs_available_on_field_project_and_my_pages(tmp_path):
     assert "k.k like 'visit:%'" in sql and "k.k like 'visitlog:%'" not in sql
 
 
+def test_project_workspace_keeps_full_tools_inside_a_lazy_same_origin_panel(tmp_path):
+    out = tmp_path / 'site'
+    cli.main(['--data', str(tmp_path / 'data'), 'demo', '--out', str(out)])
+    page = (out / 'projects.html').read_text(encoding='utf-8')
+    assert '<dialog class="pw-dialog"' in page and 'data-pj-workspace' in page
+    for kind in ('detail', 'field', 'compare', 'course', 'finder', 'history'):
+        assert f'data-pw-tab="{kind}"' in page
+    assert 'data-pj-budget' in page and 'data-pj-district' in page and 'data-pj-results' in page
+    assert '<iframe' not in page  # 선택한 기능만 필요할 때 불러옵니다.
+    for script in ('project-flow', 'project-workspace', 'workspace-embed'):
+        assert f'static/{script}.js' in page
+        assert f'static/{script}.js' in (out / 'sw.js').read_text(encoding='utf-8')
+    assert page.index('static/project-flow.js') < page.index('static/project-workspace.js') < page.index('static/projects.js')
+    css = (out / 'static/style.css').read_text(encoding='utf-8')
+    assert '.pw-dialog[open]' in css and '.pw-frame[hidden]' in css and '.pj-embed-field' in css
+    assert 'href="projects.html"' in (out / 'index.html').read_text(encoding='utf-8')
+    assert '한 화면에서 집 찾기' in (out / 'intro.html').read_text(encoding='utf-8')
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"

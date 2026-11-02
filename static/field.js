@@ -36,6 +36,7 @@
     setTimeout(() => sheet.querySelector("h3").focus(), 60);
   }
   function close() {
+    if (window.DJWorkspaceEmbed) { DJWorkspaceEmbed.send("close"); return; }
     if (DJ.hasVisitLogDraft?.() && !confirm("아직 저장하지 않은 방문 기록이 있어요. 현장 체크를 닫을까요?")) return;
     back.classList.remove("on"); sheet.classList.remove("on");
     setTimeout(() => { back.hidden = true; sheet.hidden = true; }, DJ.calm ? 0 : 220);
@@ -58,7 +59,7 @@
   let last = null, journal = null;
   function build(c, d) {
     last = [c, d];
-    journal = DJVisitLogUI({ region, slug, names: { [slug]: name }, data: d });
+    journal = DJVisitLogUI({ region, slug, names: { [slug]: name }, data: d, defaultProjectId: window.DJWorkspaceEmbed?.projectId });
     DJ.hasVisitLogDraft = journal.dirty;
     body.replaceChildren(...[course(c, d), where(c), checks(c), quotes(c), photos(), memo(), journal.element].filter(Boolean));
     if (DJ.paintSync) DJ.paintSync();
@@ -338,6 +339,7 @@
     if (!e.key?.startsWith(DJ.records.key("visitlog:")) || !journal || journal.dirty()) return;
     journal.refresh();
   });
+  addEventListener("dj:workspace-context", e => journal?.connectProject(e.detail));
 
   if (location.hash === "#field" && !DJ.locked()) open();
 })();
