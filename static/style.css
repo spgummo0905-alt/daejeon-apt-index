@@ -1866,6 +1866,26 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pj-item.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 .pj-item span { font-size: 12px; color: var(--muted); }
 .pj-editor { min-width: 0; }
+/* 날짜별 방문 기록: 현장 시트·프로젝트에서 같은 입력 방식을 씁니다. */
+.vl-section { min-width: 0; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+.vl-section h4 { margin: 0 0 8px; font-size: 19px; }
+.vl-section .vl-form { display: grid; align-items: stretch; gap: 12px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.vl-section .vl-form label { display: grid; gap: 7px; min-width: 0; font-size: 13px; font-weight: 700; }
+.vl-section .vl-form input:not([type="checkbox"]), .vl-form select, .vl-form textarea { min-width: 0; width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 10px; padding: 11px; background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.vl-form textarea { resize: vertical; min-height: 100px; }
+.vl-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.vl-section .vl-form .vl-check { display: flex; align-items: center; gap: 8px; }
+.vl-section .vl-form .vl-check input { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--accent); }
+.vl-form .btn { margin: 0; justify-self: start; }
+.vl-form .primary { width: 100%; justify-content: center; }
+.vl-form .sv-note { margin: 0; }
+.vl-history { display: grid; gap: 10px; margin-top: 16px; }
+.vl-entry { padding: 14px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; }
+.vl-entry summary { cursor: pointer; line-height: 1.6; overflow-wrap: anywhere; font-weight: 700; }
+.vl-memo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; }
+.vl-checks { margin: 12px 0; font-size: 13px; }
+.vl-checks li { margin: 6px 0; }
+@media (max-width: 420px) { .vl-row { grid-template-columns: minmax(0, 1fr); } }
 .pj-editor h2, .pj-editor .panel-head p { overflow-wrap: anywhere; }
 .pj-tools { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
 .pj-tools details { flex: 1; min-width: 160px; }

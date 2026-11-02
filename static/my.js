@@ -9,6 +9,21 @@
     }
     const favs = DJ.favs().map(s => d.bySlug[s]).filter(Boolean);
     const recent = DJ.recent().map(r => d.bySlug[r.s]).filter(Boolean);
+    const journal = document.querySelector("[data-visit-history]");
+    if (journal) {
+      const logs = DJVisitLog.list({ region: document.body.dataset.region }), groups = new Map();
+      logs.forEach(v => { if (!groups.has(v.slug)) groups.set(v.slug, []); groups.get(v.slug).push(v); });
+      const ul = journal.querySelector("[data-visit-history-list]");
+      groups.forEach((visits, slug) => {
+        const c = d.bySlug[slug], li = el("li"), v = visits[0];
+        const a = el(c ? "a" : "div", "nt-item"); if (c) a.href = DJ.href(c) + "#field";
+        a.append(el("b", "", c?.n || slug), el("span", "nt-when", `${visits.length}회 · 최근 ${v.date}`));
+        if (v.memo) a.append(el("span", "nt-memo", v.memo.slice(0, 90)));
+        li.append(a); ul.append(li);
+      });
+      journal.hidden = !groups.size;
+      const jump = document.querySelector("[data-mj-history]"); if (jump) jump.hidden = !groups.size;
+    }
 
     // 새 소식: 지난번 확인한 뒤 새 거래·시세 변화. 누르면 그 단지 거래 목록으로, '확인'하면 지금 상태를 기준으로
     const news = DJ.watchSync(d.bySlug), nbox = document.querySelector("[data-news]");
@@ -60,7 +75,8 @@
         const a = el("a", "nt-item");
         a.href = DJ.href(c) + "#field";
         const top = el("span", "nt-top");
-        top.append(el("span", "grade g-" + c.g, c.g), el("b", "nt-name", c.n), el("span", "nt-when" + (v.d ? " been" : ""), v.d ? v.d.slice(5).replace("-", ".") + " 다녀옴" : "방문 전"));
+        const visitCount = DJVisitLog.list({ region: document.body.dataset.region, slug: c.s }).length;
+        top.append(el("span", "grade g-" + c.g, c.g), el("b", "nt-name", c.n), el("span", "nt-when" + (v.d ? " been" : ""), v.d ? v.d.slice(5).replace("-", ".") + " 다녀옴" : visitCount ? `방문 기록 ${visitCount}회` : "방문 전"));
         const meta = el("span", "nt-meta");
         meta.append(el("span", "", `체크 ${n}/${all}`));
         if (v.q.length) {
@@ -148,7 +164,7 @@
     const ROWS = [
       ["등급·지수", ({ c }) => (c.g && c.g !== "-" ? c.g + "등급 · " : "") + (c.i == null ? "-" : c.i + "점")],
       ["84㎡ 환산가", ({ c }) => c.pt || "-"],
-      ["다녀온 날", ({ v }) => (v.d ? v.d.replace(/-/g, ".") : "방문 전")],
+      ["공통 기록 방문일", ({ c, v }) => (v.d ? v.d.replace(/-/g, ".") : DJVisitLog.list({ region, slug: c.s }).length ? "날짜별 방문 기록 참고" : "방문 전")],
       ["현장 체크", ({ c, v }) => { const [n, all] = DJ.visitDone(v, DJ.visitItems(c, region)); return `${n} / ${all}`; }],
       ["확인 못 한 것", ({ c, v }) => {
         const left = DJ.visitItems(c, region).filter(([id]) => !v.x[id]).map(t => t[1]).concat(DJ.CHECK.filter((_, i) => !v.c[i]));

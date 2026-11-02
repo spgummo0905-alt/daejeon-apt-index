@@ -5,7 +5,7 @@
   const find = s => root.querySelector(s), form = find("[data-pj-create]"), edit = find("[data-pj-edit]");
   const editor = find("[data-pj-editor]"), status = find("[data-pj-status]");
   const picked = new Set();
-  let current = null, D = null;
+  let current = null, D = null, journal = null;
   function error(e) {
     status.textContent = e.message === "conflict" ? "다른 화면에서 프로젝트가 바뀌었어요. 내용을 복사해 두고 새로고침한 뒤 다시 저장해 주세요."
       : e.message === "fields" ? "프로젝트 이름은 1~50자, 중요한 조건은 200자 이내로 적어 주세요."
@@ -15,7 +15,7 @@
   }
   function mutate(patch) {
     if (!current) return false;
-    if (patch.name === undefined && dirty() && !confirm("저장하지 않은 이름·조건 수정이 있어요. 수정을 저장하지 않고 진행할까요?")) return false;
+    if ((patch.name === undefined && dirty() || journal?.dirty()) && !confirm("저장하지 않은 수정·방문 메모가 있어요. 저장하지 않고 진행할까요?")) return false;
     try { current = P.update(current.id, REGION, current.updated, patch); status.textContent = "프로젝트를 저장했어요."; render(); return true; }
     catch (e) { error(e); return false; }
   }
@@ -24,12 +24,12 @@
     if (current.slugs.includes(c.s)) { DJ.toast("이미 담은 후보예요", "이 프로젝트의 후보 목록에서 확인해 주세요."); return; }
     mutate({ slugs: [...current.slugs, c.s] });
   }
-  function dirty() { return current && (edit.elements.name.value !== current.name || edit.elements.goal.value !== current.goal); }
+  function dirty() { return current && (edit.elements.name.value !== current.name || edit.elements.goal.value !== current.goal || journal?.dirty()); }
   DJ.hasProjectDraft = () => !!(form.elements.name.value.trim() || form.elements.goal.value.trim() || dirty());
   function updatedElsewhere() { status.textContent = "다른 화면에서 프로젝트가 바뀌었어요. 작성 중인 내용을 복사해 두고 새로고침해 주세요."; }
   addEventListener("dj:projects-updated", updatedElsewhere);
   function choose(p) {
-    if (dirty() && !confirm("저장하지 않은 이름·조건 수정이 있어요. 저장하지 않고 다른 프로젝트를 볼까요?")) return;
+    if (dirty() && !confirm("저장하지 않은 수정·방문 메모가 있어요. 저장하지 않고 다른 프로젝트를 볼까요?")) return;
     current = p; picked.clear(); render();
   }
   form.addEventListener("submit", e => {
@@ -89,6 +89,9 @@
       }
       cards.append(wrap);
     });
+    journal = DJVisitLogUI({ region: REGION, projectId: current.id, candidates: current.slugs.map(s => D.bySlug[s]).filter(Boolean),
+      names: Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n])), archived: current.archived, data: D });
+    find("[data-pj-journal]").replaceChildren(journal.element);
     actions();
   }
   function link(a, url, enabled, label) {
@@ -116,7 +119,7 @@
     DJ.search(find("#pj-search"), c => { find("#pj-search").value = ""; add(c); }); render();
   }).catch(() => { status.textContent = "단지 자료를 불러오지 못했어요. 새로고침해 주세요. 프로젝트 기록은 그대로 보관됩니다."; });
   addEventListener("storage", e => {
-    if (!e.key?.startsWith(DJ.records.key("project:"))) return;
+    if (!e.key?.startsWith(DJ.records.key("project:")) && !e.key?.startsWith(DJ.records.key("visitlog:"))) return;
     if (DJ.hasProjectDraft()) { updatedElsewhere(); return; }
     if (current) current = P.read(current.id);
     render();

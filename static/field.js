@@ -36,6 +36,7 @@
     setTimeout(() => sheet.querySelector("h3").focus(), 60);
   }
   function close() {
+    if (DJ.hasVisitLogDraft?.() && !confirm("아직 저장하지 않은 방문 기록이 있어요. 현장 체크를 닫을까요?")) return;
     back.classList.remove("on"); sheet.classList.remove("on");
     setTimeout(() => { back.hidden = true; sheet.hidden = true; }, DJ.calm ? 0 : 220);
     document.removeEventListener("keydown", esc);
@@ -54,10 +55,12 @@
     return s;
   }
 
-  let last = null;
+  let last = null, journal = null;
   function build(c, d) {
     last = [c, d];
-    body.replaceChildren(...[course(c, d), where(c), checks(c), quotes(c), photos(), memo()].filter(Boolean));
+    journal = DJVisitLogUI({ region, slug, names: { [slug]: name }, data: d });
+    DJ.hasVisitLogDraft = journal.dirty;
+    body.replaceChildren(...[course(c, d), where(c), checks(c), quotes(c), photos(), memo(), journal.element].filter(Boolean));
     if (DJ.paintSync) DJ.paintSync();
   }
 
@@ -301,7 +304,7 @@
 
   // 5. 메모와 '다녀왔어요'
   function memo() {
-    const s = section("메모", null);
+    const s = section("단지 공통 메모", "여러 번 방문해도 계속 참고할 내용을 적어 두세요. 이번 방문만의 느낌은 아래 날짜별 기록에 따로 남길 수 있어요.");
     const t = el("textarea", "fm-memo");
     t.rows = 3; t.placeholder = "동·층·향, 단지 분위기, 부동산에서 들은 이야기";
     t.setAttribute("aria-label", name + " 메모");
@@ -318,7 +321,9 @@
     paint();
     const note = el("p", "fm-note", "기록은 이 기기의 브라우저에만 남아요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요.");
     note.dataset.syncNote = "";   // 카카오로 로그인했으면 sync.js 가 '계정에 저장돼요'로 바꿈
-    s.append(t, been, note);
+    const dated = el("button", "btn ghost", "이번 방문 따로 남기기"); dated.type = "button";
+    dated.addEventListener("click", () => journal?.element.querySelector("textarea")?.focus());
+    s.append(t, been, dated, note);
     return s;
   }
 
@@ -328,6 +333,10 @@
     if (!last || !old) return;
     const n = course(last[0], last[1]);
     if (n) old.replaceWith(n);
+  });
+  addEventListener("storage", e => {
+    if (!e.key?.startsWith(DJ.records.key("visitlog:")) || !journal || journal.dirty()) return;
+    journal.refresh();
   });
 
   if (location.hash === "#field" && !DJ.locked()) open();

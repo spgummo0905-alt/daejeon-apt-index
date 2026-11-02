@@ -636,6 +636,23 @@ def test_project_page_preserves_existing_records_and_is_not_indexed(tmp_path):
     assert '"projects.html"' in sw and "static/project-store.js" in sw
 
 
+def test_dated_visit_logs_available_on_field_project_and_my_pages(tmp_path):
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    projects = (out / "projects.html").read_text(encoding="utf-8")
+    for page in (apt, projects):
+        assert page.index("static/project-store.js") < page.index("static/visit-log.js") < page.index("static/visit-log-ui.js")
+    assert 'data-pj-journal' in projects
+    my = (out / "my.html").read_text(encoding="utf-8")
+    assert 'data-visit-history' in my and my.index("static/visit-log.js") < my.index("static/my.js")
+    sw = (out / "sw.js").read_text(encoding="utf-8")
+    assert 'static/visit-log.js' in sw and 'static/visit-log-ui.js' in sw
+    # 공유 RPC는 기존 단지 노트만 내보내고 새 날짜별 기록은 공개하지 않습니다.
+    sql = (__import__('pathlib').Path(__file__).parents[1] / 'scripts' / 'supabase_setup.sql').read_text(encoding='utf-8')
+    assert "k.k like 'visit:%'" in sql and "k.k like 'visitlog:%'" not in sql
+
+
 def test_my_settings_and_note_export(tmp_path):
     # 관심 화면 '내 설정'(처음 볼 지역·면적 단위·코스 이동·시세 알림 기준·내 체크 항목·내 기록 파일)과 임장 노트 내보내기
     out = tmp_path / "site"
