@@ -115,14 +115,34 @@
     apply();
   }
   if (table.hasAttribute("data-lazy")) {
-    const small = fetch((window.DJ_ROOT || "") + "small.json").then(r => r.ok ? r.json() : { complexes: [] }).catch(() => ({ complexes: [] }));
-    Promise.all([DJ.data(), small]).then(([d, s]) => {
-      // 순위 순 (지수 없는 단지는 맨 아래), 소규모·원룸형은 그 뒤 (지수 높은 순)
-      const all = d.complexes.slice().sort((a, b) => (a.rk || 1e9) - (b.rk || 1e9));
-      const sm = s.complexes.slice().sort((a, b) => (b.i ?? -1) - (a.i ?? -1));
-      tbody.replaceChildren(...all.map(row), ...sm.map(row));
-      rows = Array.from(tbody.rows);
-      start();
-    }).catch(start);
+    // 전체 단지 줄(1천 줄 넘게)은 첫 화면에 필요 없어서, 화면이 한가할 때 만듭니다 (휴대폰 첫 화면이 빨라짐).
+    // 지역으로 들어오거나 표 근처로 내려오면 바로 만듭니다.
+    let built = false;
+    const build = () => {
+      if (built) return; built = true;
+      const small = fetch((window.DJ_ROOT || "") + "small.json").then(r => r.ok ? r.json() : { complexes: [] }).catch(() => ({ complexes: [] }));
+      Promise.all([DJ.data(), small]).then(([d, s]) => {
+        // 순위 순 (지수 없는 단지는 맨 아래), 소규모·원룸형은 그 뒤 (지수 높은 순)
+        const all = d.complexes.slice().sort((a, b) => (a.rk || 1e9) - (b.rk || 1e9));
+        const sm = s.complexes.slice().sort((a, b) => (b.i ?? -1) - (a.i ?? -1));
+        tbody.replaceChildren(...all.map(row), ...sm.map(row));
+        rows = Array.from(tbody.rows);
+        start();
+      }).catch(start);
+    };
+    const urgent = /[?&](area|dong)=/.test(location.search) || location.hash === "#list";
+    if (urgent) build();
+    else {
+      const idle = window.requestIdleCallback ? cb => requestIdleCallback(cb, { timeout: 4000 }) : cb => setTimeout(cb, 2500);
+      // 사용자가 표 쪽으로 오면 기다리지 않고 바로
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); build(); } }, { rootMargin: "600px 0px" });
+        io.observe(table);
+      }
+      addEventListener("load", () => idle(build), { once: true });
+      // 다른 곳(지역 카드, 지도)이 '이 지역 단지 보기'를 부르면 그때 만들고 이어서 실행
+      DJ.showArea = function (area, dong) { build(); const t = setInterval(() => { if (DJ.showArea !== stub) { clearInterval(t); DJ.showArea(area, dong); } }, 50); };
+      var stub = DJ.showArea;
+    }
   } else start();
 })();
