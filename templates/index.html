@@ -76,14 +76,14 @@ try {
     <a class="quick-tile" href="themes.html"><svg class="ic"><use href="#i-star"/></svg><strong>테마로 찾기</strong><span>학교·교통·신축 등 조건별로</span></a>
     {% if transit.page %}<a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.stop }} 주변 아파트 비교</span></a>
     {% else %}<a class="quick-tile" href="#map"><svg class="ic"><use href="#i-map"/></svg><strong>지도로 보기</strong><span>동네별 시세와 단지 위치</span></a>{% endif %}
-    <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>최대 4곳의 가격·입지·수익률</span></a>
+    <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>최대 4곳을 나란히 비교</span></a>
     <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건에 맞는 집</span></a>
   </div>
   <a class="roof-strip" href="rooftop.html"><span class="roof-strip-moon" aria-hidden="true">🌙</span><span class="roof-strip-t"><b>집감 옥상</b> 불꽃놀이 보며 잠깐 쉬어가요</span><i aria-hidden="true">→</i></a>
 </section>
 
 <section class="stat-strip" aria-label="데이터 요약">
-  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}지수 산정 {{ "{:,}".format(meta.n_ranked) }}곳 · 나머지는 자료 부족{% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
+  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}그중 {{ "{:,}".format(meta.n_ranked) }}곳에 점수를 매겼어요 (나머지는 거래 자료가 적어요){% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
   <div class="ss"><span class="label">반영한 실거래</span><span class="value" data-count>{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   {% if pulse %}
   <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">계약 해제 거래 제외</span></div>
