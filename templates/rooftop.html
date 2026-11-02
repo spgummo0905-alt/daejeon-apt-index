@@ -30,18 +30,25 @@
       <span class="sr-only">야경으로 볼 동네</span>
       <select data-roof-town aria-label="야경으로 볼 동네"></select>
     </label>
-    <div class="roof-status" aria-live="polite">
+    <div class="roof-status" data-roof-status>
+      <button type="button" class="roof-pill roof-info" data-roof-info aria-expanded="false" aria-controls="roof-statlist" aria-label="옥상 현황 펼치기"><span data-roof-infot>🌙 맑은 밤</span><em aria-hidden="true">▾</em></button>
+      <div class="roof-statlist" id="roof-statlist" aria-live="polite">
       <span class="roof-pill" data-roof-who>👥 지금 <b data-roof-now>1</b>명<span data-roof-todayw hidden><i aria-hidden="true"></i>오늘 <b data-roof-today>1</b>명</span></span>
       <span class="roof-pill" data-roof-srv hidden></span>
       <button type="button" class="roof-pill roof-song" data-roof-song hidden aria-label="파티 음악 듣기·끄기"></button>
       <span class="roof-pill" data-roof-when>🌙 밤</span>
       <span class="roof-pill" data-roof-stay>☕ 방금 왔어요</span>
+      </div>
     </div>
-    <div class="roof-tools">
+    <div class="roof-tools" data-roof-tools>
       <button type="button" class="roof-btn" data-roof-open="room" data-roof-roombtn hidden aria-label="함께 있기">👥 <b data-roof-pc>함께</b></button>
-      <button type="button" class="roof-btn roof-mission" data-roof-mission aria-expanded="false" aria-label="오늘의 미션">🎯 <b data-roof-mcount>0/4</b></button>
-      <button type="button" class="roof-btn" data-roof-open="set" aria-label="옥상 설정">설정</button>
-      <button type="button" class="roof-btn" data-roof-photo>사진 저장</button>
+      <button type="button" class="roof-btn roof-icon" data-roof-snd aria-label="소리 켜기">🔇</button>
+      <button type="button" class="roof-btn roof-icon" data-roof-more aria-expanded="false" aria-controls="roof-morelist" aria-label="메뉴 더 보기">•••</button>
+      <div class="roof-more" id="roof-morelist" data-roof-morelist>
+        <button type="button" class="roof-btn roof-mission" data-roof-mission aria-expanded="false" aria-label="오늘의 미션">🎯 미션 <b data-roof-mcount>0/4</b></button>
+        <button type="button" class="roof-btn" data-roof-open="set" aria-label="옥상 설정">⚙️ 설정</button>
+        <button type="button" class="roof-btn" data-roof-photo>📷 사진 저장</button>
+      </div>
     </div>
   </div>
 
@@ -150,8 +157,11 @@
   </div>
 
   <div class="roof-emo" data-roof-emobar hidden role="group" aria-label="이모지 인사">
+    <div class="roof-emo-list" id="roof-emolist">
     <button type="button" data-roof-emo="👋" aria-label="손 흔들기">👋</button><button type="button" data-roof-emo="❤️" aria-label="하트">❤️</button><button type="button" data-roof-emo="😂" aria-label="웃음">😂</button>
     <button type="button" data-roof-emo="👏" aria-label="박수">👏</button><button type="button" data-roof-emo="🙏" aria-label="감사">🙏</button><button type="button" data-roof-emo="🎆" aria-label="불꽃">🎆</button><button type="button" data-roof-emo="🥂" aria-label="건배">🥂</button><button type="button" data-roof-emo="💃" aria-label="춤">💃</button>
+    </div>
+    <button type="button" class="roof-emo-t" data-roof-emot aria-expanded="false" aria-controls="roof-emolist" aria-label="이모지 인사 펼치기">😊</button>
   </div>
 
   <div class="roof-modal" data-roof-modal="room" hidden>

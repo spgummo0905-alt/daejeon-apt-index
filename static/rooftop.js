@@ -162,6 +162,7 @@
     $$("[data-roof-q]").forEach(b => b.setAttribute("aria-pressed", String(st.q === b.dataset.roofQ)));
     $("[data-roof-starsn]").textContent = st.stars.idx.length + "개 · 처음부터 다시 세고 싶을 때";
     { const gl = $("[data-roof-glow]"); gl.value = st.glow ?? 20; $("[data-roof-glowv]").textContent = gl.value + "%"; }
+    paintSnd();
     $$("[data-roof-vol]").forEach(r => { r.value = st.vol[r.dataset.roofVol]; $(`[data-roof-volv="${r.dataset.roofVol}"]`).textContent = st.vol[r.dataset.roofVol] + "%"; });
   }
   $("[data-roof-sound]").addEventListener("click", () => setSound(!st.sound));
@@ -410,7 +411,17 @@
     const f = box.dataset.focus, spin = api && api.getSpin && api.getSpin(), mins = Math.floor((Date.now() - arrived) / 60e3);
     const act = f === "lie" ? "🛌 별멍" : f === "sky" ? "⭐ 별 세기" : f === "tent" ? "⛺ 텐트 속" : f === "table" ? "☕ 차 한 잔" : spin ? "🌀 야경멍" : Date.now() - lastFw < 25e3 ? "🎆 불꽃멍" : "☕ 쉼";
     $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
+    paintInfo();
   };
+  function paintInfo() {   // 접힌 현황 칩: 가장 중요한 한 줄만 (누르면 나머지가 펼쳐져요)
+    const el = $("[data-roof-infot]"); if (!el) return; let t = "";
+    try { if (inParty()) t = `🎉 ${curSrv}서버 · ${names.length + 1}명`; } catch (e) { /* 준비 전 */ }
+    el.textContent = t || $("[data-roof-when]").textContent.split(" · ")[0];
+  }
+  function paintSnd() {   // 위쪽 소리 버튼 (파티 옥상에서는 파티 음악까지)
+    const b = $("[data-roof-snd]"); if (!b) return; const on = st.sound && (!inParty() || st.on.mu);
+    b.textContent = on ? "🔊" : "🔇"; b.setAttribute("aria-label", on ? "소리 끄기" : "소리 켜기"); b.setAttribute("aria-pressed", String(on));
+  }
   const loadToday = () => { if (window.DJ && DJ.online && DJ.online.onToday && !loadToday.on) { loadToday.on = true; DJ.online.onToday(v => { todayN = v; stat(); }); } };   // '오늘'은 사이트 전체 기준 (online.js)
   setTimeout(loadToday, 3000); setInterval(loadToday, 5 * 60e3); setInterval(() => { try { stat(); } catch (e) { /* 준비 전 */ } }, 20e3);
   if (window.DJ && DJ.online) DJ.online.onChange(() => { try { stat(); } catch (e) { /* 아직 준비 전 */ } });
@@ -508,6 +519,7 @@
       const b = document.createElement("button"); b.type = "button"; b.className = "roof-btn srv-go"; b.textContent = here ? "✓" : "입장"; b.disabled = here || n >= SRV_MAX; b.setAttribute("aria-label", `${k}서버 ${here ? "지금 여기" : "들어가기"}`);
       b.addEventListener("click", () => joinRoom("srv", k)); li.append(b); if (here) li.classList.add("ok"); return li; }));
     const pill = $("[data-roof-srv]"); if (pill) { pill.hidden = !(curSrv && net); pill.textContent = `🎉 ${curSrv}서버 파티 · ${cnt(curSrv)}명 · ${showIn()}`; }
+    paintInfo();
   }
   function paintArrParty() {   // 들어올 때 인사 화면: 지금 파티에 몇 명이 있는지
     const el = $("[data-roof-arrparty]"); if (!el || !canNet) return; const n = Object.values(srvCounts).reduce((a, b) => a + b, 0);
@@ -537,6 +549,7 @@
     $$("[data-roof-sky], [data-roof-wx]").forEach(b => { b.disabled = on; });
     const nt = $("[data-roof-partynote]"); if (nt) nt.hidden = !on;
     const sg = $("[data-roof-song]"); if (sg) sg.hidden = !on;
+    paintSnd(); paintInfo();
   }
   function greet(list) {   // 새로 올라온 사람 알림 (잦으면 묶어서)
     if (Date.now() - greetT < 5000) return; greetT = Date.now();
@@ -665,6 +678,16 @@
   $$("[data-roof-song]").forEach(b => b.addEventListener("click", toggleMusic));
   if (canNet) { roomBtn.hidden = false; setTimeout(connectLobby, 1500); }
   paintNet();
+
+  // ---------- 접는 메뉴: 현황·더 보기·이모지는 평소엔 버튼 하나로 접어 두고, 누르면 펼쳐요 (화면을 가리지 않게) ----------
+  const DROPS = [["[data-roof-info]", "[data-roof-status]"], ["[data-roof-more]", "[data-roof-tools]"], ["[data-roof-emot]", "[data-roof-emobar]"]];
+  const setDrop = (b, w, open) => { $(w).classList.toggle("open", open); $(b).setAttribute("aria-expanded", String(open)); };
+  const closeDrops = keep => DROPS.forEach(([b, w]) => { if (w !== keep) setDrop(b, w, false); });
+  DROPS.forEach(([b, w]) => $(b).addEventListener("click", e => { e.stopPropagation(); const open = !$(w).classList.contains("open"); closeDrops(w); setDrop(b, w, open); }));
+  document.addEventListener("pointerdown", e => DROPS.forEach(([b, w]) => { if (!$(w).contains(e.target)) setDrop(b, w, false); }), true);   // 바깥을 누르면 접혀요
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrops(); });
+  $$("[data-roof-morelist] button, [data-roof-emo]").forEach(x => x.addEventListener("click", () => closeDrops()));   // 고르면 다시 접혀요
+  $("[data-roof-snd]").addEventListener("click", () => { if (st.sound && (!inParty() || st.on.mu)) setSound(false); else { st.on.mu = true; saveSt(); setSound(true); } });
 
   // ---------- 3D 장면 시작 ----------
   const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } })();
