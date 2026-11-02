@@ -5,15 +5,25 @@
 {# 사이트에 들어올 때마다(새 창·새 탭·주소 입력·바깥 링크) 인트로부터. 같은 창에서 인트로를 이미 봤거나,
    사이트 안에서 넘어왔거나, 검색 로봇이면 그대로 (인트로 ↔ 첫 화면이 계속 오가지 않게 이 창에서만 기억).
    내 설정의 '처음 볼 지역'이 다른 지역이면 바깥에서 들어왔을 때 그 지역 첫 화면으로 (사이트 안에서 지역을 바꾸면 그대로) #}
-<script>try{var r=document.referrer,ext=!(r&&new URL(r).origin===location.origin)&&!/[?&](skip|code|error|stay)/.test(location.search),P=JSON.parse(localStorage.getItem("djdex:prefs")||"{}"),G={{ regions | tojson }},go="";if(ext&&P.region&&P.region!=={{ region | tojson }})for(var i=0;i<G.length;i++)if(G[i].name===P.region&&G[i].url)go=G[i].url;if(go)location.replace(go);else if(ext&&!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html")}catch(e){}</script>
+<script>
+try {
+  var r=document.referrer,ext=!(r&&new URL(r).origin===location.origin)&&!/[?&](skip|code|error|stay)/.test(location.search);
+  var auth=JSON.parse(localStorage.getItem("djdex-auth")||"null");
+  var prefsKey=auth&&auth.user?"djdex@"+auth.user.id+":prefs":"djdex:prefs";
+  var P=JSON.parse(localStorage.getItem(prefsKey)||"{}"),G={{ regions | tojson }},go="";
+  if(ext&&P.region&&P.region!=={{ region | tojson }})for(var i=0;i<G.length;i++)if(G[i].name===P.region&&G[i].url)go=G[i].url;
+  if(go)location.replace(go);
+  else if(ext&&!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html");
+}catch(e){}
+</script>
 {% endblock %}
 {% block body %}
 <section class="hero hero-main">
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">국토교통부 실거래 기준 · {{ meta.updated }} 업데이트</p>
-      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">몇 점</span>일까요?</h1>
-      <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 가격 흐름을 비교했습니다. 관심 있는 단지를 검색하거나 예산과 평형에 맞춰 찾아보세요.</p>
+      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
+      <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳. 실거래가와 입지를 비교하고, 직접 가 볼 집을 골라보세요.</p>
       <div class="hero-search">
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">

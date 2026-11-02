@@ -11,7 +11,7 @@
   if (!C || !C.url || !C.key || !window.fetch || !window.crypto || !crypto.subtle) return;
   const { el } = DJ;
   const API = C.url.replace(/\/+$/, "");
-  const PFX = "djdex:", STAMP = "djdex-t", AUTH = "djdex-auth", META = "djdex-sync", PKCE = "djdex-pkce";
+  const R = DJ.records, AUTH = "djdex-auth", PKCE = "djdex-pkce";
   const ls = {
     get(k, f) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch (e) { return f; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
@@ -55,6 +55,7 @@
         img: https(md.avatar_url || md.picture) } : prev && prev.user,
     };
     ls.set(AUTH, a);
+    R.activate(a.user && a.user.id);
     S.user = a.user;
     return a;
   }
@@ -62,11 +63,12 @@
   async function token() {
     const a = ls.get(AUTH, null);
     if (!a) return null;
+    if (!R.current() || !S.user || a.user.id !== S.user.id || R.user !== S.user.id) throw new Error("계정이 변경됐어요. 화면을 다시 열어 주세요.");
     if (a.exp * 1000 - Date.now() > 60000) return a.at;
     if (!refreshing) {
       refreshing = call("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: a.rt } })
-        .then(s => keep(s).at)
-        .catch(e => { if (e.status === 400 || e.status === 401) forget(); throw e; })   // 다른 곳에서 로그아웃·탈퇴한 경우
+        .then(s => { if (ls.get(AUTH, null)?.rt !== a.rt) throw new Error("계정이 변경됐어요"); return keep(s).at; })
+        .catch(e => { if ((e.status === 400 || e.status === 401) && ls.get(AUTH, null)?.rt === a.rt) forget(); throw e; })
         .finally(() => { refreshing = null; });
     }
     return refreshing;
@@ -94,9 +96,11 @@
   const allPhotos = () => localKeys().filter(k => k.startsWith("visit:")).flatMap(k => ((getLocal(k) || {}).p || []).map(x => x[0]));
 
   function forget() {
-    ls.del(AUTH); ls.del(META); ss.del(MEM);
+    ls.del(AUTH); ss.del(MEM);
+    R.activate(null);
     S.user = null; S.state = "";
     paint();
+    location.reload();
   }
 
   // ---------- 회원 등급과 사이트 설정 (관리자 화면에서 정함, scripts/supabase_setup.sql) ----------
@@ -168,27 +172,20 @@
 
   // ---------- 기록 고르기 ----------
   function localKeys() {
-    const out = [];
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(PFX) && !DJ.LOCAL_ONLY.includes(k.slice(PFX.length))) out.push(k.slice(PFX.length));
-      }
-    } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
-    return out;
+    return R.keys().filter(k => !DJ.LOCAL_ONLY.includes(k) && k !== "oid");
   }
   function getLocal(k) {
-    try { const v = localStorage.getItem(PFX + k); return v == null ? undefined : JSON.parse(v); } catch (e) { return undefined; }
+    return R.get(k, undefined);
   }
   function putLocal(k, v) {
-    try { localStorage.setItem(PFX + k, JSON.stringify(v)); return true; } catch (e) { return false; }
+    return R.put(k, v);
   }
 
   // 처음 이을 때 두 쪽을 합치는 기록 (나머지는 더 새 쪽)
   const uniq = (arr, by) => { const seen = new Set(); return arr.filter(x => { const k = by ? by(x) : x; if (k == null || seen.has(k)) return false; seen.add(k); return true; }); };
   const isObj = v => v && typeof v === "object" && !Array.isArray(v);
   const JOIN = {
-    favs: [Array.isArray, (a, b) => uniq([...a, ...b]).slice(0, 100)],
+    favs: [Array.isArray, (a, b) => uniq([...a, ...b])],
     recent: [Array.isArray, (a, b) => uniq([...a, ...b], x => x && x.s).slice(0, 30)],
     searches: [Array.isArray, (a, b) => uniq([...a, ...b], x => x && x.u).slice(0, 12)],
     days: [Array.isArray, (a, b) => uniq([...a, ...b]).sort().slice(-60)],
@@ -201,7 +198,8 @@
 
   // ---------- 보내기·받기 ----------
   // META = {uid: 이은 계정, since: 마지막으로 받은 서버 시각, sent: {기록: 보낸 고친 시각}}
-  const meta = () => ls.get(META, null);
+  const meta = () => R.meta();
+  const owns = () => S.user && R.current() && R.user === S.user.id;
   async function fetchAll(since, at) {
     const rows = [];
     for (let i = 0; i < 20; i++) {
@@ -218,9 +216,9 @@
   async function push(keepalive) {
     if (pushing) return pushing.then(() => push(keepalive));
     pushing = (async () => {
-      const m = meta(), at = m && await token();
+      const m = meta(), at = owns() && m && m.uid === S.user.id && await token();
       if (!at) return;
-      const t = ls.get(STAMP, {}), items = [];
+      const t = R.times(), items = [];
       localKeys().forEach(k => {
         const tk = t[k] || 1;
         if (m.sent[k] === tk) return;
@@ -228,11 +226,12 @@
         if (v !== undefined) items.push({ k, v, t: tk });
       });
       for (let i = 0; i < items.length; i += 100) {
+        if (!owns()) throw new Error("계정이 변경됐어요");
         const part = items.slice(i, i + 100);
         await call("/rest/v1/rpc/sync_put", { method: "POST", body: { items: part }, keepalive }, at);
         const m2 = meta() || m;
         part.forEach(x => { m2.sent[x.k] = x.t; });
-        ls.set(META, m2);
+        if (owns() && !R.setMeta(m2)) throw new Error("기기 저장 공간이 부족해요");
       }
       S.at = Date.now();
     })().finally(() => { pushing = null; });
@@ -240,44 +239,66 @@
   }
   // 다른 기기에서 바뀐 기록을 받아 이 기기보다 새 것만 반영. 바뀐 기록 이름을 돌려줌
   async function pull() {
-    const m = meta(), at = m && await token();
+    const m = meta(), at = owns() && m && m.uid === S.user.id && await token();
     if (!at) return [];
-    const rows = await fetchAll(m.since, at), t = ls.get(STAMP, {}), changed = [];
+    const rows = await fetchAll(m.since, at), t = R.times(), changed = [];
+    if (!owns()) throw new Error("계정이 변경됐어요");
     rows.forEach(r => {
       if (r.updated_at > (m.since || "")) m.since = r.updated_at;
-      if (DJ.LOCAL_ONLY.includes(r.k) || !((t[r.k] || 0) < r.t || getLocal(r.k) === undefined)) return;
-      if (putLocal(r.k, r.v)) { t[r.k] = r.t; m.sent[r.k] = r.t; changed.push(r.k); }
+      if (r.k.startsWith("_") || DJ.LOCAL_ONLY.includes(r.k) || !((t[r.k] || 0) < r.t || getLocal(r.k) === undefined)) return;
+      if (!putLocal(r.k, r.v)) throw new Error("기기 저장 공간이 부족해요");
+      t[r.k] = r.t; m.sent[r.k] = r.t; changed.push(r.k);
     });
-    ls.set(STAMP, t); ls.set(META, m);
+    R.setTimes(t); if (!R.setMeta(m)) throw new Error("기기 저장 공간이 부족해요");
     S.at = Date.now();
     return changed;
   }
   // 이 기기를 이 계정에 처음 이을 때: 계정의 기록을 모두 받아 이 기기 기록과 합친 뒤 보냅니다. 이 기기가 바뀌었으면 true
-  async function link(user) {
+  async function link(user, bringGuest) {
+    if (bringGuest && !R.put("_importGuest", true)) throw new Error("기기 저장 공간이 부족해요");
     const at = await token();
-    const rows = await fetchAll("", at), t = ls.get(STAMP, {}), m = { uid: user.id, since: "", sent: {} };
+    const rows = await fetchAll("", at), t = R.times(), m = { uid: user.id, since: "", sent: {} };
+    if (!owns() || S.user.id !== user.id) throw new Error("계정이 변경됐어요");
     const now = Date.now(), cloud = {};
     let changed = false;
     rows.forEach(r => { cloud[r.k] = r; if (r.updated_at > m.since) m.since = r.updated_at; });
-    const keys = uniq([...localKeys(), ...Object.keys(cloud)]).filter(k => !DJ.LOCAL_ONLY.includes(k));
+    const keys = uniq([...localKeys(), ...Object.keys(cloud)]).filter(k => !k.startsWith("_") && k !== "oid" && !DJ.LOCAL_ONLY.includes(k));
     keys.forEach(k => {
       const r = cloud[k], mine = getLocal(k), tk = t[k] || 1;
       if (!r) { t[k] = tk; return; }                          // 이 기기에만 있음: 보냄
-      const j = JOIN[k];
+      const j = JOIN[k] || (k.startsWith("visit:") ? [isObj, R.mergeVisit] : null);
       if (mine !== undefined && j && j[0](mine) && j[0](r.v)) {
         const v = j[1](mine, r.v);
         if (JSON.stringify(v) === JSON.stringify(r.v)) { t[k] = r.t; m.sent[k] = r.t; }
         else { t[k] = Math.max(now, r.t + 1); }               // 합친 것을 보냄
-        if (JSON.stringify(v) !== JSON.stringify(mine)) { putLocal(k, v); changed = true; }
+        if (JSON.stringify(v) !== JSON.stringify(mine)) { if (!putLocal(k, v)) throw new Error("기기 저장 공간이 부족해요"); changed = true; }
       } else if (mine === undefined || r.t >= tk) {
-        if (JSON.stringify(mine) !== JSON.stringify(r.v)) { putLocal(k, r.v); changed = true; }
+        if (JSON.stringify(mine) !== JSON.stringify(r.v)) { if (!putLocal(k, r.v)) throw new Error("기기 저장 공간이 부족해요"); changed = true; }
         t[k] = r.t; m.sent[k] = r.t;
       } else {
         t[k] = tk;                                            // 이 기기 것이 더 새것: 보냄
       }
     });
-    ls.set(STAMP, t); ls.set(META, m);
+    const guest = bringGuest ? R.guest() : {};
+    Object.keys(guest).filter(k => !DJ.LOCAL_ONLY.includes(k) && k !== "oid").forEach(k => {
+      const mine = getLocal(k), j = JOIN[k];
+      let v = guest[k];
+      if (mine !== undefined && j && j[0](mine) && j[0](v)) v = j[1](v, mine);
+      else if (k.startsWith("visit:") && isObj(mine) && isObj(v)) v = R.mergeVisit(v, mine);
+      else if (k === "course" && mine && v) v = Object.assign({}, mine, v, { list: uniq([...(v.list || []), ...(mine.list || [])]).slice(0, 8), auto: false });
+      else if (mine !== undefined) return; // 설정 등은 기존 계정 값을 유지
+      if (!putLocal(k, v)) throw new Error("기기 저장 공간이 부족해요");
+      t[k] = Math.max(now, t[k] + 1 || now); delete m.sent[k]; changed = true;
+    });
+    // 코스가 8곳을 넘으면 나머지 후보도 관심 단지에 남겨 다시 고를 수 있게 합니다.
+    if (guest.course && Array.isArray(guest.course.list)) {
+      const favs = uniq([...(getLocal("favs") || []), ...guest.course.list]);
+      if (!putLocal("favs", favs)) throw new Error("기기 저장 공간이 부족해요");
+      t.favs = Math.max(now, (t.favs || 0) + 1); delete m.sent.favs;
+    }
+    R.setTimes(t); if (!R.setMeta(m)) throw new Error("기기 저장 공간이 부족해요");
     await push();
+    if (bringGuest && owns()) { R.clearGuest(guest); R.remove("_importGuest"); } // 전송 성공 전에는 원본 보존
     return changed;
   }
 
@@ -309,28 +330,34 @@
       `&code_challenge=${ch}&code_challenge_method=s256`);
   };
   DJ.logout = async function (wipe) {
-    try { await push(); } catch (e) { /* 못 보낸 기록은 이 기기에 남음 */ }
+    if (S.linking) { DJ.toast("기록을 연결하고 있어요", "연결이 끝난 뒤 로그아웃해 주세요."); return; }
+    S.linking = true;
+    try { await push(); } catch (e) {
+      if (wipe) {
+        S.linking = false; setState("error");
+        DJ.toast("아직 계정에 보내지 못한 기록이 있어요", "기기 기록은 지우지 않았어요. 연결 상태를 확인한 뒤 다시 시도해 주세요.");
+        return;
+      }
+    }
+    if (!owns()) { location.reload(); return; }
     const a = ls.get(AUTH, null);
     if (a) call("/auth/v1/logout?scope=local", { method: "POST", body: {} }, a.at).catch(() => {});
-    forget();
     if (wipe) {
-      localKeys().concat(DJ.LOCAL_ONLY).forEach(k => { try { localStorage.removeItem(PFX + k); } catch (e) { /* 무시 */ } });
-      ls.del(STAMP);
-      DJ.toast("로그아웃했어요", "이 기기의 기록도 지웠어요. 다시 로그인하면 계정에 저장된 기록을 불러와요.");
-      setTimeout(() => location.reload(), 900);
-      return;
+      R.keys().forEach(k => R.remove(k)); R.remove("_times"); R.remove("_sync");
     }
-    DJ.toast("로그아웃했어요", "이 기기의 기록은 그대로 남아 있어요.");
+    forget();
   };
   DJ.deleteAccount = async function () {
-    if (!confirm("카카오 로그인 연결과 계정에 저장된 기록을 모두 지울까요?\n이 기기에 남은 기록은 지우지 않아요.")) return;
+    if (S.linking) { DJ.toast("기록을 연결하고 있어요", "연결이 끝난 뒤 다시 시도해 주세요."); return; }
+    if (!confirm("계정과 현장 사진, 공유 링크, 이 기기의 해당 계정 기록을 모두 지울까요?\n비회원 기록과 다른 계정의 기록은 유지됩니다.")) return;
     try {
       try { await pull(); } catch (e) { /* 받지 못해도 이 기기 기록으로 */ }
       const ph = allPhotos();
       for (let i = 0; i < ph.length; i += 100) await DJ.photoDel(ph.slice(i, i + 100));   // 사진부터 지움
       await call("/rest/v1/rpc/delete_me", { method: "POST", body: {} }, await token());
+      if (!owns()) { location.reload(); return; }
+      R.keys().forEach(k => R.remove(k)); R.remove("_times"); R.remove("_sync");
       forget();
-      DJ.toast("계정을 지웠어요", "계정에 저장된 기록도 모두 지웠어요. 이 기기 기록은 그대로예요.");
     } catch (e) {
       DJ.toast("지우지 못했어요", "잠시 뒤 다시 해 주세요.");
     }
@@ -397,17 +424,20 @@
       document.dispatchEvent(new CustomEvent("dj:auth", { detail: u }));
     }
     document.querySelectorAll("[data-sync-note]").forEach(p => {
-      p.textContent = u ? "기록은 카카오 계정에 저장돼 다른 기기에서도 이어 볼 수 있어요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요."
-        : "기록은 이 기기의 브라우저에 남아요. 관심 화면에서 카카오로 로그인하면 다른 기기에서도 이어 볼 수 있어요.";
+      p.textContent = u ? "기록은 내 계정에 연결됩니다. 저장 상태는 위쪽 계정 메뉴에서 확인하고, 관심 화면에서 코스와 임장 노트를 다시 볼 수 있어요."
+        : "기록은 이 기기의 브라우저에 저장됩니다. 사이트 데이터를 지우면 사라질 수 있어요. 로그인해 계정에 보관하거나 내 설정에서 파일로 백업해 주세요.";
+    });
+    document.querySelectorAll("[data-storage-summary]").forEach(p => {
+      p.textContent = u ? "내 계정에 연결됨 · 저장 상태는 위쪽 계정 메뉴에서 확인하세요." : "이 브라우저에 저장 중 · 중요한 기록은 내 설정에서 파일로 백업하세요.";
     });
   }
   DJ.paintSync = paint;
   // 지금 이 기기에 있는 기록 (계정 창에 '관심 단지 3곳 · 임장 노트 2곳 · 사진 5장')
   function counts() {
-    const favs = ls.get(PFX + "favs", []);
+    const favs = getLocal("favs") || [];
     let notes = 0, photos = 0;
     localKeys().filter(k => k.startsWith("visit:")).forEach(k => {
-      const v = ls.get(PFX + k, null);
+      const v = getLocal(k);
       if (!v) return;
       const p = (v.p || []).length;
       if (v.d || v.m || p || (v.q || []).length || (v.c || []).some(Boolean) || Object.values(v.x || {}).some(Boolean)) notes++;
@@ -453,7 +483,7 @@
     });
     function ask(what) {
       pop.classList.toggle("ask", !!what);
-      const benefits = { "관심 단지": "관심 단지를 계정에 보관해요", "임장 코스": "임장 코스를 기기마다 이어 봐요", "현장 모드": "현장 체크와 메모를 저장해요" };
+      const benefits = { "관심 단지": "관심 단지를 계정에 보관해요", "임장 코스": "임장 코스를 기기마다 이어 봐요", "현장 모드": "현장 체크와 메모를 저장해요", "현장 사진": "사진을 계정에 보관해요" };
       if (why) { why.hidden = !what; why.textContent = what ? (benefits[what] || `${what} · 로그인하면 이어 쓸 수 있어요`) : ""; }
     }
     DJ.loginPrompt = what => setTimeout(() => { close(false); ask(what); open(); }, 0);
@@ -505,9 +535,15 @@
     timer = setTimeout(() => { timer = null; sync(false); }, 1200);
   };
   async function sync(withPull) {
-    if (!S.user) return;
+    if (!S.user || S.linking) return [];
     S.state = "busy";
     try {
+      if (R.get("_importGuest", false) && !S.linking) {
+        S.linking = true;
+        await link(S.user, true);
+        setState("saved");
+        return ["*"];
+      }
       await push();
       const ch = withPull ? await pull() : [];
       setState("saved");
@@ -515,7 +551,7 @@
     } catch (e) {
       setState(S.user ? "error" : "");
       return [];
-    }
+    } finally { S.linking = false; }
   }
   // 화면을 떠날 때 남은 저장을 마저 보냄
   addEventListener("pagehide", () => {
@@ -553,27 +589,32 @@
       try {
         const a = keep(await call("/auth/v1/token?grant_type=pkce", { method: "POST", body: { auth_code: code, code_verifier: pk.v } }));
         setState("busy");
-        const changed = await link(a.user);
+        S.linking = true;
+        await link(a.user, true);
+        S.linking = false;
         setState("saved");
-        if (changed) applied([], a.user.name);
-        else welcome(a.user.name);
+        ss.set("djdex-hello", a.user.name);
+        location.reload(); // 계정 전환 전 만들어진 체크·메모·코스 객체도 새로 읽음
       } catch (e) {
+        S.linking = false;
         if (!S.user) DJ.toast("로그인하지 못했어요", why(e.message), 12000);
-        else setState("error");
+        else { setState("error"); location.reload(); }
       }
       return;
     }
     if (!S.user) return;
     try {
       const m = meta();
-      if (!m || m.uid !== S.user.id) {
+      if (!m || m.uid !== S.user.id || R.get("_importGuest", false)) {
+        S.linking = true;
         setState("busy");
-        const changed = await link(S.user);
+        const changed = await link(S.user, R.get("_importGuest", false));
+        S.linking = false;
         setState("saved");
         if (changed) applied(["*"]);
         return;
       }
-    } catch (e) { setState("error"); return; }
+    } catch (e) { S.linking = false; setState("error"); return; }
     const ch = await sync(true);
     if (ch && ch.length) applied(ch);
   }

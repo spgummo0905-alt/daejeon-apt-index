@@ -42,7 +42,7 @@
     if (location.hash === "#field") history.replaceState(null, "", location.pathname + location.search);
   }
   function esc(e) { if (e.key === "Escape") close(); }
-  // 현장 모드의 체크·호가·메모는 계정 기록이라 로그인을 켠 사이트에선 로그인 뒤에 (app.js DJ.askLogin)
+  // 기본 기록은 비회원도 기기에 저장. 계정 전환 중인 경우에만 입력을 기다립니다.
   opens.forEach(b => b.addEventListener("click", () => { if (!DJ.askLogin("현장 모드")) open(); }));
   sheet.querySelectorAll("[data-fm-close]").forEach(b => b.addEventListener("click", close));
 
@@ -248,8 +248,8 @@
     s.dataset.feature = "photos";   // 관리자 화면에서 끄면 감춤
     if (!(DJ.sync && DJ.sync.user)) {
       s.append(el("p", "fm-sub", "카카오로 로그인하면 주차장·동 간격·언덕 같은 현장 사진을 이 단지 노트에 남길 수 있어요."));
-      const go = el("a", "btn", "로그인하러 가기 ›");
-      go.href = (window.DJ_ROOT || "") + "my.html#account";
+      const go = el("button", "btn", "로그인하고 사진 남기기"); go.type = "button";
+      go.addEventListener("click", () => { close(); DJ.loginPrompt("현장 사진"); });
       s.append(go);
       return s;
     }

@@ -78,10 +78,7 @@
     if (backup) backup.addEventListener("click", () => {
       const data = {};
       try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith("djdex:")) data[k.slice(6)] = JSON.parse(localStorage.getItem(k));
-        }
+        DJ.records.keys().forEach(k => { data[k] = DJ.load(k, null); });
       } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
       download(`aptindex-records-${stamp()}.json`, JSON.stringify({ app: "djdex", v: 1, at: new Date().toISOString(), data }, null, 1), "application/json");
     });
@@ -92,7 +89,7 @@
       f.text().then(txt => {
         const j = JSON.parse(txt);
         if (!j || j.app !== "djdex" || typeof j.data !== "object") throw new Error("bad");
-        const keys = Object.keys(j.data).filter(k => /^[\w:.-]{1,80}$/.test(k));
+        const keys = Object.keys(j.data).filter(k => /^[a-z][\w:.-]{0,79}$/.test(k));
         if (!confirm(`이 파일의 기록 ${keys.length}가지로 이 기기 기록을 바꿀까요?\n같은 종류의 기록은 파일 것으로 바뀌어요.`)) return;
         keys.forEach(k => DJ.save(k, j.data[k]));   // 로그인했으면 계정에도 저장됨
         DJ.toast("기록을 되살렸어요", "화면을 새로 열어요.");
@@ -178,8 +175,8 @@
   // 기록이 있는 단지 [{c, v, items}] (다녀온 날 최근 순)
   function rows(d) {
     let keys = [];
-    try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
-    return keys.map(k => ({ c: d.bySlug[k.slice(12)], v: DJ.visit(k.slice(12)) }))
+    keys = DJ.records.keys().filter(k => k.startsWith("visit:"));
+    return keys.map(k => ({ c: d.bySlug[k.slice(6)], v: DJ.visit(k.slice(6)) }))
       .filter(({ c, v }) => c && (v.d || v.m || v.q.length || (v.p || []).length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
       .sort((a, b) => (b.v.d || "").localeCompare(a.v.d || "") || a.c.n.localeCompare(b.c.n))
       .map(r => Object.assign(r, { items: DJ.visitItems(r.c, document.body.dataset.region) }));
@@ -269,8 +266,8 @@
     const name = DJ.sync && DJ.sync.user ? DJ.sync.user.name : "";
     let notes = 0, photos = 0;
     try {
-      Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")).forEach(k => {
-        const v = DJ.visit(k.slice(12)), p = (v.p || []).length;
+      DJ.records.keys().filter(k => k.startsWith("visit:")).forEach(k => {
+        const v = DJ.visit(k.slice(6)), p = (v.p || []).length;
         if (v.d || v.m || v.q.length || p || v.c.some(Boolean) || Object.values(v.x).some(Boolean)) notes++;
         photos += p;
       });

@@ -10,8 +10,8 @@
 
   function visits() {
     let keys = [];
-    try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
-    return keys.map(k => { const s = k.slice(12), v = DJ.visit(s); return { s, v, p: (v.p || []).length }; })
+    keys = DJ.records.keys().filter(k => k.startsWith("visit:"));
+    return keys.map(k => { const s = k.slice(6), v = DJ.visit(s); return { s, v, p: (v.p || []).length }; })
       .filter(({ v, p }) => v.d || v.m || v.q.length || p || v.c.some(Boolean) || Object.values(v.x).some(Boolean));
   }
   function icon(id) {

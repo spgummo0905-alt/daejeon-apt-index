@@ -50,8 +50,8 @@
     if (nbx) {
       const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
       let keys = [];
-      try { keys = Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")); } catch (e) { /* 저장소를 못 쓰는 브라우저 */ }
-      const notes = keys.map(k => ({ c: d.bySlug[k.slice(12)], v: DJ.visit(k.slice(12)) }))
+      keys = DJ.records.keys().filter(k => k.startsWith("visit:"));
+      const notes = keys.map(k => ({ c: d.bySlug[k.slice(6)], v: DJ.visit(k.slice(6)) }))
         .filter(({ c, v }) => c && (v.d || v.m || v.q.length || (v.p || []).length || v.c.some(Boolean) || Object.values(v.x).some(Boolean)))
         .sort((a, b) => (b.v.d || "").localeCompare(a.v.d || "") || a.c.n.localeCompare(b.c.n));
       const ul = nbx.querySelector("[data-notes-list]");
@@ -85,7 +85,12 @@
     }
 
     const favBox = document.getElementById("favs");
-    if (!favs.length) favBox.append(el("p", "muted", "아직 저장한 아파트가 없습니다. 단지 페이지 위쪽의 ☆를 눌러 관심 단지를 추가해 보세요."));
+    if (!favs.length) {
+      const empty = el("div", "empty-start");
+      empty.append(el("b", "", "먼저, 눈여겨본 단지 두 곳을 담아 보세요"), el("p", "muted", "단지 화면의 ‘관심’을 누르면 여기에 모입니다. 후보를 비교하고 임장 코스까지 한 번에 준비할 수 있어요."));
+      const start = el("a", "btn primary", "아파트 찾아보기"); start.href = "index.html?stay=1";
+      empty.append(start); favBox.append(empty);
+    }
     favs.forEach(c => favBox.append(DJ.card(c, d.stats)));
     if (favs.length >= 2) {  // 비교는 네 곳까지
       const b = document.getElementById("fav-battle");
