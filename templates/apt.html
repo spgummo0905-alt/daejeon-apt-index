@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ c.name }} 실거래가·시세·입지 | {{ region }} {{ c | place }} | 집감{% endblock %}
 {% block og_title %}{{ c.name }} · 지수 {{ c.index | score }}{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} | 집감{% endblock %}
-{% block description %}{{ region }} {{ c | place }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 연평균 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} {{ c.location_top | share }}{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
+{% block description %}{{ region }} {{ c | place }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 평균 상승 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} {{ c.location_top | share }}{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
 {% block body %}
 <div class="apt-topbar">
   <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
@@ -53,7 +53,7 @@
   <a class="mc-news" href="#trades" data-watch-news hidden><b>지난번 확인 뒤</b><span data-watch-text></span></a>
   {% set age = (meta.asof[:4] | int) - c.build_year if c.build_year else none %}
   <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}{% if age is not none and age >= 30 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한(30년) 충족" data-desc="준공 {{ age }}년 차로 재건축 연한(30년)을 넘었습니다. 연한은 재건축 진단을 신청할 수 있는 시기일 뿐, 사업 추진이나 가격을 뜻하지 않습니다.">재건축 연한 충족</button>{% elif age is not none and age >= 25 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한까지 {{ 30 - age }}년" data-desc="준공 {{ age }}년 차입니다. 재건축 연한은 30년이며, 연한은 재건축 진단을 신청할 수 있는 시기일 뿐 사업 추진을 뜻하지 않습니다.">재건축 연한까지 {{ 30 - age }}년</button>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
-  <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 백분위)">
+  <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 몇 번째인지를 0~100점으로 바꾼 값)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<div class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></div>
     {% elif loop.index0 == 3 %}<div class="mc-grp"><span>참고 지표</span><em>지수에 반영하지 않음</em></div>{% endif %}
@@ -62,9 +62,9 @@
   </div>
   {% set c10 = c["cagr_%dy" % years[0]] %}
   <div class="mc-cells">
-    <div><span>84㎡ 환산가</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
-    <div><span>{{ years[0] }}년 연평균</span><strong>{{ c10 | pct }}</strong></div>
-    <div><span>전고점 대비</span><strong>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</strong></div>
+    <div><span>84㎡ 기준 가격</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
+    <div><span>{{ years[0] }}년 평균 상승</span><strong>{{ c10 | pct }}</strong></div>
+    <div><span>최고가 대비</span><strong>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</strong></div>
   </div>
   <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="등급 표시 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
 </div></section>
@@ -93,13 +93,13 @@
 </div>
 <section class="cards" tabindex="0" aria-label="주요 지표">
   <div class="card">
-    <span class="label">전용 {{ ref_area }}㎡ 환산가</span>
+    <span class="label">전용 {{ ref_area }}㎡ 기준 가격</span>
     <span class="value">{{ c.price_ref | price }}</span>
     <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }}, ㎡당 중간 가격으로 환산한 비교용 추정치{% endif %}</span>
   </div>
   {% if c.from_peak is defined and c.from_peak is not nan %}
   <div class="card">
-    <span class="label">전고점 대비</span>
+    <span class="label">역대 최고가 대비</span>
     <span class="value {{ 'neg' if c.from_peak < 0 else 'pos' }}">{{ "%+.0f" | format(c.from_peak * 100) }}%</span>
     <span class="muted">{{ c.peak_year | int }}년 고점 84㎡ {{ (c.peak_ppm2 * ref_area) | price }} 기준</span>
   </div>
@@ -113,9 +113,9 @@
   {% endif %}
   {% for n in years %}
   <div class="card">
-    <span class="label">{{ n }}년 연평균 수익률</span>
+    <span class="label">{{ n }}년 평균 상승률 (해마다)</span>
     <span class="value {{ '' if c['cagr_%dy' % n] is nan else ('pos' if c['cagr_%dy' % n] > 0 else 'neg') }}">{{ c["cagr_%dy" % n] | pct }}</span>
-    {% set p = c["cagr_%dy_pct" % n] %}<span class="muted">{{ "실질" if meta.real_returns else "명목" }} · {% if p is nan %}비교할 거래 부족{% else %}{{ region }} {{ (100 - p) | share }}{% endif %}</span>
+    {% set p = c["cagr_%dy_pct" % n] %}<span class="muted">{{ "물가 뺀 값" if meta.real_returns else "실제 금액 기준" }} · {% if p is nan %}비교할 거래 부족{% else %}{{ region }} {{ (100 - p) | share }}{% endif %}</span>
   </div>
   {% endfor %}
   <div class="card">
@@ -162,15 +162,15 @@
         <button type="button" class="seg-btn" data-pc-years="0">전체</button>
       </div>
       <div class="seg" role="group" aria-label="보기">
-        <button type="button" class="seg-btn active" data-pc-mode="nom" aria-pressed="true">명목</button>
-        <button type="button" class="seg-btn" data-pc-mode="real" hidden>실질</button>
+        <button type="button" class="seg-btn active" data-pc-mode="nom" aria-pressed="true">실제 금액</button>
+        <button type="button" class="seg-btn" data-pc-mode="real" hidden>물가 뺀 값</button>
         <button type="button" class="seg-btn" data-pc-mode="mkt" hidden>시장 흐름</button>
-        <button type="button" class="seg-btn" data-pc-mode="gap" hidden>전세·갭</button>
+        <button type="button" class="seg-btn" data-pc-mode="gap" hidden>전세·차액</button>
       </div>
     </div>
     <div class="pc-plot" data-pc-plot>
       {# 자바스크립트가 차트를 그리기 전·못 그릴 때 보이는 연도별 가격 #}
-      <p class="muted">연도별 {{ ref_area }}㎡ 환산가입니다. 회색 선은 같은 해 {{ region }} 전체의 중간값입니다.</p>
+      <p class="muted">연도별 {{ ref_area }}㎡ 기준 가격입니다. 회색 선은 같은 해 {{ region }} 전체의 중간값입니다.</p>
       {{ charts.price | safe }}
     </div>
     <div class="pc-legend" data-pc-legend></div>
@@ -178,8 +178,8 @@
       <summary>계산 기준</summary>
       <p class="muted"><b>추정 시세</b> 같은 평형 거래를 대표 면적에 맞춘 뒤, 그달 앞뒤 6개월 거래를 가까운 달일수록 큰 비중으로 평균합니다. 거래가 드문 달은 앞뒤 12개월까지 넓혀 계산하고 점선으로 표시합니다.</p>
       <p class="muted"><b>제외하는 거래</b> 해제 거래{% if exclude_direct %}와 직거래{% endif %}, 1~3층 거래(시세보다 낮게 거래되는 경우가 많음), 시세와 크게 동떨어진 거래.</p>
-      <p class="muted"><b>예상 거래 범위</b> 거래 10건 중 8건이 들어오는 폭입니다. <b>실질</b>은 소비자물가 상승분을 뺀 값이고, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 비교한 가격 수준입니다.</p>
-      <p class="muted"><b>전세·갭</b> 전세는 월세 없는 계약만 같은 방식으로 계산하며, 갱신 계약은 인상 폭이 5%로 제한돼 시세에서 제외하고 계약 수에만 포함합니다. 갭은 매매 추정 시세에서 전세 추정 보증금을 뺀 값입니다.</p>
+      <p class="muted"><b>예상 거래 범위</b> 거래 10건 중 8건이 들어오는 폭입니다. <b>물가 뺀 값</b>은 물가가 오른 만큼을 덜어낸, 실제 구매력 기준의 값이고, 시장 흐름의 지역·구 지수는 같은 단지·같은 면적 거래끼리 비교한 가격 수준입니다.</p>
+      <p class="muted"><b>전세·차액</b> 전세는 월세 없는 계약만 같은 방식으로 계산하며, 갱신 계약은 인상 폭이 5%로 제한돼 시세에서 제외하고 계약 수에만 포함합니다. 차액(갭)은 매매 추정 시세에서 전세 추정 보증금을 뺀 값, 즉 전세를 끼고 살 때 직접 마련해야 하는 돈입니다.</p>
       <p class="muted">출처: 국토교통부 실거래가(매매·전월세), 한국은행 경제통계(물가·금리).</p>
     </details>
   </div>
@@ -219,7 +219,7 @@
         <label><span>기간 (년)</span><input type="number" inputmode="numeric" min="1" step="1" data-pay-yr></label>
       </div>
       <div class="pay-out" data-pay-out aria-live="polite"></div>
-      <p class="pay-note">평형별 추정 시세 기준의 참고용 계산입니다. 실제 대출 한도는 은행 심사·스트레스 DSR·정책에 따라 다르며, 취득세·중개보수는 별도입니다.</p>
+      <p class="pay-note">평형별 추정 시세 기준의 참고용 계산입니다. 실제 대출 한도는 은행 심사·스트레스 DSR(소득 대비 대출 상환 한도)·정책에 따라 다르며, 취득세·중개보수는 별도입니다.</p>
     </div>
   </details>
   {% endif %}

@@ -192,14 +192,14 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     if not _nan(c.get("price_ref")) and med:
         ratio = c["price_ref"] / med
         v = "비슷" if abs(ratio - 1) < 0.03 else f"{(ratio - 1) * 100:+.0f}%"
-        out.append({"k": f"{c['gu']} 중간 가격 대비", "v": v, "s": f"84㎡ 환산가 · {c['gu']} 중간 {eok(med)}",
+        out.append({"k": f"{c['gu']} 중간 가격 대비", "v": v, "s": f"84㎡ 기준 가격 · {c['gu']} 중간 {eok(med)}",
                     "bar": min(ratio / 2, 1), "mid": 0.5, "tone": "up" if ratio >= 1.03 else "down" if ratio <= 0.97 else None})
     if leader and not c["small"] and not _nan(c.get("price_ref")):
         if leader["complex_id"] == c["complex_id"]:
-            out.append({"k": f"{c['gu']} 84㎡ 환산가", "v": "1위", "s": f"{c['gu']}에서 84㎡ 환산가가 가장 높은 단지", "bar": 1})
+            out.append({"k": f"{c['gu']} 84㎡ 기준 가격", "v": "1위", "s": f"{c['gu']}에서 84㎡ 기준 가격이 가장 높은 단지", "bar": 1})
         else:
             ratio = c["price_ref"] / leader["price"]
-            out.append({"k": f"{c['gu']} 환산가 1위 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
+            out.append({"k": f"{c['gu']} 기준 가격 1위 대비", "v": f"{ratio * 100:.0f}%", "s": f"{leader['name']} {leader['price_text']}",
                         "bar": min(ratio, 1)})
     if c.get("hh"):
         size = "대단지" if c["hh"] >= 1000 else "중간 규모" if c["hh"] >= 500 else "작은 단지"
@@ -426,7 +426,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     dips = [by_id[cid] for cid in main_t[main_t.get("from_peak", pd.Series(dtype=float)) <= -0.10]
             .sort_values("from_peak").index[:5]] if "from_peak" in main_t else []
     if dips:
-        tops.append({"title": "전고점 대비 많이 내린 단지", "tab": "고점 대비 하락", "items": dips,
+        tops.append({"title": "최고가보다 많이 내린 단지", "tab": "최고가 대비 하락", "items": dips,
                      "value": lambda r: f"{r['from_peak'] * 100:.0f}% · {int(r['peak_year'])}년 고점"})
     news = sorted([r for r in rows if not r["small"] and r["is_new"] and not _nan(r.get("location_score"))],
                   key=lambda r: -r["location_score"])[:5]
@@ -739,11 +739,11 @@ def _gu_boards(gu_stats: list[dict], main_t: pd.DataFrame, y: int) -> list[dict]
     def signed(v, fmt):
         return ("+" if v > 0 else "−" if v < 0 else "±") + fmt(abs(v))
     specs = [
-        ("price", "집값", "84㎡ 환산가 중간값", main_t["price_ref"].median(), eok,
+        ("price", "집값", "84㎡ 기준 가격 중간값", main_t["price_ref"].median(), eok,
          lambda d: signed(d, lambda x: f"{x / 10000:.1f}억" if x >= 10000 else f"{round(x, -1):,.0f}만")),
         ("index", "종합 지수", "종합 지수 중간값", main_t["index"].median(), lambda v: f"{v:.0f}점",
          lambda d: signed(d, lambda x: f"{x:.0f}점")),
-        ("c10", f"{y}년 수익률", f"{y}년 연평균 수익률 중간값",
+        ("c10", f"{y}년 수익률", f"{y}년 해마다 평균 상승률 중간값",
          main_t[f"cagr_{y}y"].median() if f"cagr_{y}y" in main_t else float("nan"), fmt_pct,
          lambda d: signed(d * 100, lambda x: f"{x:.1f}%p")),
         ("location", "입지", "입지점수 중간값", main_t["location_score"].median(), lambda v: f"{v:.0f}점",
@@ -1126,10 +1126,10 @@ def station_name(raw) -> str | None:
 # 단지 카드의 다섯 항목 점수: (열 이름, 표시 이름, 설명)
 STATS = [
     ("location_score", "입지", "교통·학군·생활 편의 점수 (아래 '교통·학군·생활 입지')"),
-    ("stat_growth", "장기 흐름", "10년 연평균 수익률의 백분위 (10년 거래가 없으면 5년)"),
-    ("stat_momentum", "5년 흐름", "최근 5년 연평균 수익률의 백분위 (단기 흐름은 아님)"),
-    ("stat_value", "입지 대비 가격", "입지 점수에 비해 84㎡ 환산가가 낮을수록 높음 (저평가를 뜻하지는 않음)"),
-    ("stat_activity", "거래량", "최근 3년 매매 건수의 백분위"),
+    ("stat_growth", "장기 흐름", "10년간 해마다 평균 오른 폭이 대전 단지 중 얼마나 높은지 0~100점 (10년 거래가 없으면 5년)"),
+    ("stat_momentum", "5년 흐름", "최근 5년간 해마다 평균 오른 폭이 단지 중 얼마나 높은지 0~100점 (단기 흐름은 아님)"),
+    ("stat_value", "입지 대비 가격", "입지 점수에 비해 84㎡ 기준 가격이 낮을수록 높음 (저평가를 뜻하지는 않음)"),
+    ("stat_activity", "거래량", "최근 3년 매매 건수가 단지 중 얼마나 많은지 0~100점"),
     ("stat_new", "신축도", "준공 1년차 100점, 30년 이상 0점 (분양권 100점)"),
 ]
 NEW_SPAN = 30  # 신축도가 0점이 되는 연차

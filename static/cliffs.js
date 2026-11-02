@@ -69,7 +69,7 @@
     });
     const c = clues(x);
     li.append(dl,
-      el("p", "cl-gap", `직선 ${Math.round(x.d * 1000)}m 거리 · 84㎡ 환산가 ${eok(x.gap)} 차이`),
+      el("p", "cl-gap", `직선 ${Math.round(x.d * 1000)}m 거리 · 84㎡ 기준 가격 ${eok(x.gap)} 차이`),
       el("p", "cl-why", c.length ? "자료로 보이는 차이: " + c.join(" · ") : "자료상으로는 큰 차이가 보이지 않습니다. 현장에서 확인해 볼 만한 곳입니다."));
     const row = el("div", "cl-act");
     const go = el("button", "chip sm", "지도에서 보기");
