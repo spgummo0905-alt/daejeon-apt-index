@@ -180,6 +180,8 @@ def test_intro_page_and_first_visit(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     intro = (out / "intro.html").read_text(encoding="utf-8")
+    assert '<h1>좋은 집의 가치는,<br><em>내가 보낼 하루에 있으니까</em></h1>' in intro
+    assert '마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.' in intro
     # 실제 자료: 1위 카드, 등급 분포(S~D), 뜨거운 동네, 시작하기
     assert 'class="gcard it-card g-' in intro and "1위" in intro
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
@@ -938,6 +940,8 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     page = (out / "index.html").read_text(encoding="utf-8")
     # 디자인은 인트로 그대로, 지역부터 고르게 (위쪽 '지역 선택', 시작 버튼이 지역 고르기 창을 엶)
     assert '<base href="/daejeon/">' in page and 'class="it-hero"' in page and "<span>지역 선택</span>" in page
+    assert '<h1>좋은 집의 가치는,<br><em>내가 보낼 하루에 있으니까</em></h1>' in page
+    assert '마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.' in page
     assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기' in page and 'aria-current="page"' not in page
     final = page.split('class="it-final"')[1].split('</section>')[0]
     assert 'data-rg-open' in final and "지역 고르고 아파트 찾기" in final
