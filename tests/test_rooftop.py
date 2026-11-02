@@ -197,3 +197,33 @@ def test_rooftop_waterfront_landmarks():
     for k in ("lmTower", "wheel.rotation.z", "hallGlow", "dome", "ferries", "벚꽃 길", "고층 옥상 테두리 불빛"):
         assert k in js3                                                                  # 초고층 타워·대관람차·공연장·돔·유람선·벚꽃·옥상 불빛
     assert "em *= 1. + 1.1*uPhotoK" in js3 and "const GMAX = 22000" in js3                 # 노을엔 금빛 창
+
+
+def test_rooftop_party_server_is_shared_and_locked():
+    """들어오면 1서버부터 자동으로 모이고, 공용 서버(파티 옥상)는 정해진 파티장 배치라 꾸미기가 잠겨요"""
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    d3 = (ROOT / "static" / "rooftop3d.js").read_text(encoding="utf-8")
+    assert "find(k => cnt(k) < SRV_MAX) || 1" in js and "function autoJoin()" in js and "autoJoin();" in js   # 1서버부터 차례로
+    assert 'if (k === "deco" && inParty())' in js and "api.setParty(on)" in js                            # 꾸미기는 내 옥상에서만
+    assert "if (inParty()) return; st.sky" in js and "if (inParty()) return; st.wx" in js                  # 하늘·날씨도 파티에서는 고정
+    assert "const PARTY_LAYOUT" in d3 and all(f'["{t}",' in d3 for t in ("bonfire", "jukebox", "dance", "neon"))
+    assert "setDeco(m) { if (party) m = null;" in d3                                                        # 눌러도 배치가 안 바뀜
+    assert 'PRIVATE_ACT = new Set(["myvideo", "music", "musicoff"])' in d3                                  # 나에게만 재생되는 건 공용에서 빼요
+    assert "PEER_MAX = 19" in d3 and '"dance"])' in d3
+
+
+def test_rooftop_party_music_and_shared_actions():
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    assert "const SONGS = [" in js and "const songAt = now =>" in js and 'net.send("song", music.ov)' in js   # 같은 곡을 같은 박자로
+    assert 'net.send("log", {})' in js and 'net.send("lan", api.myPos())' in js and 'net.send("it", { i, on })' in js
+    assert "Math.abs(Date.now() - t0) > 6e5" in js                                                          # 받은 곡 시각은 범위를 확인
+    assert 'look: { c: 0, a: 0 }' in js and "api.setLook(l)" in js
+
+
+def test_rooftop_page_party_controls(tmp_path):
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "rooftop.html").read_text(encoding="utf-8")
+    assert "data-roof-song" in page and "data-roof-lookc" in page and "data-roof-looka" in page and "data-roof-invite" in page
+    assert 'data-roof-bus="mu"' in page and 'data-roof-emo="🥂"' in page and "data-roof-arrparty" in page and "data-roof-partynote" in page
+    assert "별빛옥상" in page
