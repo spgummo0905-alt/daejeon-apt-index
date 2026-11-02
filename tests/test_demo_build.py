@@ -185,6 +185,9 @@ def test_intro_page_and_first_visit(tmp_path):
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
     assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
     assert 'class="it-hot"' in intro and 'href="index.html">궁금한 아파트 찾기' in intro
+    assert "대전 아파트 검색하기" not in intro and "대전 아파트의" not in intro
+    assert "같은 지역의 단지끼리 비교한 상대 점수" in intro
+    assert 'data-search-go' in intro and 'href="index.html#list">아파트 검색하기' in intro
     # 요즘 뜨거운 동네: 지역 이름 없이, 온도 상위 동네를 넘겨 볼 자료와 대장 단지
     assert "최근 거래 흐름이 강한 동네" in intro and "지금 대전에서는" not in intro
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
@@ -863,6 +866,11 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     # 디자인은 인트로 그대로, 지역부터 고르게 (위쪽 '지역 선택', 시작 버튼이 지역 고르기 창을 엶)
     assert '<base href="/daejeon/">' in page and 'class="it-hero"' in page and "<span>지역 선택</span>" in page
     assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기' in page and 'aria-current="page"' not in page
+    final = page.split('class="it-final"')[1].split('</section>')[0]
+    assert 'data-rg-open' in final and "지역 고르고 아파트 찾기" in final
+    assert 'data-search-go' not in final and 'href="index.html#list"' not in final
+    assert "대전 아파트 검색하기" not in page and "대전 아파트의" not in page
+    assert "분포 예시" in page and "지역마다 분포가 다릅니다" in page
     assert 'href="https://www.jipgam.kr/sejong/"' in page and "window.DJ_LANDING=1" in page
     assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and 'content="https://www.jipgam.kr/static/og/jipgam.jpg"' in page
     assert 'name="naver-site-verification"' in page and not (out / "daejeon" / "landing.html").exists()

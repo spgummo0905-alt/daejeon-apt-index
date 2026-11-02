@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{% if landing %}집감 · 아파트 실거래가·입지 지수, 집 볼 때도 감이 필요하니까{% else %}집감 · {{ region }} 아파트, 집 볼 때도 감이 필요하니까{% endif %}{% endblock %}
-{% block description %}아파트 후보 비교부터 임장 코스, 현장 체크와 메모까지. {% if not landing %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 {% endif %}실거래가와 입지를 살펴보고 나에게 맞는 집을 골라 보세요. 로그인 없이 임장을 준비할 수 있습니다.{% endblock %}
+{% block title %}집감 · 아파트 비교부터 임장 기록까지{% endblock %}
+{% block description %}실거래가와 입지를 비교해 가 볼 집을 고르세요. 임장 코스부터 현장 체크·메모까지, 집감에서. 로그인 없이 임장을 준비할 수 있습니다.{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
@@ -19,7 +19,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   <div class="it-glow" aria-hidden="true"></div>
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
-      <p class="it-eyebrow"><span class="live-dot"></span>{% if landing %}{{ regions | map(attribute="name") | join("·") }} 아파트{% else %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳{% endif %} · 실거래 매일 반영</p>
+      <p class="it-eyebrow"><span class="live-dot"></span>아파트 비교부터 현장 기록까지 · 실거래 매일 반영</p>
       <h1>같은 예산,<br><em class="nw">다른 일상.</em></h1>
       <p class="it-lead">실거래가와 입지를 비교해 가 볼 집을 고르세요.<br>임장 코스부터 현장 체크·메모까지, 집감에서.</p>
       <div class="it-cta">
@@ -27,8 +27,8 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'my.html#course' }}">{{ '임장 도구 살펴보기' if landing else '내 임장 준비하기' }}</a>
       </div>
       <dl class="it-nums">
-        <div><dt>{% if landing %}{{ region }} 예시 · {% endif %}지수 산정 아파트</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
-        <div><dt>{% if landing %}{{ region }} 예시 · {% endif %}반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
+        <div><dt>예시 지역 · 지수 산정 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
+        <div><dt>예시 지역 · 반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
       </dl>
     </div>
     {% if top %}
@@ -50,7 +50,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         </div>
         <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | price }}</span></div>
       </a>
-      <p class="it-fan-tag">{{ region }} 종합 지수 1위 · {{ meta.updated or meta.asof }} 기준</p>
+      <p class="it-fan-tag">실제 단지 예시 · 해당 지역 종합 지수 1위 · {{ meta.updated or meta.asof }} 기준</p>
     </div>
     {% endif %}
   </div>
@@ -86,9 +86,9 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
       </div>
       <ol class="it-ana-list">
         <li data-reveal><b><i>1</i>등급</b><span>지수 80점 이상은 S, 65점 이상은 A입니다. 등급별 색상으로 쉽게 구분할 수 있습니다.</span></li>
-        <li data-reveal><b><i>2</i>종합 지수</b><span>입지와 장기·5년 가격 흐름을 각각 0~100으로 환산해 평균했습니다. {{ region }} 단지끼리 비교한 상대 점수입니다.</span></li>
+        <li data-reveal><b><i>2</i>종합 지수</b><span>입지와 장기·5년 가격 흐름을 각각 0~100으로 환산해 평균했습니다. 같은 지역의 단지끼리 비교한 상대 점수입니다.</span></li>
         <li data-reveal><b><i>3</i>항목별 막대</b><span>입지(교통·학군·생활 편의), 장기 흐름(10년 수익률), 5년 흐름(5년 수익률), 입지 대비 가격.</span></li>
-        <li data-reveal><b><i>4</i>순위와 가격</b><span>{{ region }} 안에서의 순위와 전용 84㎡로 환산한 비교용 가격입니다. 실제 매물 가격은 평형·동·층에 따라 다르니 상세 시세도 함께 확인하세요.</span></li>
+        <li data-reveal><b><i>4</i>순위와 가격</b><span>해당 지역 안에서의 순위와 전용 84㎡로 환산한 비교용 가격입니다. 실제 매물 가격은 평형·동·층에 따라 다르니 상세 시세도 함께 확인하세요.</span></li>
       </ol>
     </div>
   </div>
@@ -99,14 +99,14 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 <section class="it-sec it-ladder">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>02 · 등급</p>
-    <h2 data-reveal>{{ region }} 아파트의<br><em>등급 분포</em></h2>
+    <h2 data-reveal>아파트의 차이를<br><em>등급으로 한눈에</em></h2>
     <div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
       {% for d in grade_dist %}{% if d.n %}<span class="seg g-{{ d.g }}" style="--w: {{ '%.2f' | format(d.pct) }}"><b>{{ d.g }}</b></span>{% endif %}{% endfor %}
     </div>
     <ul class="it-grades" data-reveal>
       {% for d in grade_dist %}<li><span class="grade g-{{ d.g }}">{{ d.g }}</span><b>{{ d.name }}</b><span>{{ "{:,}".format(d.n) }}곳 · {{ "%.0f" | format(d.pct) }}%</span></li>{% endfor %}
     </ul>
-    <p class="it-sub" data-reveal>지수를 산정한 {{ "{:,}".format(meta.n_ranked) }}곳 기준입니다. 각 단지가 {{ region }} 전체에서 어느 위치에 있는지 살펴보세요.{% if meta.n_ranked < meta.n_complexes %} 입지·거래 자료가 부족한 {{ "{:,}".format(meta.n_complexes - meta.n_ranked) }}곳은 등급을 매기지 않았습니다.{% endif %}</p>
+    <p class="it-sub" data-reveal>한 지역에서 지수를 산정한 {{ "{:,}".format(meta.n_ranked) }}곳의 분포 예시입니다. 등급과 순위는 같은 지역 안에서 비교하며, 지역마다 분포가 다릅니다.{% if meta.n_ranked < meta.n_complexes %} 입지·거래 자료가 부족한 {{ "{:,}".format(meta.n_complexes - meta.n_ranked) }}곳은 등급을 매기지 않았습니다.{% endif %}</p>
   </div>
 </section>
 
@@ -206,7 +206,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>05 · 동네 온도</p>
     <h2 data-reveal>최근 거래 흐름이 강한 동네<br><span class="it-roll"><em data-hot-name>{{ h.d }}</em></span><span data-hot-j>{{ h.j }}</span></h2>
-    <p class="it-live-lead" data-reveal>최근 가격 변화와 거래량으로 동네별 흐름을 비교한 상대 지표입니다. 매달 새 실거래로 다시 계산합니다.</p>
+    <p class="it-live-lead" data-reveal>한 지역의 동네 온도 예시입니다. 최근 가격 변화와 거래량으로 지역 안의 흐름을 비교하고, 매달 새 실거래로 다시 계산합니다.</p>
     <div class="it-live-grid">
       <div class="it-dong" id="it-dong" data-reveal>
         <div class="it-dong-top"><span class="it-rank" data-hot-rank>온도 1위</span><span class="it-gu" data-hot-gu>{{ h.gu }}</span></div>
@@ -246,11 +246,11 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     {% endif %}
     <div class="it-final" data-reveal>
       <h2>다음 임장,<br>궁금한 아파트부터 담아 보세요</h2>
-      <div class="hero-search it-search">
+      {% if not landing %}<div class="hero-search it-search">
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
-      </div>
-      <a class="it-btn primary" href="index.html#list">{{ region }} 아파트 검색하기 <span aria-hidden="true">→</span></a>
+      </div>{% endif %}
+      {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 아파트 찾기 <span aria-hidden="true">→</span></button>{% else %}<a class="it-btn primary" href="index.html#list">아파트 검색하기 <span aria-hidden="true">→</span></a>{% endif %}
     </div>
   </div>
 </section>
