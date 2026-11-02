@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block title %}집감 · 아파트 비교부터 임장 기록까지{% endblock %}
-{% block description %}실거래가와 입지를 비교해 가 볼 집을 고르세요. 임장 코스부터 현장 체크·메모까지, 집감에서. 로그인 없이 임장을 준비할 수 있습니다.{% endblock %}
+{% block title %}{% if landing %}집감 | 아파트 실거래가 비교부터 임장 코스·기록까지{% else %}{{ region }} 아파트 임장 가이드 | 집감{% endif %}{% endblock %}
+{% block description %}{% if not landing %}{{ region }}에서 {% endif %}아파트 실거래가·시세·교통·학군을 비교하고, 가 볼 집을 골라보세요. 임장 코스와 현장 체크리스트·메모까지 로그인 없이 시작하는 집감.{% endblock %}
+{% block og_alt %}집감 · 아파트 실거래가 비교부터 임장 코스와 현장 기록까지{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
