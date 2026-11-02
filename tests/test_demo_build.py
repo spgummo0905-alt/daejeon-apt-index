@@ -184,7 +184,7 @@ def test_intro_page_and_first_visit(tmp_path):
     assert 'class="gcard it-card g-' in intro and "1위" in intro
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
     assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
-    assert 'class="it-hot"' in intro and 'href="index.html">아파트 찾아보기' in intro
+    assert 'class="it-hot"' in intro and 'href="index.html">궁금한 아파트 찾기' in intro
     # 요즘 뜨거운 동네: 지역 이름 없이, 온도 상위 동네를 넘겨 볼 자료와 대장 단지
     assert "최근 거래 흐름이 강한 동네" in intro and "지금 대전에서는" not in intro
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
