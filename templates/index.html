@@ -14,7 +14,7 @@ try {
   var P=JSON.parse(localStorage.getItem(prefsKey)||"{}"),G={{ regions | tojson }},go="";
   if(ext&&P.region&&P.region!=={{ region | tojson }})for(var i=0;i<G.length;i++)if(G[i].name===P.region&&G[i].url)go=G[i].url;
   if(go)location.replace(go);
-  else if(ext&&!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html");
+  else if(ext&&!r&&!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html");
 }catch(e){}
 </script>
 {% endblock %}
