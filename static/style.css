@@ -3849,7 +3849,21 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .mv-h { margin-top: 0; }
   .mv-soon .mv-extra { display: grid !important; }
   .mv-toggle { display: none; }
-  .mv-bars { max-width: 640px; }
+  .mv-bars { max-width: none; }
+}
+/* PC: 왼쪽에 제목·연도 막대·구별 표를 세로로, 오른쪽에 '다가오는 입주'를 옆 카드로 (높이가 서로 맞고 빈 곳이 없게) */
+@media (min-width: 900px) {
+  .mv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); column-gap: 36px;
+    grid-template-areas: "head soon" "bars soon" "tbl soon" "fine fine"; grid-template-rows: auto auto 1fr auto; }
+  .mv > .panel-head { grid-area: head; }
+  .mv > .mv-bars { grid-area: bars; margin: 18px 0 26px; }
+  .mv > .mv-fine { grid-area: fine; }
+  .mv-body { display: contents; }
+  .mv-body > div:first-child { grid-area: tbl; min-width: 0; }
+  .mv-body > div:last-child { grid-area: soon; min-width: 0; align-self: stretch; padding: 20px 24px 12px; border-radius: 18px;
+    background: color-mix(in srgb, var(--chip) 55%, transparent); border: 1px solid var(--border); }
+  .mv-body > div:last-child .mv-h { margin-top: 0; }
+  .mv-col { height: 120px; }
 }
 
 
