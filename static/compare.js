@@ -123,13 +123,13 @@
     table.append(tb);
     const top = wins.indexOf(Math.max(...wins));
     const verdict = el("p", "verdict", cs.length === 2
-      ? (wins[0] === wins[1] ? "두 단지가 항목별로 비슷합니다"
+      ? (wins[0] === wins[1] ? "우세한 항목 수가 같습니다. 예산과 생활 조건도 함께 비교하세요"
          : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + nCounted + "개 중 " + wins[top] + "개에서 앞섭니다")
       : "항목별 우위: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
     const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
     const cards = el("div", "card-grid");
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(verdict, wrap, el("p", "muted center small", "표시된 칸은 그 항목에서 상대적으로 유리한 값입니다 (점수·세대수는 높을수록, 거리는 가까울수록). 가격은 표시하지 않습니다."), cards);
+    out.append(verdict, wrap, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {

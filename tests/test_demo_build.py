@@ -234,7 +234,7 @@ def test_cards_page_today_badges_album(tmp_path):
     assert cards.index('id="today"') < cards.index('id="badges"') < cards.index('id="album"')
     my = (out / "my.html").read_text(encoding="utf-8")
     assert 'id="album"' not in my and 'class="to-cards" href="cards.html"' in my   # 관심 단지 화면은 카드첩으로 가는 카드만
-    assert my.index('class="to-cards"') < my.index('id="favs"')
+    assert my.index('id="favs"') < my.index('id="course"') < my.index('class="to-cards"')
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.collect = function" in app and "DJ.miniCard = function" in app and "DJ.memo = function" in app
     assert app.index("DJ.collect(c.s)") < app.index("DJ.addRecent(c)")   # 처음 쓰는 기기에서 '첫 카드'로 세어지게
@@ -420,7 +420,7 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert 'window.DJ_SB = {"key": "sb_publishable_test", "provider": "custom:kakao", "url": "https://demo.supabase.co"}' in my
     assert my.index("static/app.js") < my.index("static/sync.js") < my.index("static/my.js")
     assert 'id="account"' in my and "data-login" in my and 'href="me.html"' in my
-    assert my.index('id="account"') < my.index('id="favs"')
+    assert my.index('id="favs"') < my.index('id="account"') < my.index('id="course"')
     index = (out / "index.html").read_text(encoding="utf-8")
     assert "data-acct" in index and 'href="privacy.html"><b>개인정보처리방침</b>' in index
     assert "(skip|code|error|stay)" in index   # 카카오에서 돌아올 때 인트로로 보내지 않음
@@ -431,14 +431,14 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     assert "grant_type=pkce" in js and "code_challenge_method=s256" in js and "/rest/v1/rpc/sync_put" in js
     assert 'provider=${encodeURIComponent(C.provider || "kakao")}' in js
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
-    assert 'DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"]' in app and 'localStorage.setItem("djdex-t"' in app
+    assert 'DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"]' in app and 'DJ.records.setTimes(t)' in app
     sql = (config.ROOT / "scripts" / "supabase_setup.sql").read_text(encoding="utf-8")
     assert "enable row level security" in sql and "security definer" in sql and "where public.user_kv.t < excluded.t" in sql
     assert "revoke all on public.user_kv from anon, authenticated" in sql
 
 
-def test_personal_records_open_after_login(tmp_path, monkeypatch):
-    # 로그인을 켠 사이트: 관심 단지·임장 코스·임장 노트·카드첩은 계정 기록이라 로그인해야 열림 (어느 기기에서든 같은 기록)
+def test_personal_records_available_to_guests(tmp_path, monkeypatch):
+    # 계정을 켠 사이트도 기본 임장 기록은 비회원에게 열려 있고, 사진·공유·동기화는 로그인 안내.
     from djdex import config
     out = tmp_path / "site"
     monkeypatch.delenv("SUPABASE_URL", raising=False)
@@ -450,16 +450,15 @@ def test_personal_records_open_after_login(tmp_path, monkeypatch):
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
     monkeypatch.setattr(config.Config, "account", property(lambda self: {"owner": "운영자", "email": "help@example.com"}))
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
-    for page, title, inner in (("my.html", "관심 단지는 로그인하면 열려요", 'id="favs"'), ("cards.html", "카드첩은 로그인하면 열려요", "data-album-cards")):
+    for page, inner in (("my.html", 'id="favs"'), ("cards.html", "data-album-cards")):
         html = (out / page).read_text(encoding="utf-8")
-        gate = html.index('class="me-gate" data-when-out')
-        assert title in html and "data-login" in html[gate:]
-        assert gate < html.index("<div data-when-in hidden>") < html.index(inner)
+        assert "me-gate" not in html and inner in html
+        assert html.index("static/records.js") < html.index("static/app.js")
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert index.count('class="nav-lock" data-when-out') == 3 and 'id="i-lock"' in index
-    assert "data-pop-why" in index and "로그인하지 않아도 단지 정보·관심 단지" not in index
+    assert 'class="nav-lock"' not in index
+    assert "data-pop-why" in index and "후보 저장·코스·현장 메모는 로그인 없이도" in index
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
-    assert "DJ.locked = () => !!(DJ.sync && !DJ.sync.user)" in app
+    assert "DJ.locked = () => !DJ.records.current()" in app
     assert 'DJ.favs = () => DJ.locked() ? [] : load("favs", [])' in app
     assert 'if (DJ.askLogin("관심 단지")) return DJ.isFav(s);' in app and 'if (DJ.askLogin("임장 코스")) return;' in app
     assert 'DJ.askLogin("현장 모드")' in (out / "static" / "field.js").read_text(encoding="utf-8")
@@ -519,7 +518,7 @@ def test_my_info_page_only_for_logged_in(tmp_path, monkeypatch):
         assert s in gated, s
     assert "static/prefs.js" in me and "static/me.js" in me
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'id="prefs"' not in my and "data-share" not in my and "data-delete" not in my and 'href="me.html"' in my
+    assert 'id="prefs"' in my and "data-share-actions" not in my and "data-delete" not in my and 'href="me.html"' in my
     assert "data-nt-csv" in my   # 임장 노트 내보내기는 관심 화면에
     js = (out / "static" / "me.js").read_text(encoding="utf-8")
     assert "아직 안 가 본 관심 단지" in js and 'DJ.save("course"' in js

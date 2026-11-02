@@ -3,25 +3,28 @@
 (function () {
   const ROOT = window.DJ_ROOT || "";
   const DJ = (window.DJ = {});
+  DJ.records = window.DJRecords;
 
   // ---------- 저장소 ----------
   function load(key, fallback) {
-    try { const v = localStorage.getItem("djdex:" + key); return v ? JSON.parse(v) : fallback; }
+    try { return DJ.records.get(key, fallback); }
     catch (e) { return fallback; }
   }
   // 고친 시각도 함께 적어 둡니다 (djdex-t). 카카오로 로그인하면 sync.js 가 이걸 보고 기기끼리 새 것을 남깁니다.
   // 기기마다 따로인 것(지도 위치·카드 순서·새 소식 수)은 적지 않습니다.
   DJ.LOCAL_ONLY = ["kmap", "seed", "watchN"];
   function save(key, value) {
+    if (DJ.sync && DJ.sync.linking) return false; // 계정 전환 전 화면의 오래된 객체를 새 보관함에 쓰지 않음
     try {
-      localStorage.setItem("djdex:" + key, JSON.stringify(value));
+      if (!DJ.records.put(key, value)) throw new Error("기록을 저장할 수 없습니다");
       if (!DJ.LOCAL_ONLY.includes(key)) {
-        const t = JSON.parse(localStorage.getItem("djdex-t") || "{}");
+        const t = DJ.records.times();
         t[key] = Date.now();
-        localStorage.setItem("djdex-t", JSON.stringify(t));
+        DJ.records.setTimes(t);
         if (DJ.onSave) DJ.onSave(key);
       }
-    } catch (e) { /* 저장 불가: 무시 */ }
+      return true;
+    } catch (e) { if (DJ.toast) DJ.toast("기록을 저장하지 못했어요", "브라우저 저장 공간을 확인하고 다시 시도해 주세요."); return false; }
   }
   DJ.load = load; DJ.save = save;
 
@@ -93,15 +96,11 @@
 
   DJ.unlock = function () {}; // 예전 페이지 호환용 (업적 기능은 없앴습니다)
 
-  // ---------- 로그인해야 쓰는 내 기록 ----------
-  // 카카오 로그인을 켠 사이트에선 관심 단지·임장 코스·임장 노트·카드첩이 계정에 저장되는 기록이라,
-  // 어느 기기에서든 로그인만 하면 같은 기록을 이어 봅니다. 로그인 전엔 비어 보이고, 담으려 하면 로그인 안내.
-  // (로그인을 켜지 않은 사이트·로그인 기능이 안 되는 브라우저는 예전처럼 이 기기에)
-  DJ.locked = () => !!(DJ.sync && !DJ.sync.user);
+  // 비회원도 기기에 기록합니다. 인증이 다른 탭에서 바뀌었거나 계정 연결 중일 때만 편집을 막습니다.
+  DJ.locked = () => !DJ.records.current() || !!(DJ.sync && DJ.sync.linking);
   DJ.askLogin = function (what) {
     if (!DJ.locked()) return false;
-    if (DJ.loginPrompt) DJ.loginPrompt(what);
-    else DJ.toast(`${what} · 로그인하면 쓸 수 있어요`, "위쪽 '로그인'에서 카카오로 로그인해 주세요");
+    DJ.toast("지금은 기록을 저장할 수 없어요", DJ.sync && DJ.sync.linking ? "계정 기록을 연결한 뒤 다시 눌러 주세요." : "화면을 새로 열거나 브라우저의 저장소 설정을 확인해 주세요.");
     return true;
   };
 
@@ -112,8 +111,9 @@
     if (DJ.askLogin("관심 단지")) return DJ.isFav(s);
     let f = DJ.favs();
     const on = !f.includes(s);
+    if (on && f.length >= 100) { DJ.toast("관심 단지가 100곳 이상이에요", "기존 기록은 유지됩니다. 후보를 정리한 뒤 새 단지를 담아 주세요."); return false; }
     f = on ? [s, ...f] : f.filter(x => x !== s);
-    save("favs", f.slice(0, 100));
+    if (!save("favs", f)) return DJ.isFav(s);
     DJ.paintFavCount();
     return on;
   };
@@ -1316,7 +1316,7 @@
       if (pop.hidden) dock.classList.toggle("tuck", y > lastY + 4 && y > 240);
       if (Math.abs(y - lastY) > 4) lastY = y;
     }, { passive: true });
-    addEventListener("storage", e => { if (e.key === "djdex:recent") paint(); });   // 다른 탭에서 본 단지도 바로
+    addEventListener("storage", e => { if (e.key === DJ.records.key("recent")) paint(); });
     addEventListener("dj:recent", paint);
     // 메인의 '최근 본 단지' 줄이 화면에 보이는 동안은 같은 내용이니 비켜 둡니다
     const strip = document.getElementById("recent-strip");
@@ -1531,7 +1531,7 @@
     navigator.serviceWorker.register(ROOT + "sw.js").then(() => navigator.serviceWorker.ready).then(reg => {
       if (DJ.locked()) return;
       const slugs = new Set(DJ.favs());
-      try { Object.keys(localStorage).filter(k => k.startsWith("djdex:visit:")).forEach(k => slugs.add(k.slice(12))); } catch (e) { /* 저장소 없음 */ }
+      DJ.records.keys().filter(k => k.startsWith("visit:")).forEach(k => slugs.add(k.slice(6)));
       const course = load("course", {});
       (Array.isArray(course.list) ? course.list : []).forEach(s => slugs.add(s));
       const urls = [...slugs].map(s => new URL(ROOT + "apt/" + s + ".html", location.href).href);
