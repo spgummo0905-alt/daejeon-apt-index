@@ -3,6 +3,7 @@
 {% block description %}집을 찾는 목적별로 후보 아파트를 묶고, 비교와 임장 코스로 이어가세요.{% endblock %}
 {% block head_extra %}{% if not demo %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 {% block body %}
+{% set seg_cur = 'projects' %}{% include "_seg_pj.html" %}
 <section class="page-hero">
   <p class="eyebrow">집 찾기 프로젝트</p>
   <h1>집을 찾는 이유마다,<br>후보도 따로.</h1>

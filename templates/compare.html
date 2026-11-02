@@ -3,6 +3,7 @@
 {% block og_image %}static/og/compare.jpg{% endblock %}
 {% block description %}{{ region }} 아파트를 최대 4곳까지 가격과 입지, 수익률, 전세가율, 학군을 같은 기준으로 나란히 비교합니다.{% endblock %}
 {% block body %}
+{% set seg_cur = 'compare' %}{% include "_seg_pj.html" %}
 <section class="page-hero">
   <p class="eyebrow">단지 비교</p>
   <h1>고민되는 아파트,<br>나란히 비교해 보세요</h1>

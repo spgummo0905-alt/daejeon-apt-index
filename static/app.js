@@ -927,10 +927,15 @@
   // ---------- 페이지 공통 동작 ----------
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
+    // 현재 화면이 속한 메뉴 묶음: 찾기(조건·테마·역세권) / 임장(프로젝트·비교) / 나의 집감(관심·카드첩)
+    const tabOf = { themes: "finder", stations: "finder", compare: "projects", cards: "my" }[page] || page;
     document.querySelectorAll(".tabbar a").forEach(a => {
-      if (a.dataset.tab === page || (["cards", "projects"].includes(page) && a.dataset.tab === "my") ||
-          (page === "index" && a.dataset.tab === "map" && location.hash === "#map")) a.classList.add("on");
+      if (a.dataset.tab === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); }
     });
+    document.querySelectorAll(".top-nav > a[data-nav]").forEach(a => { if (a.dataset.nav === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
+    const grp = { finder: "finder", themes: "finder", stations: "finder", projects: "project", compare: "project", cards: "project" }[page];
+    if (grp) document.querySelectorAll('.tn-grp[data-tn="' + grp + '"]').forEach(g => g.classList.add("on"));
+    topNav();
     // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼
     const apt = document.querySelector("[data-apt]");
     if (apt) {
@@ -1262,6 +1267,21 @@
   }
   // 최근 본 단지: 오른쪽 아래 작은 버튼 → 누르면 목록(휴대폰은 아래 시트). 다른 지역에서 본 단지도 함께.
   // 내려 읽을 때는 비켜 주고, 올리거나 멈추면 다시 나타납니다. 인트로·지금 보는 단지만 있으면 숨김.
+  // 위쪽 펼침 메뉴(찾기·임장): 눌러서 열고, Esc 또는 바깥 누르기로 닫음. 마우스를 올려 여는 방식은 쓰지 않음
+  function topNav() {
+    const grps = [...document.querySelectorAll(".tn-grp")];
+    if (!grps.length) return;
+    const set = (g, on) => { g.querySelector(".tn-pop").hidden = !on; g.querySelector(".tn-btn").setAttribute("aria-expanded", on ? "true" : "false"); };
+    const closeAll = except => grps.forEach(g => { if (g !== except) set(g, false); });
+    grps.forEach(g => {
+      const btn = g.querySelector(".tn-btn"), pop = g.querySelector(".tn-pop");
+      btn.addEventListener("click", e => { e.stopPropagation(); const on = pop.hidden; closeAll(g); set(g, on); });
+      g.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { set(g, false); btn.focus(); } });
+      g.addEventListener("focusout", e => { if (!pop.hidden && e.relatedTarget && !g.contains(e.relatedTarget)) set(g, false); });
+    });
+    document.addEventListener("click", e => { if (!e.target.closest(".tn-grp")) closeAll(null); });
+  }
+
   function recentDock() {
     const dock = document.querySelector("[data-rcd]");
     if (!dock || document.body.dataset.page === "intro") return;
