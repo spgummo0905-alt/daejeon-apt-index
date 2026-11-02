@@ -862,7 +862,7 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     page = (out / "index.html").read_text(encoding="utf-8")
     # 디자인은 인트로 그대로, 지역부터 고르게 (위쪽 '지역 선택', 시작 버튼이 지역 고르기 창을 엶)
     assert '<base href="/daejeon/">' in page and 'class="it-hero"' in page and "<span>지역 선택</span>" in page
-    assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 시작하기' in page and 'aria-current="page"' not in page
+    assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기' in page and 'aria-current="page"' not in page
     assert 'href="https://www.jipgam.kr/sejong/"' in page and "window.DJ_LANDING=1" in page
     assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and 'content="https://www.jipgam.kr/static/og/jipgam.jpg"' in page
     assert 'name="naver-site-verification"' in page and not (out / "daejeon" / "landing.html").exists()
