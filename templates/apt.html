@@ -5,11 +5,12 @@
 {% block body %}
 <div class="apt-topbar">
   <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
-  <div class="icon-actions">
-    <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div>
-    <button class="icon-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic"><use href="#i-star"/></svg></button>
-    {% if latlng %}<button class="icon-btn" data-course-add="{{ c.slug }}" type="button" aria-pressed="false" aria-label="임장 코스에 넣기" title="임장 코스에 넣기"><svg class="ic"><use href="#i-route"/></svg></button>{% endif %}
-    <button class="icon-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic"><use href="#i-share"/></svg></button>
+  <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div>
+  <div class="icon-actions apt-actions">
+    <button class="icon-btn action-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-action-label>관심</span></button>
+    {% if latlng %}<button class="icon-btn action-btn" data-course-add="{{ c.slug }}" type="button" aria-pressed="false" aria-label="임장 코스에 넣기" title="임장 코스에 넣기"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg><span data-action-label>코스</span></button>{% endif %}
+    <button class="icon-btn action-btn" data-field type="button" aria-haspopup="dialog" aria-controls="field-sheet"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg><span>현장 체크</span></button>
+    <button class="icon-btn action-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span>공유</span></button>
   </div>
 </div>
 

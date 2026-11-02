@@ -2,7 +2,7 @@
 <section class="panel course" id="course" aria-labelledby="course-title">
   <div class="panel-head">
     <h2 id="course-title">임장 코스</h2>
-    <p class="muted">방문할 단지를 모아 임장 동선을 계획해 보세요. 가장 짧은 순서로 잇고, 구간마다 카카오맵 길찾기와 현장 체크리스트를 함께 보여 줍니다.</p>
+    <p class="muted">방문할 단지를 모아 임장 동선을 계획해 보세요. 단지 간 직선거리를 기준으로 순서를 정하고, 구간마다 카카오맵 길찾기와 현장 체크리스트를 함께 보여 줍니다.</p>
   </div>
   <div class="cs-ctl">
     <div class="cs-add"><input type="search" placeholder="코스에 단지 더하기 (단지·동 이름)" aria-label="코스에 단지 더하기" data-cs-add></div>
@@ -14,6 +14,7 @@
   <p class="muted cs-empty" data-cs-empty hidden>아직 코스가 없습니다. 관심 단지를 두 곳 이상 저장하거나 위 검색창에서 단지를 추가하면 코스가 만들어집니다.</p>
   <div class="cs-body" data-cs-body hidden>
     <div class="cs-sum" data-cs-sum></div>
+    <p class="note">거리는 단지 간 직선거리이며, 이동 시간은 평균 속도와 우회 거리를 반영한 추정치입니다. 실제 도로·교통·주차 상황은 카카오맵 길찾기에서 확인하세요.</p>
     <div class="cs-grid">
       <figure class="cs-map" data-cs-map></figure>
       <ol class="cs-list" data-cs-list></ol>

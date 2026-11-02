@@ -453,7 +453,8 @@
     });
     function ask(what) {
       pop.classList.toggle("ask", !!what);
-      if (why) { why.hidden = !what; why.textContent = what ? `${what} · 로그인하면 열려요` : ""; }
+      const benefits = { "관심 단지": "관심 단지를 계정에 보관해요", "임장 코스": "임장 코스를 기기마다 이어 봐요", "현장 모드": "현장 체크와 메모를 저장해요" };
+      if (why) { why.hidden = !what; why.textContent = what ? (benefits[what] || `${what} · 로그인하면 이어 쓸 수 있어요`) : ""; }
     }
     DJ.loginPrompt = what => setTimeout(() => { close(false); ask(what); open(); }, 0);
     document.addEventListener("click", e => { if (!pop.hidden && !pop.contains(e.target)) close(false); });
