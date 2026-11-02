@@ -416,6 +416,13 @@ def cmd_demo(cfg, args) -> None:
     print(f"[데모] 가짜 단지 {n}개 → {out / 'index.html'}")
 
 
+def cmd_landing(cfg, args) -> None:
+    from . import landing
+    out = Path(args.out or ROOT / "site")
+    n = landing.build(cfg, out)
+    print(f"지역 고르기 화면 → {out / 'index.html'} (예전 대전 주소 안내 {n}개)")
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="djdex", description="집감: 아파트 실거래가·입지 지수")
     p.add_argument("--config", type=Path, help="설정 파일 (기본: config.toml)")
@@ -438,9 +445,11 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("elev", help="언덕(고저차)만 계산 (지형 타일, 새 단지만)")
     for name in ("build", "demo"):
         sub.add_parser(name).add_argument("--out", help="사이트 출력 폴더")
+    sub.add_parser("landing", help="맨 앞 지역 고르기 화면 (지역 사이트를 모두 만든 뒤)").add_argument(
+        "--out", help="사이트 맨 위 폴더 (기본: site)")
     args = p.parse_args(argv)
     cfg = config_mod.load(args.config, args.data)
     cfg.paths.data.mkdir(parents=True, exist_ok=True)
     {"collect": cmd_collect, "locate": cmd_locate, "build": cmd_build,
      "all": cmd_all, "demo": cmd_demo, "slow": cmd_slow, "school": cmd_school, "feeprobe": cmd_feeprobe,
-     "elev": cmd_elev}[args.cmd](cfg, args)
+     "elev": cmd_elev, "landing": cmd_landing}[args.cmd](cfg, args)

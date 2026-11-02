@@ -30,10 +30,11 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
-      - run: python -m djdex demo
+      - run: python -m djdex demo --out site-demo/daejeon
       - run: python -m djdex --config config.sejong.toml demo --out site-demo/sejong
       - run: python -m djdex --config config.seoul.toml demo --out site-demo/seoul
       - run: python -m djdex --config config.cheongju.toml demo --out site-demo/cheongju
+      - run: python -m djdex landing --out site-demo
 
   publish:
     # 실제 데이터 수집과 배포는 예약 실행이나 수동 실행 때만
@@ -141,7 +142,8 @@ jobs:
           ECOS_KEY: ${{ secrets.ECOS_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
-        run: python -m djdex all
+        # 대전도 다른 지역처럼 폴더 하나(/daejeon/). 맨 앞 주소에는 아래에서 지역 고르기 화면을 만듭니다
+        run: python -m djdex all --out site/daejeon
       # 뒤 단계가 실패해도 받아 둔 실거래·입지 데이터는 저장해서 다음 실행 때 다시 받지 않습니다.
       - name: 수집 캐시 저장
         if: always()
@@ -262,6 +264,10 @@ jobs:
           # 학교 자료를 새로 받았으면 아래에서 서울 캐시를 저장해 다음 배포 때 다시 받지 않게
           if [ "$(ls data/seoul/school 2>/dev/null | wc -l)" != "$before" ]; then echo "fresh=true" >> "$GITHUB_OUTPUT"; fi
           python -m djdex --config config.seoul.toml build --out site/seoul
+      # 맨 앞 주소(www.jipgam.kr/): 지역 고르기 화면 + 예전 대전 주소(/apt/○○.html 등)를 /daejeon/ 로 넘기는 안내 파일.
+      # 만들어진 지역 폴더만 카드로 보여 주므로 지역 사이트를 모두 만든 뒤에 합니다
+      - name: 맨 앞 지역 고르기 화면
+        run: python -m djdex landing --out site
       # 배포본 화면 코드 압축: 설명 주석을 지우고 이름을 줄여 그대로 가져다 쓰기 어렵게 (저장소 원본은 그대로).
       # 압축에 실패하면 압축하지 않은 채로 배포합니다
       - name: 화면 코드 압축
