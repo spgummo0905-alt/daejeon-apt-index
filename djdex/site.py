@@ -611,7 +611,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
     write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"]] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"] if n != "projects"] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
@@ -993,7 +993,7 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
 
 
 THEME_ROWS = 400  # 구별로 걸러도 끝까지 볼 수 있게 넉넉히 (화면엔 12곳씩, 나머지는 숨겨 둠)
-APP_PAGES = ["compare", "finder", "my", "cards", "rooftop"]
+APP_PAGES = ["compare", "finder", "my", "cards", "rooftop", "projects"]
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 
 

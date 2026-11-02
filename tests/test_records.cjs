@@ -208,3 +208,31 @@ test('failure to persist sync metadata cannot clear guest originals', async () =
   assert.ok(!b.requests.some(r => r.path === '/rest/v1/rpc/sync_put'));
   assert.equal(b.R.get('_importGuest'), true);
 });
+
+test('guest projects join account projects without mixing into favorites or other accounts', async () => {
+  const s = storage({ 'djdex:project:guest-id': { version: 1, id: 'guest-id', name: '비회원 집찾기', region: '대전', slugs: ['apt-1'] }, 'djdex-pkce': { v: 'test' } });
+  const server = { A: [{ k: 'project:cloud-id', v: { version: 1, id: 'cloud-id', name: '계정 집찾기', region: '세종', slugs: ['apt-2'] }, t: 1, updated_at: '2026-01-01' }] };
+  const b = browser(s, server, { login: 'A' }); await b.start();
+  assert.equal(b.R.keys().filter(k => k.startsWith('project:')).length, 2);
+  assert.equal(s.getItem('djdex:project:guest-id'), null);
+  assert.ok(server.A.some(r => r.k === 'project:guest-id'));
+  assert.equal(b.R.get('favs', null), null);
+  await b.ctx.DJ.logout(false); assert.equal(b.R.keys().filter(k => k.startsWith('project:')).length, 0);
+});
+
+test('same project ID from a restored guest backup preserves both versions and retries without extra copies', async () => {
+  const guest = { version: 1, id: 'same-id', name: '기기에서 고침', region: '대전', slugs: ['apt-1'] };
+  const cloud = { ...guest, name: '계정 원본', slugs: ['apt-2'] };
+  const s = storage({ 'djdex:project:same-id': guest, 'djdex-pkce': { v: 'test' } });
+  const server = { A: [{ k: 'project:same-id', v: cloud, t: 1, updated_at: '2026-01-01' }] };
+  const fail = browser(s, server, { login: 'A', failPush: true }); await fail.start();
+  assert.equal(fail.R.keys().filter(k => k.startsWith('project:')).length, 2);
+  assert.notEqual(s.getItem('djdex:project:same-id'), null);
+  const copyKey = fail.R.keys().find(k => k.startsWith('project:') && k !== 'project:same-id');
+  s.setItem('djdex@A:' + copyKey, JSON.stringify(Object.fromEntries(Object.entries(fail.R.get(copyKey)).reverse())));
+  const retry = browser(s, server); await retry.start();
+  const keys = retry.R.keys().filter(k => k.startsWith('project:'));
+  assert.equal(keys.length, 2); assert.equal(retry.R.get('project:same-id').name, '계정 원본');
+  assert.ok(keys.some(k => retry.R.get(k).name === '기기에서 고침'));
+  assert.equal(s.getItem('djdex:project:same-id'), null);
+});

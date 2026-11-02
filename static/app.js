@@ -928,7 +928,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
     document.querySelectorAll(".tabbar a").forEach(a => {
-      if (a.dataset.tab === page || (page === "cards" && a.dataset.tab === "my") ||
+      if (a.dataset.tab === page || (["cards", "projects"].includes(page) && a.dataset.tab === "my") ||
           (page === "index" && a.dataset.tab === "map" && location.hash === "#map")) a.classList.add("on");
     });
     // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼

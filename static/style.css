@@ -1845,6 +1845,51 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-work-row { display: flex; gap: 8px; }
 .sv-work-row .pc-sel { flex: 1; height: 42px; }
 .sv-work-row .btn { margin: 0; }
+.pj-entry { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 24px; margin: 0 0 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--text); text-decoration: none; }
+.pj-entry > span:first-child { display: grid; gap: 5px; }
+.pj-entry b { font-size: 18px; }
+.pj-entry span span { font-size: 14px; color: var(--muted); }
+.pj-create form, .pj-editor form { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.pj-create > summary { cursor: pointer; display: list-item; }
+.pj-create > summary b { font-size: 18px; }
+.pj-create > summary > span { display: block; margin-top: 6px; font-size: 13px; }
+.pj-create[open] > summary { margin-bottom: 22px; }
+.pj-create label, .pj-editor form label { display: grid; gap: 7px; flex: 1 1 220px; font-size: 13px; font-weight: 700; }
+.pj-create input, .pj-editor form input, .pj-search { width: 100%; min-width: 0; height: 44px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+.pj-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 18px; }
+.pj-sidebar h2 { margin-top: 0; }
+.pj-list { display: grid; gap: 8px; }
+.pj-sidebar details { margin-top: 20px; }
+.pj-sidebar summary, .pj-tools summary { cursor: pointer; font-size: 14px; font-weight: 700; padding: 8px 0; }
+.pj-item { display: grid; gap: 5px; width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: left; font: inherit; background: var(--surface); color: var(--text); cursor: pointer; overflow-wrap: anywhere; }
+.pj-item.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.pj-item span { font-size: 12px; color: var(--muted); }
+.pj-editor { min-width: 0; }
+.pj-editor h2, .pj-editor .panel-head p { overflow-wrap: anywhere; }
+.pj-tools { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.pj-tools details { flex: 1; min-width: 160px; }
+.pj-tools form { padding-top: 12px; }
+.pj-tools .btn { margin: 0; }
+.pj-search-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 700; }
+.pj-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+.pj-actions p { flex-basis: 100%; margin: 0 0 4px; font-weight: 700; }
+.pj-actions .btn { margin: 0; }
+.pj-actions a[aria-disabled="true"] { opacity: .45; cursor: default; }
+.pj-candidates { margin-top: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pj-candidate { min-width: 0; border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
+.pj-check { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+.pj-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.pj-note { font-size: 13px; color: var(--text-2); white-space: pre-line; overflow-wrap: anywhere; }
+.pj-empty { grid-column: 1 / -1; padding: 24px 0; }
+@media (max-width: 900px) { .pj-layout { grid-template-columns: 1fr; } .pj-list { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); } }
+@media (max-width: 560px) {
+  .pj-candidates { grid-template-columns: 1fr; }
+  .pj-create form > .btn { width: 100%; justify-content: center; }
+  .pj-entry { padding: 18px; }
+  .pj-list { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 5px; }
+  .pj-list .pj-item { flex: 0 0 180px; scroll-snap-align: start; }
+  .pj-actions a { flex: 1 1 100%; justify-content: center; }
+}
 .sv-seg { margin: 0 0 12px; }
 .sv-own { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13.5px; color: var(--text-2); font-weight: 600; }
 .sv-own input { width: 96px; height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
