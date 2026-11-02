@@ -871,6 +871,12 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert 'data-search-go' not in final and 'href="index.html#list"' not in final
     assert "대전 아파트 검색하기" not in page and "대전 아파트의" not in page
     assert "분포 예시" in page and "지역마다 분포가 다릅니다" in page
+    assert '<title>집감 | 아파트 실거래가 비교부터 임장 코스·기록까지</title>' in page
+    assert 'property="og:title" content="집감 | 아파트 실거래가 비교부터 임장 코스·기록까지"' in page
+    schema = json.loads(page.split('<script type="application/ld+json">')[1].split('</script>')[0])
+    assert schema["@type"] == "WebSite" and schema["name"] == "집감"
+    assert schema["url"] == "https://www.jipgam.kr/" and schema["@id"] == "https://www.jipgam.kr/#website"
+    assert "potentialAction" not in schema  # 제공하지 않는 전국 통합 검색을 선언하지 않음
     assert 'href="https://www.jipgam.kr/sejong/"' in page and "window.DJ_LANDING=1" in page
     assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and 'content="https://www.jipgam.kr/static/og/jipgam.jpg"' in page
     assert 'name="naver-site-verification"' in page and not (out / "daejeon" / "landing.html").exists()
@@ -888,3 +894,9 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     # 지역 사이트는 각자 폴더 주소를 씀 (대전 → /daejeon/)
     dj = (out / "daejeon" / "index.html").read_text(encoding="utf-8")
     assert '<link rel="canonical" href="https://www.jipgam.kr/daejeon/">' in dj
+    assert '<title>대전 아파트 실거래가·시세·입지 비교 | 집감</title>' in dj
+    assert 'name="description" content="대전 아파트 ' in dj
+    sj = (out / "sejong" / "index.html").read_text(encoding="utf-8")
+    assert '<title>세종 아파트 실거래가·시세·입지 비교 | 집감</title>' in sj
+    apt = (out / "daejeon" / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
+    assert "실거래가·시세·입지 | 대전" in apt and "| 집감</title>" in apt
