@@ -80,11 +80,11 @@
 </svg>
 <header class="site">
   {# 브랜드 '집감'(집 + 감각) + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
-  <a class="brand" href="{{ root }}index.html" aria-label="집감 {{ region }} 첫 화면"><img class="brand-sym" src="{{ root }}static/brand/symbol-96.png" width="30" height="30" alt=""><span class="brand-word">집감<i class="brand-dot" aria-hidden="true"></i></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
+  <a class="brand" href="{% if landing %}/{% else %}{{ root }}index.html{% endif %}" aria-label="집감 {% if not landing %}{{ region }} {% endif %}첫 화면"><img class="brand-sym" src="{{ root }}static/brand/symbol-96.png" width="30" height="30" alt=""><span class="brand-word">집감<i class="brand-dot" aria-hidden="true"></i></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
   {% if regions | length > 1 %}
   <div class="rg">
-    <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="지역 바꾸기, 지금 {{ region }}">
-      <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>{{ region }}</span><svg class="ic rg-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
+    <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="{% if landing %}지역 고르기{% else %}지역 바꾸기, 지금 {{ region }}{% endif %}">
+      <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>{% if landing %}지역 선택{% else %}{{ region }}{% endif %}</span><svg class="ic rg-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
     <div class="rg-pop" id="rg-pop" role="dialog" aria-label="지역 고르기" hidden>
       <div class="sheet-grab" aria-hidden="true"></div>
       <div class="rg-head"><b>어느 지역을 볼까요?</b><span class="muted">{{ regions | length }}곳</span></div>
@@ -92,7 +92,7 @@
       {% for grp in region_groups %}
       <p class="rg-grp" data-rg-grp>{{ grp.name }}</p>
       <div class="rg-grid">
-        {% for g in grp["items"] %}{% set cur = g.name == region %}
+        {% for g in grp["items"] %}{% set cur = g.name == region and not landing %}
         <a class="rg-item{% if cur %} on{% endif %}" href="{{ g.url }}" data-rg-name="{{ g.name }}"{% if cur %} aria-current="page"{% endif %}>
           <b>{{ g.name }}{% if g.badge %}<i class="rg-badge">{{ g.badge }}</i>{% endif %}</b>
           <small>{{ "지금 보는 곳" if cur else (g.desc or "") }}</small></a>

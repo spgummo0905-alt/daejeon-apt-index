@@ -861,10 +861,14 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out / "sejong")])
     cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
     page = (out / "index.html").read_text(encoding="utf-8")
-    assert 'href="daejeon/"' in page and 'href="sejong/"' in page and 'href="seoul/"' not in page   # 만든 지역만
-    assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and "static/og/jipgam.jpg" in page
-    assert 'name="naver-site-verification"' in page and "아파트<b>51곳</b>" in page
-    assert (out / "static" / "og" / "jipgam.jpg").exists() and (out / "static" / "bg" / "sky.webp").exists()
+    # 디자인은 인트로 그대로, 지역부터 고르게 (위쪽 '지역 선택', 시작 버튼이 지역 고르기 창을 엶)
+    assert '<base href="/daejeon/">' in page and 'class="it-hero"' in page and "<span>지역 선택</span>" in page
+    assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 시작하기' in page and 'aria-current="page"' not in page
+    assert 'href="https://www.jipgam.kr/sejong/"' in page and "window.DJ_LANDING=1" in page
+    assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and 'content="https://www.jipgam.kr/static/og/jipgam.jpg"' in page
+    assert 'name="naver-site-verification"' in page and not (out / "daejeon" / "landing.html").exists()
+    assert (out / "static" / "og" / "jipgam.jpg").exists()
+    assert "지역 선택" not in (out / "daejeon" / "intro.html").read_text(encoding="utf-8")   # 지역 인트로는 그대로
     stub = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert 'location.replace("/daejeon/apt/DEMO-0001.html"+location.search+location.hash)' in stub
     assert 'href="https://www.jipgam.kr/daejeon/apt/DEMO-0001"' in stub and 'content="noindex"' in stub

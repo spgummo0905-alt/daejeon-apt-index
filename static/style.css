@@ -2064,6 +2064,8 @@ body[data-page="intro"] {
 body[data-page="intro"] main { max-width: none; padding: 0; }
 body[data-page="intro"] .top-nav, body[data-page="intro"] .tabbar { display: none; }
 body[data-page="intro"] header.site { position: relative; z-index: 3; }
+/* 지역 고르기 창이 열리면 머리글을 뒤 어둡게 깔린 막(z 90) 위로 (안 그러면 창이 막 아래에 깔려 못 누름) */
+body[data-page="intro"] header.site:has(.rg-pop:not([hidden])) { z-index: 96; }
 body[data-page="intro"] footer { border-top-color: var(--border); padding-bottom: 32px; }
 .it-wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; position: relative; }
 .it-hero, .it-sec { position: relative; overflow: hidden; }
