@@ -538,6 +538,8 @@ def test_course_share_link_and_print_sheet(tmp_path):
     course = (out / "static" / "course.js").read_text(encoding="utf-8")
     assert 'course.html?c=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}' in course
     assert 'q.get("c") || q.get("course")' in course and "내 코스로 저장" in course and 'if (!got) DJ.save("course", state)' in course
+    assert 'q.get("from") === "project"' in course and "프로젝트에서 고른 임장 코스" in course
+    assert course.index('if (!DJ.save("course", next)) return;') < course.index('if (RECV) { location.href = base + "my.html#course"; return; }')
     assert "DJ.printSheet(sheet())" in course and "window.print" not in course
     assert "state.auto = true" in course   # 빈 코스가 저장돼 있어도 관심 단지를 따라감
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
