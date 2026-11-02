@@ -71,19 +71,28 @@ try {
     <a class="ticker-more" href="rank.html">랭킹 <span aria-hidden="true">→</span></a>
   </div>
   {% endif %}
-  <a class="pj-entry" href="projects.html"><span><b>한 화면에서 집 찾기</b><span>후보 검색·비교부터 임장 코스와 방문 기록까지</span></span><span aria-hidden="true">→</span></a>
-  <div class="quick">
-    <a class="quick-tile" href="themes.html"><svg class="ic"><use href="#i-star"/></svg><strong>테마로 찾기</strong><span>학교·교통·신축 등 조건별로</span></a>
-    {% if transit.page %}<a class="quick-tile" href="stations.html"><svg class="ic"><use href="#i-train"/></svg><strong>{{ transit.tab }} 단지</strong><span>{{ transit.stop }} 주변 아파트 비교</span></a>
-    {% else %}<a class="quick-tile" href="#map"><svg class="ic"><use href="#i-map"/></svg><strong>지도로 보기</strong><span>동네별 시세와 단지 위치</span></a>{% endif %}
-    <a class="quick-tile" href="compare.html"><svg class="ic"><use href="#i-compare"/></svg><strong>단지 비교</strong><span>최대 4곳의 가격·입지·수익률</span></a>
-    <a class="quick-tile" href="finder.html"><svg class="ic"><use href="#i-filter"/></svg><strong>조건으로 찾기</strong><span>예산과 생활 조건에 맞는 집</span></a>
+  {# 핵심 두 입구: 입지 검색(찾기)과 임장. 바로가기 4칸·배너를 하나로 모음 #}
+  <div class="gates">
+    <section class="gate" aria-labelledby="gate-find">
+      <p class="gate-k">찾기</p>
+      <h2 id="gate-find">어디에 살지,<br>조건부터 골라 볼까요?</h2>
+      <p>질문 8개에 답하면 맞는 단지를 추려 드려요.</p>
+      <a class="gate-btn" href="finder.html">조건으로 찾기 시작 <span aria-hidden="true">→</span></a>
+      <p class="gate-sub"><span>다른 방법</span><a href="themes.html">테마로</a>{% if transit.page %}<a href="stations.html">{{ transit.tab }} 주변</a>{% endif %}{% if charts.map or kakao_js_key %}<a href="#map">지도에서</a>{% endif %}</p>
+    </section>
+    <section class="gate gold" aria-labelledby="gate-visit">
+      <p class="gate-k">임장</p>
+      <h2 id="gate-visit">가 볼 단지,<br>한 화면에 모아 둘까요?</h2>
+      <p>모으고, 비교하고, 다녀온 기록까지 한곳에서.</p>
+      <a class="gate-btn" href="projects.html">집 찾기 프로젝트 열기 <span aria-hidden="true">→</span></a>
+      <p class="gate-sub"><a href="compare.html">단지 비교</a><a href="my.html">관심 단지</a><a href="cards.html">카드첩</a></p>
+    </section>
   </div>
   <a class="roof-strip" href="rooftop.html"><span class="roof-strip-moon" aria-hidden="true">🌙</span><span class="roof-strip-t"><b>집감 옥상</b> 불꽃놀이 보며 잠깐 쉬어가요</span><i aria-hidden="true">→</i></a>
 </section>
 
 <section class="stat-strip" aria-label="데이터 요약">
-  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}지수 산정 {{ "{:,}".format(meta.n_ranked) }}곳 · 나머지는 자료 부족{% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
+  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}그중 {{ "{:,}".format(meta.n_ranked) }}곳에 점수를 매겼어요 (나머지는 거래 자료가 적어요){% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
   <div class="ss"><span class="label">반영한 실거래</span><span class="value" data-count>{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   {% if pulse %}
   <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">계약 해제 거래 제외</span></div>

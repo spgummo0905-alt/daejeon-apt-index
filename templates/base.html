@@ -106,17 +106,34 @@
   {% endif %}
   <div class="hd-end">
     <nav class="top-nav">
-      <a href="{{ root }}index.html#map">지도</a>
-      <a href="{{ root }}rank.html">랭킹</a>
-      <a href="{{ root }}themes.html">테마</a>
-      {% if transit.page %}<a href="{{ root }}stations.html">{{ transit.tab }}</a>{% endif %}
-      <a href="{{ root }}compare.html">단지 비교</a>
-      <a href="{{ root }}finder.html">조건으로 찾기</a>
-      <a href="{{ root }}my.html">관심 단지<span class="fav-count" data-fav-count hidden></span></a>
-      <a href="{{ root }}cards.html">카드첩</a>
+      {# 핵심 둘(찾기·임장)은 굵게 펼침 메뉴, 나머지는 보통 글자. 눌러서 열고 Esc 로 닫음 (app.js topNav) #}
+      <div class="tn-grp" data-tn="finder">
+        <button type="button" class="tn-btn core" aria-expanded="false" aria-controls="tn-find">찾기<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
+        <div class="tn-pop" id="tn-find" hidden>
+          <ul>
+            <li><a class="tn-lead" href="{{ root }}finder.html"><b>조건으로 찾기</b><span>질문 8개로 내게 맞는 단지 추리기</span></a></li>
+            <li><a href="{{ root }}themes.html"><b>테마로 찾기</b><span>학교·학원가·역세권·준공연도</span></a></li>
+            {% if transit.page %}<li><a href="{{ root }}stations.html"><b>{{ transit.tab }} 단지</b><span>{{ transit.stop }} 주변 아파트 비교</span></a></li>{% endif %}
+            <li><a href="{{ root }}index.html#map"><b>지도에서 보기</b><span>동네별 시세와 단지 위치</span></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="tn-grp" data-tn="project">
+        <button type="button" class="tn-btn core" aria-expanded="false" aria-controls="tn-visit">임장<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
+        <div class="tn-pop" id="tn-visit" hidden>
+          <ul>
+            <li><a class="tn-lead" href="{{ root }}projects.html"><b>집 찾기 프로젝트</b><span>검색·비교·방문 기록을 한 화면에서</span></a></li>
+            <li><a href="{{ root }}compare.html"><b>단지 비교</b><span>최대 4곳을 나란히</span></a></li>
+            <li><a href="{{ root }}my.html#course"><b>임장 코스</b><span>가 볼 순서와 현장 체크</span></a></li>
+            <li><a href="{{ root }}cards.html"><b>카드첩</b><span>살펴본 단지 카드와 임장 기록</span></a></li>
+          </ul>
+        </div>
+      </div>
+      <a href="{{ root }}rank.html" data-nav="rank">랭킹</a>
+      <a href="{{ root }}my.html" data-nav="my">나의 집감<span class="fav-count" data-fav-count hidden></span></a>
     </nav>
     <button type="button" class="hs-btn" data-hs-open aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pop" aria-label="검색: 단지·동·역 이름이나 가격 조건" title="검색 ( / )">
-      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
+      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="hs-label">검색</span></button>
     <div class="hs-pop" id="hs-pop" role="dialog" aria-label="검색" hidden>
       <div class="hs-head">
         <div class="hero-search hs-box"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
@@ -179,10 +196,10 @@
 </footer>
 <nav class="tabbar" aria-label="주요 메뉴">
   <a href="{{ root }}index.html" data-tab="index"><svg class="ic"><use href="#i-home"/></svg>홈</a>
+  <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-search"/></svg>찾기</a>
+  <a href="{{ root }}projects.html" data-tab="projects" class="tab-key"><svg class="ic"><use href="#i-route"/></svg>임장</a>
   <a href="{{ root }}rank.html" data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>랭킹</a>
-  <a href="{{ root }}compare.html" data-tab="compare"><svg class="ic"><use href="#i-compare"/></svg>비교</a>
-  <a href="{{ root }}finder.html" data-tab="finder"><svg class="ic"><use href="#i-filter"/></svg>찾기</a>
-  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>관심<span class="fav-count" data-fav-count hidden></span></a>
+  <a href="{{ root }}my.html" data-tab="my"><svg class="ic"><use href="#i-star"/></svg>나의 집감<span class="fav-count" data-fav-count hidden></span></a>
 </nav>
 {# 최근 본 단지: 어느 화면에서든 오른쪽 아래 작은 버튼으로. 내려 읽을 때는 숨고 올리면 다시 (app.js recentDock) #}
 <div class="rcd" data-rcd hidden>

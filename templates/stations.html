@@ -2,6 +2,7 @@
 {% block title %}{{ transit.tab }} 아파트 · 집감{% endblock %}
 {% block description %}{{ region }} {{ transit.stop }}에서 직선거리 {{ radius }}m 이내인 아파트를 역별로 모아 가격과 입지 점수를 비교합니다.{% endblock %}
 {% block body %}
+{% set seg_cur = 'stations' %}{% include "_seg_find.html" %}
 <section class="page-hero">
   <p class="eyebrow">{{ transit.tab }} 단지</p>
   <h1>{{ transit.stop }} 주변 아파트,<br>한눈에 비교</h1>

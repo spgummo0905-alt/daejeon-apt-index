@@ -2,6 +2,7 @@
 {% block title %}생활 조건으로 아파트 찾기 · 집감{% endblock %}
 {% block description %}{{ region }} 아파트를 초품아, {{ transit.tab }}, 학원가 도보권, 학군, 신축, 입지 대비 가격 테마로 모았습니다.{% endblock %}
 {% block body %}
+{% set seg_cur = 'themes' %}{% include "_seg_find.html" %}
 <section class="page-hero">
   <p class="eyebrow">테마 모음</p>
   <h1>원하는 생활 조건으로<br>아파트 찾기</h1>

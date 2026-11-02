@@ -1,0 +1,29 @@
+{# 전체 메뉴: 숨겨 둔 것도 한곳에서 찾을 수 있게 (나의 집감 맨 아래) #}
+<section class="panel allmenu" id="allmenu" aria-labelledby="allmenu-t">
+  <div class="panel-head"><h2 id="allmenu-t">전체 메뉴</h2></div>
+  <div class="am-grid">
+    <nav aria-label="찾기 메뉴"><h3>찾기</h3><ul>
+      <li><a href="finder.html">조건으로 찾기</a></li>
+      <li><a href="themes.html">테마로 찾기</a></li>
+      {% if transit.page %}<li><a href="stations.html">{{ transit.tab }} 단지</a></li>{% endif %}
+      <li><a href="index.html#map">지도에서 보기</a></li>
+    </ul></nav>
+    <nav aria-label="임장 메뉴"><h3>임장</h3><ul>
+      <li><a href="projects.html">집 찾기 프로젝트</a></li>
+      <li><a href="compare.html">단지 비교</a></li>
+      <li><a href="my.html#course">임장 코스</a></li>
+      <li><a href="cards.html">카드첩</a></li>
+    </ul></nav>
+    <nav aria-label="구경하기 메뉴"><h3>구경하기</h3><ul>
+      <li><a href="rank.html">랭킹</a></li>
+      <li><a href="index.html#heat">동네 온도</a></li>
+      <li><a href="index.html#movein">입주 물량</a></li>
+      <li><a href="rooftop.html">집감 옥상</a></li>
+    </ul></nav>
+    <nav aria-label="알아두기 메뉴"><h3>알아두기</h3><ul>
+      <li><a href="methodology.html">점수 산출 방법</a></li>
+      <li><a href="intro.html">서비스 소개</a></li>
+      <li><a href="terms.html">이용약관</a></li>
+    </ul></nav>
+  </div>
+</section>
