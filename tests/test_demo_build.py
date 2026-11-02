@@ -850,6 +850,23 @@ def test_movein_supply_by_area(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'id="movein"' in index and "입주 예정 물량" in index and 'href="#movein"' in index and "조합원 몫" in index
+    # 입주 예정 물량 화면: 결론 한 줄, 연도 막대, 칸 색 단계, 작은 물량 제외, 먼 해·올해 꼬리표
+    assert "mv-head" in index and "가장 많이 입주해요" in index and 'class="mv-bars"' in index and "mv-t" in index
+    assert "공고된 것만" in index
+    # 비율 → 색 단계 (0은 없음, 최댓값은 5)
+    assert [movein._tier(x) for x in (0, 0.01, 0.2, 0.21, 0.5, 1.0)] == [0, 1, 1, 2, 3, 5]
+    # 같은 달은 한 번만 쓰고, 30세대 미만은 목록에서 빼되 건수는 알려 줌
+    rows2 = [{"ym": "202611", "addr": "대전 서구 a", "area": "서구", "hh": 2, "name": "잔여"},
+             {"ym": "202611", "addr": "대전 서구 b", "area": "서구", "hh": 500, "name": "A"},
+             {"ym": "202611", "addr": "대전 서구 c", "area": "서구", "hh": 300, "name": "B"},
+             {"ym": "202703", "addr": "대전 유성구 d", "area": "유성구", "hh": 4000, "name": "C"}]
+    v2 = movein.view(rows2, gus, today=date(2026, 11, 2))
+    assert [r["name"] for r in v2["soon"]] == ["A", "B", "C"] and v2["soon_cut"] == 1
+    assert [r["mlabel"] for r in v2["soon"]] == ["11월", "", "2027년 3월"]
+    assert v2["bars"][0]["note"] == "남은 2달" and v2["bars"][-1]["note"] == "공고된 것만"
+    assert v2["head"] == "2027년에 가장 많이 입주해요" and v2["bars"][1]["peak"] and not v2["bars"][0]["peak"]
+    one = movein.view([rows2[3]], gus, today=date(2026, 11, 2))   # 한 해뿐이어도 깨지지 않음
+    assert one["head"] == "2027년에 입주 예정이에요" and not any(b["peak"] for b in one["bars"])
 
 
 def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
