@@ -42,6 +42,7 @@ test('no-commute mode ignores saved workplaces and second workplace only applies
   assert.equal(api.active(state, [p]).length, 2);
   assert.equal(api.active({ ...state, two: false }, [p]).length, 1);
   assert.equal(api.active({ ...state, commute: 'any' }, [p]).length, 0);
+  assert.equal(api.active({ ...state, commute: '' }, [p]).length, 0);
   assert.equal(api.active({ works: [] }, [p]).length, 0);
 });
 test('address and building name searches both return selectable coordinates', async () => {

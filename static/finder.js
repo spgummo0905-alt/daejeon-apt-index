@@ -65,10 +65,13 @@
     return best;
   }
 
-  const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false, commute: "work",
+  const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false, commute: "",
     budget: 0, bmode: "price", af: { income: "", equity: "", rate: cfg.default_rate || 4, years: cfg.default_years || 30, debt: 0 },
     py: [], age: "", stn: 0, sch: 0, must: [], sort: "i", here: null });
-  const S = Object.assign(blank(), DJ.load("survey", {}));
+  const savedSurvey = DJ.load("survey", {});
+  const S = Object.assign(blank(), savedSurvey);
+  // 이전 버전에 직장 조건이 있던 이용자는 선택한 내용을 그대로 이어 봅니다.
+  if (!("commute" in savedSurvey) && DJWorkplaces.active(savedSurvey, cfg.workplaces || []).length) S.commute = "work";
   const save = () => DJ.save("survey", S);
   const eok = v => v >= 10000 ? (+(v / 10000).toFixed(v >= 100000 ? 0 : 1)) + "억" : Math.round(v).toLocaleString() + "만";
 
@@ -163,12 +166,13 @@
     q.append(g);
   }
   function drawWork() {
-    q.append(grid("", option("직장 기준으로 찾기", "직장과 가까운 단지 찾기", null, S.commute !== "any", () => { S.commute = "work"; }),
+    q.append(grid("", option("직장 기준으로 찾기", "직장과 가까운 단지 찾기", null, S.commute === "work", () => { S.commute = "work"; }),
       option("출퇴근 조건 없이", "직장 없음·재택·거리 무관", null, S.commute === "any", () => { S.commute = "any"; })));
     if (S.commute === "any") {
       q.append(el("p", "sv-note", "직장 거리로 단지를 제한하지 않습니다. 예산·평형·생활 조건으로 나에게 맞는 집을 찾아보세요."));
       return;
     }
+    if (S.commute !== "work") return;
     const ps = places();
     const slot = k => {
       const w = S.works[k];

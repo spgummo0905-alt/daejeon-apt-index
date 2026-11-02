@@ -11,7 +11,7 @@
   }
   let loading;
   function active(state, presets) {
-    if (state.commute === "any" || !Array.isArray(state.works)) return [];
+    if (state.commute === "any" || state.commute === "" || !Array.isArray(state.works)) return [];
     return state.works.slice(0, state.two ? 2 : 1).map(w => resolve(w, presets, state.here)).filter(Boolean);
   }
   const available = () => !!document.body.dataset.kakao || !!window.kakao?.maps?.services;
