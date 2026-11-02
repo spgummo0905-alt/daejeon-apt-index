@@ -329,6 +329,7 @@
       `&code_challenge=${ch}&code_challenge_method=s256`);
   };
   DJ.logout = async function (wipe) {
+    if (S.linking) { DJ.toast("기록을 연결하고 있어요", "연결이 끝난 뒤 로그아웃해 주세요."); return; }
     S.linking = true;
     try { await push(); } catch (e) { /* 못 보낸 기록은 이 기기에 남음 */ }
     if (!owns()) { location.reload(); return; }
@@ -340,6 +341,7 @@
     forget();
   };
   DJ.deleteAccount = async function () {
+    if (S.linking) { DJ.toast("기록을 연결하고 있어요", "연결이 끝난 뒤 다시 시도해 주세요."); return; }
     if (!confirm("계정과 현장 사진, 공유 링크, 이 기기의 해당 계정 기록을 모두 지울까요?\n비회원 기록과 다른 계정의 기록은 유지됩니다.")) return;
     try {
       try { await pull(); } catch (e) { /* 받지 못해도 이 기기 기록으로 */ }
@@ -526,7 +528,7 @@
     timer = setTimeout(() => { timer = null; sync(false); }, 1200);
   };
   async function sync(withPull) {
-    if (!S.user) return;
+    if (!S.user || S.linking) return [];
     S.state = "busy";
     try {
       if (R.get("_importGuest", false) && !S.linking) {

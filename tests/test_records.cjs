@@ -46,6 +46,7 @@ function browser(localStorage = storage(), server = {}, options = {}) {
     let data = [];
     if (path === '/auth/v1/token') data = { access_token: 'token-' + options.login, refresh_token: 'refresh-' + options.login, expires_in: 3600, user: { id: options.login, user_metadata: { name: options.login } } };
     if (path === '/rest/v1/user_kv') {
+      if (options.readBarrier) await options.readBarrier;
       data = server[id] || [];
       if (options.switchAccountOnRead) localStorage.setItem('djdex-auth', JSON.stringify({ user: { id: 'B' }, at: 'token-B', exp: Date.now() / 1000 + 3600 }));
     }
@@ -172,4 +173,17 @@ test('an account switch during a cloud read cannot upload the previous account t
   assert.ok(!b.requests.some(r => r.path === '/rest/v1/rpc/sync_put'));
   assert.equal(s.getItem('djdex@B:favs'), null);
   assert.deepEqual(JSON.parse(s.getItem('djdex@A:favs')), ['private-A']);
+});
+
+test('an autosave timer cannot unlock a pending initial account connection', async () => {
+  let release;
+  const readBarrier = new Promise(resolve => { release = resolve; });
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 } });
+  const b = browser(s, {}, { readBarrier });
+  const started = b.start();
+  b.ctx.DJ.onSave();
+  await new Promise(resolve => setTimeout(resolve, 1300));
+  assert.equal(b.ctx.DJ.sync.linking, true);
+  release(); await started;
+  assert.equal(b.ctx.DJ.sync.linking, false);
 });
