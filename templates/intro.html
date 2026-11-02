@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% block title %}집감 · {{ region }} 아파트, 집 볼 때도 감이 필요하니까{% endblock %}
-{% block description %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 장기 가격 흐름을 하나의 지수와 등급 카드로 정리했습니다.{% endblock %}
+{% block title %}{% if landing %}집감 · 아파트 실거래가·입지 지수, 집 볼 때도 감이 필요하니까{% else %}집감 · {{ region }} 아파트, 집 볼 때도 감이 필요하니까{% endif %}{% endblock %}
+{% block description %}{% if landing %}지역을 고르고 아파트 실거래가와 입지, 장기 가격 흐름을 하나의 지수와 등급 카드로 비교해 보세요.{% else %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳의 실거래가와 입지, 장기 가격 흐름을 하나의 지수와 등급 카드로 정리했습니다.{% endif %}{% endblock %}
 {% block page_id %}intro{% endblock %}
 {% block head_extra %}
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
 <script>try{sessionStorage.setItem("dj-intro","1");localStorage.removeItem("dj-intro")}catch(e){}</script>
+{% if landing %}{# 맨 앞 주소: 앱 시작(?skip=1)·로그인 복귀(?code=)는 지난번 지역으로 바로. 지역 화면이 '지난 지역'을 기억해 둠 (app.js) #}
+<script>window.DJ_LANDING=1;try{var q=location.search,L=JSON.parse(localStorage.getItem("dj-last-region")||"null");if(/[?&](skip|code|error)=/.test(q))location.replace((L&&/^\/[\w-]+\/$/.test(L.url)?L.url:document.baseURI)+q+location.hash)}catch(e){}
+{# 화면 주소는 지역 폴더 기준(<base>)이라 '#카드 읽는 법' 같은 같은 화면 안 이동은 직접 #}
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]'),t=a&&document.getElementById(a.getAttribute("href").slice(1));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth",block:"start"})}},true)</script>{% endif %}
 {% endblock %}
 {% block body %}
 {% set top = hero_cards[0] if hero_cards else none %}
@@ -15,11 +19,11 @@
   <div class="it-glow" aria-hidden="true"></div>
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
-      <p class="it-eyebrow"><span class="live-dot"></span>{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳 · 실거래 매일 반영</p>
+      <p class="it-eyebrow"><span class="live-dot"></span>{% if landing %}{{ regions | map(attribute="name") | join("·") }} 아파트{% else %}{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳{% endif %} · 실거래 매일 반영</p>
       <h1>집 볼 때도<br><em class="nw">감</em>이 필요하니까</h1>
       <p class="it-lead">집감은 실거래가와 입지, 장기 가격 흐름을 하나의 지수로 정리해 집값의 감을 잡도록 돕습니다. 관심 있는 아파트의 가격과 특징을 카드 한 장으로 확인해 보세요.</p>
       <div class="it-cta">
-        <a class="it-btn primary" href="index.html">아파트 찾아보기 <span aria-hidden="true">→</span></a>
+        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 시작하기 <span aria-hidden="true">→</span></button>{% else %}<a class="it-btn primary" href="index.html">아파트 찾아보기 <span aria-hidden="true">→</span></a>{% endif %}
         <a class="it-btn ghost" href="#it-card">카드 읽는 법</a>
       </div>
       <dl class="it-nums">
@@ -235,7 +239,7 @@
     <p class="it-kicker" data-reveal>06 · 지역</p>
     <h2 data-reveal>어느 지역부터 볼까요?</h2>
     <div class="it-regions" data-reveal>
-      {% for g in regions %}{% set cur = g.name == region %}
+      {% for g in regions %}{% set cur = g.name == region and not landing %}
       <a class="it-region{% if cur %} on{% endif %}" href="{{ g.url }}"{% if cur %} aria-current="page"{% endif %}>
         <b>{{ g.name }}{% if g.badge %}<i class="rg-badge">{{ g.badge }}</i>{% endif %}</b><span>{{ "지금 보는 곳" if cur else (g.desc or "") }}</span></a>
       {% endfor %}

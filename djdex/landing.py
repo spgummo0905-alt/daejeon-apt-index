@@ -1,4 +1,4 @@
-"""맨 앞 주소(www.jipgam.kr/)의 지역 고르기 화면.
+"""맨 앞 주소(www.jipgam.kr/)의 첫 화면: 인트로(디자인 그대로)에서 지역부터 고르기.
 
 지역 사이트는 모두 폴더 하나씩 (/daejeon/, /seoul/, /sejong/, /cheongju/ …) 이고, 맨 앞에는 지역을 고르는 화면만 둡니다.
 지역이 늘면 config.toml 의 regions 에 한 줄만 더하면 이 화면에도 카드가 생겨요.
@@ -10,14 +10,13 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from datetime import datetime
 from html import escape
 from pathlib import Path
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
-
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .config import ROOT
 
@@ -54,13 +53,6 @@ def _root_url(cfg) -> str:
     """사이트 맨 앞 주소 (대전 base_url 'https://www.jipgam.kr/daejeon/' → 'https://www.jipgam.kr/')"""
     u = urlsplit(cfg.site.get("base_url", ""))
     return f"{u.scheme}://{u.netloc}/" if u.netloc else ""
-
-
-def _groups(rows: list[dict]) -> list[dict]:
-    out: dict[str, list[dict]] = {}
-    for g in rows:
-        out.setdefault(g.get("group") or "지역", []).append(g)
-    return [{"name": k, "items": v} for k, v in out.items()]
 
 
 STUB = ('<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>집감 {name}</title>'
@@ -101,28 +93,29 @@ self.addEventListener("activate", e => {
 
 
 def build(cfg, out_dir: Path) -> int:
+    """맨 앞 주소 = 지역 사이트의 인트로 화면(디자인 그대로)을 지역부터 고르게 만든 것 (site.py 가 만든 landing.html).
+    화면 안의 그림·링크는 그 지역 폴더 기준으로 열리게 <base> 를 붙여 맨 앞에 둡니다."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     base = _root_url(cfg)
     rows = regions(cfg, out_dir)
-    env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=select_autoescape(["html"]))
-    total = sum(r["n"] for r in rows)
     legacy = next((r for r in rows if r["folder"] == LEGACY), rows[0] if rows else None)
-    html = env.get_template("landing.html").render(
-        site=cfg.site, base=base, groups=_groups(rows), regions=rows, total=total,
-        default=legacy["path"] if legacy else "",
-        updated=datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y.%m.%d"))
+    if not legacy or not (out_dir / legacy["folder"] / "landing.html").exists():
+        return 0
+    src = out_dir / legacy["folder"] / "landing.html"
+    html = src.read_text(encoding="utf-8")
+    src.unlink()   # 지역 폴더 안에는 두지 않음 (맨 앞에만)
+    folder = legacy["folder"]
+    html = html.replace('<meta charset="utf-8">', f'<meta charset="utf-8">\n<base href="/{folder}/">', 1)
+    if base:
+        html = html.replace(f'href="{base}{folder}/landing"', f'href="{base}"').replace(
+            f'content="{base}{folder}/landing"', f'content="{base}"')
+        html = re.sub(r'(<meta property="og:image" content=")[^"]*(")', rf'\g<1>{base}static/og/jipgam.jpg\g<2>', html)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
-    # 맨 앞 화면에 쓰는 작은 파일만 (아이콘·미리보기 이미지)
-    st = out_dir / "static"
-    for sub, names in (("brand", ["favicon-48.png", "favicon-96.png", "symbol-96.png"]),
-                       ("icons", ["apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"]),
-                       ("og", ["jipgam.jpg"]), ("bg", ["sky.webp"])):
-        (st / sub).mkdir(parents=True, exist_ok=True)
-        for n in names:
-            if (ROOT / "static" / sub / n).exists():
-                shutil.copy2(ROOT / "static" / sub / n, st / sub / n)
+    # 링크 미리보기 이미지 (맨 앞 주소용 '전국')
+    (out_dir / "static" / "og").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "static" / "og" / "jipgam.jpg", out_dir / "static" / "og" / "jipgam.jpg")
 
     (out_dir / "sw.js").write_text(SW, encoding="utf-8")
     n_stub = write_redirects(out_dir, legacy["folder"], legacy["name"], base, {r["folder"] for r in rows}) if legacy else 0

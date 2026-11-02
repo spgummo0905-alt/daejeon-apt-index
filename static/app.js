@@ -1519,7 +1519,7 @@
     // 맨 앞 지역 고르기 화면(jipgam.kr)이 '지난번에 본 지역'을 먼저 보여 주도록 지금 지역과 첫 화면 주소를 기억
     try {
       const rg = document.body.dataset.region;
-      if (rg) localStorage.setItem("dj-last-region", JSON.stringify({ name: rg, url: new URL(ROOT || "./", location.href).pathname }));
+      if (rg && !window.DJ_LANDING) localStorage.setItem("dj-last-region", JSON.stringify({ name: rg, url: new URL(ROOT || "./", location.href).pathname }));
     } catch (e) {}
     if (!("serviceWorker" in navigator) || !(location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) return;
     navigator.serviceWorker.register(ROOT + "sw.js").then(() => navigator.serviceWorker.ready).then(reg => {
