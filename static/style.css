@@ -3719,3 +3719,18 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-guest-list small button { margin-left: auto; padding: 2px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: none; color: rgba(220,226,255,.65); font: inherit; font-size: 12px; cursor: pointer; }
 .roof-guest-list .mine p { color: #ffe3bd; }
 .roof-guest-empty { padding: 22px 6px; text-align: center; color: rgba(220,226,255,.55); font-size: 13.5px; line-height: 1.6; }
+
+/* ===== 휴대폰에서 누르기 쉽게: 눌러도 작던 버튼·링크를 높이 44px 이상으로 (보이는 크기는 거의 그대로, 누르는 영역만 넓힘) ===== */
+@media (pointer: coarse), (max-width: 720px) {
+  button.rg-btn, button.hs-btn, button.it-auto, button.jump-field, button.seg-btn, button.sv-reset, button.sv-step,
+  button.chip, button[data-area-unit], select.pc-sel { min-height: 44px; }
+  button.hs-btn { min-width: 44px; }
+  button[data-area-unit], button.seg-btn { min-width: 44px; }
+  a.brand, a.chip, a.alt-head, .mc-compare, a[href*="compare"].link-more { display: inline-flex; align-items: center; min-height: 44px; }
+  a.brand { padding-block: 0; }
+  summary { min-height: 44px; display: flex; align-items: center; }
+  .acct-btn { min-height: 44px; min-width: 44px; }
+  .sec-head > a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+  .mc-stats > div[data-stat] { min-height: 44px; }
+  .jump a { display: inline-flex; align-items: center; min-height: 44px; }
+}
