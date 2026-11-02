@@ -65,7 +65,7 @@
     return best;
   }
 
-  const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false,
+  const blank = () => ({ step: 0, status: "", gus: [], works: [{ w: "", lim: 0 }, { w: "", lim: 0 }], two: false, commute: "work",
     budget: 0, bmode: "price", af: { income: "", equity: "", rate: cfg.default_rate || 4, years: cfg.default_years || 30, debt: 0 },
     py: [], age: "", stn: 0, sch: 0, must: [], sort: "i", here: null });
   const S = Object.assign(blank(), DJ.load("survey", {}));
@@ -79,11 +79,7 @@
   }
   const places = () => (cfg.workplaces || []).concat(S.here ? [{ name: "내 위치", lat: S.here[0], lng: S.here[1], here: true }] : []);
   function works(s) {
-    const ps = places();
-    return s.works.slice(0, s.two ? 2 : 1).map(w => {
-      const p = w.w === "here" ? ps.find(x => x.here) : ps[+w.w];
-      return w.w !== "" && p && w.lim ? { name: p.name, lat: p.lat, lng: p.lng, lim: w.lim } : null;
-    }).filter(Boolean);
+    return DJWorkplaces.active(s, cfg.workplaces || []);
   }
   const shortName = n => n.split(/[·(]/)[0];
 
@@ -95,7 +91,7 @@
   }
   function pass(c, s) {
     if (s.gus.length && !s.gus.includes(c.gu)) return false;
-    for (const w of works(s)) if (c.la == null || km(w.lat, w.lng, c.la, c.ln) > w.lim) return false;
+    for (const w of works(s)) if (c.la == null || c.ln == null || km(w.lat, w.lng, c.la, c.ln) > w.lim) return false;
     if ((s.py.length || s.budget) && !fit(c, s).length) return false;
     const age = AGE.find(a => a.id === s.age);
     if (age && age.years && !(c.y && c.y >= NOW - age.years)) return false;
@@ -114,8 +110,8 @@
       on: () => !!S.status, clear: () => { S.status = ""; }, draw: drawStatus },
     { id: "gu", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳을 고를 수 있습니다. 건너뛰면 ${REGION} 전체가 대상입니다.`,
       on: () => S.gus.length > 0, clear: () => { S.gus = []; }, draw: drawGu },
-    { id: "work", name: "직장", q: "직장은 어디인가요?", sub: "직장에서 직선거리로 몇 km 안까지 볼지 정해 주세요. 재택이면 건너뛰어도 됩니다.",
-      on: () => works(S).length > 0, clear: () => { S.works = blank().works; S.two = false; }, draw: drawWork },
+    { id: "work", name: "직장", q: "출퇴근도 고려할까요?", sub: "직장 주소·건물명을 검색하거나 주요 장소를 고르세요. 직장이 없거나 재택근무라면 출퇴근 조건 없이 찾을 수 있습니다.",
+      on: () => works(S).length > 0, clear: () => { S.works = blank().works; S.two = false; S.commute = "any"; }, draw: drawWork },
     { id: "budget", name: "예산", q: "예산은 얼마인가요?", sub: "가격대를 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
       on: () => !!S.budget, clear: () => { S.budget = 0; }, draw: drawBudget },
     { id: "py", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준입니다. 여러 개를 고를 수 있습니다.",
@@ -167,16 +163,71 @@
     q.append(g);
   }
   function drawWork() {
+    q.append(grid("", option("직장 기준으로 찾기", "직장과 가까운 단지 찾기", null, S.commute !== "any", () => { S.commute = "work"; }),
+      option("출퇴근 조건 없이", "직장 없음·재택·거리 무관", null, S.commute === "any", () => { S.commute = "any"; })));
+    if (S.commute === "any") {
+      q.append(el("p", "sv-note", "직장 거리로 단지를 제한하지 않습니다. 예산·평형·생활 조건으로 나에게 맞는 집을 찾아보세요."));
+      return;
+    }
     const ps = places();
     const slot = k => {
       const w = S.works[k];
       const wrap = el("div", "sv-work");
       wrap.append(label(k ? "두 번째 직장" : "첫 번째 직장"));
+      const searchRow = el("form", "sv-work-row sv-work-search");
+      searchRow.setAttribute("role", "search"); searchRow.setAttribute("aria-label", (k ? "두 번째" : "첫 번째") + " 직장 주소 검색");
+      const input = el("input"); input.type = "search"; input.placeholder = "도로명 주소 또는 건물·회사명"; input.maxLength = 100;
+      input.setAttribute("aria-label", (k ? "두 번째" : "첫 번째") + " 직장 주소 또는 건물명"); input.autocomplete = "off";
+      const search = el("button", "btn", "검색"); search.type = "submit";
+      searchRow.append(input, search);
+      const message = el("p", "sv-note"); message.setAttribute("role", "status");
+      const found = el("div", "sv-work-found");
+      found.setAttribute("aria-label", "직장 검색 결과");
+      let request = 0;
+      input.addEventListener("input", () => { request++; search.disabled = false; search.textContent = "검색"; found.replaceChildren(); message.textContent = ""; });
+      searchRow.addEventListener("submit", async e => {
+        e.preventDefault();
+        const query = input.value.trim(), id = ++request;
+        found.replaceChildren();
+        if (query.length < 2) { message.textContent = "주소나 장소 이름을 두 글자 이상 입력해 주세요."; input.focus(); return; }
+        search.disabled = true; search.textContent = "검색 중"; message.textContent = "주소와 장소를 찾고 있어요…";
+        try {
+          const rows = await DJWorkplaces.search(query);
+          if (id !== request || !wrap.isConnected) return;
+          message.textContent = rows.length ? "주소를 확인하고 직장으로 쓸 장소를 선택해 주세요." : "검색 결과가 없어요. 지역명과 도로명 또는 건물명을 함께 입력해 보세요.";
+          rows.forEach(p => {
+            const b = el("button", "sv-work-place"); b.type = "button";
+            b.append(el("b", "", p.name), el("span", "", p.address));
+            b.addEventListener("click", () => { w.w = "custom"; w.p = p; if (!w.lim) w.lim = 8; changed(); });
+            found.append(b);
+          });
+        } catch (_) {
+          if (id === request && wrap.isConnected) message.textContent = "주소 검색에 연결하지 못했어요. 다시 검색하거나 아래 주요 장소에서 골라 주세요.";
+        } finally { if (id === request) { search.disabled = false; search.textContent = "검색"; } }
+      });
+      if (!DJWorkplaces.available()) {
+        input.disabled = search.disabled = true;
+        message.textContent = "지금은 주소 검색을 사용할 수 없어요. 주요 장소를 고르거나 내 위치를 이용해 주세요.";
+      }
+      wrap.append(searchRow, message, found);
+      const picked = DJWorkplaces.resolve(w, cfg.workplaces || [], S.here);
+      if (picked) {
+        const selected = el("div", "sv-work-picked");
+        const text = el("div"); text.append(el("b", "", picked.name));
+        if (picked.address) text.append(el("span", "", picked.address));
+        const remove = el("button", "btn sm", "해제"); remove.type = "button";
+        remove.setAttribute("aria-label", (k ? "두 번째" : "첫 번째") + " 직장 해제");
+        remove.addEventListener("click", () => { S.works[k] = { w: "", lim: 0 }; changed(); });
+        selected.append(text, remove); wrap.append(selected);
+      }
+      wrap.append(label("또는 주요 장소에서 고르기"));
       const sel = el("select", "pc-sel");
-      sel.append(new Option("직장 고르기", ""));
+      sel.setAttribute("aria-label", (k ? "두 번째" : "첫 번째") + " 직장 주요 장소");
+      sel.append(new Option("주요 장소 선택", ""));
+      if (w.w === "custom" && w.p) sel.append(new Option(w.p.name + " (검색한 장소)", "custom"));
       ps.forEach((p, i) => sel.append(new Option(p.name, p.here ? "here" : String(i))));
       sel.value = w.w;
-      sel.addEventListener("change", () => { w.w = sel.value; if (w.w && !w.lim) w.lim = 8; changed(); });
+      sel.addEventListener("change", () => { w.w = sel.value; if (w.w !== "custom") delete w.p; if (w.w && !w.lim) w.lim = 8; changed(); });
       const row = el("div", "sv-work-row");
       row.append(sel);
       if (!k) {
@@ -185,14 +236,15 @@
         here.addEventListener("click", () => {
           if (!navigator.geolocation) return DJ.toast("위치를 사용할 수 없습니다", "이 브라우저는 위치 기능을 지원하지 않습니다");
           navigator.geolocation.getCurrentPosition(pos => {
+            if (!wrap.isConnected || S.commute === "any") return;
             S.here = [pos.coords.latitude, pos.coords.longitude]; w.w = "here"; if (!w.lim) w.lim = 8; changed();
           }, () => DJ.toast("위치를 가져오지 못했습니다", "브라우저에서 위치 권한을 확인해 주세요"), { timeout: 8000 });
         });
         row.append(here);
       }
       wrap.append(row);
-      if (w.w) {
-        wrap.append(label("직장에서 직선거리"));
+      if (picked) {
+        wrap.append(label("직장에서 직선거리 · 실제 통근 시간과는 달라요"));
         wrap.append(grid("c4", ...LIMITS.map(lim => {
           const works2 = S.works.map((x, j) => j === k ? Object.assign({}, x, { lim }) : x);
           return option(lim + "km 이내", null, countWith({ works: works2 }), w.lim === lim, () => { w.lim = lim; }, "sm");
@@ -204,9 +256,10 @@
     const two = el("label", "sv-check");
     const cb = el("input"); cb.type = "checkbox"; cb.checked = S.two;
     cb.addEventListener("change", () => { S.two = cb.checked; changed(); });
-    two.append(cb, document.createTextNode(" 직장이 두 곳 (맞벌이)"));
+    two.append(cb, document.createTextNode(" 직장 두 곳 모두 고려하기 (맞벌이 등)"));
     q.append(two);
     if (S.two) q.append(slot(1));
+    q.append(el("p", "sv-note", "검색어는 검색 버튼을 누를 때 카카오맵으로 전달됩니다. 선택한 위치는 찾기 조건과 함께 저장되며, 로그인하면 계정에 동기화됩니다."));
   }
   function drawBudget() {
     const seg = el("div", "seg sv-seg");
