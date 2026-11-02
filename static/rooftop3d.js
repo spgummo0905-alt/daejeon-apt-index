@@ -1877,7 +1877,7 @@ export function start(host, cb, opt) {
       placeLayout(list); },
     getLayout: () => itemList(),
     // 파티 옥상(공용 서버): 정해진 파티장 배치로 바꾸고 꾸미기를 잠가요. 끄면 rooftop.js 가 내 배치를 다시 넣어요
-    setParty(on) { party = !!on; if (party) { placing = null; removing = editing = false; movingIt = null; api.setLayout(PARTY_LAYOUT); target = null; mePos.set(rnd(-.6, 2.4), 0, rnd(1.9, 2.5)); me.yaw = Math.PI; } }, isParty: () => party,   // 들어오면 모닥불 뒤쪽, 의자 사이로
+    setParty(on) { party = !!on; if (party) { placing = null; removing = editing = false; movingIt = null; api.setLayout(PARTY_LAYOUT); target = null; mePos.set(rnd(-.3, 2.2), 0, rnd(1.15, 1.6)); me.yaw = Math.PI; } }, isParty: () => party,   // 들어오면 모닥불 뒤쪽, 의자 사이로
     itemSet(i, lit) { const it = items[i | 0]; if (!it || typeof lit !== "boolean") return; if (it.t === "screen") { it.lit = lit; return; } if (["lantern", "lamp"].includes(it.t)) setLit(it, lit); },
     addLog, remoteLantern(x, z) { sendLantern("", new THREE.Vector3(nv(x, -RX + 1, RX - 1), 1.3, nv(z, -RZ + 1, RZ - 1))); },
     myPos: () => ({ x: +mePos.x.toFixed(2), z: +mePos.z.toFixed(2) }),

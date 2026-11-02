@@ -3954,4 +3954,28 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .roof-swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); background: var(--c); cursor: pointer; padding: 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }
 .roof-swatch[aria-checked="true"] { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.28), inset 0 -3px 0 rgba(0,0,0,.12); }
 .roof-chip[disabled], .roof .rs-sw[disabled] { opacity: .4; cursor: not-allowed; }
-@media (max-width: 600px) { .roof.is-party [data-roof-who], .roof.is-party [data-roof-stay], .roof.is-party [data-roof-when] { display: none; } }
+/* 접는 메뉴: 위쪽은 현황 칩 하나 + 👥·소리·⋯ 세 버튼, 이모지는 버튼 하나. 누르면 작은 판으로 펼쳐져요 */
+.roof-status { position: relative; flex: 0 1 auto; flex-basis: auto; order: 0; flex-wrap: nowrap; min-width: 0; }
+.roof-info { cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; max-width: 56vw; }
+.roof-info > span { overflow: hidden; text-overflow: ellipsis; display: block; }
+.roof-info em { font-style: normal; font-size: 11px; opacity: .7; margin-left: 3px; transition: transform .2s; }
+.roof-status.open .roof-info em { transform: rotate(180deg); }
+.roof-statlist, .roof-more { display: none; position: absolute; top: calc(100% + 6px); z-index: 6; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px;
+  border-radius: 16px; background: rgba(10,16,34,.82); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(12px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+.roof-statlist { left: 0; min-width: 210px; }
+.roof-more { right: 0; min-width: 160px; }
+.roof-status.open .roof-statlist, .roof-tools.open .roof-more { display: flex; }
+.roof-statlist .roof-pill { background: none; border: 0; backdrop-filter: none; padding: 6px 8px; border-radius: 10px; white-space: normal; }
+.roof-statlist .roof-pill[hidden] { display: none; }
+.roof-statlist .roof-song:hover { background: rgba(255,255,255,.08); }
+.roof-tools { position: relative; align-items: center; }
+.roof-more .roof-btn { text-align: left; border-color: transparent; background: rgba(255,255,255,.05); }
+.roof-more .roof-btn:hover { background: rgba(255,255,255,.12); }
+.roof-btn.roof-icon { padding: 8px 11px; min-width: 40px; }
+.roof-emo { top: auto; bottom: calc(118px + env(safe-area-inset-bottom)); transform: none; align-items: center; }
+.roof-emo-list { display: none; flex-direction: column; gap: 8px; }
+.roof-emo.open .roof-emo-list { display: flex; }
+.roof-emo .roof-emo-t { width: 46px; height: 46px; font-size: 22px; border-color: rgba(255,255,255,.26); }
+.roof-emo.open .roof-emo-t { background: rgba(123,92,248,.45); }
+.roof-statlist .roof-song { text-align: left; font-weight: 600; justify-content: flex-start; }
+.roof-btn[data-roof-more] { letter-spacing: 1px; font-size: 12px; }

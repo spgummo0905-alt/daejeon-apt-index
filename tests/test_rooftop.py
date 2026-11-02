@@ -227,3 +227,14 @@ def test_rooftop_page_party_controls(tmp_path):
     assert "data-roof-song" in page and "data-roof-lookc" in page and "data-roof-looka" in page and "data-roof-invite" in page
     assert 'data-roof-bus="mu"' in page and 'data-roof-emo="🥂"' in page and "data-roof-arrparty" in page and "data-roof-partynote" in page
     assert "별빛옥상" in page
+
+
+def test_rooftop_menus_fold_away(tmp_path):
+    """현황·더 보기·이모지는 평소에 버튼 하나로 접혀 있어 화면을 가리지 않아요"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "rooftop.html").read_text(encoding="utf-8")
+    assert "data-roof-info" in page and 'class="roof-statlist"' in page and "data-roof-more" in page and "data-roof-morelist" in page
+    assert "data-roof-emot" in page and 'class="roof-emo-list"' in page and "data-roof-snd" in page
+    js = (ROOT / "static" / "rooftop.js").read_text(encoding="utf-8")
+    assert "const DROPS = [" in js and "closeDrops()" in js and "function paintInfo()" in js
