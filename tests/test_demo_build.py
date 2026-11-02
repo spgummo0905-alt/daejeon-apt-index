@@ -614,6 +614,9 @@ def test_compare_fill_finder_fav_and_card_flip_target(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     assert "qa-fill" in (out / "static" / "compare.js").read_text(encoding="utf-8")
     assert "DJ.card(c, STATS, { fav: true })" in (out / "static" / "finder.js").read_text(encoding="utf-8")
+    finder_html = (out / "finder.html").read_text(encoding="utf-8")
+    assert finder_html.index("static/app.js") < finder_html.index("static/workplaces.js") < finder_html.index("static/finder.js")
+    assert (out / "static" / "workplaces.js").exists()
     assert "if (opts.fav)" in (out / "static" / "app.js").read_text(encoding="utf-8")
     css = (out / "static" / "style.css").read_text(encoding="utf-8")
     assert ".mcard-turn::before" in css and ".gfav {" in css
