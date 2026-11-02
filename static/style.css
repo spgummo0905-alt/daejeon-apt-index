@@ -1483,22 +1483,6 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pay-row.warn b { color: #c9302f; }
 .pay-note { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
 /* 첫 화면 입주 예정 물량 */
-.mv-years { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
-.mv-y { padding: 12px; border-radius: 14px; background: var(--chip); display: grid; gap: 4px; }
-.mv-y span { font-size: 12.5px; color: var(--text-2); }
-.mv-y b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.mv-y small { font-size: 12px; font-weight: 600; margin-left: 2px; color: var(--text-2); }
-.mv-table { width: 100%; font-size: 14px; }
-.mv-table th, .mv-table td { padding: 8px 6px; text-align: right; white-space: nowrap; }
-.mv-table th:first-child { text-align: left; }
-.mv-table td { position: relative; font-variant-numeric: tabular-nums; }
-.mv-bar { position: absolute; right: 6px; bottom: 3px; height: 3px; width: calc(var(--w) * 0.8); max-width: 80%; border-radius: 2px; background: var(--accent); opacity: .55; }
-.mv-soon { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
-.mv-soon li { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; grid-template-areas: "w n h" "w a h"; gap: 0 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.mv-when { grid-area: w; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
-.mv-soon b { grid-area: n; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mv-soon .muted { grid-area: a; font-size: 12.5px; }
-.mv-hh { grid-area: h; font-weight: 750; font-variant-numeric: tabular-nums; }
 /* 다녀온 단지 나란히 비교 (관심 화면) */
 .vc-pick { margin: 4px 0 12px; }
 .vc-table td { white-space: pre-line; text-align: left; vertical-align: top; min-width: 9.5em; font-size: 13.5px; line-height: 1.5; }
@@ -3367,13 +3351,6 @@ a.notice-text { text-decoration: underline; text-underline-offset: 3px; }
   .ad-m-edit { grid-template-columns: minmax(0, 1fr); margin-left: 0; }
   .ad-logs li { flex-direction: column; gap: 2px; }
 }
-.mv-scroll { overflow-x: auto; }
-.mv-table th, .mv-table td { border: 0; border-bottom: 1px solid var(--border); }
-.mv-table tbody tr:last-child > * { border-bottom: 0; }
-@media (min-width: 900px) {
-  .mv-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
-  .mv-h { margin-top: 0; }
-}
 
 /* ===================== 집감 옥상 (rooftop.html): 쉬어가는 1인용 공간 =====================
    화면 색 설정과 상관없이 늘 밤. 불빛은 번쩍이지 않고 은은하게, 소리는 기본 꺼짐. */
@@ -3733,4 +3710,63 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .sec-head > a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
   .mc-stats > div[data-stat] { min-height: 44px; }
   .jump a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* ===== 입주 예정 물량: 결론 한 줄 → 연도 막대 → 구별 색 칸 → 다가오는 입주 ===== */
+.mv { --mv: #c2461f; --mv-ink: #b03a0a; }
+@media (prefers-color-scheme: dark) { .mv { --mv: #d36a45; --mv-ink: #fb923c; } }
+.mv .mv-head { margin: 6px 0 0; font-size: 24px; color: var(--text); font-weight: 800; letter-spacing: -.03em; line-height: 1.3; }
+.mv .mv-head2 { margin: 2px 0 6px; font-size: 15px; font-weight: 700; color: var(--text-2); }
+.mv-bars { list-style: none; margin: 14px 0 18px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.mv-bar-col { display: grid; justify-items: center; gap: 4px; }
+.mv-v { font-size: 20px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.mv-v small { font-size: 12px; font-weight: 600; margin-left: 2px; color: var(--text-2); }
+.mv-col { width: 100%; height: 96px; display: flex; align-items: flex-end; border-bottom: 2px solid var(--border); }
+.mv-col i { display: block; width: 100%; height: var(--h); background: color-mix(in srgb, var(--mv) 38%, var(--chip)); border-radius: 8px 8px 0 0; transform-origin: bottom; animation: mv-grow .7s cubic-bezier(.2,.7,.2,1) both; }
+.peak .mv-col i { background: var(--mv); }
+.mv-yr { font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.mv-yr em { font-style: normal; font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--mv); color: #fff; }
+@media (prefers-color-scheme: dark) { .mv-yr em { color: #1a0a04; } }
+.mv-note { font-size: 12.5px; color: var(--text-2); min-height: 1.2em; }
+@keyframes mv-grow { from { transform: scaleY(.04); } }
+@media (prefers-reduced-motion: reduce) { .mv-col i { animation: none; } }
+.mv-scroll { overflow-x: auto; }
+.mv-table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 15px; }
+.mv-table th, .mv-table td { padding: 0 8px; height: 44px; text-align: right; white-space: nowrap; border: 0; }
+.mv-table th:first-child { text-align: left; font-weight: 700; padding-left: 2px; }
+.mv-table thead th { height: 32px; font-size: 13px; color: var(--text-2); font-weight: 700; }
+.mv-table td { border-radius: 8px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); background: var(--chip); }
+.mv-table td.mv-t1, .mv-legend .mv-t1 { background: #fdece5; color: #3a1405; }
+.mv-table td.mv-t2, .mv-legend .mv-t2 { background: #fbd0bf; color: #3a1405; }
+.mv-table td.mv-t3, .mv-legend .mv-t3 { background: #f4a98e; color: #2b0e04; }
+.mv-table td.mv-t4, .mv-legend .mv-t4 { background: #c2461f; color: #fff; }
+.mv-table td.mv-t5, .mv-legend .mv-t5 { background: #8f2b10; color: #fff; }
+@media (prefers-color-scheme: dark) {
+  .mv-table td.mv-t1, .mv-legend .mv-t1 { background: #35211a; color: #f0efec; }
+  .mv-table td.mv-t2, .mv-legend .mv-t2 { background: #5b3022; color: #f0efec; }
+  .mv-table td.mv-t3, .mv-legend .mv-t3 { background: #8c4328; color: #fff; }
+  .mv-table td.mv-t4, .mv-legend .mv-t4 { background: #d36a45; color: #1a0a04; }
+  .mv-table td.mv-t5, .mv-legend .mv-t5 { background: #f08c63; color: #1a0a04; }
+}
+.mv-legend { display: flex; align-items: center; gap: 4px; margin: 8px 2px 0; font-size: 12.5px; color: var(--text-2); }
+.mv-legend i { width: 22px; height: 12px; border-radius: 4px; }
+.mv-more summary, .mv-fine summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--text-2); }
+.mv-fine { margin-top: 16px; }
+.mv-fine p { margin: 6px 0 0; font-size: 13px; }
+.mv-soon { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 0; }
+.mv-soon li { position: relative; display: grid; grid-template-columns: 5.6em minmax(0, 1fr) auto; grid-template-areas: "w n h" "w a h"; gap: 0 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.mv-when { grid-area: w; font-weight: 800; font-size: 14px; color: var(--mv-ink); align-self: start; padding-top: 2px; }
+.mv-soon b { grid-area: n; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.mv-area { grid-area: a; font-size: 12.5px; color: var(--muted); }
+.mv-hh { grid-area: h; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.mv-hbar { position: absolute; left: calc(5.6em + 10px); bottom: -1px; height: 3px; width: calc((100% - 5.6em - 10px) * var(--w) / 100); border-radius: 2px; background: color-mix(in srgb, var(--mv) 55%, transparent); }
+.mv-toggle { margin-top: 10px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--chip); font-weight: 700; color: var(--text); cursor: pointer; }
+.mv-soon.open .mv-extra { display: grid; }
+.mv-soon:not(.open) .mv-extra { display: none; }
+@media (min-width: 900px) {
+  .mv-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .mv-h { margin-top: 0; }
+  .mv-soon .mv-extra { display: grid !important; }
+  .mv-toggle { display: none; }
+  .mv-bars { max-width: 640px; }
 }
