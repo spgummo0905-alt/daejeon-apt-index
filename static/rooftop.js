@@ -413,10 +413,10 @@
     $("[data-roof-stay]").textContent = mins < 1 ? `${act} · 방금 왔어요` : `${act} ${mins}분째`;
     paintInfo();
   };
-  function paintInfo() {   // 접힌 현황 칩: 가장 중요한 한 줄만 (누르면 나머지가 펼쳐져요)
-    const el = $("[data-roof-infot]"); if (!el) return; let t = "";
-    try { if (inParty()) t = `🎉 ${curSrv}서버 · ${names.length + 1}명`; } catch (e) { /* 준비 전 */ }
-    el.textContent = t || $("[data-roof-when]").textContent.split(" · ")[0];
+  function paintInfo() {   // 위쪽 접속 현황 한 줄: 몇 서버·지금 몇 명·오늘 몇 명 (항상 보여요)
+    const el = $("[data-roof-infot]"); if (!el) return; const today = $("[data-roof-today]").textContent, now = $("[data-roof-now]").textContent;
+    try { if (inParty()) { el.textContent = `🎉 ${curSrv}서버 · 지금 ${names.length + 1}명 · 오늘 ${today}명`; return; } } catch (e) { /* 준비 전 */ }
+    el.textContent = `👥 지금 ${now}명 · 오늘 ${today}명`;
   }
   function paintSnd() {   // 위쪽 소리 버튼 (파티 옥상에서는 파티 음악까지)
     const b = $("[data-roof-snd]"); if (!b) return; const on = st.sound && (!inParty() || st.on.mu);
@@ -528,7 +528,7 @@
   const roomBtn = $("[data-roof-roombtn]"), emoBar = $("[data-roof-emobar]"), roomStat = $("[data-roof-roomstat]");
   function paintNet(msg) {
     const n = names.length + 1, on = !!net, pty = inParty();
-    $("[data-roof-pc]").textContent = on ? n + "명" : "함께";
+    $("[data-roof-pc]").textContent = "함께";   // 인원 수는 위쪽 접속 현황 한 곳에서만
     emoBar.hidden = !on;
     roomStat.textContent = msg || (pty ? `🎉 ${roomLabel} 파티 · ${n}명이 함께 있어요. 놓인 물건은 모두 같이 써요.` : on ? `${roomLabel} · ${n}명이 함께 있어요` : "🏠 내 옥상이에요. 마음껏 꾸미고 쉬어요.");
     paintServers();
@@ -680,7 +680,7 @@
   paintNet();
 
   // ---------- 접는 메뉴: 현황·더 보기·이모지는 평소엔 버튼 하나로 접어 두고, 누르면 펼쳐요 (화면을 가리지 않게) ----------
-  const DROPS = [["[data-roof-info]", "[data-roof-status]"], ["[data-roof-more]", "[data-roof-tools]"], ["[data-roof-emot]", "[data-roof-emobar]"]];
+  const DROPS = [["[data-roof-more]", "[data-roof-tools]"], ["[data-roof-emot]", "[data-roof-emobar]"]];
   const setDrop = (b, w, open) => { $(w).classList.toggle("open", open); $(b).setAttribute("aria-expanded", String(open)); };
   const closeDrops = keep => DROPS.forEach(([b, w]) => { if (w !== keep) setDrop(b, w, false); });
   DROPS.forEach(([b, w]) => $(b).addEventListener("click", e => { e.stopPropagation(); const open = !$(w).classList.contains("open"); closeDrops(w); setDrop(b, w, open); }));
