@@ -4091,17 +4091,8 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 #map { contain-intrinsic-size: auto 1800px; }
 #heat { contain-intrinsic-size: auto 2100px; }
 
-/* ===== 옥상 개편: 지역 버튼 제거 · 접속 현황 고정 한 줄 · 카테고리(불꽃·굽기·꾸미기·쉬기·야경)를 위쪽으로 ===== */
+/* ===== 옥상 개편: 지역 버튼 제거 · 접속 현황 고정 한 줄 · 카테고리(불꽃·굽기·꾸미기·쉬기·야경)를 위쪽 정리 (행동 메뉴는 원래 아래 자리) ===== */
 body[data-page="rooftop"] header.site .rg { display: none; }
 .roof-statlist { display: none !important; }
 .roof-info { cursor: default; max-width: none; white-space: nowrap; }
 .roof-info > span { display: inline; overflow: visible; }
-.roof-bottom { top: 62px; bottom: auto; flex-direction: column-reverse; justify-content: flex-end; padding: 6px 12px 0; background: none; }
-.roof-bottom .roof-tray { background: rgba(10,16,34,.72); }
-.roof-bottom .roof-sub { max-height: calc(100dvh - 250px); overflow-y: auto; }
-.roof-hint { top: auto; bottom: calc(24px + env(safe-area-inset-bottom)); }
-.roof-joy { bottom: calc(24px + env(safe-area-inset-bottom)); }
-.roof-reset { bottom: calc(150px + env(safe-area-inset-bottom)); }
-.roof-emo { bottom: calc(40px + env(safe-area-inset-bottom)); }
-.roof-nowplay { bottom: calc(24px + env(safe-area-inset-bottom)); }
-@media (min-width: 900px) { .roof-bottom { top: 70px; } .roof-hint { top: auto; bottom: 28px; } }
