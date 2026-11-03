@@ -973,11 +973,12 @@
         };
         paint(DJ.isFav(c.s));
         fav.addEventListener("click", () => {
-          const on = DJ.toggleFav(c.s);
-          if (on) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
+          const was = DJ.isFav(c.s), on = DJ.toggleFav(c.s);
+          const added = on && !was;   // 저장이 실패하면 예전 상태 그대로라서 '저장했다'고 알리지 않음
+          if (added) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
           paint(on);
-          if (on && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
-          if (on) { DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"); DJ.checkBadges(); }
+          if (added && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
+          if (added) { DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"); DJ.checkBadges(); }
         });
       }
     }
