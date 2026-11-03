@@ -87,7 +87,7 @@
   <div class="rg">
     <button type="button" class="rg-btn" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" aria-label="{% if landing %}지역 고르기{% else %}지역 바꾸기, 지금 {{ region }}{% endif %}">
       <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>{% if landing %}지역 선택{% else %}{{ region }}{% endif %}</span><svg class="ic rg-caret" aria-hidden="true"><use href="#i-chev-down"/></svg></button>
-    <div class="rg-pop" id="rg-pop" role="dialog" aria-label="지역 고르기" hidden>
+    <div class="rg-pop" id="rg-pop" data-nosnippet role="dialog" aria-label="지역 고르기" hidden>
       <div class="sheet-grab" aria-hidden="true"></div>
       <div class="rg-head"><b>어느 지역을 볼까요?</b><span class="muted">{{ regions | length }}곳</span></div>
       {% if regions | length > 6 %}<input class="rg-q" type="search" placeholder="지역 이름으로 찾기" aria-label="지역 찾기" data-rg-q>{% endif %}
@@ -134,7 +134,7 @@
     </nav>
     <button type="button" class="hs-btn" data-hs-open aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pop" aria-label="검색: 단지·동·역 이름이나 가격 조건" title="검색 ( / )">
       <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="hs-label">검색</span></button>
-    <div class="hs-pop" id="hs-pop" role="dialog" aria-label="검색" hidden>
+    <div class="hs-pop" id="hs-pop" data-nosnippet role="dialog" aria-label="검색" hidden>
       <div class="hs-head">
         <div class="hero-search hs-box"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
           <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search"></div>
@@ -146,7 +146,7 @@
     <div class="acct-wrap">
       <a class="acct-btn" href="{{ root }}my.html#account" data-acct aria-haspopup="dialog" aria-expanded="false" aria-controls="acct-pop" aria-label="카카오 로그인 · 기록 이어 보기" title="카카오 로그인">
         <svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="acct-label">로그인</span><span class="acct-face" data-acct-face hidden></span></a>
-      <div class="acct-pop" id="acct-pop" role="dialog" aria-label="내 임장 기록" hidden>
+      <div class="acct-pop" id="acct-pop" data-nosnippet role="dialog" aria-label="내 임장 기록" hidden>
         <div class="ap-out" data-when-out>
           <p class="ap-ask" data-pop-why hidden></p>
           <p class="ap-kicker">임장 기록, 어디서든 이어서</p>

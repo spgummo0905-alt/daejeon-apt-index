@@ -113,11 +113,16 @@ def build(cfg, out_dir: Path) -> int:
         html = re.sub(r'(<meta property="og:image" content=")[^"]*(")', rf'\g<1>{base}static/og/jipgam.jpg\g<2>', html)
         # 사이트 이름은 도메인 첫 화면에서 선언합니다. 지역 자료를 전국 합계나 전국 순위로 표현하지 않습니다.
         website = {"@context": "https://schema.org", "@type": "WebSite", "@id": base + "#website",
-                   "name": "집감", "alternateName": "Jipgam", "url": base, "inLanguage": "ko-KR",
+                   "name": "집감", "alternateName": ["Jipgam", "집감 임장"], "url": base, "inLanguage": "ko-KR",
                    "description": "아파트 실거래가·입지 비교, 임장 코스와 현장 기록을 한곳에서 준비하는 플랫폼"}
         # JSON 문자열 안의 HTML 종료 태그가 script 요소를 닫지 못하게 이스케이프합니다.
         schema = json.dumps(website, ensure_ascii=False).replace("<", "\\u003c")
-        html = html.replace("</head>", f'<script type="application/ld+json">{schema}</script>\n</head>', 1)
+        # 브랜드 검색(집감)에서 사이트와 로고를 알아보게: 조직 정보와 로고 (96px 아이콘이 아닌 512px)
+        org = {"@context": "https://schema.org", "@type": "Organization", "@id": base + "#organization",
+               "name": "집감", "alternateName": "Jipgam", "url": base, "logo": base + "static/icons/icon-512.png"}
+        org_s = json.dumps(org, ensure_ascii=False).replace("<", "\\u003c")
+        html = html.replace("</head>", f'<script type="application/ld+json">{schema}</script>\n'
+                                       f'<script type="application/ld+json">{org_s}</script>\n</head>', 1)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
     # 링크 미리보기 이미지 (맨 앞 주소용 '전국')
