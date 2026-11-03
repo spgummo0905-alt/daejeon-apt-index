@@ -95,6 +95,21 @@ def _two_lines(draw, text: str, weight: str, px: int, width: int) -> list[str] |
     return None
 
 
+def display_parts(name: str) -> tuple[str, str]:
+    """긴 단지 이름을 (본 이름, 보조 이름)으로. '대치우성아파트1동,2동,3동' → ('대치우성아파트', ''),
+    '반석마을3단지(호반베르디움)' → ('반석마을3단지', '호반베르디움')."""
+    import re
+    name = str(name).strip()
+    main, _, rest = name.partition("(")
+    sub_ = rest.rstrip(")").strip()
+    m = re.search(r"\d+동\s*,", main)          # 1동,2동,3동 … 나열은 앞에서 자름
+    if m:
+        main = main[:m.start()]
+    if re.fullmatch(r"[\d,\s동·~\-]+", sub_ or "x"):   # 괄호 안이 동 번호뿐이면 버림
+        sub_ = ""
+    return main.strip() or name, sub_
+
+
 def _wrap_chars(draw, text: str, px: int, width: int) -> list[str]:
     f = _font("Bold", px)
     lines, cur = [], ""
@@ -132,11 +147,12 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
     d.text(((chip_x + 16) * S, 60 * S), region, font=cf, fill="#cfdcf3")
 
     # ---- 왼쪽: 단지 이름 (크게) ----
-    name = str(c["name"])
+    full = str(c["name"])
+    name, alias = display_parts(full)
     text_w = 640
     f, px, one = _fit(d, name, "Bold", 100, 72, text_w)
     lines = [one]
-    if one != name:   # 한 줄에 안 들어가면 두 줄로 (글자를 조금씩 줄여 가며)
+    if one != name:   # 한 줄에 안 들어가면 두 줄로 (공백 기준, 안 되면 글자 수로)
         for tp in (80, 72, 64, 58, 52):
             two = _two_lines(d, name, "Bold", tp, text_w)
             if two:
@@ -144,10 +160,14 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
                 break
         else:
             f, px, lines = _font("Bold", 56), 56, _wrap_chars(d, name, 56, text_w)
-    y = 150 if len(lines) == 1 else 128
+    y = 150 if len(lines) == 1 and not alias else 128 if len(lines) > 1 else 140
     for ln in lines:
         d.text((x0 * S, y * S), ln, font=f, fill="#ffffff")
         y += int(px * 1.2)
+    if alias and len(lines) == 1:
+        af, _, al = _fit(d, "(" + alias + ")", "Regular", 40, 28, text_w)
+        d.text((x0 * S, (y - 2) * S), al, font=af, fill="#c9d6ee")
+        y += 52
     pf = _font("Regular", 36)
     d.text((x0 * S, (y + 6) * S), place, font=pf, fill="#aebbd3")
 
@@ -191,11 +211,11 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
     sf = _font("Bold", 74)
     cd.text((140 * S, 54 * S), score_text, font=sf, fill=t["ink"])
     # 카드 이름
-    nf, _, nm = _fit(cd, name, "Bold", 34, 22, cw_ - 56)
+    nf, _, nm = _fit(cd, display_parts(full)[0], "Bold", 34, 22, cw_ - 56)
     cd.text((28 * S, 150 * S), nm, font=nf, fill=t["ink"])
     cd.text((28 * S, 194 * S), place, font=_font("Regular", 24), fill=t["sub"])
     # 막대 네 개
-    yy = 248
+    yy = 238
     for label, val in stats:
         cd.text((28 * S, yy * S), label, font=_font("Bold", 25), fill=t["ink"])
         bx0, bx1, byy = 28, cw_ - 28 - 2 * fw, yy + 40
@@ -208,8 +228,8 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
             bar = _gradient(int((bx1 - bx0) * v / 100 * S), 14 * S, t["bar"], diagonal=False)
             m = _round_mask(bar.size, 7 * S)
             card.paste(bar, (bx0 * S, byy * S), m)
-        yy += 58
-    cd.text((28 * S, (ch_ - 2 * fw - 44) * S), "◆ " * GEMS[grade], font=_font("Bold", 24), fill=t["accent"])
+        yy += 52
+    cd.text((28 * S, (ch_ - 2 * fw - 38) * S), "◆ " * GEMS[grade], font=_font("Bold", 24), fill=t["accent"])
     # 카드 둥근 모서리로 붙이기
     img.paste(card, (cx * S, cy * S), _round_mask(card.size, 34 * S))
 

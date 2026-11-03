@@ -993,3 +993,11 @@ def test_apt_link_preview_card_only_for_s_and_a(tmp_path):
     from PIL import Image
     with Image.open(next((out / "static" / "og" / "apt").glob("*.jpg"))) as im:
         assert im.size == (1200, 630)
+
+
+def test_og_card_display_name_shortening():
+    from djdex.ogcard import display_parts
+    assert display_parts("대치우성아파트1동,2동,3동,5동,6동,7동") == ("대치우성아파트", "")
+    assert display_parts("반석마을3단지(호반베르디움)") == ("반석마을3단지", "호반베르디움")
+    assert display_parts("현대1차(12,13,21,22,31,32,33동)") == ("현대1차", "")
+    assert display_parts("공작한양") == ("공작한양", "")
