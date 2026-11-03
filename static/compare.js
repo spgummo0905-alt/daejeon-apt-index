@@ -33,6 +33,36 @@
     ["세대당 주차", c => c.pk, c => c.pk ? c.pk.toFixed(1) + "대" : "-", "high"],
   ];
 
+  // 내 조건 기준: '조건으로 찾기'에서 고른 조건과 각 단지의 실제 값을 견줘, 맞는 점·벗어난 점·자료 없음으로 나눕니다 (평가·추천 없음)
+  const SURVEY_NAME = { gus: "지역", budget: "예산", py: "평형", age: "연식", stn: "역", sch: "초등학교", must: "필수 조건" };
+  function myFit(cs) {
+    const survey = DJ.load("survey", {}), box = el("section", "cmp-fit");
+    box.setAttribute("aria-label", "내 조건 기준");
+    if (!window.DJFit || !DJFit.hasConditions(survey)) {
+      box.append(el("h3", "", "내 조건 기준"), el("p", "muted", "조건으로 찾기에서 예산·평형·역 거리를 정하면, 여기서 단지마다 맞는 점과 벗어난 점을 나눠 볼 수 있어요."));
+      const a = el("a", "btn sm", "조건으로 찾기"); a.href = "finder.html"; box.append(a); return box;
+    }
+    const year = new Date().getFullYear(), res = cs.map(c => DJFit.evaluate(survey, c, year));
+    box.append(el("h3", "", "내 조건 기준"), el("p", "sv-note", "조건으로 찾기에서 고른 조건과 단지의 실제 값을 견줬어요. 어느 집이 낫다는 판단은 하지 않아요."));
+    const grid = el("div", "cmp-fit-grid");
+    cs.forEach((c, k) => {
+      const r = res[k], card = el("div", "cmp-fit-card");
+      card.append(el("b", "", c.n), el("span", "cmp-fit-n", `맞음 ${r.ok.length} · 벗어남 ${r.miss.length}${r.unknown.length ? " · 자료 없음 " + r.unknown.length : ""}`));
+      [["ok", "맞는 점", "✓"], ["miss", "벗어난 점", "−"], ["unknown", "자료 없음", "?"]].forEach(([key, title, mark]) => {
+        if (!r[key].length) return;
+        card.append(el("p", "pj-sum-h", title));
+        const ul = el("ul", "cmp-fit-" + key);
+        r[key].forEach(x => ul.append(el("li", "", `${mark} ${x.label} · ${x.detail}`)));
+        card.append(ul);
+      });
+      grid.append(card);
+    });
+    box.append(grid);
+    const skipped = [...new Set(res.flatMap(r => r.skipped))];
+    if (skipped.length) box.append(el("p", "muted small", "학원가·학군·병원 조건은 지역 전체 순위가 필요해서 이 화면에서는 판정하지 않았어요. 조건으로 찾기 결과에서 확인해 주세요."));
+    return box;
+  }
+
   DJ.data().then(d => {
     picked = picked.filter(s => d.bySlug[s]);
     const input = document.getElementById("pick");
@@ -131,7 +161,7 @@
     const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
     const cards = el("div", "card-grid");
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(verdict, wrap, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
+    out.append(verdict, myFit(cs), wrap, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {
