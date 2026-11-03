@@ -98,6 +98,7 @@
     <span class="label">전용 {{ ref_area }}㎡ 기준 가격</span>
     <span class="value">{{ c.price_ref | price }}</span>
     <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }}, ㎡당 중간 가격으로 환산한 비교용 추정치{% endif %}</span>
+    {% if thin_n is not none %}<span class="thin-note" role="note">거래 {{ thin_n }}건으로 계산해 값이 달라질 수 있어요. 최근 거래 내역도 함께 확인해 보세요.</span>{% endif %}
   </div>
   {% if c.from_peak is defined and c.from_peak is not nan %}
   <div class="card">

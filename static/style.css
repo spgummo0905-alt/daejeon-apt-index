@@ -4096,3 +4096,6 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 .roof-statlist { display: none !important; }
 .roof-info { cursor: default; max-width: none; white-space: nowrap; }
 .roof-info > span { display: inline; overflow: visible; }
+
+/* 거래가 적어 값이 흔들릴 수 있을 때만 붙는 안내 */
+.thin-note { display: block; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px dashed var(--border); font-size: 14px; line-height: 1.5; color: var(--text); }
