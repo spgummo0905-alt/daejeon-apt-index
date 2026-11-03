@@ -113,42 +113,178 @@ def _over(img: Image.Image, layer: Image.Image) -> None:
     img.paste(layer, (0, 0), layer)
 
 
-def _art(w: int, h: int, v: dict, rnd: random.Random, dong: str, ss: int) -> Image.Image:
-    """카드 안 야경 그림: 하늘 → 해·달 → 먼 산 → 아파트 두 줄(창문 불빛) → 동 이름 워터마크. 단지마다 다름."""
+def traits_from_json(c: dict) -> dict:
+    """사이트 complexes.json 한 줄 → 그림·배지에 쓰는 특징값 (시험용, 빌드는 site.py 의 _og_traits)."""
+    f = c.get("f") or {}
+    nz = c.get("nz") or [None]
+    hl = c.get("hl") or [None]
+    return dict(sub=f.get("subway"), stn=c.get("stn"), elem=f.get("elementary"), mart=f.get("mart"), hosp=f.get("hospital"),
+                hub=c.get("hm"), hn=c.get("hn"), hh=c.get("hh"), y=c.get("y"), nw=bool(c.get("nw")), road=nz[0], hill=hl[0])
+
+
+def badges(tr: dict, limit: int = 3) -> list[str]:
+    """실제 값에서 눈에 띄는 장점 몇 개를 숫자 그대로 적음 (판단 말투 없이). 값이 없거나 평범하면 넣지 않음."""
+    cand: list[tuple[float, str]] = []
+
+    def num(k):
+        v = tr.get(k)
+        try:
+            return None if v is None or v != v else float(v)
+        except (TypeError, ValueError):
+            return None
+    sub, elem, hub, hosp, mart, hh, y = num("sub"), num("elem"), num("hub"), num("hosp"), num("mart"), num("hh"), num("y")
+    if sub is not None and sub <= 800 and tr.get("stn"):
+        cand.append((1.00 - sub / 800 * .6, f"{tr['stn']} {int(sub)}m"))
+    if elem is not None and elem <= 500:
+        cand.append((.95 - elem / 500 * .6, f"초등학교 {int(elem)}m"))
+    if hub is not None and hub <= 30 and tr.get("hn"):
+        cand.append((.9 - hub / 30 * .5, f"{tr['hn']} {int(hub)}분"))
+    if hosp is not None and hosp <= 120:
+        cand.append((.55 - hosp / 120 * .2, "병원 바로 옆" if hosp < 5 else f"병원 {int(hosp)}m"))
+    if mart is not None and mart <= 250:
+        cand.append((.5 - mart / 250 * .2, f"마트 {int(mart)}m"))
+    if hh is not None and hh >= 1500:
+        cand.append((.7, f"{int(hh):,}세대"))
+    if tr.get("nw") or (y is not None and y >= 2018):
+        cand.append((.72, f"{int(y)}년 준공" if y else "신축"))
+    cand.sort(key=lambda t: -t[0])
+    return [t for _, t in cand[:limit]]
+
+
+def _art(w: int, h: int, v: dict, rnd: random.Random, dong: str, ss: int, tr: dict | None = None) -> Image.Image:
+    """카드 안 야경 그림. 실제 값을 그림으로 옮김: 세대수→건물 수·빽빽함, 준공년→높이·유리 느낌, 지하철→역과 선로(거리만큼 떨어짐),
+    초등학교→학교 건물과 깃발, 학원가→간판 불빛, 큰길→도로와 차 불빛(멀면 나무), 언덕→오르막 지면, 병원·마트→작은 표지.
+    값이 없는 것은 그리지 않음. 참고용 그림."""
+    tr = tr or {}
     W2, H2 = w * ss, h * ss
-    img = _gradient(W2, H2, v["sky"], diagonal=False).convert("RGBA")
-    sx, sy = W2 * (0.58 + rnd.random() * 0.3), H2 * (0.26 + rnd.random() * 0.12)
-    R = int(H2 * .42)
-    ys, xs = np.mgrid[0:2 * R, 0:2 * R]
-    a = np.clip(1 - np.sqrt((xs - R) ** 2 + (ys - R) ** 2) / R, 0, 1) ** 2.2
-    sun = np.zeros((2 * R, 2 * R, 4), dtype="uint8")
-    sun[..., 0], sun[..., 1], sun[..., 2] = 255, 238, 200
-    sun[..., 3] = (a * 255).astype("uint8")
-    img.alpha_composite(Image.fromarray(sun, "RGBA"), (max(0, int(sx - R)), max(0, int(sy - R)))) if sx - R >= 0 and sy - R >= 0 else None
+    base = _gradient(W2, H2, v["sky"], diagonal=False).convert("RGBA")
+    sx, sy = W2 * (0.58 + rnd.random() * 0.3), H2 * (0.24 + rnd.random() * 0.12)
+    ys, xs = np.mgrid[0:H2, 0:W2]
+    R = H2 * .5
+    a = np.clip(1 - np.sqrt((xs - sx) ** 2 + (ys - sy) ** 2) / R, 0, 1) ** 2.2
+    sun = np.zeros((H2, W2, 4), dtype="uint8")
+    sun[..., 0], sun[..., 1], sun[..., 2], sun[..., 3] = 255, 238, 200, (a * 255).astype("uint8")
+    base.alpha_composite(Image.fromarray(sun, "RGBA"))
+    img = base.convert("RGB")                       # 이 뒤로는 RGB 위에 투명도 있는 색을 겹쳐 그림
     d = ImageDraw.Draw(img, "RGBA")
     d.ellipse([sx - 11 * ss, sy - 11 * ss, sx + 11 * ss, sy + 11 * ss], fill=(255, 248, 226, 235))
-    pts = [(0, H2)] + [(W2 * k / 8, H2 * (0.5 + rnd.random() * 0.14)) for k in range(9)] + [(W2, H2)]
-    d.polygon(pts, fill=(255, 255, 255, 22))
-    for base, color, maxh, lit in [(0.58, (10, 18, 32, 120), 0.34, False), (0.9, (8, 14, 26, 235), 0.5, True)]:
-        bx = -10 * ss
-        while bx < W2:
-            bw, bh = (14 + rnd.random() * 18) * ss, H2 * (0.16 + rnd.random() * maxh)
-            top = H2 * base - bh + (H2 * .02 if lit else 0)
-            d.rectangle([bx, top, bx + bw, H2], fill=color)
-            if lit:
-                wy = top + 5 * ss
-                while wy < H2 - 6 * ss:
-                    wx = bx + 3 * ss
-                    while wx < bx + bw - 4 * ss:
-                        if rnd.random() < .45:
-                            d.rectangle([wx, wy, wx + 2.6 * ss, wy + 3.6 * ss],
-                                        fill=(255, 226, 150, 215) if rnd.random() < .6 else (255, 244, 214, 150))
-                        wx += 5 * ss
-                    wy += 7 * ss
-            bx += bw + (1.5 + rnd.random() * 4) * ss
+    ground = H2 * .93
+    # 언덕: 오르막이 큰 단지는 지면이 비스듬히 올라감
+    hill = tr.get("hill")
+    slope = 0.0 if hill is None else min(1.0, max(0.0, (float(hill) - 15) / 60))
+    far = [(0, H2)] + [(W2 * k / 8, H2 * (0.5 + rnd.random() * 0.14)) for k in range(9)] + [(W2, H2)]
+    d.polygon(far, fill=(255, 255, 255, 22))
+
+    new = bool(tr.get("nw")) or (tr.get("y") or 0) >= 2012
+    old = 0 < (tr.get("y") or 0) < 1995
+    hh = tr.get("hh") or 0
+    n_front = 5 if hh and hh < 300 else 8 if hh and hh < 900 else 12 if hh else 9
+    glass = (200, 226, 255, 215) if new else (255, 226, 150, 215)
+    hmin, hmax = (.16, .30) if old else (.32, .62) if new else (.22, .46)
+    left_pad = 0.30 if tr.get("sub") is not None and tr["sub"] <= 800 else .06     # 역이 있으면 왼쪽을 비움
+    right_pad = .24 if tr.get("elem") is not None and tr["elem"] <= 500 else .06
+    x_lo, x_hi = W2 * left_pad, W2 * (1 - right_pad)
+
+    def tower(bx, bw, bh, color, lit):
+        top = ground - bh
+        d.rectangle([bx, top, bx + bw, ground], fill=color)
+        if lit:
+            wy = top + 5 * ss
+            step_x = 4.6 * ss if new else 5.4 * ss
+            while wy < ground - 6 * ss:
+                wx = bx + 3 * ss
+                while wx < bx + bw - 4 * ss:
+                    if rnd.random() < (.62 if new else .42):
+                        d.rectangle([wx, wy, wx + 2.4 * ss, wy + 3.4 * ss], fill=glass if rnd.random() < .65 else (255, 244, 214, 150))
+                    wx += step_x
+                wy += 6.5 * ss
+
+    # 뒷줄(옅은 그림자) → 앞줄(창문 불빛)
+    for layer, color, lit in [(0, (10, 18, 32, 120), False), (1, (8, 14, 26, 235), True)]:
+        n = n_front if layer else max(3, n_front // 2)
+        span = x_hi - x_lo
+        gap = 1.4 * ss if hh >= 900 else 4 * ss
+        bw0 = max(10 * ss, (span - gap * (n - 1)) / n)
+        bx = x_lo
+        for _ in range(n):
+            bw = bw0 * (.8 + rnd.random() * .4)
+            bh = H2 * (hmin + rnd.random() * (hmax - hmin)) * (1.0 if layer else 1.2)
+            if layer == 0:
+                bh = min(bh, H2 * .62)
+            tower(bx, bw, bh, color, lit)
+            bx += bw + gap
+    # 단지 앞 지면
+    d.rectangle([0, ground, W2, H2], fill=(6, 10, 20, 255))
+    if slope:
+        d.polygon([(0, ground), (W2, ground - slope * H2 * .16), (W2, H2), (0, H2)], fill=(14, 22, 36, 255))
+
+    # 지하철: 거리에 비례해 단지에서 떨어진 왼쪽에 역과 높은 선로, 가까우면 열차
+    sub = tr.get("sub")
+    if sub is not None and sub <= 800:
+        rail_y = ground - 20 * ss
+        d.rectangle([0, rail_y, x_lo + W2 * .02, rail_y + 3 * ss], fill=(150, 165, 190, 255))
+        for px_ in range(int(4 * ss), int(x_lo), int(26 * ss)):
+            d.rectangle([px_, rail_y + 3 * ss, px_ + 3 * ss, ground], fill=(40, 52, 72, 255))
+        st_x = W2 * (0.04 + .12 * (sub / 800))
+        d.rectangle([st_x, rail_y - 26 * ss, st_x + 62 * ss, rail_y], fill=(26, 40, 66, 255))
+        d.polygon([(st_x - 4 * ss, rail_y - 26 * ss), (st_x + 66 * ss, rail_y - 26 * ss), (st_x + 58 * ss, rail_y - 34 * ss), (st_x + 4 * ss, rail_y - 34 * ss)], fill=(60, 86, 130, 255))
+        cx_, cy_ = st_x + 31 * ss, rail_y - 14 * ss
+        d.ellipse([cx_ - 9 * ss, cy_ - 9 * ss, cx_ + 9 * ss, cy_ + 9 * ss], fill=(60, 140, 255, 255), outline=(255, 255, 255, 255), width=int(1.5 * ss))
+        d.text((cx_ - 4.5 * ss, cy_ - 9 * ss), "M", font=_font("Bold", int(13 * ss)), fill=(255, 255, 255, 255))
+        if sub <= 500:
+            tx = st_x + 70 * ss
+            d.rounded_rectangle([tx, rail_y - 12 * ss, tx + 54 * ss, rail_y], radius=3 * ss, fill=(190, 205, 230, 255))
+            for k in range(5):
+                d.rectangle([tx + (4 + k * 10) * ss, rail_y - 9 * ss, tx + (10 + k * 10) * ss, rail_y - 5 * ss], fill=(255, 238, 170, 255))
+    # 초등학교: 오른쪽에 학교 건물, 깃발, 시계
+    elem = tr.get("elem")
+    if elem is not None and elem <= 500:
+        sx0 = x_hi + W2 * .035
+        sw, sh = W2 * (.17 - .08 * (elem / 500)), 30 * ss
+        d.rectangle([sx0, ground - sh, sx0 + sw, ground], fill=(30, 46, 74, 255))
+        d.polygon([(sx0 - 3 * ss, ground - sh), (sx0 + sw + 3 * ss, ground - sh), (sx0 + sw / 2, ground - sh - 12 * ss)], fill=(86, 66, 52, 255))
+        d.ellipse([sx0 + sw / 2 - 5 * ss, ground - sh - 8 * ss, sx0 + sw / 2 + 5 * ss, ground - sh + 2 * ss], fill=(255, 244, 214, 255))
+        fx = sx0 + sw + 4 * ss
+        d.line([fx, ground, fx, ground - sh - 16 * ss], fill=(200, 210, 225, 255), width=int(1.4 * ss))
+        d.polygon([(fx, ground - sh - 16 * ss), (fx + 11 * ss, ground - sh - 12 * ss), (fx, ground - sh - 8 * ss)], fill=(255, 90, 90, 255))
+        for k in range(3):
+            d.rectangle([sx0 + (6 + k * 15) * ss, ground - 16 * ss, sx0 + (12 + k * 15) * ss, ground - 7 * ss], fill=(255, 226, 150, 235))
+    # 학원가: 가까우면 단지와 학교 사이에 네온 간판
+    hub = tr.get("hub")
+    if hub is not None and hub <= 30:
+        n_sign = 5 if hub <= 12 else 3
+        cols = [(255, 92, 160), (92, 220, 255), (255, 214, 92), (150, 255, 170), (200, 140, 255)]
+        for k in range(n_sign):
+            gx = x_lo + (x_hi - x_lo) * (.12 + .76 * (k + rnd.random() * .3) / n_sign)
+            gh = (10 + rnd.random() * 9) * ss
+            d.rectangle([gx, ground - gh - 2 * ss, gx + 13 * ss, ground - 2 * ss], fill=(*cols[k % 5], 235))
+    # 큰길: 가까우면 앞쪽 도로와 차 불빛, 멀면 나무
+    road = tr.get("road")
+    if road is not None and road < 150:
+        d.rectangle([0, ground + 4 * ss, W2, ground + 14 * ss], fill=(28, 34, 46, 255))
+        for k in range(6):
+            lx = W2 * (.06 + k * .16 + rnd.random() * .06)
+            d.rectangle([lx, ground + 8 * ss, lx + 8 * ss, ground + 10 * ss], fill=(255, 80, 70, 255) if k % 2 else (255, 244, 214, 255))
+    elif road is not None and road >= 450:
+        for k in range(9):
+            tx = x_lo + (x_hi - x_lo) * rnd.random()
+            r_ = (4 + rnd.random() * 4) * ss
+            d.ellipse([tx - r_, ground - r_ * 1.7, tx + r_, ground - r_ * .2], fill=(30, 74, 60, 235))
+    # 병원: 십자 / 마트: 작은 차양
+    hosp, mart = tr.get("hosp"), tr.get("mart")
+    if hosp is not None and hosp <= 120:
+        hx = x_lo + (x_hi - x_lo) * .5
+        d.rectangle([hx, ground - 14 * ss, hx + 12 * ss, ground], fill=(236, 242, 250, 255))
+        d.rectangle([hx + 5 * ss, ground - 12 * ss, hx + 7 * ss, ground - 4 * ss], fill=(230, 60, 70, 255))
+        d.rectangle([hx + 2 * ss, ground - 9 * ss, hx + 10 * ss, ground - 7 * ss], fill=(230, 60, 70, 255))
+    if mart is not None and mart <= 250:
+        mx = x_lo + (x_hi - x_lo) * .22
+        d.rectangle([mx, ground - 9 * ss, mx + 16 * ss, ground], fill=(40, 56, 84, 255))
+        d.polygon([(mx - 2 * ss, ground - 9 * ss), (mx + 18 * ss, ground - 9 * ss), (mx + 16 * ss, ground - 14 * ss), (mx, ground - 14 * ss)], fill=(255, 138, 76, 255))
     if dong:
         d.text((10 * ss, 6 * ss), dong, font=_font("Bold", 30 * ss), fill=(255, 255, 255, 40))
-    return img.convert("RGB")
+    d.text((W2 - 66 * ss, H2 - 14 * ss), "참고용 그림", font=_font("Regular", int(10 * ss)), fill=(255, 255, 255, 150))
+    return img
 
 
 def _holo(card: Image.Image, strength: float, phase: float, tint: str = "#ffffff") -> Image.Image:
@@ -229,7 +365,7 @@ def _num(v) -> float:
 
 
 def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], place: str, score_text: str, out: Path,
-           seed: str = "", dong: str = "") -> bool:
+           seed: str = "", dong: str = "", traits: dict | None = None) -> bool:
     """c: 단지 행. stats: [(라벨, 0~100 값)] 네 개. seed: 단지 ID (같으면 늘 같은 그림). 그렸으면 True."""
     grade = c.get("grade")
     if grade not in TIER:
@@ -296,14 +432,28 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
         y += 52
     d.text((x0, y + 6), place, font=_font("Regular", 36), fill="#aebbd3")
 
+    # ---- 왼쪽: 실제 장점 배지 (숫자 그대로) ----
+    chips = badges(traits or {})
+    bf = _font("Bold", 26)
+    cx_, cy_ = x0, y + 64
+    drawn = 0
+    for tx in chips:
+        wtx = int(d.textlength(tx, font=bf)) + 36
+        if cx_ + wtx > x0 + 650 and drawn:
+            break
+        d.rounded_rectangle([cx_, cy_, cx_ + wtx, cy_ + 46], radius=23, fill=_mix("#13294b", t["accent"], .16), outline=_mix("#13294b", t["accent"], .55), width=2)
+        d.text((cx_ + 18, cy_ + 6), tx, font=bf, fill="#ffffff")
+        cx_ += wtx + 10
+        drawn += 1
+    chips_bottom = cy_ + 46 if drawn else y + 56
+
     # ---- 왼쪽 아래: 등급·점수·순위 ----
-    by = 410
+    by = max(410, chips_bottom + 24)
     d.text((x0, by), grade + "등급", font=_font("Bold", 64), fill=t["accent"])
     gw = int(d.textlength(grade + "등급", font=_font("Bold", 64)))
     d.text((x0 + gw + 28, by + 4), f"{score_text}점", font=_font("Bold", 64), fill="#ffffff")
     if c.get("rank"):
         d.text((x0, by + 94), f"{n_total:,}곳 중 {c['rank']}위", font=_font("Bold", 46), fill="#e7eefb")
-    d.text((x0, H - 56), "집 볼 때도 감이 필요하니까  ·  jipgam.kr", font=_font("Regular", 26), fill="#7f8fae")
 
     # ---- 오른쪽: 수집 카드 (2배로 그려 줄이고 살짝 기울임) ----
     SS = 2
@@ -323,15 +473,15 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
     cd.text((30 * SS + (64 * SS - cd.textlength(grade, font=gf)) / 2, 30 * SS + 4 * SS), grade, font=gf, fill=t["chip_ink"])
     cd.text((112 * SS, 34 * SS), "종합 지수", font=_font("Regular", 18 * SS), fill=t["sub"])
     cd.text((112 * SS, 46 * SS), score_text, font=_font("Bold", 46 * SS), fill=t["ink"])
-    aw, ah = cw_ - 2 * 28, 150
-    art = _art(aw, ah, v, rnd, dong, SS)
-    card.paste(art, (28 * SS, 108 * SS), _round_mask(art.size, 16 * SS))
-    cd.rounded_rectangle([28 * SS, 108 * SS, (28 + aw) * SS, (108 + ah) * SS], radius=16 * SS,
+    aw, ah = cw_ - 2 * 28, 184
+    art = _art(aw, ah, v, rnd, dong, SS, traits)
+    card.paste(art, (28 * SS, 100 * SS), _round_mask(art.size, 16 * SS))
+    cd.rounded_rectangle([28 * SS, 100 * SS, (28 + aw) * SS, (100 + ah) * SS], radius=16 * SS,
                          outline=_mix(t["frame"][1], "#ffffff", .15), width=3)
-    nf, _, nm = _fit(cd, name, "Bold", 30 * SS, 20 * SS, (cw_ - 56) * SS)
-    cd.text((28 * SS, 270 * SS), nm, font=nf, fill=t["ink"])
-    cd.text((28 * SS, 308 * SS), place, font=_font("Regular", 19 * SS), fill=t["sub"])
-    yy = 348
+    nf, _, nm = _fit(cd, name, "Bold", 28 * SS, 20 * SS, (cw_ - 56) * SS)
+    cd.text((28 * SS, 292 * SS), nm, font=nf, fill=t["ink"])
+    cd.text((28 * SS, 326 * SS), place, font=_font("Regular", 19 * SS), fill=t["sub"])
+    yy = 364
     for label, val in stats:
         cd.text((28 * SS, yy * SS), label, font=_font("Bold", 19 * SS), fill=t["ink"])
         bx0, bx1, byy = 170, cw_ - 28, yy + 8
@@ -340,7 +490,7 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
         if vv:
             bar = _gradient(max(2, int((bx1 - bx0) * vv / 100 * SS)), 12 * SS, t["bar"], diagonal=False)
             card.paste(bar, (bx0 * SS, byy * SS), _round_mask(bar.size, 6 * SS))
-        yy += 36
+        yy += 32
     gem = "◆ " * GEMS[grade]
     gwid = cd.textlength(gem, font=_font("Bold", 20 * SS))
     cd.text(((CW - gwid) / 2, (ch_ - fw - 40) * SS), gem, font=_font("Bold", 20 * SS), fill=t["accent"])
@@ -369,8 +519,8 @@ def render(c: dict, region: str, n_total: int, stats: list[tuple[str, str]], pla
             y = rnd.uniform(10, H - 10)
             if x < 520 or x > W - 8:
                 continue
-            if cx0 < x < cx1 and cy0 < y < cy1 and not (y < cy0 + 70 or y > cy1 - 60) and rnd.random() < .85:
-                continue   # 카드 글자 위는 비워 둠 (위 알약 줄과 아래 다이아 줄만 허용)
+            if cx0 < x < cx1 and cy0 < y < cy1:
+                continue   # 카드 안쪽(글자·그림 위)에는 반짝이를 두지 않음
             r = rnd.choice([4, 5, 6, 8, 11, 16]) if i % 7 else rnd.uniform(16, 24)
             if r < 6:
                 dd.ellipse([x - 1.6, y - 1.6, x + 1.6, y + 1.6], fill=(255, 250, 235, 230))

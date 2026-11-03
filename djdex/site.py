@@ -593,7 +593,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             try:
                 og_card = ogcard.render(c, cfg.region_name, n_total, [(lab, c.get(k)) for k, lab, _d in STATS[:4]],
                                         place(c), fmt_score(c.get("index")), out_dir / "static" / "og" / "apt" / f"{c['slug']}.jpg",
-                                        seed=c["slug"], dong=str(c.get("dong") or ""))
+                                        seed=c["slug"], dong=str(c.get("dong") or ""), traits=_og_traits(c))
             except Exception as e:   # 그림 실패가 사이트 빌드를 막지 않게 (지역 대표 이미지로 대신)
                 print(f"[미리보기] {c['slug']} 건너뜀: {e}")
         html = tpl.render(
@@ -1196,6 +1196,17 @@ def station_groups(rows: list[dict]) -> list[dict]:
 
 def _r(x, nd=0):
     return None if _nan(x) else (round(float(x)) if nd == 0 else round(float(x), nd))
+
+
+def _og_traits(r) -> dict:
+    """링크 미리보기 카드 그림·배지에 쓰는 실제 값 (비어 있으면 None: 그리지 않음)."""
+    def v(k):
+        x = r.get(k)
+        return None if _nan(x) else x
+    noise, hill = r.get("noise") or {}, r.get("hill") or {}
+    return dict(sub=v("subway_raw"), stn=station_name(r.get("subway_name_raw")), elem=v("elementary_raw"), mart=v("mart_raw"),
+                hosp=v("hospital_raw"), hub=v("hub_min_raw"), hn=r.get("hub_name_raw") if isinstance(r.get("hub_name_raw"), str) else None,
+                hh=v("hh"), y=v("build_year"), nw=bool(r.get("is_new")), road=noise.get("road"), hill=hill.get("rf"))
 
 
 def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None,

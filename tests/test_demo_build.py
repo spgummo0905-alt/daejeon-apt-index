@@ -1001,3 +1001,13 @@ def test_og_card_display_name_shortening():
     assert display_parts("반석마을3단지(호반베르디움)") == ("반석마을3단지", "호반베르디움")
     assert display_parts("현대1차(12,13,21,22,31,32,33동)") == ("현대1차", "")
     assert display_parts("공작한양") == ("공작한양", "")
+
+
+def test_og_card_badges_use_real_values_only():
+    from djdex.ogcard import badges
+    # 값이 있고 눈에 띄는 것만, 숫자 그대로. 판단 말투(초품아 등)는 쓰지 않음
+    b = badges(dict(sub=157, stn="탄방역", elem=253, hub=8, hn="둔산 학원가", hh=366, y=1994, nw=False, hosp=None, mart=None))
+    assert b[0] == "탄방역 157m" and len(b) <= 3 and all("초품아" not in x for x in b)
+    assert badges(dict(sub=None, elem=None, hub=None, hh=None, y=None, nw=False)) == []          # 값이 없으면 비움
+    assert badges(dict(sub=2000, stn="먼역", elem=900, hub=60, hn="x", hh=100, y=1990)) == []     # 멀면 장점으로 적지 않음
+    assert "2,010세대" in badges(dict(hh=2010))
