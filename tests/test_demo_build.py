@@ -1030,3 +1030,15 @@ def test_root_about_page_brand_explainer(tmp_path):
     assert "about</loc>" in (out / "sitemap-root.xml").read_text(encoding="utf-8")
     assert 'href="/about">집감이란?</a>' in (out / "index.html").read_text(encoding="utf-8")
     assert "집감이란?" not in (out / "daejeon" / "index.html").read_text(encoding="utf-8")   # 지역 화면에는 두지 않음
+
+
+def test_thin_trades_note_only_when_few_sale_trades():
+    """가격 근거가 매매 3건 미만일 때만 안내. 충분하거나 분양권 기준이거나 건수를 모르면 안내하지 않음"""
+    from djdex.site import _thin_trades
+
+    base = {"price_ref": 80000.0}
+    assert _thin_trades({**base, "price_basis": "최근 12개월 매매 2건"}) == 2
+    assert _thin_trades({**base, "price_basis": "최근 12개월 매매 3건"}) is None
+    assert _thin_trades({**base, "price_basis": "최근 24개월 분양권·입주권"}) is None
+    assert _thin_trades({**base, "price_basis": None}) is None
+    assert _thin_trades({"price_ref": float("nan"), "price_basis": "최근 12개월 매매 2건"}) is None

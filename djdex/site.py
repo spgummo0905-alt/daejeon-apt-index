@@ -215,6 +215,21 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
     return out
 
 
+THIN_TRADES = 3   # 대전 표본 70곳 중 29%가 해당 (5건 미만으로 잡으면 57%라 안내가 흔해져 의미가 없어짐)
+
+
+def _thin_trades(c) -> int | None:
+    """가격 근거가 '최근 N개월 매매 N건'인데 N이 THIN_TRADES(3)건 미만이면 그 건수. 건수를 알 수 없거나 충분하면 None.
+    (분양권·입주권 기준이거나 가격이 없으면 안내하지 않음: 지어낸 숫자를 보여 주지 않기 위해)"""
+    import re as _re
+    basis = c.get("price_basis")
+    if not isinstance(basis, str) or _nan(c.get("price_ref")):
+        return None
+    m = _re.search(r"매매 (\d+)건", basis)
+    n = int(m.group(1)) if m else None
+    return n if n is not None and n < THIN_TRADES else None
+
+
 def write_assetlinks(out_dir: Path, cfg, root: bool = False) -> None:
     """안드로이드 앱 소유 확인 파일 (/.well-known/assetlinks.json). 앱이 이 사이트의 주인이라는 증명이라
     사이트 맨 위 주소(루트)에만 두고, 서명 지문(config.toml [app] android_sha256)이 있을 때만 만듭니다.
@@ -597,7 +612,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             except Exception as e:   # 그림 실패가 사이트 빌드를 막지 않게 (지역 대표 이미지로 대신)
                 print(f"[미리보기] {c['slug']} 건너뜀: {e}")
         html = tpl.render(
-            og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
+            thin_n=_thin_trades(c), og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             loc_sets=loc_sets, neighbors=neighbors,
