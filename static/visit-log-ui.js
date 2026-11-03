@@ -59,13 +59,34 @@
           (v.checks.labels || []).forEach(item => ul.append(el("li", "", `${item.on ? "✓" : "−"} ${item.label}`)));
           state.append(ul); d.append(state);
         }
+        const edit = el("button", "btn ghost sm", "이 방문 기록 고치기"); edit.type = "button";
+        edit.addEventListener("click", () => {
+          const f = el("form", "vl-form vl-edit"), st = el("p", "sv-note"); st.setAttribute("role", "status");
+          const ed = el("input"); ed.type = "date"; ed.required = true; ed.max = DJ.today(); ed.value = v.date;
+          const ep = el("select"); DJVisitLog.periods.forEach(x => { const o = el("option", "", x || "시간대 선택 · 선택사항"); o.value = x; ep.append(o); }); ep.value = v.period;
+          const em = el("textarea"); em.rows = 3; em.maxLength = 2000; em.value = v.memo;
+          const ok = el("button", "btn primary", "고친 내용 저장"); ok.type = "submit";
+          const no = el("button", "btn ghost sm", "취소"); no.type = "button"; no.addEventListener("click", () => draw());
+          f.append(label("방문 날짜", ed), label("시간대", ep), label("이번 방문에서 확인한 점", em), ok, no, st);
+          f.addEventListener("submit", e => {
+            e.preventDefault(); ok.disabled = true;
+            try { DJVisitLog.update(v.id, v.created, { date: ed.value, period: ep.value, memo: em.value }); draw(); status.textContent = "방문 기록을 고쳤어요."; }
+            catch (x) {
+              st.textContent = x.message === "empty" ? "메모를 적어 주세요. 체크 상태가 없는 기록은 메모가 꼭 필요해요."
+                : x.message === "fields" ? "날짜와 메모를 확인해 주세요. 미래 날짜는 기록할 수 없어요."
+                : x.message === "conflict" ? "다른 곳에서 이 기록이 바뀌었어요. 새로고침한 뒤 다시 고쳐 주세요."
+                : "저장하지 못했어요. 고치던 내용은 그대로 남겨두었으니 연결 상태와 저장 공간을 확인해 주세요.";
+            } finally { ok.disabled = false; }
+          });
+          edit.replaceWith(f); em.focus();
+        });
         const del = el("button", "btn ghost sm", "이 방문 기록 삭제"); del.type = "button";
         del.addEventListener("click", () => {
           if (!confirm(`${v.date} 방문 기록을 삭제할까요? 기존 단지 메모와 다른 방문 기록은 남습니다.`)) return;
           try { DJVisitLog.remove(v.id, v.created); draw(); status.textContent = "선택한 방문 기록을 삭제했어요."; }
           catch (_) { status.textContent = "삭제하지 못했어요. 연결 상태와 저장 공간을 확인해 주세요."; }
         });
-        d.append(del); history.append(d);
+        d.append(edit, del); history.append(d);
       });
     }
     form.addEventListener("submit", e => {
