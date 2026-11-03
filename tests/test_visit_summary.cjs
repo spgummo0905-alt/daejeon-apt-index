@@ -21,3 +21,16 @@ test('keeps only the three latest memos and skips empty ones', () => {
   const r = S.build(['a'], logs)[0];
   assert.equal(r.memos.length, 3); assert.equal(JSON.stringify(r.memos.map(m => m.text)), JSON.stringify(['메모1', '메모3', '메모4']));
 });
+
+test('field-mode note alone counts as visited; its checks merge with dated logs; field memo is flagged', () => {
+  const S = load();
+  const r = S.build(['a', 'b', 'c'], [log('a', '2026-11-02', '', [{ label: '주차', on: false }])],
+    { a: '가' }, {
+      a: { d: '2026-11-03', m: '현장 메모', labels: [{ label: '주차', on: true }, { label: '소음', on: false }] },
+      b: { d: '2026-11-01', m: '', labels: null },
+      c: { d: '', m: '', labels: null } });
+  assert.equal(r[0].visits, 1); assert.equal(r[0].last, '2026-11-03'); assert.equal(JSON.stringify([...r[0].done]), JSON.stringify(['주차']));
+  assert.equal(JSON.stringify([...r[0].todo]), JSON.stringify(['소음'])); assert.equal(r[0].memos[0].field, true); assert.equal(r[0].memos[0].text, '현장 메모');
+  assert.equal(r[1].visited, true); assert.equal(r[1].visits, 0); assert.equal(r[1].field, true); assert.equal(r[1].last, '2026-11-01');
+  assert.equal(r[2].visited, false);
+});

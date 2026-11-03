@@ -7,10 +7,12 @@
   const picked = new Set();
   let current = null, D = null, journal = null;
   let searchLimit = 12, lastOpened = null;
-  const workspace = DJProjectWorkspace({ dialog: find("[data-pj-workspace]"),
+  const wsDialog = find("[data-pj-workspace]");
+  const workspace = DJProjectWorkspace({ dialog: wsDialog,
     context: () => current && D ? { project: current, data: D, selected: [...picked] } : null,
     onAdd: s => { if (D.bySlug[s]) add(D.bySlug[s]); },
     onLogin: () => DJ.loginPrompt?.("기록 이어 보기") });
+  wsDialog.addEventListener("close", () => { if (current && D) summary(); });   // 현장 체크·방문 기록을 닫으면 정리를 새로 모아요
   function error(e) {
     status.textContent = e.message === "conflict" ? "다른 화면에서 프로젝트가 바뀌었어요. 내용을 복사해 두고 새로고침한 뒤 다시 저장해 주세요."
       : e.message === "fields" ? "프로젝트 이름은 1~50자, 중요한 조건은 200자 이내로 적어 주세요."
@@ -124,17 +126,29 @@
   function summary() {
     const box = find("[data-pj-summary]"); box.replaceChildren();
     const logs = DJVisitLog.list({ region: REGION, projectId: current.id });
-    box.hidden = !logs.length; if (!logs.length) return;
     const names = Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n]));
-    const rows = DJVisitSummary.build(current.slugs, logs, names).filter(r => r.visited);
-    box.append(el("h3", "", "다녀온 뒤 정리"), el("p", "sv-note", "방문 기록에서 모은 내용이에요. 어느 집이 낫다는 판단은 하지 않아요."));
+    // 현장 모드의 단지 공통 기록: 다녀온 날·메모, 체크는 하나라도 눌렀을 때만 (안 눌렀는데 전부 '못 확인'으로 쏟아지지 않게)
+    const field = {};
+    current.slugs.forEach(s => {
+      const c = D.bySlug[s], v = DJ.visit(s); if (!c) return;
+      const any = v.c.some(Boolean) || Object.values(v.x).some(Boolean);
+      const labels = any ? [...DJ.CHECK.map((label, i) => ({ label, on: !!v.c[i] })), ...DJ.visitItems(c, REGION).map(([k, label]) => ({ label, on: !!v.x[k] }))] : null;
+      if (v.d || v.m || labels) field[s] = { d: v.d || "", m: v.m || "", labels };
+    });
+    const rows = DJVisitSummary.build(current.slugs, logs, names, field).filter(r => r.visited);
+    box.hidden = !rows.length; if (!rows.length) return;
+    box.append(el("h3", "", "다녀온 뒤 정리"), el("p", "sv-note", "방문 기록과 현장 체크에서 모은 내용이에요. 어느 집이 낫다는 판단은 하지 않아요."));
     rows.forEach(r => {
       const d = el("details", "pj-sum-row"); d.open = rows.length <= 2;
-      d.append(el("summary", "", `${r.name} · 방문 ${r.visits}번 · 마지막 ${r.last}${r.total ? ` · 확인 ${r.checked}/${r.total}` : ""}`));
-      if (r.todo.length) { d.append(el("p", "pj-sum-h", "아직 못 확인한 것")); const ul = el("ul"); r.todo.forEach(t => ul.append(el("li", "", t))); d.append(ul); }
+      const when = r.visits ? `방문 ${r.visits}번${r.last ? " · 마지막 " + r.last : ""}` : `현장 기록${r.last ? " · " + r.last : ""}`;
+      d.append(el("summary", "", `${r.name} · ${when}${r.total ? ` · 확인 ${r.checked}/${r.total}` : ""}`));
       if (r.done.length) { d.append(el("p", "pj-sum-h", "확인한 것")); const ul = el("ul"); r.done.forEach(t => ul.append(el("li", "", "✓ " + t))); d.append(ul); }
-      if (!r.total) d.append(el("p", "muted", "체크 상태를 같이 보관한 기록이 없어요. 다음 방문에는 '현재 단지 체크 상태도 함께 보관'을 켜 보세요."));
-      if (r.memos.length) { d.append(el("p", "pj-sum-h", "남긴 메모")); r.memos.forEach(m => d.append(el("p", "pj-sum-memo", `${m.date}${m.period ? " " + m.period : ""} · ${m.text}`))); }
+      if (r.todo.length) {   // 길어지지 않게 5개까지만 보이고, 나머지는 펼쳐서
+        d.append(el("p", "pj-sum-h", `아직 못 확인한 것 ${r.todo.length}가지`)); const ul = el("ul"); r.todo.slice(0, 5).forEach(t => ul.append(el("li", "", t))); d.append(ul);
+        if (r.todo.length > 5) { const more = el("details", "pj-sum-more"); more.append(el("summary", "", `나머지 ${r.todo.length - 5}가지 보기`)); const ul2 = el("ul"); r.todo.slice(5).forEach(t => ul2.append(el("li", "", t))); more.append(ul2); d.append(more); }
+      }
+      if (!r.total) d.append(el("p", "muted", "체크한 항목이 아직 없어요. 현장 체크에서 확인한 것을 눌러 두면 여기에 모여요."));
+      if (r.memos.length) { d.append(el("p", "pj-sum-h", "남긴 메모")); r.memos.forEach(m => d.append(el("p", "pj-sum-memo", `${m.field ? "현장 메모" : m.date + (m.period ? " " + m.period : "")}${m.field && m.date ? " (" + m.date + ")" : ""} · ${m.text}`))); }
       box.append(d);
     });
   }
