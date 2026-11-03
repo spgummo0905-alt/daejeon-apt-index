@@ -6,8 +6,8 @@
 {% block head_extra %}
 {# 이 창에서 인트로를 봤다는 표시 (창을 닫으면 지워져 다음에 들어올 때 다시 인트로). 예전 '한 번만' 표시는 지움 #}
 <script>try{sessionStorage.setItem("dj-intro","1");localStorage.removeItem("dj-intro")}catch(e){}</script>
-{% if landing %}{# 맨 앞 주소: 앱 시작(?skip=1)·로그인 복귀(?code=)는 지난번 지역으로 바로. 지역 화면이 '지난 지역'을 기억해 둠 (app.js) #}
-<script>window.DJ_LANDING=1;try{var q=location.search,L=JSON.parse(localStorage.getItem("dj-last-region")||"null");if(/[?&](skip|code|error)=/.test(q))location.replace((L&&/^\/[\w-]+\/$/.test(L.url)?L.url:document.baseURI)+q+location.hash)}catch(e){}
+{% if landing %}{# 맨 앞 주소: 앱 시작(?skip=1)은 지난번 지역이 있을 때만 바로 가고(처음 켜면 지역 고르기를 보여 줌), 로그인 복귀(?code=)는 항상 바로. 지역 화면이 '지난 지역'을 기억해 둠 (app.js) #}
+<script>window.DJ_LANDING=1;try{var q=location.search,L=JSON.parse(localStorage.getItem("dj-last-region")||"null");if(/[?&](code|error)=/.test(q)||(/[?&]skip=/.test(q)&&L))location.replace((L&&/^\/[\w-]+\/$/.test(L.url)?L.url:document.baseURI)+q+location.hash)}catch(e){}
 {# 화면 주소는 지역 폴더 기준(<base>)이라 '#카드 읽는 법' 같은 같은 화면 안 이동은 직접 #}
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]'),t=a&&document.getElementById(a.getAttribute("href").slice(1));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth",block:"start"})}},true)</script>{% endif %}
 {% endblock %}
