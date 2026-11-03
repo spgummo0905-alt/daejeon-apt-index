@@ -4112,3 +4112,15 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 .pj-sum-memo { margin: 4px 14px 12px; font-size: 16px; line-height: 1.55; }
 .pj-sum-more > summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--accent, #1f66c1); cursor: pointer; }
 .pj-sum-more ul { margin-top: 0; }
+
+/* 비교 화면: 내 조건 기준 */
+.cmp-fit { margin: 16px 0; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+.cmp-fit h3 { margin: 0 0 4px; font-size: 18px; }
+.cmp-fit .btn { margin-top: 8px; }
+.cmp-fit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.cmp-fit-card { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); }
+.cmp-fit-card > b { display: block; font-size: 17px; }
+.cmp-fit-n { display: block; margin-top: 2px; font-size: 15px; color: var(--muted); }
+.cmp-fit-card .pj-sum-h { margin: 10px 0 4px; }
+.cmp-fit-card ul { margin: 0; padding: 0; list-style: none; }
+.cmp-fit-card li { margin: 4px 0; font-size: 16px; line-height: 1.5; }
