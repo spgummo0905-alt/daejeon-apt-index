@@ -48,6 +48,7 @@ def test_cheongju_demo_has_no_station_pages(tmp_path):
 def test_assetlinks_only_at_root_with_fingerprints(tmp_path):
     from djdex import config, site
     cfg = config.load(config.ROOT / "config.toml")
+    cfg.raw.setdefault("app", {})["android_sha256"] = []      # 실제 설정에 지문이 들어 있어도, 비었을 때의 동작을 확인
     site.write_assetlinks(tmp_path, cfg, root=True)
     assert not (tmp_path / ".well-known").exists()            # 지문이 없으면 만들지 않음
     cfg.raw.setdefault("app", {})["android_sha256"] = ["aa:bb:cc"]
