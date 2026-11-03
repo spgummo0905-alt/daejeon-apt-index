@@ -113,12 +113,30 @@
       }
       cards.append(wrap);
     });
-    dash();
+    dash(); summary();
     journal = DJVisitLogUI({ region: REGION, projectId: current.id, candidates: current.slugs.map(s => D.bySlug[s]).filter(Boolean),
       names: Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n])), archived: current.archived, data: D });
     find("[data-pj-journal]").replaceChildren(journal.element);
     renderSearch(); workspace.refresh();
     actions();
+  }
+  // 다녀온 뒤 정리: 후보마다 확인한 것·아직 못 확인한 것·남긴 메모 (방문 기록을 모아 보여 줄 뿐, 평가는 하지 않아요)
+  function summary() {
+    const box = find("[data-pj-summary]"); box.replaceChildren();
+    const logs = DJVisitLog.list({ region: REGION, projectId: current.id });
+    box.hidden = !logs.length; if (!logs.length) return;
+    const names = Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n]));
+    const rows = DJVisitSummary.build(current.slugs, logs, names).filter(r => r.visited);
+    box.append(el("h3", "", "다녀온 뒤 정리"), el("p", "sv-note", "방문 기록에서 모은 내용이에요. 어느 집이 낫다는 판단은 하지 않아요."));
+    rows.forEach(r => {
+      const d = el("details", "pj-sum-row"); d.open = rows.length <= 2;
+      d.append(el("summary", "", `${r.name} · 방문 ${r.visits}번 · 마지막 ${r.last}${r.total ? ` · 확인 ${r.checked}/${r.total}` : ""}`));
+      if (r.todo.length) { d.append(el("p", "pj-sum-h", "아직 못 확인한 것")); const ul = el("ul"); r.todo.forEach(t => ul.append(el("li", "", t))); d.append(ul); }
+      if (r.done.length) { d.append(el("p", "pj-sum-h", "확인한 것")); const ul = el("ul"); r.done.forEach(t => ul.append(el("li", "", "✓ " + t))); d.append(ul); }
+      if (!r.total) d.append(el("p", "muted", "체크 상태를 같이 보관한 기록이 없어요. 다음 방문에는 '현재 단지 체크 상태도 함께 보관'을 켜 보세요."));
+      if (r.memos.length) { d.append(el("p", "pj-sum-h", "남긴 메모")); r.memos.forEach(m => d.append(el("p", "pj-sum-memo", `${m.date}${m.period ? " " + m.period : ""} · ${m.text}`))); }
+      box.append(d);
+    });
   }
   // 한눈에 보는 현황: 후보 수·다녀온 단지·방문 기록, 3단계 진행, 지금 할 일 하나
   function openDiscover() {

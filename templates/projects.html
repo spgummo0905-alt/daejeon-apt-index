@@ -46,6 +46,7 @@
       <dl class="pj-stats" data-pj-stats aria-label="프로젝트 현황"></dl>
       <ol class="pj-steps" data-pj-steps aria-label="진행 단계"></ol>
       <div class="pj-next" data-pj-next></div>
+      <section class="pj-sum" data-pj-summary aria-label="다녀온 뒤 정리" hidden></section>
 
       <div class="pj-cands">
         <div class="pj-cands-head"><h3>내 후보 <span data-pj-count></span></h3></div>
@@ -98,4 +99,4 @@
   </div>
 </div>
 {% endblock %}
-{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/visit-log-ui.js?v={{ v }}"></script><script src="static/project-flow.js?v={{ v }}"></script><script src="static/project-workspace.js?v={{ v }}"></script><script src="static/projects.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/visit-log-ui.js?v={{ v }}"></script><script src="static/visit-summary.js?v={{ v }}"></script><script src="static/project-flow.js?v={{ v }}"></script><script src="static/project-workspace.js?v={{ v }}"></script><script src="static/projects.js?v={{ v }}"></script>{% endblock %}

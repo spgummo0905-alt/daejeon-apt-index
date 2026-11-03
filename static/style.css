@@ -4099,3 +4099,14 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 
 /* 거래가 적어 값이 흔들릴 수 있을 때만 붙는 안내 */
 .thin-note { display: block; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px dashed var(--border); font-size: 14px; line-height: 1.5; color: var(--text); }
+
+/* 다녀온 뒤 정리 (프로젝트 화면) */
+.pj-sum { margin: 16px 0; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+.pj-sum h3 { margin: 0 0 4px; font-size: 18px; }
+.pj-sum-row { margin-top: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+.pj-sum-row > summary { min-height: 48px; display: flex; align-items: center; padding: 8px 14px; font-weight: 700; font-size: 16px; cursor: pointer; }
+.pj-sum-row > :not(summary) { margin-left: 14px; margin-right: 14px; }
+.pj-sum-row ul { margin-top: 0; padding-left: 20px; }
+.pj-sum-row li { margin: 4px 0; font-size: 16px; line-height: 1.5; }
+.pj-sum-h { margin: 10px 14px 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
+.pj-sum-memo { margin: 4px 14px 12px; font-size: 16px; line-height: 1.55; }
