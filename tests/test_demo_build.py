@@ -977,3 +977,19 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert '<title>세종 아파트 실거래가·시세·입지 비교 | 집감</title>' in sj
     apt = (out / "daejeon" / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert "실거래가·시세·입지 | 대전" in apt and "| 집감</title>" in apt
+
+
+def test_apt_link_preview_card_only_for_s_and_a(tmp_path):
+    # 링크 미리보기 카드: S·A 등급 단지만 따로 그리고, 나머지는 지역 대표 이미지
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    made = {p.stem for p in (out / "static" / "og" / "apt").glob("*.jpg")}
+    assert made, "S·A 단지가 하나도 없으면 안 됨"
+    for slug in made:
+        html = (out / "apt" / f"{slug}.html").read_text(encoding="utf-8")
+        assert f"static/og/apt/{slug}.jpg" in html.split('og:image"')[1].split(">")[0]
+    other = next(p for p in (out / "apt").glob("*.html") if p.stem not in made)
+    assert "static/og/apt/" not in other.read_text(encoding="utf-8").split('og:image"')[1].split(">")[0]
+    from PIL import Image
+    with Image.open(next((out / "static" / "og" / "apt").glob("*.jpg"))) as im:
+        assert im.size == (1200, 630)

@@ -17,7 +17,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
 from . import movein as movein_mod
-from . import charts, heatmap, kapt, pricechart, trends
+from . import charts, heatmap, kapt, ogcard, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -588,8 +588,15 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         area_types = _area_types(shown + jeonse + wolse, c["sup"])
         for a in area_types:   # 매매·전세·월세 탭마다 면적 칩 옆 건수
             a["ns"] = [sum(1 for t in rows_ if t["akey"] == a["key"]) for rows_ in (shown, jeonse, wolse)]
+        og_card = False
+        if c.get("grade") in ogcard.OG_GRADES:   # S·A 등급 단지만 링크 미리보기 카드를 따로 만듦
+            try:
+                og_card = ogcard.render(c, cfg.region_name, n_total, [(lab, c.get(k)) for k, lab, _d in STATS[:4]],
+                                        place(c), fmt_score(c.get("index")), out_dir / "static" / "og" / "apt" / f"{c['slug']}.jpg")
+            except Exception as e:   # 그림 실패가 사이트 빌드를 막지 않게 (지역 대표 이미지로 대신)
+                print(f"[미리보기] {c['slug']} 건너뜀: {e}")
         html = tpl.render(
-            c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
+            og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             loc_sets=loc_sets, neighbors=neighbors,
