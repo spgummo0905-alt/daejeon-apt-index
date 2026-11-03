@@ -47,11 +47,20 @@
     if (DJ.load(PREFIX + id, null) !== null) throw new Error("conflict");
     return save({ version: 1, id, region, slug, projectId, date, period, memo, checks, created: Date.now() });
   }
+  // 날짜·시간대·메모만 고칩니다. 번호·단지·프로젝트·체크 상태·만든 시각은 그대로 두어 동기화와 정렬이 깨지지 않게 합니다.
+  function update(id, expected, { date, period = "", memo = "" }) {
+    const v = read(id);
+    if (!v || v.created !== expected) throw new Error("conflict");
+    memo = String(memo).trim();
+    if (!dateOK(date) || !periods.includes(period) || memo.length > 2000) throw new Error("fields");
+    if (!memo && !v.checks) throw new Error("empty");
+    return save({ ...v, date, period, memo });
+  }
   function remove(id, expected) {
     const v = read(id);
     if (!v || v.created !== expected) throw new Error("conflict");
     // 삭제 표시를 동기화해 다른 기기에서 이전 기록이 살아나지 않게 합니다.
     return save({ version: 1, id, deleted: true, created: v.created });
   }
-  window.DJVisitLog = { list, read, create, remove, periods };
+  window.DJVisitLog = { list, read, create, update, remove, periods };
 })();

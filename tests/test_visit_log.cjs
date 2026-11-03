@@ -71,3 +71,16 @@ test('malformed and future-version backups do not break history rendering or get
   R.put('visitlog:' + v.id, { ...v, version: 2 }); assert.equal(V.list().length, 0);
   assert.equal(R.get('visitlog:' + v.id).version, 2);
 });
+test('editing changes only date, period and memo; checks, id and creation time stay; conflicts and bad input are refused', () => {
+  const { V } = setup(), v = V.create({ ...input, snapshot: { c: [true], x: {}, labels: [{ label: '경사', on: true }] } });
+  const u = V.update(v.id, v.created, { date: '2026-11-01', period: '밤', memo: '  고친 메모  ' });
+  assert.equal(u.memo, '고친 메모'); assert.equal(u.date, '2026-11-01'); assert.equal(u.period, '밤');
+  assert.equal(u.id, v.id); assert.equal(u.created, v.created); assert.equal(u.checks.c[0], true); assert.equal(V.list({}).length, 1);
+  assert.throws(() => V.update(v.id, v.created + 1, { date: '2026-11-01' }), /conflict/);
+  assert.throws(() => V.update(v.id, v.created, { date: '2099-01-01' }), /fields/);
+  assert.throws(() => V.update(v.id, v.created, { date: '2026-11-01', period: '새벽' }), /fields/);
+  const m = V.create({ ...input, memo: '메모만' });
+  assert.throws(() => V.update(m.id, m.created, { date: '2026-11-02', memo: '  ' }), /empty/);
+  assert.equal(V.read(m.id).memo, '메모만');
+  V.remove(v.id, v.created); assert.throws(() => V.update(v.id, v.created, { date: '2026-11-01', memo: 'x' }), /conflict/);
+});
