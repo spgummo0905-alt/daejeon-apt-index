@@ -592,7 +592,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         if c.get("grade") in ogcard.OG_GRADES:   # S·A 등급 단지만 링크 미리보기 카드를 따로 만듦
             try:
                 og_card = ogcard.render(c, cfg.region_name, n_total, [(lab, c.get(k)) for k, lab, _d in STATS[:4]],
-                                        place(c), fmt_score(c.get("index")), out_dir / "static" / "og" / "apt" / f"{c['slug']}.jpg")
+                                        place(c), fmt_score(c.get("index")), out_dir / "static" / "og" / "apt" / f"{c['slug']}.jpg",
+                                        seed=c["slug"], dong=str(c.get("dong") or ""))
             except Exception as e:   # 그림 실패가 사이트 빌드를 막지 않게 (지역 대표 이미지로 대신)
                 print(f"[미리보기] {c['slug']} 건너뜀: {e}")
         html = tpl.render(
