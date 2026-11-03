@@ -8,12 +8,12 @@ def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
 
 android {
     namespace 'kr.jipgam.app'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId 'kr.jipgam.app'
         minSdk 24
-        targetSdk 34
+        targetSdk 36
         versionCode Integer.parseInt(System.getenv("ANDROID_VERSION_CODE") ?: "1")
         versionName "1.0.0"
     }
