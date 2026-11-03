@@ -4110,3 +4110,5 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 .pj-sum-row li { margin: 4px 0; font-size: 16px; line-height: 1.5; }
 .pj-sum-h { margin: 10px 14px 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
 .pj-sum-memo { margin: 4px 14px 12px; font-size: 16px; line-height: 1.55; }
+.pj-sum-more > summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--accent, #1f66c1); cursor: pointer; }
+.pj-sum-more ul { margin-top: 0; }
