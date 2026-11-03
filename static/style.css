@@ -4084,3 +4084,9 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .pj-candidate > .btn:not(.pj-remove) { grid-area: btn; justify-self: stretch; margin-top: 8px; }
   .pj-candidate > .pj-remove { justify-self: end; }
 }
+
+/* 첫 화면 아래 큰 구역은 화면에 가까워질 때까지 그리기를 미룹니다(휴대폰 첫 로딩 속도).
+   높이는 대략값이라 스크롤바가 조금 움직일 수 있고, 목차 링크로 이동하면 그 구역은 바로 그려집니다. */
+#map, #heat, #movein, #world, #value, #list { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+#map { contain-intrinsic-size: auto 1800px; }
+#heat { contain-intrinsic-size: auto 2100px; }
