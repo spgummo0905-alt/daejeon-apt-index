@@ -1046,11 +1046,9 @@ def test_thin_trades_note_only_when_few_sale_trades():
 
 def test_landing_app_start_skips_only_with_saved_region():
     """앱 시작(?skip=1)은 지난 지역이 저장돼 있을 때만 바로 이동. 처음 켜면 지역 고르기를 보여 줌. 로그인 복귀(?code/error)는 항상 이동"""
-    import re
-
     from djdex import landing
 
     src = (landing.ROOT / "templates" / "intro.html").read_text(encoding="utf-8")
-    m = re.search(r"if\((/\[\?&\]\(code\|error\)=/\.test\(q\)\|\|\(/\[\?&\]skip=/\.test\(q\)&&L\)\)location\.replace", src)
-    assert m, "skip 은 지난 지역(L)이 있을 때만, code/error 는 항상 이동해야 함"
+    # code/error 는 항상, skip 은 지난 지역(L)이 있을 때만 이동
+    assert "if(/[?&](code|error)=/.test(q)||(/[?&]skip=/.test(q)&&L))location.replace(" in src
     assert "(skip|code|error)" not in src
