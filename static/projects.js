@@ -6,7 +6,7 @@
   const editor = find("[data-pj-editor]"), status = find("[data-pj-status]");
   const picked = new Set();
   let current = null, D = null, journal = null;
-  let searchLimit = 12;
+  let searchLimit = 12, lastOpened = null;
   const workspace = DJProjectWorkspace({ dialog: find("[data-pj-workspace]"),
     context: () => current && D ? { project: current, data: D, selected: [...picked] } : null,
     onAdd: s => { if (D.bySlug[s]) add(D.bySlug[s]); },
@@ -55,11 +55,13 @@
   function projectButton(p) {
     const b = el("button", "pj-item" + (current?.id === p.id ? " on" : "")); b.type = "button";
     b.setAttribute("aria-pressed", current?.id === p.id ? "true" : "false");
-    b.append(el("b", "", p.name), el("span", "", `${p.slugs.length}곳${p.archived ? " · 보관 중" : " · 찾는 중"}`));
+    const visits = DJVisitLog.list({ region: REGION, projectId: p.id }).length;
+    b.append(el("b", "", p.name), el("span", "", `후보 ${p.slugs.length}곳 · 방문 ${visits}건${p.archived ? " · 보관 중" : ""}`));
     b.addEventListener("click", () => choose(p)); return b;
   }
   function render() {
     const projects = P.list(REGION), active = projects.filter(p => !p.archived), archived = projects.filter(p => p.archived);
+    root.classList.toggle("pj-none", !projects.length);
     find("[data-pj-list]").replaceChildren(...active.map(projectButton));
     find("[data-pj-empty]").hidden = !!active.length;
     if (!active.length && archived.length) find("[data-pj-empty]").textContent = "진행 중인 프로젝트가 없어요. 보관함에서 다시 시작할 수 있습니다.";
@@ -77,6 +79,7 @@
     edit.elements.name.value = current.name; edit.elements.goal.value = current.goal;
     find("[data-pj-settings]").hidden = current.archived;
     find("[data-pj-add]").hidden = current.archived;
+    if (lastOpened !== current.id) { lastOpened = current.id; find("[data-pj-add]").open = current.slugs.length < 2; }
     const favs = DJ.favs().map(s => D.bySlug[s]).filter(c => c && !current.slugs.includes(c.s));
     find("[data-pj-favs]").replaceChildren(...favs.map(c => { const b = el("button", "chip", "+ " + c.n); b.type = "button"; b.addEventListener("click", () => add(c)); return b; }));
     const cards = find("[data-pj-candidates]"); cards.replaceChildren();
@@ -84,34 +87,77 @@
     current.slugs.forEach(s => {
       const c = D.bySlug[s], wrap = el("div", "pj-candidate");
       if (c) {
+        const logs = DJVisitLog.list({ region: REGION, slug: s, projectId: current.id });
         const select = el("label", "pj-check"), cb = el("input"); cb.type = "checkbox"; cb.checked = picked.has(s);
         cb.setAttribute("aria-label", c.n + " 비교·코스에 선택");
         cb.addEventListener("change", () => { if (cb.checked) picked.add(s); else picked.delete(s); actions(); });
-        select.append(cb, document.createTextNode(" 비교·코스에 선택")); wrap.append(select, DJ.card(c, D.stats));
+        select.append(cb);
+        const main = el("button", "pj-cand-main"); main.type = "button";
+        const info = el("span", "pj-cand-info");
+        info.append(el("b", "", c.n), el("span", "muted", `${DJ.place(c)} · 84㎡ ${c.pt || "가격 정보 없음"}`));
+        main.append(el("span", "grade g-" + c.g, c.g), info);
+        main.addEventListener("click", () => workspace.open("detail", s));
+        const state = el("span", "pj-cand-state" + (logs.length ? " done" : ""), logs.length ? `다녀옴 · ${logs[0].date}` : "아직 안 가봄");
+        wrap.append(select, main, state);
         const note = DJ.visit(s);
+        const field = el("button", "btn ghost sm", "현장 체크"); field.type = "button";
+        field.setAttribute("aria-label", c.n + " 현장 체크와 지난 기록");
+        field.addEventListener("click", () => workspace.open("field", s)); wrap.append(field);
         if (note.d || note.m) wrap.append(el("p", "pj-note", `${note.d ? note.d + " 방문 · " : ""}${note.m ? note.m.slice(0, 90) : "단지에 현장 기록이 있어요"}`));
-        const detail = el("button", "btn ghost sm", "상세 정보"); detail.type = "button";
-        detail.addEventListener("click", () => workspace.open("detail", s));
-        const field = el("button", "btn ghost sm", "현장 체크·지난 기록"); field.type = "button";
-        field.addEventListener("click", () => workspace.open("field", s)); wrap.append(detail, field);
-        wrap.querySelectorAll('a[href]').forEach(a => a.addEventListener("click", e => {
-          if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-          e.preventDefault(); workspace.open("detail", s);
-        }));
       } else wrap.append(el("p", "muted", `현재 자료에 없는 후보 (${s}) · 기록은 유지됩니다.`));
       if (!current.archived) {
-        const remove = el("button", "btn ghost sm", "후보에서 빼기"); remove.type = "button";
+        const remove = el("button", "btn ghost sm pj-remove", "빼기"); remove.type = "button";
         remove.setAttribute("aria-label", (c?.n || s) + " 이 프로젝트 후보에서 빼기");
         remove.addEventListener("click", () => { if (mutate({ slugs: current.slugs.filter(x => x !== s) })) { picked.delete(s); actions(); } });
         wrap.append(remove);
       }
       cards.append(wrap);
     });
+    dash();
     journal = DJVisitLogUI({ region: REGION, projectId: current.id, candidates: current.slugs.map(s => D.bySlug[s]).filter(Boolean),
       names: Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n])), archived: current.archived, data: D });
     find("[data-pj-journal]").replaceChildren(journal.element);
     renderSearch(); workspace.refresh();
     actions();
+  }
+  // 한눈에 보는 현황: 후보 수·다녀온 단지·방문 기록, 3단계 진행, 지금 할 일 하나
+  function openDiscover() {
+    const d = find("[data-pj-add]"); d.open = true;
+    d.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    find("#pj-search").focus({ preventScroll: true });
+  }
+  function pickAndOpen(kind) {
+    const logs = DJVisitLog.list({ region: REGION, projectId: current.id }), went = new Set(logs.map(v => v.slug));
+    let list = current.slugs.filter(s => D.bySlug[s]).sort((a, b) => went.has(b) - went.has(a));
+    if (kind === "course") list = list.filter(s => Number.isFinite(D.bySlug[s].la) && Number.isFinite(D.bySlug[s].ln));
+    picked.clear(); list.slice(0, kind === "course" ? 8 : 4).forEach(s => picked.add(s));
+    render(); workspace.open(kind);
+  }
+  function dash() {
+    const n = current.slugs.length, logs = DJVisitLog.list({ region: REGION, projectId: current.id }), went = new Set(logs.map(v => v.slug)).size;
+    find("[data-pj-count]").textContent = n ? `${n}곳` : "";
+    const stats = find("[data-pj-stats]"); stats.replaceChildren();
+    [["후보", n + "곳"], ["다녀온 단지", went + "곳"], ["방문 기록", logs.length + "건"]].forEach(([k, v]) => {
+      const box = el("div", "pj-stat"); box.append(el("dd", "", v), el("dt", "", k)); stats.append(box);
+    });
+    const steps = [
+      { t: "후보 담기", s: n >= 2 ? "done" : "now", d: n ? `${n}곳 담았어요` : "2곳 이상 담아 보세요" },
+      { t: "비교하고 순서 정하기", s: n < 2 ? "todo" : logs.length ? "done" : "now", d: "단지 비교 · 임장 코스" },
+      { t: "다녀와서 기록하기", s: !logs.length ? "todo" : went >= 2 ? "done" : "now", d: logs.length ? `다녀온 단지 ${went}곳` : "방문 기록 0건" }];
+    find("[data-pj-steps]").replaceChildren(...steps.map((x, i) => {
+      const li = el("li", "pj-step " + x.s); if (x.s === "now") li.setAttribute("aria-current", "step");
+      li.append(el("span", "pj-step-n", x.s === "done" ? "✓" : String(i + 1)), el("b", "", x.t), el("span", "muted", x.d)); return li;
+    }));
+    const box = find("[data-pj-next]"); box.replaceChildren(); box.hidden = current.archived;
+    if (current.archived) return;
+    const btns = [], go = (label, fn, primary) => { const b = el("button", "btn sm" + (primary ? " primary" : ""), label); b.type = "button"; b.addEventListener("click", fn); btns.push(b); };
+    let msg;
+    if (!n) { msg = "먼저 눈여겨본 아파트를 담아 보세요."; go("후보 찾으러 가기", openDiscover, true); }
+    else if (n === 1) { msg = "한 곳만 더 담으면 비교할 수 있어요."; go("후보 더 찾기", openDiscover, true); }
+    else if (!logs.length) { msg = "후보가 모였어요. 비교하고 가 볼 순서를 정해 보세요."; go("후보 비교하기", () => pickAndOpen("compare"), true); go("임장 코스 만들기", () => pickAndOpen("course")); }
+    else if (went < 2) { msg = "다녀온 곳의 느낌을 남겼어요. 다음 후보도 가 보세요."; go("방문 기록 남기기", () => workspace.open("history"), true); go("후보 비교하기", () => pickAndOpen("compare")); }
+    else { msg = "두 곳 이상 다녀왔어요. 기록을 보며 다시 비교해 보세요."; go("다시 비교하기", () => pickAndOpen("compare"), true); go("방문 기록 보기", () => workspace.open("history")); }
+    box.append(el("p", "pj-next-t", "지금 할 일"), el("p", "pj-next-m", msg), ...btns);
   }
   function actions() {
     if (!current || !D) return;

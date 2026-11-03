@@ -4,12 +4,11 @@
 {% block head_extra %}{% if not demo %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 {% block body %}
 {% set seg_cur = 'projects' %}{% include "_seg_pj.html" %}
-<section class="page-hero">
+<section class="page-hero pj-hero">
   <p class="eyebrow">집 찾기 프로젝트</p>
   <h1>집을 찾는 이유마다,<br>후보도 따로.</h1>
-  <p class="lead">검색하고, 비교하고, 다녀온 느낌까지. 집을 고르는 과정을 이 작업 화면에서 이어가세요.</p>
+  <p class="lead">후보를 담고, 비교하고, 다녀온 기록까지 한 곳에서 이어가요.</p>
   <p class="muted" data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 관심 화면에서 파일로 백업하세요.</p>
-  <a class="btn ghost" href="my.html">← 관심 단지·임장 기록</a>
 </section>
 <div id="projects" data-region="{{ region }}">
   <details class="panel pj-create" data-pj-new open>
@@ -31,20 +30,41 @@
       <p class="sv-note" data-pj-other hidden></p>
     </section>
     <section class="panel pj-editor" data-pj-editor hidden aria-labelledby="pj-title">
-      <div class="panel-head"><p class="eyebrow" data-pj-state></p><h2 id="pj-title" data-pj-title></h2><p class="muted" data-pj-goal></p></div>
-      <div class="pj-tools">
-        <button class="btn ghost sm" type="button" data-pj-history>날짜별 방문 기록</button>
-        <details data-pj-settings><summary>이름·조건 수정</summary>
-          <form data-pj-edit>
-            <label>프로젝트 이름<input name="name" required maxlength="50" autocomplete="off"></label>
-            <label>중요한 조건<input name="goal" maxlength="200" autocomplete="off"></label>
-            <button class="btn sm" type="submit">수정 저장</button>
-          </form>
-        </details>
-        <button class="btn ghost sm" type="button" data-pj-toggle></button>
+      <div class="pj-head">
+        <div class="panel-head"><p class="eyebrow" data-pj-state></p><h2 id="pj-title" data-pj-title></h2><p class="muted" data-pj-goal></p></div>
+        <div class="pj-tools">
+          <details data-pj-settings><summary>이름·조건 수정</summary>
+            <form data-pj-edit>
+              <label>프로젝트 이름<input name="name" required maxlength="50" autocomplete="off"></label>
+              <label>중요한 조건<input name="goal" maxlength="200" autocomplete="off"></label>
+              <button class="btn sm" type="submit">수정 저장</button>
+            </form>
+          </details>
+          <button class="btn ghost sm" type="button" data-pj-toggle></button>
+        </div>
       </div>
+      <dl class="pj-stats" data-pj-stats aria-label="프로젝트 현황"></dl>
+      <ol class="pj-steps" data-pj-steps aria-label="진행 단계"></ol>
+      <div class="pj-next" data-pj-next></div>
+
+      <div class="pj-cands">
+        <div class="pj-cands-head"><h3>내 후보 <span data-pj-count></span></h3></div>
+        <div class="pj-actions" data-pj-actions>
+          <p data-pj-selection role="status">후보를 선택해 비교·코스로 이어가세요.</p>
+          <button class="btn sm" type="button" data-pj-all>전체 선택</button>
+          <button class="btn ghost sm" type="button" data-pj-none>선택 해제</button>
+          <button type="button" class="btn primary sm" data-pj-compare>단지 비교</button>
+          <button type="button" class="btn sm" data-pj-course>임장 코스 보기</button>
+          <button type="button" class="btn sm" data-pj-history>방문 기록 남기기·보기</button>
+        </div>
+        <p class="sv-note" data-pj-help>비교는 2~4곳, 코스는 위치 정보가 있는 2~8곳을 선택하세요. 코스 미리보기는 기존 내 코스를 덮어쓰지 않습니다.</p>
+        <div class="pj-selection-dock" data-pj-dock hidden role="group" aria-label="선택한 후보 작업"><b data-pj-dock-count></b><button type="button" class="btn primary sm" data-pj-quick-compare>비교</button><button type="button" class="btn sm" data-pj-quick-course>임장 코스</button></div>
+        <div class="pj-candidates" data-pj-candidates></div>
+        <p class="sv-note">단지를 누르면 상세 정보와 현장 체크를 작업 패널에서 엽니다. 기존 현장 메모는 단지별 공통 기록이며, 날짜별 기록은 이 프로젝트에 따로 남길 수 있어요. 후보에서 빼거나 프로젝트를 보관해도 기록은 남습니다.</p>
+      </div>
+
       <details class="pj-discover" data-pj-add open>
-        <summary>1. 아파트 찾기 · 검색 조건은 패널을 닫아도 그대로</summary>
+        <summary>후보 더 찾기 <span class="muted">검색 조건은 패널을 닫아도 그대로</span></summary>
         <label class="pj-search-label" for="pj-search">단지·동·역 이름으로 검색</label>
         <input class="pj-search" id="pj-search" type="search" placeholder="단지·동·역 이름" autocomplete="off">
         <div class="pj-filters">
@@ -59,19 +79,6 @@
         <p class="sv-note">관심 단지에서도 바로 담을 수 있어요.</p>
         <div class="chips" data-pj-favs></div>
       </details>
-      <div class="pj-actions" data-pj-actions>
-        <h3>2. 후보를 골라, 한 화면에서 이어보기</h3>
-        <p data-pj-selection role="status">후보를 선택해 비교·코스로 이어가세요.</p>
-        <button class="btn sm" type="button" data-pj-all>전체 선택</button>
-        <button class="btn ghost sm" type="button" data-pj-none>선택 해제</button>
-        <button type="button" class="btn primary sm" data-pj-compare>단지 비교</button>
-        <button type="button" class="btn sm" data-pj-course>임장 코스 보기</button>
-        <button type="button" class="btn sm" data-pj-history>방문 기록 남기기·보기</button>
-      </div>
-      <p class="sv-note" data-pj-help>비교는 2~4곳, 코스는 위치 정보가 있는 2~8곳을 선택하세요. 코스 미리보기는 기존 내 코스를 덮어쓰지 않습니다.</p>
-      <div class="pj-selection-dock" data-pj-dock hidden role="group" aria-label="선택한 후보 작업"><b data-pj-dock-count></b><button type="button" class="btn primary sm" data-pj-quick-compare>비교</button><button type="button" class="btn sm" data-pj-quick-course>임장 코스</button></div>
-      <div class="card-grid pj-candidates" data-pj-candidates></div>
-      <p class="sv-note">단지를 누르면 상세 정보와 현장 체크를 작업 패널에서 엽니다. 기존 현장 메모는 단지별 공통 기록이며, 날짜별 기록은 이 프로젝트에 따로 남길 수 있어요. 후보에서 빼거나 프로젝트를 보관해도 기록은 남습니다.</p>
       <dialog class="pw-dialog" data-pj-workspace aria-labelledby="pw-title">
         <header class="pw-head"><div><p class="eyebrow">집 찾기 작업 패널</p><h2 id="pw-title" data-pw-title></h2></div><button type="button" class="btn ghost sm" data-pw-close>닫고 검색·후보로</button></header>
         <div class="pw-tabs" aria-label="프로젝트 작업">
