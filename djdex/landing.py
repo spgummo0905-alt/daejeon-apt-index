@@ -92,6 +92,22 @@ self.addEventListener("activate", e => {
 """
 
 
+def _write_about(cfg, out_dir: Path, base: str, rows: list[dict]) -> None:
+    """'집감이란?' 브랜드 설명 페이지 (맨 앞 주소/about). 지역·단지 수는 이번 빌드의 실제 값."""
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+    env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=select_autoescape(["html"]))
+    total = sum(r["n"] for r in rows)
+    about = {"@context": "https://schema.org", "@type": "AboutPage", "@id": base + "about#page", "url": base + "about",
+             "name": "집감이란?", "inLanguage": "ko-KR", "isPartOf": {"@id": base + "#website"},
+             "about": {"@id": base + "#organization"}}
+    schema = json.dumps(about, ensure_ascii=False).replace("<", "\\u003c")
+    html = env.get_template("about.html").render(
+        base=base, regions=rows, total=f"{total:,}", schema=schema,
+        today=datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y.%m.%d"),
+        naver=cfg.site.get("naver_site_verification", ""), google=cfg.site.get("google_site_verification", ""))
+    (out_dir / "about.html").write_text(html, encoding="utf-8")
+
+
 def build(cfg, out_dir: Path) -> int:
     """맨 앞 주소 = 지역 사이트의 인트로 화면(디자인 그대로)을 지역부터 고르게 만든 것 (site.py 가 만든 landing.html).
     화면 안의 그림·링크는 그 지역 폴더 기준으로 열리게 <base> 를 붙여 맨 앞에 둡니다."""
@@ -125,6 +141,9 @@ def build(cfg, out_dir: Path) -> int:
                                        f'<script type="application/ld+json">{org_s}</script>\n</head>', 1)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
+    if base:
+        _write_about(cfg, out_dir, base, rows)
+
     # 링크 미리보기 이미지 (맨 앞 주소용 '전국')
     (out_dir / "static" / "og").mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / "static" / "og" / "jipgam.jpg", out_dir / "static" / "og" / "jipgam.jpg")
@@ -138,7 +157,8 @@ def build(cfg, out_dir: Path) -> int:
         today = datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
         (out_dir / "sitemap-root.xml").write_text(
             '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-            f"<url><loc>{xe(base)}</loc><lastmod>{today}</lastmod><priority>1.0</priority></url>\n</urlset>\n", encoding="utf-8")
+            f"<url><loc>{xe(base)}</loc><lastmod>{today}</lastmod><priority>1.0</priority></url>\n"
+            f"<url><loc>{xe(base)}about</loc><lastmod>{today}</lastmod><priority>0.8</priority></url>\n</urlset>\n", encoding="utf-8")
         maps = [f"{base}sitemap-root.xml"] + [f"{base}{r['path']}sitemap.xml" for r in rows
                                               if (out_dir / r["folder"] / "sitemap.xml").exists()]
         (out_dir / "sitemap.xml").write_text(

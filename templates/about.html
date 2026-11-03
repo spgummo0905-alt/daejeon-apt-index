@@ -1,0 +1,96 @@
+<!doctype html>
+{# 집감이란? 맨 앞 주소(www.jipgam.kr/about) 전용 소개 글. 검색에서 '집감'이 무엇인지 알아보게 하는 브랜드 설명 페이지.
+   지역·단지 수는 빌드 때 실제 값. 판단·예측 문구 없이 사실만. landing.py 가 만듭니다. #}
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>집감이란? 아파트 실거래가 비교부터 임장 기록까지 | 집감</title>
+<meta name="description" content="집감은 공개된 실거래가와 입지 자료로 아파트를 카드 한 장에 비교하고, 임장 코스와 현장 기록까지 이어 주는 서비스입니다. 서울·대전·세종·청주 {{ total }}곳의 단지를 로그인 없이 볼 수 있어요.">
+<link rel="canonical" href="{{ base }}about">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="집감">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="집감이란? 아파트 실거래가 비교부터 임장 기록까지">
+<meta property="og:description" content="공개 실거래가와 입지 자료로 아파트를 카드 한 장에 비교하고, 임장 코스와 현장 기록까지 한곳에서.">
+<meta property="og:url" content="{{ base }}about">
+<meta property="og:image" content="{{ base }}static/og/jipgam.jpg">
+<meta name="twitter:card" content="summary_large_image">
+{% if naver %}<meta name="naver-site-verification" content="{{ naver }}">{% endif %}
+{% if google %}<meta name="google-site-verification" content="{{ google }}">{% endif %}
+<meta name="theme-color" content="#13294b">
+<link rel="icon" href="{{ base }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
+<script type="application/ld+json">{{ schema | safe }}</script>
+<style>
+:root { color-scheme: light dark; --bg: #f4f2ee; --text: #1d232c; --muted: #5b6573; --card: #fff; --border: rgba(11,11,11,.10); --navy: #13294b; --gold: #c9a24a; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0d1626; --text: #eef1f6; --muted: #a9b4c6; --card: #15233b; --border: rgba(255,255,255,.14); } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.75 "Pretendard Variable", "Noto Sans KR", sans-serif; word-break: keep-all; }
+a { color: inherit; }
+header, main, footer { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+header { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; padding-bottom: 8px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; text-decoration: none; min-height: 44px; }
+.brand img { width: 32px; height: 32px; }
+.home { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); text-decoration: none; font-weight: 700; font-size: 16px; }
+h1 { font-size: 34px; line-height: 1.3; letter-spacing: -.02em; margin: 36px 0 12px; }
+.lead { font-size: 20px; color: var(--muted); margin: 0 0 28px; }
+h2 { font-size: 24px; line-height: 1.35; margin: 44px 0 10px; letter-spacing: -.01em; }
+p { margin: 0 0 14px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; margin: 14px 0; }
+.card b { display: block; font-size: 19px; margin-bottom: 4px; }
+ul { padding-left: 22px; margin: 0 0 14px; }
+li { margin: 6px 0; }
+.regions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; list-style: none; padding: 0; }
+.regions a { display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 0 18px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); text-decoration: none; font-weight: 700; }
+.regions small { font-weight: 500; color: var(--muted); font-size: 15px; }
+.go { display: flex; align-items: center; justify-content: center; min-height: 56px; margin: 28px 0 8px; border-radius: 14px; background: var(--navy); color: #fff; font-weight: 800; font-size: 18px; text-decoration: none; }
+.go:hover { background: #1e3d6e; }
+:focus-visible { outline: 3px solid #1f66c1; outline-offset: 2px; }
+footer { padding-top: 28px; padding-bottom: 60px; color: var(--muted); font-size: 15px; line-height: 1.7; }
+footer a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; }
+main p a { display: inline-block; padding: 8px 0; }
+@media (max-width: 560px) { body { font-size: 18px; } h1 { font-size: 28px; } .regions { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="{{ base }}"><img src="{{ base }}static/brand/symbol-96.png" alt="" width="32" height="32">집감</a>
+  <a class="home" href="{{ base }}">처음 화면으로</a>
+</header>
+<main>
+  <h1>집감이란?</h1>
+  <p class="lead">아파트를 숫자 대신 카드 한 장으로 비교하고, 직접 가 보는 임장까지 이어 주는 서비스입니다.</p>
+
+  <h2>한 줄로 말하면</h2>
+  <p>집감은 “집 볼 때도 감이 필요하니까”라는 생각으로 만든 아파트 비교·임장 서비스입니다. 공개된 실거래가와 입지 자료를 모아 단지마다 카드 한 장으로 정리하고, 마음에 드는 단지를 모아 임장 코스를 짜고 현장 기록을 남길 수 있게 돕습니다.</p>
+
+  <h2>무엇을 할 수 있나요?</h2>
+  <div class="card"><b>카드로 한눈에 비교</b>단지마다 종합 지수와 등급(S·A·B·C·D), 항목별 점수를 카드 한 장에 담았습니다. 가격, 해마다 평균 오른 폭, 교통·학군·생활 입지를 같은 기준으로 봅니다.</div>
+  <div class="card"><b>조건으로 찾기</b>예산, 지역, 평형, 연식, 꼭 필요한 조건을 고르면 맞는 단지를 추려 줍니다. 역 주변, 학교 같은 테마로도 찾을 수 있습니다.</div>
+  <div class="card"><b>임장 준비와 기록</b>관심 단지를 모아 비교하고, 가 볼 순서를 정해 임장 코스를 만듭니다. 현장에서 체크한 항목, 들은 호가, 메모를 단지마다 남깁니다.</div>
+
+  <h2>어디의 아파트를 볼 수 있나요?</h2>
+  <p>현재 아래 지역의 아파트를 제공합니다. 전국 모든 지역을 제공한다는 뜻은 아니며, 지역은 순서대로 늘려 갑니다.</p>
+  <ul class="regions">
+  {% for r in regions %}<li><a href="{{ base }}{{ r.path }}"><span>{{ r.name }}</span><small>{{ "{:,}".format(r.n) }}곳</small></a></li>
+  {% endfor %}
+  </ul>
+
+  <h2>자료는 어디서 오나요?</h2>
+  <ul>
+    <li>국토교통부 아파트 매매·분양권·전월세 실거래가</li>
+    <li>공동주택관리정보시스템(K-apt)의 단지 정보</li>
+    <li>건축물대장의 공급면적, 카카오 로컬의 위치 정보, OpenStreetMap 기여자의 교통 정보</li>
+  </ul>
+  <p>광고나 중개 의뢰는 점수에 반영하지 않습니다. 지수와 점수는 판단을 돕는 참고 정보이며 투자를 권유하거나 가격을 예측하지 않습니다. 계산 방법은 <a href="{{ base }}daejeon/methodology">산출 방법</a>에 적어 두었습니다.</p>
+
+  <h2>로그인해야 하나요?</h2>
+  <p>아니요. 로그인 없이 검색, 비교, 임장 코스, 현장 기록을 쓸 수 있고, 기록은 이 브라우저에 저장됩니다. 로그인(카카오)은 다른 기기에서 기록을 이어 보고 싶을 때만 선택하면 됩니다.</p>
+
+  <a class="go" href="{{ base }}">지역 고르고 아파트 찾기</a>
+</main>
+<footer>
+  <p>집감 · 최종 갱신 {{ today }} · <a href="{{ base }}daejeon/privacy">개인정보 처리방침</a> · <a href="{{ base }}daejeon/terms">이용약관</a></p>
+</footer>
+</body>
+</html>

@@ -1011,3 +1011,22 @@ def test_og_card_badges_use_real_values_only():
     assert badges(dict(sub=None, elem=None, hub=None, hh=None, y=None, nw=False)) == []          # 값이 없으면 비움
     assert badges(dict(sub=2000, stn="먼역", elem=900, hub=60, hn="x", hh=100, y=1990)) == []     # 멀면 장점으로 적지 않음
     assert "2,010세대" in badges(dict(hh=2010))
+
+
+def test_root_about_page_brand_explainer(tmp_path):
+    """맨 앞 주소 /about: '집감이란?' 브랜드 설명. 지역 수·단지 수는 실제 값, 판단·예측 문구 없음, 사이트맵에 포함"""
+    from djdex import cli
+
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out / "daejeon")])
+    cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out / "sejong")])
+    cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
+    page = (out / "about.html").read_text(encoding="utf-8")
+    assert "<title>집감이란?" in page and '<link rel="canonical" href="https://www.jipgam.kr/about">' in page
+    assert '"@type": "AboutPage"' in page and "전국 모든 지역을 제공한다는 뜻은 아니며" in page
+    assert 'href="https://www.jipgam.kr/sejong/"' in page and 'name="naver-site-verification"' in page
+    for bad in ("투자하세요", "오를", "수익 보장", "1위 서비스", "최고의"):
+        assert bad not in page
+    assert "about</loc>" in (out / "sitemap-root.xml").read_text(encoding="utf-8")
+    assert 'href="/about">집감이란?</a>' in (out / "index.html").read_text(encoding="utf-8")
+    assert "집감이란?" not in (out / "daejeon" / "index.html").read_text(encoding="utf-8")   # 지역 화면에는 두지 않음
