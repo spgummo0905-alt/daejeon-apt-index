@@ -977,3 +977,37 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert '<title>세종 아파트 실거래가·시세·입지 비교 | 집감</title>' in sj
     apt = (out / "daejeon" / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert "실거래가·시세·입지 | 대전" in apt and "| 집감</title>" in apt
+
+
+def test_apt_link_preview_card_only_for_s_and_a(tmp_path):
+    # 링크 미리보기 카드: S·A 등급 단지만 따로 그리고, 나머지는 지역 대표 이미지
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    made = {p.stem for p in (out / "static" / "og" / "apt").glob("*.jpg")}
+    assert made, "S·A 단지가 하나도 없으면 안 됨"
+    for slug in made:
+        html = (out / "apt" / f"{slug}.html").read_text(encoding="utf-8")
+        assert f"static/og/apt/{slug}.jpg" in html.split('og:image"')[1].split(">")[0]
+    other = next(p for p in (out / "apt").glob("*.html") if p.stem not in made)
+    assert "static/og/apt/" not in other.read_text(encoding="utf-8").split('og:image"')[1].split(">")[0]
+    from PIL import Image
+    with Image.open(next((out / "static" / "og" / "apt").glob("*.jpg"))) as im:
+        assert im.size == (1200, 630)
+
+
+def test_og_card_display_name_shortening():
+    from djdex.ogcard import display_parts
+    assert display_parts("대치우성아파트1동,2동,3동,5동,6동,7동") == ("대치우성아파트", "")
+    assert display_parts("반석마을3단지(호반베르디움)") == ("반석마을3단지", "호반베르디움")
+    assert display_parts("현대1차(12,13,21,22,31,32,33동)") == ("현대1차", "")
+    assert display_parts("공작한양") == ("공작한양", "")
+
+
+def test_og_card_badges_use_real_values_only():
+    from djdex.ogcard import badges
+    # 값이 있고 눈에 띄는 것만, 숫자 그대로. 판단 말투(초품아 등)는 쓰지 않음
+    b = badges(dict(sub=157, stn="탄방역", elem=253, hub=8, hn="둔산 학원가", hh=366, y=1994, nw=False, hosp=None, mart=None))
+    assert b[0] == "탄방역 157m" and len(b) <= 3 and all("초품아" not in x for x in b)
+    assert badges(dict(sub=None, elem=None, hub=None, hh=None, y=None, nw=False)) == []          # 값이 없으면 비움
+    assert badges(dict(sub=2000, stn="먼역", elem=900, hub=60, hn="x", hh=100, y=1990)) == []     # 멀면 장점으로 적지 않음
+    assert "2,010세대" in badges(dict(hh=2010))
