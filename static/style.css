@@ -859,7 +859,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .rg-btn:hover { border-color: var(--text-2); }
 .rg-btn .ic { width: 16px; height: 16px; color: var(--accent); }
 .rg-btn .rg-caret { color: var(--muted); transition: transform 200ms var(--ease-out); }
-.rg-btn[aria-expanded="true"] .rg-caret, .rg-word[aria-expanded="true"] .ic { transform: rotate(180deg); }
+.rg-btn[aria-expanded="true"] .rg-caret { transform: rotate(180deg); }
 .rg-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 95; width: 380px; max-height: min(70vh, 560px); overflow: auto;
   padding: 16px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 18px 48px rgba(8,12,20,.22);
   opacity: 0; transform: translateY(-6px); transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out); }
@@ -884,10 +884,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   color: #2a1c02; background: linear-gradient(135deg, #fff0b8, #d9a63a); }
 /* 첫 화면 제목 속 지역 이름: 눌러서 지역 바꾸기 */
 .rg-word { position: relative; display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer;
-  text-decoration: underline; text-decoration-style: dotted; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); }
-/* 화살표는 글자 밑(점선 아래)에: '대전에서'처럼 조사와 붙어 읽히게 */
-.rg-word .ic { position: absolute; left: 50%; bottom: -.5em; width: .38em; height: .38em; stroke-width: 3; color: var(--accent); transform: translateX(-50%); transition: transform 200ms var(--ease-out); }
-.rg-word[aria-expanded="true"] .ic { transform: translateX(-50%) rotate(180deg); }
+  text-decoration: underline; text-decoration-style: dotted; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--accent) 85%, transparent); }
 /* 휴대폰: 아래에서 올라오는 시트. 첫 화면 제목에서 연 넓은 화면은 가운데 창 */
 @media (max-width: 719px) {
   .rg { margin-left: 4px; }
@@ -4138,3 +4135,7 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 /* 소개 제목 둘째 줄: 쉼표 뒤에서만 줄이 바뀌게 ("더"만 줄 끝에 남지 않게) */
 .it-copy h1 .nb { white-space: nowrap; display: inline-block; }
 @media (max-width: 380px) { .it-copy h1 .nb { white-space: normal; } }
+
+/* 통계 카드 보조 글: 덩어리 사이에서만 줄이 바뀌게 */
+.ss .muted .nb { display: inline-block; white-space: nowrap; }
+@media (max-width: 380px) { .ss .muted .nb { white-space: normal; } }
