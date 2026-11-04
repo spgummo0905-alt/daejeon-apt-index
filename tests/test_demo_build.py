@@ -1075,3 +1075,22 @@ def test_root_privacy_and_terms_are_real_pages_not_redirect_stubs(tmp_path, monk
         assert '<base href="/daejeon/">' in page and word in page and len(page) > 5000
     other = (out / "compare.html").read_text(encoding="utf-8")   # 나머지 옛 주소는 그대로 넘겨 줌
     assert "location.replace" in other
+
+
+def test_structured_data_on_region_home_and_apartment_pages(tmp_path):
+    """검색·AI 요약이 읽는 구조화 정보: 지역 홈은 목록 설명, 단지 상세는 단지 정보(있는 값만). JSON 이 깨지지 않아야 함"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    def blocks(name):
+        html = (out / name).read_text(encoding="utf-8")
+        return [json.loads(b.split("</script>")[0]) for b in html.split('<script type="application/ld+json">')[1:]]
+    home = blocks("index.html")
+    assert len(home) == 1 and [g["@type"] for g in home[0]["@graph"]] == ["BreadcrumbList", "CollectionPage"]
+    apt = next((out / "apt").glob("*.html"))
+    one = blocks("apt/" + apt.name)
+    kinds = [g["@type"] for g in one[0]["@graph"]]
+    assert kinds == ["BreadcrumbList", "ApartmentComplex"]
+    cx = one[0]["@graph"][1]
+    assert cx["name"] and cx["address"]["addressCountry"] == "KR" and cx["description"]
+    assert "geo" not in cx or {"latitude", "longitude"} <= set(cx["geo"])   # 좌표는 있을 때만
+    assert "aggregateRating" not in cx and "offers" not in cx               # 지어낸 평점·가격 정보 금지

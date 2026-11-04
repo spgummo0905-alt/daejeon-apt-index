@@ -38,6 +38,7 @@
 <link rel="stylesheet" href="{{ root }}static/style.css?v={{ v }}">
 <script src="{{ root }}static/workspace-embed.js?v={{ v }}"></script>
 {% block head_extra %}{% endblock %}
+{% if base %}{% block jsonld %}{% endblock %}{% endif %}
 </head>
 <body data-unit="{{ unit }}" data-region="{{ region }}"{% if kakao_js_key %} data-kakao="{{ kakao_js_key }}"{% endif %} data-page="{% block page_id %}{{ page_path.split('/')[0].replace('.html', '') or 'index' }}{% endblock %}">
 {% if demo %}
