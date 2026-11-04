@@ -136,7 +136,7 @@ def main() -> None:
             out["가까운데 값이 다른 곳"] = "data-cliffs" in html and "data-m3d-seg" not in html
             # 배포본은 화면 코드를 압축해 함수 이름이 바뀌므로 문구·속성 이름으로 확인 (scripts/minify_site.sh)
             js = s.get(url + "static/cards.js", timeout=30)
-            out["임장 후보 코드"] = js.ok and "요즘 수요가 몰리는지" in js.text
+            out["임장 후보 코드"] = js.ok and "차이가 어디서 오는지 비교해 보세요" in js.text   # 문구를 다듬을 때 함께 고칠 것: 사라지면 점검이 실패합니다
             app = s.get(url + "static/app.js", timeout=30)
             out["동·역·조건 검색 코드"] = app.ok and ".parseCond=" in app.text.replace(" ", "")
             css = s.get(url + "static/style.css", timeout=30)

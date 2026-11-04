@@ -111,3 +111,14 @@ def test_main_exits_nonzero_when_page_loads_but_data_is_missing(monkeypatch):
     with pytest.raises(SystemExit) as e:
         sc.main()
     assert e.value.code == 1
+
+
+def test_site_check_markers_exist_in_source():
+    """점검이 찾는 문구가 원본 코드에 실제로 있어야 한다: 문구를 다듬다 어긋나면 점검이 조용히 거짓 실패를 내므로 여기서 먼저 잡는다"""
+    root = Path(__file__).resolve().parent.parent
+    src = (root / "scripts" / "site_check.py").read_text(encoding="utf-8")
+    cards = (root / "static" / "cards.js").read_text(encoding="utf-8")
+    import re
+    marker = re.search(r'"임장 후보 코드"\] = js\.ok and "([^"]+)" in js\.text', src).group(1)
+    assert marker in cards
+    assert ".parseCond=" in (root / "static" / "app.js").read_text(encoding="utf-8").replace(" ", "") or "parseCond" in (root / "static" / "app.js").read_text(encoding="utf-8")
