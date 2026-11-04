@@ -1,5 +1,8 @@
 import json
+from pathlib import Path
 from djdex import cli
+
+ROOT_DIR = Path(__file__).resolve().parent.parent   # 스타일 원본 확인용: 배포본 style.css 는 공백을 줄여 놓아서 원본을 읽는다
 
 
 def test_demo_builds_site(tmp_path):
@@ -494,7 +497,7 @@ def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
     apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
     assert 'id="acct-pop"' in apt and 'href="../me.html#prefs"' in apt and 'href="../me.html"' in apt and 'href="../privacy.html"' in apt
     assert 'id="my-favs"' in (out / "my.html").read_text(encoding="utf-8")
-    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert 'body[data-page="intro"] .acct-btn { display: none; }' not in css
     js = (out / "static" / "sync.js").read_text(encoding="utf-8")
     assert "function menu()" in js and "[data-when-out]" in js
@@ -548,7 +551,7 @@ def test_course_share_link_and_print_sheet(tmp_path):
     assert "DJ.printSheet = function" in app and "KAKAOTALK" in app and '"(pointer: coarse)"' in app
     prefs = (out / "static" / "prefs.js").read_text(encoding="utf-8")
     assert "DJ.printSheet(sheet)" in prefs and "window.print" not in prefs
-    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert "body.printing > :not(.print-sheet)" in css and ".cs-p-checks" in css and "print-course" not in css
 
 
@@ -620,7 +623,7 @@ def test_compare_fill_finder_fav_and_card_flip_target(tmp_path):
     assert finder_html.index("static/app.js") < finder_html.index("static/workplaces.js") < finder_html.index("static/finder.js")
     assert (out / "static" / "workplaces.js").exists()
     assert "if (opts.fav)" in (out / "static" / "app.js").read_text(encoding="utf-8")
-    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert ".mcard-turn::before" in css and ".gfav {" in css
 
 
@@ -668,7 +671,7 @@ def test_project_workspace_keeps_full_tools_inside_a_lazy_same_origin_panel(tmp_
         assert f'static/{script}.js' in page
         assert f'static/{script}.js' in (out / 'sw.js').read_text(encoding='utf-8')
     assert page.index('static/project-flow.js') < page.index('static/project-workspace.js') < page.index('static/projects.js')
-    css = (out / 'static/style.css').read_text(encoding='utf-8')
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert '.pw-dialog[open]' in css and '.pw-frame[hidden]' in css and '.pj-embed-field' in css
     assert 'body[data-page="projects"] .rcd { display: none; }' in css
     assert 'href="projects.html"' in (out / 'index.html').read_text(encoding='utf-8')
@@ -747,7 +750,7 @@ def test_admin_page_roles_settings_and_membership_groundwork(tmp_path, monkeypat
     me = (out / "me.html").read_text(encoding="utf-8")
     assert "data-member-id" in me and "data-member-copy" in me and '<li data-feature="membership">' in me
     assert 'id="share" aria-labelledby="share-title" data-feature="share"' in me
-    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert '.off-photos [data-feature="photos"], .off-share [data-feature="share"] { display: none !important; }' in css
     assert 'html:not(.on-membership) [data-feature="membership"]' in css
     assert 's.dataset.feature = "photos"' in (out / "static" / "field.js").read_text(encoding="utf-8")
