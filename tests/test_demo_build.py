@@ -1055,3 +1055,23 @@ def test_landing_app_start_skips_only_with_saved_region():
     # code/error 는 항상, skip 은 지난 지역(L)이 있을 때만 이동
     assert "if(/[?&](code|error)=/.test(q)||(/[?&]skip=/.test(q)&&L))location.replace(" in src
     assert "(skip|code|error)" not in src
+
+
+def test_root_privacy_and_terms_are_real_pages_not_redirect_stubs(tmp_path, monkeypatch):
+    """구글 Play 등이 맨 앞 주소(/privacy.html, /terms.html)를 읽으므로 넘겨 주는 빈 페이지가 아니라 본문을 그대로 둔다"""
+    from djdex import config
+    monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co/rest/v1/")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setattr(config.Config, "account", property(lambda self: {
+        "owner": "운영자", "email": "help@example.com", "storage": "일본(도쿄)", "since": "2026-10-26",
+        "provider": "custom:kakao"}))
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out / "daejeon")])
+    cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out / "sejong")])
+    cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
+    for name, word in (("privacy.html", "개인정보"), ("terms.html", "이용약관")):
+        page = (out / name).read_text(encoding="utf-8")
+        assert "location.replace" not in page and 'http-equiv="refresh"' not in page   # 넘겨 주는 빈 페이지가 아님
+        assert '<base href="/daejeon/">' in page and word in page and len(page) > 5000
+    other = (out / "compare.html").read_text(encoding="utf-8")   # 나머지 옛 주소는 그대로 넘겨 줌
+    assert "location.replace" in other

@@ -62,6 +62,9 @@ STUB = ('<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>집�
         '<body><a href="{to}">집감 {name} 화면으로 이동</a></body></html>')
 
 
+LEGAL_PAGES = {"privacy.html", "terms.html"}
+
+
 def write_redirects(out_dir: Path, folder: str, name: str, base: str, skip: set[str] = frozenset()) -> int:
     """예전 맨 앞 주소의 화면들 → /{folder}/ 같은 화면. 다른 지역 폴더나 맨 앞 파일과 겹치면 건너뜁니다."""
     src = out_dir / folder
@@ -74,6 +77,11 @@ def write_redirects(out_dir: Path, folder: str, name: str, base: str, skip: set[
         if dst.exists() or rel.split("/")[0] in skip:   # 다른 지역 폴더와 겹치는 이름은 건드리지 않음
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
+        if rel in LEGAL_PAGES:   # 개인정보처리방침·이용약관은 구글 Play 등이 주소로 읽으므로 넘겨 주지 않고 본문을 그대로 둠
+            body = f.read_text(encoding="utf-8").replace('<meta charset="utf-8">', f'<meta charset="utf-8">\n<base href="/{folder}/">', 1)
+            dst.write_text(body, encoding="utf-8")
+            n += 1
+            continue
         to = f"/{folder}/{rel}"
         canon = f"{base}{folder}/{rel[:-5]}" if base else to
         dst.write_text(STUB.format(name=escape(name), to=escape(to), canon=escape(canon)), encoding="utf-8")
