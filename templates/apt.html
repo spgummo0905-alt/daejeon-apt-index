@@ -4,6 +4,19 @@
 {% block og_image %}{% if og_card %}static/og/apt/{{ c.slug }}.jpg{% else %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endif %}{% endblock %}
 {% block og_alt %}{{ c.name }} {{ c.index | score }}점{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} · 집감 {{ region }}{% endblock %}
 {% block description %}{{ region }} {{ c | place }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 평균 상승 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} {{ c.location_top | share }}{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
+{% block jsonld %}
+{% set _ld = {"@context": "https://schema.org", "@graph": [
+  {"@type": "BreadcrumbList", "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "집감", "item": "https://www.jipgam.kr/"},
+    {"@type": "ListItem", "position": 2, "name": region ~ " 아파트", "item": base},
+    {"@type": "ListItem", "position": 3, "name": c.name, "item": base ~ cpath}]},
+  {"@type": "ApartmentComplex", "name": c.name, "url": base ~ cpath,
+   "address": {"@type": "PostalAddress", "addressCountry": "KR", "addressLocality": region, "addressRegion": c | place},
+   "description": self.description() | striptags | trim}] } %}
+{% if latlng %}{% set _ = _ld["@graph"][1].update({"geo": {"@type": "GeoCoordinates", "latitude": latlng[0], "longitude": latlng[1]}}) %}{% endif %}
+{% if c.ki and c.ki.hh %}{% set _ = _ld["@graph"][1].update({"numberOfAccommodationUnits": c.ki.hh}) %}{% endif %}
+<script type="application/ld+json">{{ _ld | tojson }}</script>
+{% endblock %}
 {% block body %}
 <div class="apt-topbar">
   <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
