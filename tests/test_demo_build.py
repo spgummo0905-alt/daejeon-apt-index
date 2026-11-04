@@ -382,7 +382,9 @@ def test_field_mode_and_notes(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     page = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
     assert 'class="jump-field" data-field' in page and 'id="field-sheet"' in page and "static/field.js" in page
-    assert page.index("jump-field") < page.index('href="#price"')   # 바로가기 줄 맨 앞
+    jump = page[page.index('<nav class="jump apt-jump"'):]
+    assert jump.index("jump-field") < jump.index('href="#price"')   # 바로가기 줄 맨 앞 (5개 범주 진입 줄의 #price 와 구분)
+    assert page.count('class="cat-row"') >= 3 and page.index('id="catalog"') < page.index('class="jump apt-jump"')   # 범주 진입 줄은 바로가기 위
     js = (out / "static" / "field.js").read_text(encoding="utf-8")
     assert "getCurrentPosition" in js and "map.kakao.com/link/to/" in js and "시세보다" in js and "DJ.visitItems(c" in js
     app = (out / "static" / "app.js").read_text(encoding="utf-8")

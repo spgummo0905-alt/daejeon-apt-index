@@ -145,6 +145,25 @@
 </div>
 </div>
 
+{# 5개 범주 진입 줄: 무엇을 보려는지로 바로 (대표 숫자 하나만 먼저). 지역 홈·단지 상세가 같은 이름·아이콘·순서를 씁니다 #}
+<nav class="cat" id="catalog" aria-label="이 단지 정보 범주">
+  <a class="cat-row" href="#price"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-coin"/></svg></span>
+    <span class="cat-tx"><b>가격</b><span>시세, 최근 거래, 층별 가격</span></span>
+    <span class="cat-v">{% if c.price_ref is not nan %}{{ ref_area }}㎡ {{ c.price_ref | price }}{% else %}거래 보기{% endif %}</span></a>
+  {% if c.ki %}<a class="cat-row" href="#info"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-home"/></svg></span>
+    <span class="cat-tx"><b>집과 건물</b><span>세대수, 주차, 관리비, 준공 연도</span></span>
+    <span class="cat-v">{% if c.ki.hh %}{{ "{:,}".format(c.ki.hh) }}세대{% elif c.build_year %}{{ c.build_year }}년{% else %}정보 보기{% endif %}</span></a>{% endif %}
+  {% if hill or noise %}<a class="cat-row" href="#{{ 'hill' if hill else 'noise' }}"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-sun"/></svg></span>
+    <span class="cat-tx"><b>해와 환경</b><span>{% if hill and noise %}언덕과 큰길 소음{% elif hill %}언덕{% else %}큰길 소음{% endif %}</span></span>
+    <span class="cat-v">{% if hill %}{{ hill.label }}{% else %}{{ noise.label }}{% endif %}</span></a>{% endif %}
+  <a class="cat-row" href="#loc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-train"/></svg></span>
+    <span class="cat-tx"><b>생활 입지</b><span>역, 학교, 학원, 마트까지 거리</span></span>
+    <span class="cat-v">{% if c.location_top is nan %}자세히{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span></a>
+  <a class="cat-row" href="#index-calc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-rank"/></svg></span>
+    <span class="cat-tx"><b>지수와 후기</b><span>집감 지수 계산과 이용자 후기</span></span>
+    <span class="cat-v">{% if c.index is not nan %}{{ c.index | score }}점{% else %}자세히{% endif %}</span></a>
+</nav>
+
 {# 바로가기: 현장에서 휴대폰으로 필요한 칸만 바로 (스크롤 따라 붙고 지금 보는 칸을 표시, app.js scrollSpy) #}
 <nav class="jump apt-jump" data-spy aria-label="이 단지 바로가기">
   <button type="button" class="jump-field" data-field aria-haspopup="dialog" aria-controls="field-sheet"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>현장 모드</button>
