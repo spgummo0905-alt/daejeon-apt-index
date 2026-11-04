@@ -17,7 +17,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
 from . import movein as movein_mod
-from . import charts, heatmap, kapt, ogcard, pricechart, trends
+from . import cardtraits, charts, heatmap, kapt, ogcard, pricechart, trends
 from .charts import eok, grade, nan as _nan
 from .config import ROOT
 
@@ -643,9 +643,12 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
               f"거래 기준 {sum(r.get('n_trades') or 0 for r in got) / tot:.0%}")
     # 지도, 검색, 단지 비교, 조건으로 찾기, 카드 저장이 함께 쓰는 단지 데이터 (소규모 제외).
     # 페이지에 넣지 않고 따로 받아 첫 화면을 가볍게 합니다. 평형별 시세(tp)는 위 시세 차트 계산에서 옵니다.
-    write_complexes(out_dir, [r for r in rows if not r["small"]], factors,
+    _main = [r for r in rows if not r["small"]]
+    from urllib.parse import urlsplit
+    _folder = (urlsplit(cfg.site.get("base_url", "")).path.strip("/") or "daejeon").split("/")[-1]
+    write_complexes(out_dir, _main, factors,
                     {"asof": meta["asof"], "updated": meta.get("updated"), "region": cfg.region_name,
-                     "url": cfg.site.get("base_url", "")})
+                     "url": cfg.site.get("base_url", "")}, ct=cardtraits.compute(_main, _folder))
     # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
     write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
@@ -1240,7 +1243,7 @@ def _og_traits(r) -> dict:
 
 
 def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: dict | None = None,
-                    name: str = "complexes.json") -> None:
+                    name: str = "complexes.json", ct: dict | None = None) -> None:
     import json
     data = []
     for r in rows:
@@ -1271,6 +1274,7 @@ def write_complexes(out_dir: Path, rows: list[dict], factors: list[dict], info: 
             "tp": r.get("tp") or [],
             "j": _r(r.get("je_ref")), "jt": eok(r.get("je_ref")) if r.get("je_ref") else None, "jr": r.get("je_ratio"),
             "hh": r.get("hh"), "pk": r.get("ppu"),
+            **({"ct": cardtraits.pack(ct[r["slug"]])} if ct and r["slug"] in ct and ct[r["slug"]]["t"] else {}),   # 카드 개성(타입·도장·번호)
             **({"sm": 1, "sr": r.get("small_reason") or "소규모"} if r.get("small") else {}),   # 소규모(빌라형): 역세권 목록 등에서 빼는 단지
             **({"hl": [_r(r["hill"].get("rf")), _r(r["hill"].get("st"))]} if (r.get("hill") or {}).get("rf") is not None else {}),
             # 소음 체크(현장 모드): [큰길까지 m, 큰길 종류, 철도까지 m] (1km 밖은 비움)

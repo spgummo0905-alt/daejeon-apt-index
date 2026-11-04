@@ -1094,3 +1094,36 @@ def test_structured_data_on_region_home_and_apartment_pages(tmp_path):
     assert cx["name"] and cx["address"]["addressCountry"] == "KR" and cx["description"]
     assert "geo" not in cx or {"latitude", "longitude"} <= set(cx["geo"])   # 좌표는 있을 때만
     assert "aggregateRating" not in cx and "offers" not in cx               # 지어낸 평점·가격 정보 금지
+
+
+def test_card_traits_types_stamps_numbers_are_data_based_and_stable():
+    """카드 개성: 타입·도장은 있는 값으로만, 번호는 구별 묶음이고 한 번 붙으면 바뀌지 않는다"""
+    from djdex import cardtraits as ct
+    base = dict(subway_raw=None, rail_raw=None, elementary_raw=None, hub_raw=None, mart_raw=None, hospital_raw=None, build_year=None, hh=None, is_new=False)
+    rows = [dict(base, slug=f"s{i}", gu="가구" if i % 2 else "나구", elementary_raw=100 + i * 30, mart_raw=900 - i * 20,
+                 subway_raw=(300 + i * 40 if i % 3 == 0 else None), hh=500 + i * 60, build_year=1985 + i) for i in range(30)]
+    out = ct.compute(rows, "nowhere")
+    assert all(v["t"] for v in out.values())
+    first = out["s0"]
+    assert "sub" in first["m"] and "sch" in first["m"]            # 지하철 300m, 초등학교 100m
+    assert "sub" not in out["s1"]["m"]                            # 지하철 값이 없으면 도장이 없다(지어내지 않음)
+    assert sum(1 for v in out.values() if v["n"] == out["s0"]["n"] and v["m"] == first["m"]) == first["n"]   # 같은 조합 수는 실제로 센 값
+    nums = {(v["g"], v["no"]) for v in out.values()}
+    assert len(nums) == 30                                         # 번호 중복 없음
+    # 등록된 번호는 유지되고, 새 단지는 그 구의 마지막 번호 다음
+    reg = {s: [v["g"], v["no"]] for s, v in out.items()}
+    rows.append(dict(base, slug="aaa-new", gu="가구"))
+    again = ct.assign_numbers(rows, reg)
+    assert all(again[s] == (reg[s][0], reg[s][1]) for s in reg) and again["aaa-new"] == ("가구", max(n for g, n in reg.values() if g == "가구") + 1)
+    assert ct.pack(first)[0] == first["t"] and isinstance(ct.pack(first)[2], int)
+
+
+def test_card_traits_registry_files_cover_each_region_without_duplicates():
+    import json
+    from pathlib import Path
+    d = Path(__file__).resolve().parent.parent / "djdex" / "card_numbers"
+    for city in ("daejeon", "sejong", "cheongju", "seoul"):
+        reg = json.loads((d / f"{city}.json").read_text(encoding="utf-8"))
+        assert len(reg) > 100
+        pairs = [tuple(v) for v in reg.values()]
+        assert len(pairs) == len(set(pairs))
