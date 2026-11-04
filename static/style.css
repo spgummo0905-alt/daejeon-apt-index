@@ -4138,3 +4138,7 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 /* 소개 제목 둘째 줄: 쉼표 뒤에서만 줄이 바뀌게 ("더"만 줄 끝에 남지 않게) */
 .it-copy h1 .nb { white-space: nowrap; display: inline-block; }
 @media (max-width: 380px) { .it-copy h1 .nb { white-space: normal; } }
+
+/* 통계 카드 보조 글: 덩어리 사이에서만 줄이 바뀌게 */
+.ss .muted .nb { display: inline-block; white-space: nowrap; }
+@media (max-width: 380px) { .ss .muted .nb { white-space: normal; } }

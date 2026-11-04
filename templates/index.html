@@ -90,7 +90,7 @@ try {
 </section>
 
 <section class="stat-strip" aria-label="데이터 요약">
-  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}그중 {{ "{:,}".format(meta.n_ranked) }}곳에 점수를 매겼어요 (나머지는 거래 자료가 적어요){% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
+  <div class="ss"><span class="label">비교한 아파트</span><span class="value" data-count>{{ "{:,}".format(meta.n_complexes) }}곳</span><span class="muted">{% if meta.n_ranked < meta.n_complexes %}<span class="nb">점수 있는 곳 {{ "{:,}".format(meta.n_ranked) }}곳 ·</span> <span class="nb">거래 적어 점수 없는 곳 {{ "{:,}".format(meta.n_complexes - meta.n_ranked) }}곳</span>{% elif meta.n_small %}소규모·나홀로·원룸형 {{ "{:,}".format(meta.n_small) }}곳은 따로 분류{% endif %}</span></div>
   <div class="ss"><span class="label">반영한 실거래</span><span class="value" data-count>{{ "{:,}".format(meta.n_trades) }}건</span>{% if meta.n_presale %}<span class="muted">분양권·입주권 {{ "{:,}".format(meta.n_presale) }}건 포함</span>{% endif %}</div>
   {% if pulse %}
   <div class="ss"><span class="label">최근 3개월 매매</span><span class="value" data-count>{{ "{:,}".format(pulse.recent3) }}건</span><span class="muted">계약 해제 거래 제외</span></div>
