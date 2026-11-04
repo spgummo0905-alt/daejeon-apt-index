@@ -15,6 +15,7 @@
    "description": self.description() | striptags | trim}] } %}
 {% if latlng %}{% set _ = _ld["@graph"][1].update({"geo": {"@type": "GeoCoordinates", "latitude": latlng[0], "longitude": latlng[1]}}) %}{% endif %}
 {% if c.ki and c.ki.hh %}{% set _ = _ld["@graph"][1].update({"numberOfAccommodationUnits": c.ki.hh}) %}{% endif %}
+{% if faq %}{% set _ = _ld["@graph"].append({"@type": "FAQPage", "mainEntity": faq_ld}) %}{% endif %}
 <script type="application/ld+json">{{ _ld | tojson }}</script>
 {% endblock %}
 {% block body %}
@@ -388,6 +389,15 @@
 </section>
 
 {# 같은 값, 가까운 다른 선택지 (alts.js): 84㎡ ±10%·3km 안 단지 세 곳과 다른 점, 임장 코스에 더하기 #}
+{% if faq %}
+<section class="panel faq" id="faq" aria-labelledby="faq-t">
+  <div class="panel-head"><h2 id="faq-t">자주 묻는 질문</h2><p class="muted">이 단지의 실제 자료로만 답합니다 · {{ meta.asof }} 기준</p></div>
+  <div class="faq-list">
+  {% for q, a in faq %}<details class="faq-it"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <section class="panel alts" id="alts" data-alts="{{ c.slug }}" hidden>
   <div class="panel-head"><h2>비슷한 가격대의 주변 아파트</h2><p class="muted" data-alts-sub></p></div>
   <ol class="alt-list" data-alts-list></ol>
