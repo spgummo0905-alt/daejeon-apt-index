@@ -23,7 +23,7 @@ try {
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">국토교통부 실거래 기준 · {{ meta.updated }} 업데이트</p>
-      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
+      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}</button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
       <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳. 실거래가와 입지를 비교하고, 직접 가 볼 집을 골라보세요.</p>
       <div class="hero-search">
         <svg class="ic"><use href="#i-search"/></svg>
