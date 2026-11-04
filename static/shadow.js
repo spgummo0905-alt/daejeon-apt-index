@@ -23,16 +23,27 @@
   const hOf = b => (b.h && b.h > 0) ? b.h : b.f * FLOOR_H;       // 높이 모르면 층수 x 2.7m
   const estOf = b => !(b.h && b.h > 0);
 
-  // 남쪽을 보는 긴 면: 가장 긴 변의 법선 중 남쪽(-y)에 가까운 쪽
+  // 남쪽을 보는 긴 면: 바깥쪽 법선이 가장 남쪽(-y)을 향하는 긴 변. 꼭짓점이 시계·반시계 어느 쪽으로 적혀 있어도 같은 변을 고른다
+  // (예전에는 가장 긴 변을 고른 뒤 법선만 남쪽으로 돌려서, 긴 변이 둘인 직사각형에서 북쪽 벽을 잘못 잡을 수 있었다)
   function face(b) {
-    const p = b.poly; let best = null;
-    for (let i = 0; i < p.length; i++) {
-      const a = p[i], c = p[(i + 1) % p.length], dx = c[0] - a[0], dy = c[1] - a[1], len = Math.hypot(dx, dy);
-      if (!best || len > best.len) best = { a, c, dx, dy, len };
+    const p = b.poly, n = p.length;
+    let area = 0;
+    for (let i = 0; i < n; i++) { const a = p[i], c = p[(i + 1) % n]; area += a[0] * c[1] - c[0] * a[1]; }
+    const sgn = area >= 0 ? 1 : -1;                               // +1 반시계, -1 시계
+    const edges = [];
+    let longest = 0;
+    for (let i = 0; i < n; i++) {
+      const a = p[i], c = p[(i + 1) % n], dx = c[0] - a[0], dy = c[1] - a[1], len = Math.hypot(dx, dy);
+      if (len < 1e-6) continue;
+      longest = Math.max(longest, len);
+      edges.push({ a, c, dx, dy, len, nx: sgn * dy / len, ny: -sgn * dx / len });   // 바깥쪽 법선
     }
-    let nx = -best.dy / best.len, ny = best.dx / best.len;
-    if (ny > 0) { nx = -nx; ny = -ny; }                           // 남쪽(-y) 법선
-    return { a: best.a, ex: best.dx / best.len, ey: best.dy / best.len, len: best.len, nx, ny, cx: (best.a[0] + best.c[0]) / 2, cy: (best.a[1] + best.c[1]) / 2 };
+    const longs = edges.filter(e => e.len >= 0.6 * longest);
+    let best = null;
+    for (const e of longs) if (!best || e.ny < best.ny - 1e-9 || (Math.abs(e.ny - best.ny) <= 1e-9 && e.len > best.len)) best = e;
+    // 남쪽을 향하는 긴 변이 하나도 없으면(드문 모양) 가장 긴 변의 바깥쪽 법선을 그대로 쓴다
+    return { a: best.a, ex: best.dx / best.len, ey: best.dy / best.len, len: best.len, nx: best.nx, ny: best.ny,
+             cx: (best.a[0] + best.c[0]) / 2, cy: (best.a[1] + best.c[1]) / 2 };
   }
 
   // 레이(P + t*u)가 폴리곤에 처음 닿는 거리 (없으면 null)
@@ -55,7 +66,8 @@
     const fc = face(b), alt = s.alt * RAD, az = s.az * RAD;
     const ux = Math.sin(az), uy = Math.cos(az);                  // 해 쪽 수평 방향(동 +x, 북 +y)
     if (ux * fc.nx + uy * fc.ny <= 0.05) return 'back';
-    const px = fc.a[0] + fc.ex * fc.len * w + fc.nx * 0.3, py = fc.a[1] + fc.ey * fc.len * w + fc.ny * 0.3;
+    const wl = fc.ex >= 0 ? w : 1 - w;                              // 폭 위치는 서쪽(0)에서 동쪽(1) 으로 통일
+    const px = fc.a[0] + fc.ex * fc.len * wl + fc.nx * 0.3, py = fc.a[1] + fc.ey * fc.len * wl + fc.ny * 0.3;
     const z = (fl - 0.5) * FLOOR_H, tan = Math.tan(alt);
     for (const o of blds) {
       if (o === b) continue;
@@ -91,6 +103,8 @@
     return n * 0.25;
   }
 
-  const api = { sun, face, cell, shadowPoly, sunHours, hOf, estOf, FLOOR_H };
+  // 화면에 시간을 보여 줄 때 반드시 함께 보여 줄 문구. 실제 공간 자료와 견주어 검증하기 전까지는 '정확한 일조시간'이라고 쓰지 않습니다.
+  const NOTICE = "추정한 참고용 그림이에요. 높이·창 방향·나무·지형을 다 반영하지 못해 법적 일조권 판단 자료가 아니에요.";
+  const api = { sun, face, cell, shadowPoly, sunHours, hOf, estOf, FLOOR_H, NOTICE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DJShadow = api;
 })(typeof window !== 'undefined' ? window : globalThis);

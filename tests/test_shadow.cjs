@@ -46,11 +46,31 @@ test("하지엔 해가 높아 같은 배치에서도 가려지는 층이 훨씬 
   assert.ok(S.sunHours([A, B], B, 15, LAT, LON, 12, 21) > w, "맨 위층이 1층보다 해가 오래 든다");
 });
 
-test("북쪽을 보는 면에는 정오에 해가 없다(해가 반대편)", () => {
-  const N = { poly: [[30, 12], [-30, 12], [-30, 0], [30, 0]], f: 15, h: 0 };   // 같은 건물, 꼭짓점 순서만 반대
+test("하지 새벽엔 해가 북동쪽이라 남향 면에는 해가 닿지 않고(back), 정오엔 닿는다(sun)", () => {
+  const dawn = S.sun(LAT, LON, 6, 21, 6.2), noon = S.sun(LAT, LON, 6, 21, 12.5);
+  assert.ok(dawn.up && dawn.az > 45 && dawn.az < 90, "새벽 방위 " + dawn.az);   // 북동~동
+  assert.equal(S.cell([B], B, 5, 0.5, dawn), "back");
+  assert.equal(S.cell([B], B, 5, 0.5, noon), "sun");
+});
+
+test("해가 지면 night 이고 어떤 칸도 sun 이 아니다", () => {
+  const night = S.sun(LAT, LON, 12, 21, 2);
+  assert.equal(night.up, false);
+  for (let f = 1; f <= 15; f++) assert.equal(S.cell([A, B], B, f, 0.5, night), "night");
+});
+
+test("꼭짓점 순서(시계·반시계)가 달라도 같은 남쪽 면을 고르고 같은 결과가 나온다", () => {
+  const rev = { poly: B.poly.slice().reverse(), f: B.f, h: B.h };
+  const fa = S.face(B), fb = S.face(rev);
+  assert.ok(fa.ny < 0 && fb.ny < 0, "둘 다 남쪽(-y)을 본다");
   const s = S.sun(LAT, LON, 12, 21, 12.5);
-  assert.notEqual(S.cell([N], N, 5, 0.5, s), "back");   // 남쪽 면을 고르므로 정오엔 해가 든다
-  assert.equal(S.cell([B], B, 5, 0.5, S.sun(LAT, LON, 6, 21, 6.2)) === "sun" || true, true);
+  for (const fl of [1, 5, 15]) assert.equal(S.cell([A, rev], rev, fl, 0.5, s), S.cell([A, B], B, fl, 0.5, s));
+});
+
+test("해 드는 시간은 참고용 추정이라 정확한 일조시간으로 표시하지 못하게 안내 문구를 함께 내보낸다", () => {
+  assert.match(S.NOTICE, /추정/);
+  assert.match(S.NOTICE, /일조권|법적/);
+  assert.equal(S.sunHours([A, B], B, 5, LAT, LON, 12, 21) % 0.25, 0);   // 15분 간격 합이라 0.25 의 배수
 });
 
 test("그림자 모양은 해 반대쪽으로 길게 늘어난다", () => {
