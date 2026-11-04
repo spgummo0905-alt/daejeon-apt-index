@@ -100,6 +100,35 @@ self.addEventListener("activate", e => {
 """
 
 
+AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "PerplexityBot", "Google-Extended", "Bingbot"]
+
+
+def _write_llms(out_dir: Path, base: str, rows: list[dict], today: str) -> None:
+    """AI 검색·답변 도구가 읽는 안내 파일(llms.txt): 무엇을 담은 사이트인지, 점수 뜻, 갱신일, 주요 주소. 사실만 적습니다."""
+    total = sum(r["n"] for r in rows)
+    lines = [
+        "# 집감",
+        "",
+        "> 대전·세종·서울·청주 아파트의 실거래가, 입지(역·학교·학원·마트·병원까지 거리), 세대수·준공연도, 언덕·큰길 거리를 단지별로 비교하는 임장 준비·기록 서비스입니다. "
+        "국토교통부 실거래 공개 자료와 공공 자료로 계산한 참고용 지수이며 투자 권유가 아닙니다.",
+        "",
+        f"- 갱신일: {today}",
+        f"- 단지 수: {total:,}곳 ({', '.join(f'{r['name']} {r['n']:,}' for r in rows)})",
+        "- 점수 뜻: 집감 지수는 입지 점수와 10년·5년 평균 상승률의 순위 점수를 합쳐 0~100으로 만든 값입니다. 등급 S~D는 이 점수 구간이고, 계산 방법은 아래 '산출 방법' 페이지에 있습니다.",
+        "- 출처: 국토교통부 실거래가 공개시스템, 건축물대장, 공동주택관리정보시스템(K-apt), 카카오 로컬(시설 위치), OpenStreetMap(도로·철도)",
+        "",
+        "## 주요 페이지",
+        "",
+        f"- [집감이란?]({base}about): 서비스 소개",
+    ]
+    for r in rows:
+        lines.append(f"- [{r['name']} 아파트 실거래가·입지 비교]({base}{r['path']}): {r['n']:,}곳")
+        lines.append(f"- [{r['name']} 산출 방법]({base}{r['path']}methodology): 지수 계산식과 기준")
+    lines += ["", "## 단지 페이지", "",
+              "단지마다 주소 형식은 `/지역/apt/단지번호`입니다(예: `/daejeon/apt/30170-41`). 각 단지 페이지에는 가격, 단지 정보, 생활 입지, 자주 묻는 질문이 있고, 값이 없는 항목은 비워 두지 않고 싣지 않습니다.", ""]
+    (out_dir / "llms.txt").write_text("\n".join(lines), encoding="utf-8")
+
+
 def _write_about(cfg, out_dir: Path, base: str, rows: list[dict]) -> None:
     """'집감이란?' 브랜드 설명 페이지 (맨 앞 주소/about). 지역·단지 수는 이번 빌드의 실제 값."""
     from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -173,8 +202,11 @@ def build(cfg, out_dir: Path) -> int:
             '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "".join(f"<sitemap><loc>{xe(m)}</loc><lastmod>{today}</lastmod></sitemap>\n" for m in maps)
             + "</sitemapindex>\n", encoding="utf-8")
-        (out_dir / "robots.txt").write_text("User-agent: *\nAllow: /\n" + "".join(f"Sitemap: {m}\n" for m in maps[1:])
+        # 검색엔진과 AI 검색 수집기를 모두 허용합니다(공개 자료만 있는 사이트). 개인 기록은 기기 안에만 있어 서버에 없습니다.
+        ai = "".join(f"User-agent: {b}\nAllow: /\n\n" for b in AI_BOTS)
+        (out_dir / "robots.txt").write_text("User-agent: *\nAllow: /\n\n" + ai + "".join(f"Sitemap: {m}\n" for m in maps[1:])
                                             + f"Sitemap: {base}sitemap.xml\n", encoding="utf-8")
+        _write_llms(out_dir, base, rows, today)
 
     # 안드로이드 앱 소유 확인 파일은 맨 앞 주소에만 둘 수 있어요
     from .site import write_assetlinks

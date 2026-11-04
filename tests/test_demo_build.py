@@ -1091,7 +1091,7 @@ def test_structured_data_on_region_home_and_apartment_pages(tmp_path):
     apt = next((out / "apt").glob("*.html"))
     one = blocks("apt/" + apt.name)
     kinds = [g["@type"] for g in one[0]["@graph"]]
-    assert kinds == ["BreadcrumbList", "ApartmentComplex"]
+    assert kinds[:2] == ["BreadcrumbList", "ApartmentComplex"] and set(kinds[2:]) <= {"FAQPage"}   # 질문 블록은 값이 있을 때만
     cx = one[0]["@graph"][1]
     assert cx["name"] and cx["address"]["addressCountry"] == "KR" and cx["description"]
     assert "geo" not in cx or {"latitude", "longitude"} <= set(cx["geo"])   # 좌표는 있을 때만
@@ -1129,3 +1129,22 @@ def test_card_traits_registry_files_cover_each_region_without_duplicates():
         assert len(reg) > 100
         pairs = [tuple(v) for v in reg.values()]
         assert len(pairs) == len(set(pairs))
+
+
+def test_llms_txt_robots_allow_ai_bots_and_apartment_faq(tmp_path, monkeypatch):
+    """AI 검색용 안내 파일과 수집기 허용, 단지 상세의 자주 묻는 질문(있는 값으로만)과 FAQPage 구조화 정보"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out / "daejeon")])
+    cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out / "sejong")])
+    cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
+    robots = (out / "robots.txt").read_text(encoding="utf-8")
+    for bot in ("GPTBot", "OAI-SearchBot", "ClaudeBot", "PerplexityBot"):
+        assert f"User-agent: {bot}\nAllow: /" in robots
+    assert "Disallow" not in robots
+    llms = (out / "llms.txt").read_text(encoding="utf-8")
+    assert llms.startswith("# 집감") and "갱신일:" in llms and "https://www.jipgam.kr/about" in llms and "투자 권유가 아닙니다" in llms
+    apt = next((out / "daejeon" / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert 'id="faq"' in apt and apt.count('class="faq-it"') >= 3
+    ld = [json.loads(b.split("</script>")[0]) for b in apt.split('<script type="application/ld+json">')[1:]]
+    faq = [g for g in ld[0]["@graph"] if g["@type"] == "FAQPage"][0]["mainEntity"]
+    assert len(faq) == apt.count('class="faq-it"') and all(q["acceptedAnswer"]["text"] for q in faq)

@@ -4161,3 +4161,12 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 }
 @media (prefers-color-scheme: dark) and (max-width: 560px) { .cat-v { color: #8fb8f0; } }
 @media (min-width: 900px) { .cat { grid-template-columns: repeat(2, 1fr); } .cat-row:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+/* 자주 묻는 질문: 눌러서 펼침. 질문 글은 18px 이상, 누르는 줄 높이 56px 이상 */
+.faq-list { display: grid; gap: 8px; }
+.faq-it { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.faq-it summary { display: flex; align-items: center; min-height: 56px; padding: 10px 16px; font-size: 18px; font-weight: 700; cursor: pointer; list-style: none; }
+.faq-it summary::-webkit-details-marker { display: none; }
+.faq-it summary::after { content: "+"; margin-left: auto; padding-left: 12px; font-size: 22px; color: var(--text-2); }
+.faq-it[open] summary::after { content: "-"; }
+.faq-it p { margin: 0; padding: 0 16px 16px; font-size: 18px; line-height: 1.6; color: var(--text-2); }

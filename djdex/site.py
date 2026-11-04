@@ -626,8 +626,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                         seed=c["slug"], dong=str(c.get("dong") or ""), traits=_og_traits(c))
             except Exception as e:   # 그림 실패가 사이트 빌드를 막지 않게 (지역 대표 이미지로 대신)
                 print(f"[미리보기] {c['slug']} 건너뜀: {e}")
+        _faq = faq_items(c, cfg.region_name, meta["asof"])
         html = tpl.render(
-            thin_n=_thin_trades(c), og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
+            faq=_faq, faq_ld=[{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in _faq], thin_n=_thin_trades(c), og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             loc_sets=loc_sets, neighbors=neighbors,
@@ -1083,6 +1084,43 @@ def noise_view(c: dict) -> dict | None:
         out["rows"].append((f"가까운 {n['road_kind']}", f"{n['road_name'] or n['road_kind']} {m(n['road'])}"))
     if "rail" in n:
         out["rows"].append(("철도", f"{n['rail_name'] or '철도'} {m(n['rail'])}"))
+    return out
+
+
+def faq_items(c: dict, region: str, asof: str) -> list[tuple[str, str]]:
+    """단지 상세 '자주 묻는 질문': 이 단지에 실제로 있는 값으로만 답합니다(없는 질문은 넣지 않음). 사람이 치는 문장형 질문."""
+    out = []
+    name = c.get("name")
+    stn, dist = station_name(c.get("subway_name_raw")), c.get("subway_raw")
+    if stn and dist is not None and not _nan(dist):
+        out.append((f"{name}에서 {stn}까지 걸어서 몇 분 걸리나요?",
+                    f"직선거리 {float(dist):,.0f}m라서 걸어서 약 {walk_min(dist)}분으로 어림합니다(직선거리의 1.3배를 시속 4.5km로 걷는 계산, 실제 길은 다를 수 있어요)."))
+    el = c.get("elementary_raw")
+    if el is not None and not _nan(el):
+        out.append((f"{name}에서 가장 가까운 초등학교는 얼마나 먼가요?",
+                    f"직선거리 {float(el):,.0f}m이고 걸어서 약 {walk_min(el)}분입니다. 실제 배정 학교는 학구도로 확인해야 해요."))
+    ki = c.get("ki") or {}
+    parts = []
+    if ki.get("hh"):
+        parts.append(f"{int(ki['hh']):,}세대")
+    if c.get("build_year"):
+        parts.append(f"{c['build_year']}년 준공")
+    if ki.get("dongs"):
+        parts.append(f"{ki['dongs']}개 동")
+    if parts:
+        out.append((f"{name}은 몇 세대이고 언제 지어졌나요?", f"{', '.join(parts)}입니다(공동주택관리정보시스템 기준)."))
+    if ki.get("ppu"):
+        out.append((f"{name}의 주차 공간은 넉넉한가요?",
+                    f"세대당 {float(ki['ppu']):.1f}대입니다{', 총 ' + format(int(ki['park']), ',') + '대' if ki.get('park') else ''}. 숫자만 보여 드리고, 넉넉한지는 현장에서 확인하세요."))
+    hv = hill_view(c)
+    if hv:
+        out.append((f"{name}은 언덕에 있나요?", f"주변 300m 고저차가 약 {hv['rf']}m로 '{hv['label']}' 구간입니다."))
+    nv = noise_view(c)
+    if nv and nv.get("rows"):
+        out.append((f"{name}은 큰길이나 철도와 가깝나요?", ", ".join(f"{a} {b}" for a, b in nv["rows"]) + "입니다(거리만 본 어림, 실제 소음은 현장에서 확인)."))
+    basis = c.get("price_basis")
+    if isinstance(basis, str) and not _nan(c.get("price_ref")):
+        out.append((f"{name}의 시세는 어떻게 계산했나요?", f"{basis} 기준으로 전용 면적 환산 가격을 보여 드립니다. 기준일은 {asof} 실거래입니다."))
     return out
 
 
