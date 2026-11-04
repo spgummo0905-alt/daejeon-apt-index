@@ -137,7 +137,7 @@ def test_sejong_demo_uses_dong_groups_and_brt(tmp_path):
     out = tmp_path / "sejong"
     cli.main(["--config", "config.sejong.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert ">세종<svg" in index and "동별 비교" in index and "구별" not in index
+    assert ">세종</button>" in index and "동별 비교" in index and "구별" not in index
     assert 'data-gu="데모' in index  # 구 대신 동으로 거르기
     # 지역 고르기: 위쪽은 버튼 하나, 창 안에 권역별 지역 카드 (지금 지역 표시)
     assert 'class="rg-btn"' in index and 'class="brand-word">집감<i class="brand-dot"' in index
