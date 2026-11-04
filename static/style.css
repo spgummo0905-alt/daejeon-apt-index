@@ -4,7 +4,7 @@
   --border: rgba(11, 11, 11, 0.10); --grid: #e9e8e2; --axis: #c3c2b7; --chip: #efeee9;
   --accent: #1f66c1; --pos: #b03a0a; --neg: #1d4ed8;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --dim: #d3d2cb; --ref: #898781;
-  --g-S: #b8912f; --g-A: #8b95a7; --g-B: #2f6fb8; --g-C: #6d7a8c; --g-D: #b9c0ca;
+  --g-S: #b8912f; --g-A: #8b95a7; --g-B: #2f6fb8; --g-C: #66738a; --g-D: #b9c0ca;
   --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #ffffff; --g-C-ink: #ffffff; --g-D-ink: #1d232c;
   --navy: #13294b; --gold: #c9a24a; --on-navy: #ffffff;
   /* 브랜드 '집감': 심볼의 하늘 → 파랑 → 보라 그라데이션과 워드마크 남색. 로고·소개·대표 버튼 같은 브랜드 자리에만 씀
@@ -31,7 +31,7 @@
     --accent: #6da7ec; --pos: #fb923c; --neg: #7aa7ff;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --dim: #3a3a37; --ref: #898781;
     --g-S: #d4af52; --g-A: #a9b3c4; --g-B: #4f8fd8; --g-C: #7f8ca0; --g-D: #5b6370;
-    --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #ffffff; --g-C-ink: #ffffff; --g-D-ink: #f0efec;
+    --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #10151d; --g-C-ink: #10151d; --g-D-ink: #f0efec;
     --navy: #9ec5f4; --gold: #d4af52; --on-navy: #0d1b2e;
     --brand-ink: #eef0f8; --brand-violet: #9a83ff;
     --quad: rgba(57, 135, 229, 0.10);
@@ -646,7 +646,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 /* 지도 핀: 등급 색 */
 .kpin.g-S { background: linear-gradient(135deg, #fff1bf, #d9b55a 40%, #a37b22); color: #2a1d02; }
 .kpin.g-A { background: linear-gradient(135deg, #fff, #c9d0db 40%, #8b95a7); color: #10151d; }
-.kpin.g-B { background: var(--g-B); color: #fff; } .kpin.g-C { background: var(--g-C); color: #fff; } .kpin.g-D { background: #b9c0ca; color: #1d232c; }
+.kpin.g-B { background: var(--g-B); color: var(--g-B-ink); } .kpin.g-C { background: var(--g-C); color: var(--g-C-ink); } .kpin.g-D { background: #b9c0ca; color: #1d232c; }
 
 /* 하단 탭바 (휴대폰) */
 .tabbar { display: none; }
