@@ -245,6 +245,9 @@
       gl.append(li);
     });
     sec.querySelector("[data-album-empty]").hidden = got.length > 0;
+    const beenN = got.filter(c => DJ.been(c)).length;   // 다녀온 곳 수 (현장 기록이 있는 카드)
+    const bn = sec.querySelector("[data-album-been]");
+    if (bn) { bn.hidden = !beenN; bn.textContent = beenN ? `그중 직접 다녀온 곳 ${beenN}곳 · 카드에 도장이 찍혀 있어요` : ""; }
     // 모은 카드: 등급 높은 순, 같은 등급은 지수 순. 처음엔 12장, 더 보기로 24장씩
     const sorted = got.slice().sort((x, y) => GRADES.indexOf(x.g) - GRADES.indexOf(y.g) || (y.i ?? -1) - (x.i ?? -1));
     const box = sec.querySelector("[data-album-cards]"), btn = sec.querySelector("[data-album-more]");
