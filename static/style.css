@@ -4124,3 +4124,9 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 .cmp-fit-card .pj-sum-h { margin: 10px 0 4px; }
 .cmp-fit-card ul { margin: 0; padding: 0; list-style: none; }
 .cmp-fit-card li { margin: 4px 0; font-size: 16px; line-height: 1.5; }
+
+/* 휴대폰 위쪽 돋보기: 글자("검색")를 숨긴 아이콘 전용 버튼이라 아이콘이 44px 원 한가운데 오게 (좌우 여백·flex 간격 때문에 왼쪽으로 쏠리던 것) */
+@media (max-width: 720px) {
+  button.hs-btn { display: inline-grid; place-items: center; width: 44px; min-width: 44px; padding: 0; gap: 0; }
+  button.hs-btn .ic { margin: 0; }
+}
