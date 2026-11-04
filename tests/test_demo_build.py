@@ -1158,3 +1158,16 @@ def test_rank_tab_is_named_browse(tmp_path):
     assert 'data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>둘러보기</a>' in page
     assert 'data-nav="rank">둘러보기</a>' in page and 'data-nav="rank">랭킹</a>' not in page
     assert (out / "rank.html").exists()
+
+
+def test_visited_card_stamp_wiring(tmp_path):
+    """다녀온 카드: 현장 기록이 있으면 카드에 도장(DJ.been), 카드첩에 다녀온 수. 기록은 이 기기 안에서만 읽는다(서버 전송 없음)"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    cards = (out / "cards.html").read_text(encoding="utf-8")
+    assert "DJ.been = function" in app and 'el("span", "mcard-been"' in app
+    assert "data-album-been" in cards and "DJ.been(c)" in (out / "static" / "cards.js").read_text(encoding="utf-8")
+    been = app[app.index("DJ.been = function"):app.index("DJ.been = function") + 500]
+    assert "fetch(" not in been and "XMLHttpRequest" not in been and "sendBeacon" not in been
+    assert ".mcard-been" in (out / "static" / "style.css").read_text(encoding="utf-8")

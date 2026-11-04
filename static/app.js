@@ -283,6 +283,12 @@
   };
   // 체크한 수 / 전체 (이 단지 항목 + 기본 항목)
   DJ.visitDone = (v, items) => [items.filter(([id]) => v.x[id]).length + DJ.CHECK.filter((_, i) => v.c[i]).length, items.length + DJ.CHECK.length];
+  // 다녀온 카드: 현장 기록(다녀온 날 / 체크 / 메모 / 호가)이 하나라도 있으면 도장을 찍을 값. 이 기기 안의 기록만 읽음. 없으면 null
+  DJ.been = function (c) {
+    const v = DJ.visit(c.s), [n, all] = DJ.visitDone(v, DJ.visitItems(c, document.body.dataset.region));
+    if (!v.d && !n && !(v.m || "").trim() && !(v.q || []).length) return null;
+    return { d: v.d || "", n, all, memo: !!(v.m || "").trim() };
+  };
 
   // ---------- 카드첩: 열어 본 단지 카드를 모읍니다 (이 브라우저에만) ----------
   // {단지: 처음 모은 날}. 지역은 단지 코드 앞 두 자리(시도: 30 대전, 36 세종, 11 서울)로 나눠 셉니다.
@@ -793,7 +799,15 @@
     if (facts) a.append(el("span", "mcard-facts", facts));
     a.append(el("strong", "mcard-name", c.n), el("span", "mcard-where", DJ.place(c)), foot);
     if (c.h) a.append(el("span", "mcard-high", "신고가"));
-    a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g}등급 ${c.i == null ? "" : c.i + "점"}`);
+    const been = DJ.been(c);   // 다녀온 카드: 현장 기록이 있으면 금박 도장
+    if (been) {
+      const when = been.d ? " " + been.d.slice(5).replace("-", ".") : "";
+      const st = el("span", "mcard-been", `다녀옴${when}`);   // 한 줄로 짧게. 확인한 수는 읽어 주는 글과 눌러 볼 때 제목에
+      st.title = `현장 확인 ${been.n}/${been.all}`;
+      a.append(st);
+      wrap.classList.add("been");
+    }
+    a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g}등급 ${c.i == null ? "" : c.i + "점"}${been ? ", 다녀온 곳, 현장 확인 " + been.n + "/" + been.all : ""}`);
     wrap.append(a);
     wrap.link = a;
     const lines = DJ.memo(c);
