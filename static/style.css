@@ -4142,3 +4142,22 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 
 /* 설명 글: 마지막 줄에 한두 글자만 남지 않게 (글자 크기 단계를 16px 로 모은 뒤 생긴 어색한 줄바꿈 정리) */
 .it-ana-list span, .it-tools-lead, .it-lead { text-wrap: pretty; }
+
+/* 5개 범주 진입 줄 (단지 상세): 아이콘 + 큰 제목 + 대표 숫자 + 한 줄 설명. 줄 높이 72px 이상, 눌러서 해당 구역으로 */
+.cat { display: grid; gap: 8px; margin: 20px 0 8px; }
+.cat-row { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; grid-template-areas: "ic tt vv" "ic ds vv"; align-items: center; column-gap: 14px; row-gap: 2px;
+  min-height: 72px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; color: var(--text); }
+.cat-row:hover { text-decoration: none; border-color: var(--text-2); }
+.cat-ic { grid-area: ic; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--navy); color: var(--on-navy); }
+.cat-ic .ic { width: 26px; height: 26px; }
+.cat-tx { display: contents; }
+.cat-tx b { grid-area: tt; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.cat-tx span { grid-area: ds; font-size: 16px; color: var(--text-2); }
+.cat-v { grid-area: vv; font-size: 18px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; max-width: 9em; }
+@media (max-width: 560px) {
+  .cat-row { grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "ic tt" "ic vv" "ic ds"; }
+  .cat-ic { width: 44px; height: 44px; align-self: start; margin-top: 2px; }
+  .cat-v { text-align: left; max-width: none; font-size: 18px; color: #1f5fb4; }
+}
+@media (prefers-color-scheme: dark) and (max-width: 560px) { .cat-v { color: #8fb8f0; } }
+@media (min-width: 900px) { .cat { grid-template-columns: repeat(2, 1fr); } .cat-row:last-child:nth-child(odd) { grid-column: 1 / -1; } }
