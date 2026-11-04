@@ -4134,3 +4134,7 @@ body[data-page="rooftop"] header.site .rg { display: none; }
   button.hs-btn { display: inline-grid; place-items: center; width: 44px; min-width: 44px; padding: 0; gap: 0; }
   button.hs-btn .ic { margin: 0; }
 }
+
+/* 소개 제목 둘째 줄: 쉼표 뒤에서만 줄이 바뀌게 ("더"만 줄 끝에 남지 않게) */
+.it-copy h1 .nb { white-space: nowrap; display: inline-block; }
+@media (max-width: 380px) { .it-copy h1 .nb { white-space: normal; } }

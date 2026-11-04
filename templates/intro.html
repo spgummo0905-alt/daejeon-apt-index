@@ -21,10 +21,10 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
       <p class="it-eyebrow"><span class="live-dot"></span>아파트 비교부터 현장 기록까지 · 실거래 매일 반영</p>
-      <h1>좋은 집의 가치는,<br><em>내가 보낼 하루에 있으니까</em></h1>
+      <h1>좋은 집의 가치<br><em><span class="nb">더 쉽게 찾고,</span> <span class="nb">더 꼼꼼히 보다</span></em></h1>
       <p class="it-lead">마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.</p>
       <div class="it-cta">
-        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기 <span aria-hidden="true">→</span></button>{% else %}<a class="it-btn primary" href="index.html">궁금한 아파트 찾기 <span aria-hidden="true">→</span></a>{% endif %}
+        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기</button>{% else %}<a class="it-btn primary" href="index.html">궁금한 아파트 찾기</a>{% endif %}
         <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'projects.html' }}">{{ '임장 도구 살펴보기' if landing else '한 화면에서 집 찾기' }}</a>
       </div>
       <dl class="it-nums">
@@ -195,7 +195,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <span>카카오 로그인</span></button>
       <div class="it-login-copy" data-when-in hidden><b><span data-user-name></span>의 기록은 카카오 계정에 저장됩니다</b>
         <span>다른 기기에서도 관심 화면에서 이어 볼 수 있습니다.</span></div>
-      <a class="it-btn ghost" href="my.html" data-when-in hidden>내 임장 기록 <span aria-hidden="true">→</span></a>
+      <a class="it-btn ghost" href="my.html" data-when-in hidden>내 임장 기록</a>
     </div>
     {% endif %}
   </div>
@@ -251,7 +251,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
       </div>{% endif %}
-      {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 아파트 찾기 <span aria-hidden="true">→</span></button>{% else %}<a class="it-btn primary" href="index.html#list">아파트 검색하기 <span aria-hidden="true">→</span></a>{% endif %}
+      {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 아파트 찾기</button>{% else %}<a class="it-btn primary" href="index.html#list">아파트 검색하기</a>{% endif %}
     </div>
   </div>
 </section>

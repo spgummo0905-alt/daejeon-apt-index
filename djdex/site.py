@@ -249,6 +249,19 @@ def write_assetlinks(out_dir: Path, cfg, root: bool = False) -> None:
                    "sha256_cert_fingerprints": fps}}], indent=1), encoding="utf-8")
 
 
+def minify_css(text):
+    """주석과 군더더기 공백만 걷어냅니다(규칙·값은 그대로). 문자열 안의 내용은 건드리지 않습니다."""
+    keep = []
+    def stash(m):
+        keep.append(m.group(0)); return f"\x00{len(keep) - 1}\x00"
+    text = re.sub(r'/\*.*?\*/', "", text, flags=re.S)
+    text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|url\([^)]*\)', stash, text)
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s*([{};>])\s*", r"\1", text)   # 쉼표 뒤 공백은 남김: 색 변수 값을 스크립트가 읽어 쓰는 곳이 있음
+    text = text.replace(";}", "}").strip()
+    return re.sub(r"\x00(\d+)\x00", lambda m: keep[int(m.group(1))], text)
+
+
 def write_pwa(out_dir: Path, cfg, version: str) -> None:
     """앱처럼 쓰기: 홈 화면에 추가할 때의 이름·아이콘(manifest)과, 끊겨도 본 화면이 열리게 하는 서비스 워커(sw.js).
     sw.js 는 사이트 맨 위에 있어야 그 아래 화면을 맡을 수 있습니다. 같은 주소 아래 다른 지역 폴더(sejong/ 등)는
@@ -310,6 +323,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         shutil.rmtree(out_dir)
     (out_dir / "apt").mkdir(parents=True)
     shutil.copytree(ROOT / "static", out_dir / "static")
+    css_out = out_dir / "static" / "style.css"   # 배포본 스타일만 줄임 (원본 static/style.css 는 그대로)
+    css_out.write_text(minify_css(css_out.read_text(encoding="utf-8")), encoding="utf-8")
     # 정적 파일이 바뀌면 주소 뒤 ?v= 값이 바뀌어 브라우저가 예전 CSS·JS를 쓰지 않습니다.
     h = hashlib.sha1()
     for f in sorted((ROOT / "static").rglob("*")):
