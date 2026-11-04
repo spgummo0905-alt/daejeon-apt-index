@@ -1148,3 +1148,13 @@ def test_llms_txt_robots_allow_ai_bots_and_apartment_faq(tmp_path, monkeypatch):
     ld = [json.loads(b.split("</script>")[0]) for b in apt.split('<script type="application/ld+json">')[1:]]
     faq = [g for g in ld[0]["@graph"] if g["@type"] == "FAQPage"][0]["mainEntity"]
     assert len(faq) == apt.count('class="faq-it"') and all(q["acceptedAnswer"]["text"] for q in faq)
+
+
+def test_rank_tab_is_named_browse(tmp_path):
+    """아래 탭·위 메뉴의 '랭킹'은 '둘러보기'로 부르고, 주소(rank.html)는 그대로 둔다(검색·북마크 보존)"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert 'data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>둘러보기</a>' in page
+    assert 'data-nav="rank">둘러보기</a>' in page and 'data-nav="rank">랭킹</a>' not in page
+    assert (out / "rank.html").exists()
