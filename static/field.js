@@ -267,7 +267,7 @@
       (v.p || []).forEach(([path], i) => {
         const fig = el("figure", "fm-ph");
         const a = el("a"); a.href = DJ.photoUrl(path); a.target = "_blank"; a.rel = "noopener";
-        const img = el("img"); img.src = DJ.photoUrl(path); img.alt = `${name} 현장 사진 ${i + 1}`; img.loading = "lazy";
+        const img = el("img"); DJ.photoSet(img, path); img.alt = `${name} 현장 사진 ${i + 1}`; img.loading = "lazy";
         a.append(img);
         const del = el("button", "fm-ph-del", "×"); del.type = "button"; del.setAttribute("aria-label", "이 사진 지우기");
         del.addEventListener("click", () => {
