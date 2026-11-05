@@ -1309,3 +1309,21 @@ def test_visit_prep_name_is_the_same_everywhere(tmp_path):
     assert "임장 코스" in home                                                                            # 코스 화면 이름은 그대로 남아 있음
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert '"이어하기"' in app and '"이어서 하기"' in app                                                   # 진행 중일 때의 이름은 그대로
+
+
+def test_mobile_text_wrap_rules_stay(tmp_path):
+    """UX 2차: 모바일 글자 밀림 정리. 개수 칸의 '대전 전체'는 좁은 화면에서 '전체'만, 안내문은 한 줄, 문단·제목 끝에 한두 단어만 남지 않도록 text-wrap 규칙을 유지한다"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert '<span class="sv-rg">' in finder and "전체</small>" in finder and "data-sv-all" in finder       # 지역 이름만 접을 수 있게 감쌈, 문구는 그대로
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    tail = css[css.index("모바일 글자 밀림 정리"):]
+    assert "p, li, dd, summary, figcaption { text-wrap: pretty; }" in tail
+    assert "text-wrap: balance" in tail and ".sv-delta" in tail and ".sv-count .sv-rg { display: none; }" in tail
+    assert ".sv-delta { grid-column: 1 / -1; grid-row: 2;" in tail and ".sv-count-box { display: contents; }" in tail   # 안내문은 제목 아래 한 줄
+    assert ".ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }" in tail
+    js = (root / "static" / "finder.js").read_text(encoding="utf-8")
+    assert "조건을 고를수록 좁혀집니다" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로

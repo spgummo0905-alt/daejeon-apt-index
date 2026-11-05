@@ -4257,3 +4257,33 @@ body[data-page="intro"] .toast-act { color: #13294b; }
   .pj-r-memo { overflow-wrap: anywhere; word-break: break-word; orphans: 3; widows: 3; }
   .pj-r-facts dd, .pj-r-cond, .pj-r-done li, .pj-r-todo li { overflow-wrap: anywhere; }
 }
+
+
+/* ===== 모바일 글자 밀림 정리 (UX 2차) =====
+   원인 세 가지를 공통 규칙으로: ① 숫자 칸 안의 짧은 말이 따로 접힘 ② 문단 마지막 줄에 한두 단어만 남음 ③ 작은 칸 안의 짧은 문구가 어색하게 끊김.
+   text-wrap 을 모르는 브라우저는 예전 그대로 보이고, 아는 브라우저만 좋아집니다. */
+p, li, dd, summary, figcaption { text-wrap: pretty; }
+h1, h2, h3, h4, .lead, .sv-qt, .sv-qs, .sv-delta, .roof-strip-t, .pt-s, .loc-raw, .ls em, .ki-note, .pt-v, .sv-opt small, .sv-opt span,
+.today-text > .muted, .pt-note, .fl-note, .cl-why, .ft-legal, .empty, .album-empty, .cs-empty { text-wrap: balance; }
+.sv-count, .sv-count small, .sv-count span { white-space: nowrap; }
+.ar-m, .ar-p { white-space: nowrap; }
+.mc-rank, .mc-rank b, .mc-rank small { white-space: nowrap; }
+@media (max-width: 560px) {
+  .sv-count .sv-rg { display: none; }   /* 제목에 이미 지역이 나와 있어, 좁은 화면에서는 '전체 571 곳' 으로 */
+}
+
+@media (max-width: 560px) {
+  /* 제목 줄 오른쪽에 개수 칸은 그대로 두고, 그 아래 안내문은 좁은 칸에 갇혀 두 줄로 쪼개지지 않게 가로 전체를 쓰는 둘째 줄로 */
+  .sv-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+  .sv-top > :first-child { min-width: 0; }
+  .sv-count-box { display: contents; }
+  .sv-count { grid-column: 2; grid-row: 1; justify-self: end; }
+  .sv-delta { grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: left; min-height: 0; }
+}
+p.muted { text-wrap: balance; }
+
+/* 숫자 칸 안의 짧은 말은 단어 중간이 아니라 칸 전체가 한 덩어리로 (잘리지 않게 칸 폭이 모자라면 글자 크기가 아니라 줄임표 없이 아래 줄로 통째로) */
+.ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }
+.pt-v { font-size: clamp(17px, 5.4vw, 21px); }
+.prose table td, .prose table th { text-wrap: balance; }
+.prose table td:first-child { min-width: 10.5em; }
