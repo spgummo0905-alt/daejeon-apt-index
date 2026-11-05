@@ -28,6 +28,19 @@
   st.m = Object.assign({}, DEF.m, st.m); st.on = Object.assign({}, DEF.on, st.on); st.vol = Object.assign({}, DEF.vol, st.vol);
   if (!st.nick) st.nick = ADJ[(Math.random() * ADJ.length) | 0] + " " + NOUN[(Math.random() * NOUN.length) | 0];
   if (!st.id) st.id = Math.random().toString(36).slice(2, 10);
+
+  // 운영자용 통계: 옥상 화면을 연 브라우저를 하루에 한 번만 알림 (화면에는 아무것도 안 보임, 이름·위치·기록 없음).
+  // 사이트 전체 접속자 번호(DJ.online.vid)를 그대로 써서 '오늘 옥상에 온 브라우저 수'만 따로 셉니다. 점검용 자동 조종 브라우저와 서버 준비 전에는 조용히 건너뜀.
+  const countRoofVisit = () => {
+    if (navigator.webdriver || !(DJ.sb && DJ.sb.call)) return;
+    const vid = (DJ.online && DJ.online.vid && DJ.online.vid()) || st.id;
+    const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), key = "djdex:roofseen";
+    try { if (localStorage.getItem(key) === day + ":" + vid) return; } catch (e) { /* 저장 불가면 그냥 보냄 */ }
+    DJ.sb.call("/rest/v1/rpc/roof_only_visit", { method: "POST", body: { vid } })
+      .then(() => { try { localStorage.setItem(key, day + ":" + vid); } catch (e) { /* 저장 불가 */ } })
+      .catch(() => { /* 서버 준비 전이거나 연결 없음: 조용히 */ });
+  };
+  setTimeout(countRoofVisit, 4000);
   const today = ymd(new Date()), yd = new Date(); yd.setDate(yd.getDate() - 1);
   if (st.last !== today) { st.streak = st.last === ymd(yd) ? st.streak + 1 : 1; st.days += 1; st.last = today; st.m = Object.assign({}, DEF.m); }
   if (st.stars.d !== today) st.stars = { d: today, idx: [] };
