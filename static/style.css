@@ -4177,3 +4177,22 @@ body[data-page="rooftop"] header.site .rg { display: none; }
   width: fit-content; max-width: calc(100% - 38px); white-space: nowrap; overflow: hidden; text-overflow: clip; }
 .mcw.been .mcard { outline: 2px solid #e3b955; outline-offset: -2px; }
 .album-been { margin: 4px 0 10px; font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* 프로젝트 한 장 보고서 (인쇄·PDF): 조건 / 공개 숫자 / 확인한 것 / 못 확인한 것 / 메모를 소제목으로 나눔 */
+@media print {
+  .pj-report h2 { margin: 0 0 2px; font-size: 22px; }
+  .pj-r-sub { margin: 0 0 12px; color: #555; font-size: 12px; }
+  .pj-r-box { margin: 0 0 10px; padding: 8px 10px; border: 1px solid #999; border-radius: 6px; break-inside: avoid; }
+  .pj-r-box h3, .pj-r-c h4 { margin: 8px 0 2px; font-size: 12px; color: #444; letter-spacing: 0; }
+  .pj-r-cond { margin: 0; font-size: 14px; font-weight: 700; }
+  .pj-r-c { break-inside: avoid; padding: 10px 0; border-top: 1px solid #bbb; }
+  .pj-r-c h3 { margin: 0; font-size: 16px; }
+  .pj-r-meta { margin: 2px 0 4px; color: #555; font-size: 12px; }
+  .pj-r-facts { display: grid; grid-template-columns: max-content 1fr; gap: 0 10px; margin: 4px 0; font-size: 12px; }
+  .pj-r-facts dt { color: #555; } .pj-r-facts dd { margin: 0; font-weight: 700; }
+  .pj-r-done, .pj-r-todo, .pj-r-pend { list-style: none; margin: 0 0 4px; padding: 0; font-size: 12px; columns: 2; }
+  .pj-r-done li, .pj-r-todo li, .pj-r-pend li { break-inside: avoid; }
+  .pj-r-todo li { color: #444; }
+  .pj-r-memo { margin: 2px 0; font-size: 12px; white-space: pre-wrap; }
+  .pj-r-note { margin-top: 12px; color: #666; font-size: 11px; }
+}
