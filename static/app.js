@@ -984,6 +984,12 @@
       // 배지 알림이 뜨면 카드 알림은 생략 (두 개가 한꺼번에 뜨지 않게)
       if (!DJ.checkBadges().length && got && ALBUM_MARKS.includes(got))
         DJ.toast(got === 1 ? "카드첩에 첫 단지를 저장했어요" : `카드첩에 ${got}번째 단지를 저장했어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 안)에서 다시 볼 수 있어요");
+      // 상세 위쪽 '비교': 담아 둔 관심 단지가 있으면 이 단지와 함께 (최대 4곳, 이 지역 것만), 없으면 이 단지 하나로 시작
+      const cmpHere = document.querySelector("[data-compare-here]");
+      if (cmpHere) DJ.data().then(d => {
+        const mine = DJ.favs().filter(s => s !== c.s && d.bySlug[s]).slice(0, 3);
+        if (mine.length) cmpHere.href = ROOT + "compare.html?s=" + [c.s, ...mine].map(encodeURIComponent).join(",");
+      }).catch(() => {});
       const fav = document.querySelector("[data-fav]");
       if (fav) {
         const label = fav.querySelector("span"); // 아이콘만 있는 버튼이면 글자 대신 aria-label 로 상태를 알립니다

@@ -233,8 +233,8 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
   border-radius: 12px; font: inherit; font-size: 13px; font-weight: 750; white-space: nowrap; }
 @media (max-width: 719px) {
   .apt-topbar { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-  .apt-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .apt-actions .action-btn { flex-direction: column; gap: 4px; padding: 8px 4px; font-size: 12px; }
+  .apt-actions { grid-column: 1 / -1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }   /* 코스 버튼이 없는 단지(위치 정보 없음)도 칸이 균등하게 */
+  .apt-actions .action-btn { flex-direction: column; gap: 4px; padding: 8px 2px; font-size: 12px; white-space: nowrap; }
 }
 @keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-color-scheme: dark) { .icon-btn[data-fav].on { background: #3a3012; color: var(--gold); } }

@@ -1275,3 +1275,17 @@ def test_project_report_print_keeps_blocks_whole(tmp_path):
     assert ".pj-report h3, .pj-report h4 { break-after: avoid; }" in css
     assert ".pj-r-mb { break-inside: avoid; }" in css and "overflow-wrap: anywhere" in css
     assert ".pj-r-mb{break-inside:avoid" in (out / "static" / "style.css").read_text(encoding="utf-8").replace(" ", "") or ".pj-r-mb" in (out / "static" / "style.css").read_text(encoding="utf-8")
+
+
+def test_apt_detail_has_compare_in_the_action_row(tmp_path):
+    """UX 2차: 단지 상세 위쪽 행동 줄에 '비교'. 관심 단지가 있으면 이 단지와 함께, 없으면 이 단지 하나로 비교를 연다. 새 저장 구조 없음"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
+    row = page[page.index('class="icon-actions apt-actions"'):page.index("</div>", page.index('class="icon-actions apt-actions"'))]
+    assert "data-compare-here" in row and 'compare.html?a=DEMO-0001' in row
+    assert row.index("data-course-add") < row.index("data-compare-here") < row.index("data-field")      # 관심 · 코스 · 비교 · 현장 체크 · 공유 순서
+    assert 'aria-label="다른 단지와 비교하기"' in row and "<span>비교</span>" in row
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "[data-compare-here]" in app and "DJ.favs().filter(s => s !== c.s" in app and ".slice(0, 3)" in app    # 관심 단지 최대 3곳 + 이 단지 = 최대 4곳
+    assert "compare.html?a=" in page[page.index("주요 지표 비교"):page.index("주요 지표 비교") + 400]          # 아래쪽 기존 '다른 단지와 비교' 링크는 그대로
