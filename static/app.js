@@ -87,6 +87,7 @@
   DJ.toast = function (title, body, ms, action) {   // ms: 오래 보여 줄 때 (실패 이유처럼 읽어야 하는 알림)
     const zone = document.getElementById("toast-zone");
     if (!zone) return;
+    if (Array.from(zone.querySelectorAll(".toast:not(.out) > strong")).some(s => s.textContent === title)) return;   // 같은 알림이 떠 있으면 다시 쌓지 않음
     const t = el("div", "toast");
     t.append(el("strong", "", title));
     if (body) t.append(el("span", "", body));

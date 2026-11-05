@@ -68,3 +68,23 @@ test('candidate order follows the project order, not the record order', () => {
   assert.deepEqual(plain(R.build({ project: { name: 'p', goal: '', slugs: ['b', 'a'] }, rows: both, bySlug }).visited.map(x => x.slug)), ['b', 'a']);
   assert.deepEqual(plain(R.build({ project: { name: 'p', goal: '', slugs: ['a', 'b'] }, rows: both, bySlug }).visited.map(x => x.slug)), ['a', 'b']);
 });
+
+
+test('long memos are split for print without losing or adding a single character', () => {
+  const C = R.chunks;
+  assert.deepEqual(plain(C('')), ['']); assert.deepEqual(plain(C(null)), ['']); assert.deepEqual(plain(C('짧은 메모')), ['짧은 메모']);
+  const samples = [
+    '엘리베이터 대기가 길었음. 주차장이 거의 찼다. '.repeat(60),
+    '아주 긴 메모입니다 '.repeat(200),
+    'https://example.com/' + 'abcdefghij'.repeat(120),            // 띄어쓰기 없는 긴 글은 길이로 자른다
+    '첫 줄\n' + '둘째 줄 내용 '.repeat(120) + '\n마지막 줄',
+    '가'.repeat(1000) + ' ' + '나'.repeat(10),
+  ];
+  for (const s of samples) {
+    const parts = plain(C(s));
+    assert.equal(parts.join(''), s, '이어 붙이면 원문과 정확히 같다');
+    assert.ok(parts.every(x => x.length > 0 && x.length <= 420), '토막 길이 상한');
+    assert.ok(parts.length >= 2);
+  }
+  assert.ok(plain(C('문장입니다. '.repeat(100)))[0].endsWith('.'), '가능하면 문장 끝(마침표 뒤)에서 자른다');
+});

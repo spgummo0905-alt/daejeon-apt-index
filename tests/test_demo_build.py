@@ -1241,3 +1241,37 @@ def test_lean_page_headers_keep_one_note_box(tmp_path):
     assert 'data-pj-create' in pages["projects"] and 'name="name"' in pages["projects"]
     js = (out / "static" / "cards.js").read_text(encoding="utf-8")
     assert "카드를 뒤집으면 선정 이유가 표시됩니다" not in js and pages["cards"].count("카드를 뒤집으면") == 0   # 같은 안내가 네 번 나오던 것을 없앰
+
+
+def test_field_mode_confirms_only_after_real_save(tmp_path):
+    """UX 2차 A·B: 현장 모드는 저장이 실제로 된 뒤에만 '다녀왔어요'·체크를 확정하고, 사진은 서버 삭제가 실패하면 되돌린다.
+    (실제 동작은 브라우저에서 저장소가 가득 찬 경우와 서버가 삭제를 거절한 경우로 확인함. 여기서는 그 연결이 사라지지 않도록 고정한다)"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert "function persist()" in js and "const ok = keep();" in js
+    been = js[js.index('been.addEventListener("click"'):js.index("nextAfterVisit();", js.index('been.addEventListener("click"'))]
+    assert "if (!persist())" in been and been.index("if (!persist())") < been.index("paint();")      # 저장 성공을 본 뒤에야 켜진 표시
+    chk = js[js.index('cb.addEventListener("change"'):js.index("const t = el(", js.index('cb.addEventListener("change"'))]
+    assert "if (!persist())" in chk and "cb.checked = was" in chk                                       # 체크리스트도 같게
+    assert ".catch(() => {})" not in js[js.index('el("button", "fm-ph-del"'):js.index("if ((v.p || []).length < MAXP)")]   # 사진 삭제 오류를 삼키지 않음
+    assert "await DJ.photoDel([path])" in js and "사진을 지우지 못했어요" in js and "photoWhy(e)" in js
+    assert js.index("if (!persist()) { v.p.splice(at, 0, gone)") < js.index("await DJ.photoDel([path])")  # 기록을 못 바꾸면 파일도 지우지 않음
+    assert "DJ.photoDel([path]).catch(() => {}); }" in js                                              # 올린 뒤 기록에 못 남긴 파일만 조용히 치움
+    course = (out / "static" / "course.js").read_text(encoding="utf-8")
+    assert "if (!DJ.saveVisit(c.s, v)) { set(was); cb.checked = was; }" in course
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert ".toast:not(.out) > strong" in app                                                           # 같은 알림이 겹겹이 쌓이지 않음
+
+
+def test_project_report_print_keeps_blocks_whole(tmp_path):
+    """한 장 보고서 인쇄: 긴 메모는 토막마다 이름표가 붙고(쪽이 넘어가도 어느 단지인지 보임), 제목이 쪽 끝에 혼자 남거나 긴 주소가 오른쪽에서 잘리지 않는다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "projects.js").read_text(encoding="utf-8")
+    assert "DJProjectReport.chunks(m.text)" in js and "이어서" in js and "pj-r-mb" in js
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")   # 배포본은 공백이 압축돼 원본으로 확인
+    assert ".pj-report h3, .pj-report h4 { break-after: avoid; }" in css
+    assert ".pj-r-mb { break-inside: avoid; }" in css and "overflow-wrap: anywhere" in css
+    assert ".pj-r-mb{break-inside:avoid" in (out / "static" / "style.css").read_text(encoding="utf-8").replace(" ", "") or ".pj-r-mb" in (out / "static" / "style.css").read_text(encoding="utf-8")
