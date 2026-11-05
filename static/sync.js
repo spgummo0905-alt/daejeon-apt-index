@@ -89,8 +89,9 @@
   DJ.photoDel = async function (paths) {
     const at = await token();
     if (!at || !paths.length) return;
-    await fetch(API + "/storage/v1/object/photos", { method: "DELETE", body: JSON.stringify({ prefixes: paths }),
+    const r = await fetch(API + "/storage/v1/object/photos", { method: "DELETE", body: JSON.stringify({ prefixes: paths }),
       headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "application/json" } });
+    if (!r.ok) { const e = new Error("사진을 지우지 못했어요 (HTTP " + r.status + ")"); e.status = r.status; throw e; }
   };
   // 이 계정의 모든 현장 사진 경로 (임장 노트 기록에서)
   const allPhotos = () => localKeys().filter(k => k.startsWith("visit:")).flatMap(k => ((getLocal(k) || {}).p || []).map(x => x[0]));

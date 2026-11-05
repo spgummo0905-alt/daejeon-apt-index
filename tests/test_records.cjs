@@ -50,6 +50,11 @@ function browser(localStorage = storage(), server = {}, options = {}) {
       data = server[id] || [];
       if (options.switchAccountOnRead) localStorage.setItem('djdex-auth', JSON.stringify({ user: { id: 'B' }, at: 'token-B', exp: Date.now() / 1000 + 3600 }));
     }
+    if (path === '/storage/v1/object/photos' && opt.method === 'DELETE') {
+      if (options.failPhotoDelete) return { ok: false, status: 500, text: async () => 'storage down' };
+      (options.deletedPhotos || []).push(...body.prefixes);
+    }
+    if (path === '/rest/v1/rpc/delete_me') options.accountDeleted && (options.accountDeleted.n = (options.accountDeleted.n || 0) + 1);
     if (path === '/rest/v1/rpc/my_member') data = { id };
     if (path === '/rest/v1/rpc/sync_put') {
       if (options.failPush) return { ok: false, status: 503, text: async () => 'unavailable' };
@@ -262,4 +267,29 @@ test('restored visit-log ID conflicts preserve both versions, and remote deletio
   server.A = [{ k: 'visitlog:log-id', v: { version: 1, id: 'log-id', deleted: true, created: 1 }, t: Date.now() + 100, updated_at: '2026-11-02' }];
   const again = browser(s, server); await again.start();
   assert.equal(again.R.get('visitlog:log-id').deleted, true);
+});
+
+
+test('account deletion stops before deleting the account when photo files could not be removed', async () => {
+  const note = { m: 'keep me', c: [true], q: [], p: [['A/apt-1/one.jpg', '11.01'], ['A/apt-1/two.jpg', '11.02']] };
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 }, 'djdex@A:visit:apt-1': note });
+  const deleted = { n: 0 }, toasts = [];
+  const b = browser(s, {}, { failPhotoDelete: true, accountDeleted: deleted }); b.ctx.DJ.toast = (...a) => toasts.push(a); await b.start();
+  await b.ctx.DJ.deleteAccount();
+  assert.equal(deleted.n || 0, 0, 'the account must not be deleted while its public photo files remain');
+  assert.deepEqual(plain(b.R.get('visit:apt-1')).p.map(x => x[0]), ['A/apt-1/one.jpg', 'A/apt-1/two.jpg']);
+  assert.equal(b.R.get('visit:apt-1').m, 'keep me');
+  assert.ok(toasts.length >= 1);
+});
+
+test('account deletion removes every photo file first, in batches of 100, then the account', async () => {
+  const p = Array.from({ length: 250 }, (_, i) => ['A/apt-1/' + i + '.jpg', '11.01']);
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 }, 'djdex@A:visit:apt-1': { m: 'x', c: [], q: [], p } });
+  const deletedPhotos = [], deleted = { n: 0 };
+  const b = browser(s, {}, { deletedPhotos, accountDeleted: deleted }); await b.start();
+  await b.ctx.DJ.deleteAccount();
+  assert.equal(deletedPhotos.length, 250);
+  assert.equal(deleted.n, 1);
+  const order = b.requests.map(r => r.path);
+  assert.ok(order.lastIndexOf('/storage/v1/object/photos') < order.indexOf('/rest/v1/rpc/delete_me'), 'photos first, then the account');
 });
