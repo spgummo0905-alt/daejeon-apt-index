@@ -1369,3 +1369,14 @@ def test_detail_card_budget_line_is_wired_and_hidden_by_default():
     assert apt.index('static/fit.js') < apt.index('static/field.js')
     app = (root / "static" / "app.js").read_text(encoding="utf-8")
     assert 'DJFit.budgetGap' in app and 'DJFit.budgetText' in app
+
+
+def test_mobile_chip_rows_are_tidy_grids():
+    """UX 2차: 휴대폰에서 구·면적 칩이 줄마다 폭이 들쭉날쭉하고 한 칩이 혼자 떨어졌음. 폭이 같은 격자로, 숨는 항목 없이"""
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
+    tail = css[css.index("/* 휴대폰: 구·면적 칩을 폭이 같은 격자로"):]
+    assert ".controls > #gu-filter { flex: 1 1 100%; }" in tail      # 가로 배치 칸 안에서 폭 전체를 써야 격자가 줄어들지 않음
+    assert "#gu-filter, [data-area-filter] { display: grid;" in tail
+    assert ".chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tail
+    assert "min-height: 44px" in tail and "overflow-x" not in tail     # 가로로 숨기지 않음
