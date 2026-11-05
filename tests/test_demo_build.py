@@ -1401,3 +1401,14 @@ def test_mobile_chip_rows_are_tidy_grids():
     assert "#gu-filter, [data-area-filter] { display: grid;" in tail
     assert ".chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tail
     assert "min-height: 44px" in tail and "overflow-x" not in tail     # 가로로 숨기지 않음
+
+
+def test_photo_wording_matches_private_storage():
+    """사진 저장소를 비공개로 닫으면 '함께 보기'에는 사진이 안 보임. 처리방침·내 정보·공유 화면 설명이 사실과 같아야 함(옛 '주소를 아는 사람만 볼 수 있어요'·'사진 포함' 문구 금지)"""
+    from pathlib import Path
+    t = Path(__file__).resolve().parent.parent / "templates"
+    privacy = (t / "privacy.html").read_text(encoding="utf-8")
+    assert "로그인한 본인만 볼 수 있고" in privacy and "임장 노트(사진은 제외)" in privacy
+    assert "그 주소를 아는 사람만" not in privacy and "임장 노트(사진 포함)" not in privacy
+    assert "사진 포함" not in (t / "me.html").read_text(encoding="utf-8")
+    assert "메모·사진)예요" not in (t / "share.html").read_text(encoding="utf-8")
