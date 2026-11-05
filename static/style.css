@@ -4305,3 +4305,8 @@ p.muted { text-wrap: balance; }
 
 /* 알림은 바닥 시트와 어두운 뒷판 위에 (시트가 열린 채 '다음 단지 현장 모드 →' 같은 링크를 눌러야 해서). 사진 보기·복사창(110~121)보다는 아래 */
 .toast-zone { z-index: 100; }
+
+/* 상세 카드: 내가 정한 예산과 추정 시세의 숫자 차이 한 줄 (판단어 없이 사실만) */
+.mc-fit span { display: block; }
+.mc-fit span + span { margin-top: 2px; font-weight: 650; color: var(--sub); }
+.mc-fit { position: relative; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; font-weight: 700; text-align: center; color: var(--ink); background: var(--glass); border: 1px solid var(--line); text-wrap: balance; }

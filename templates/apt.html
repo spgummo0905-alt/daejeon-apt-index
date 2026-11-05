@@ -70,6 +70,7 @@
   <a class="mc-news" href="#trades" data-watch-news hidden><b>지난번 확인 뒤</b><span data-watch-text></span></a>
   {% set age = (meta.asof[:4] | int) - c.build_year if c.build_year else none %}
   <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}{% if age is not none and age >= 30 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한(30년) 충족" data-desc="준공 {{ age }}년 차로 재건축 연한(30년)을 넘었습니다. 연한은 재건축 진단을 신청할 수 있는 시기일 뿐, 사업 추진이나 가격을 뜻하지 않습니다.">재건축 연한 충족</button>{% elif age is not none and age >= 25 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한까지 {{ 30 - age }}년" data-desc="준공 {{ age }}년 차입니다. 재건축 연한은 30년이며, 연한은 재건축 진단을 신청할 수 있는 시기일 뿐 사업 추진을 뜻하지 않습니다.">재건축 연한까지 {{ 30 - age }}년</button>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
+  <p class="mc-fit" data-mc-fit hidden></p>
   <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 몇 번째인지를 0~100점으로 바꾼 값)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<div class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></div>
@@ -537,6 +538,7 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
+<script src="{{ root }}static/fit.js?v={{ v }}"></script>
 <script src="{{ root }}static/project-store.js?v={{ v }}"></script>
 <script src="{{ root }}static/visit-log.js?v={{ v }}"></script>
 <script src="{{ root }}static/visit-log-ui.js?v={{ v }}"></script>

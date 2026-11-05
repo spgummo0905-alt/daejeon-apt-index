@@ -72,5 +72,23 @@
     out.skipped = skipped;
     return out;
   }
-  window.DJFit = { hasConditions, evaluate, NEED_QUANTILE: [...NEED_QUANTILE] };
+  // 상세 카드 한 줄: 내가 정한 예산과 이 단지 추정 시세의 차이. 예산을 정하지 않았거나 시세 자료가 없으면 null (아무것도 지어내지 않음).
+  // 평형 조건이 있으면 그 평형들 안에서 가장 낮은 값을 봅니다 (evaluate 의 예산 판정과 같은 기준).
+  function budgetGap(s, c) {
+    if (!s || !(s.budget > 0) || !c) return null;
+    const types = c.tp && c.tp.length ? c.tp : (c.p ? [[34, c.p, "84"]] : []);
+    const pool = types.filter(([py, price]) => price > 0 && (!(s.py && s.py.length) || s.py.some(id => PY[id] && PY[id][1](py))));
+    if (!pool.length) return null;
+    const low = pool.reduce((a, b) => (b[1] < a[1] ? b : a));
+    const limit = s.budget * 10000;
+    return { py: low[0], price: low[1], limit, diff: low[1] - limit, several: pool.length > 1 };
+  }
+  // 판단 없이 사실만: '낮아요/높아요' 는 숫자 차이일 뿐 좋다·나쁘다가 아님
+  function budgetText(g, budget) {
+    if (!g) return "";
+    const lead = `${g.several ? "가장 낮은 평형 " : ""}${g.py}평 추정 시세 ${eok(g.price)}`;
+    const d = Math.round(g.diff);
+    return `${lead} · 내 예산 ${budget}억${d === 0 ? "과 같아요" : `보다 ${eok(Math.abs(d))} ${d < 0 ? "낮아요" : "높아요"}`}`;
+  }
+  window.DJFit = { hasConditions, evaluate, budgetGap, budgetText, NEED_QUANTILE: [...NEED_QUANTILE] };
 })();
