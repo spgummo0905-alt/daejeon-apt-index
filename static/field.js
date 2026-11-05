@@ -303,6 +303,16 @@
     return s;
   }
 
+  // 방문을 마쳤다고 표시한 직후: 다음 단지(코스에 있으면)와 다녀온 뒤 정리로 가는 길을 알림에 붙입니다. 자동으로 이동하지 않아요.
+  function nextAfterVisit() {
+    const root = window.DJ_ROOT || "";
+    DJ.data().then(d => {
+      const { stops } = DJ.courseStops(d), k = stops.findIndex(x => x.s === slug), nx = k >= 0 ? stops[k + 1] : null;
+      if (nx) DJ.toast("다녀온 것으로 기록했어요", `다음 단지는 ${nx.n}이에요.`, 8000, { label: `${nx.n} 현장 모드 →`, href: DJ.href(nx) + "#field" });
+      else DJ.toast("다녀온 것으로 기록했어요", "다녀온 곳을 모아 확인한 것과 못 확인한 것을 볼 수 있어요.", 8000, { label: "다녀온 뒤 정리 보기 →", href: root + "projects.html" });
+    }).catch(() => DJ.toast("다녀온 것으로 기록했어요", "관심 화면의 임장 노트에서 다시 볼 수 있어요."));
+  }
+
   // 5. 메모와 '다녀왔어요'
   function memo() {
     const s = section("단지 공통 메모", "여러 번 방문해도 계속 참고할 내용을 적어 두세요. 이번 방문만의 느낌은 아래 날짜별 기록에 따로 남길 수 있어요.");
@@ -318,7 +328,12 @@
       been.classList.toggle("on", !!v.d);
       been.setAttribute("aria-pressed", v.d ? "true" : "false");
     };
-    been.addEventListener("click", () => { if (v.d) delete v.d; else v.d = DJ.today(); keep(); paint(); });
+    been.addEventListener("click", () => {
+      const was = !!v.d;
+      if (v.d) delete v.d; else v.d = DJ.today();
+      keep(); paint();
+      if (!was) nextAfterVisit();   // '다녀왔어요'를 켠 순간에만. 끌 때는 아무 안내도 하지 않음
+    });
     paint();
     const note = el("p", "fm-note", "기록은 이 기기의 브라우저에만 남아요. 관심 화면의 '임장 노트'와 '임장 코스'에서 다시 볼 수 있어요.");
     note.dataset.syncNote = "";   // 카카오로 로그인했으면 sync.js 가 '계정에 저장돼요'로 바꿈

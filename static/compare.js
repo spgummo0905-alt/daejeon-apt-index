@@ -33,6 +33,34 @@
     ["세대당 주차", c => c.pk, c => c.pk ? c.pk.toFixed(1) + "대" : "-", "high"],
   ];
 
+  // 비교 다음 단계: 이미 있는 기능(임장 코스 담기, 프로젝트)으로 이어 줍니다. 누르기 전에는 아무것도 바꾸거나 이동하지 않습니다.
+  //  · 코스로 보내려면 위치가 있는 단지 2곳 이상 · 코스에 넣은 뒤에는 관심 화면의 코스로 (첫 단지 길찾기가 거기 있음)
+  function nextStep(cs) {
+    const box = document.getElementById("vs-next");
+    if (!box) return;
+    box.replaceChildren();
+    const withLoc = cs.filter(c => Number.isFinite(c.la) && Number.isFinite(c.ln));
+    box.hidden = cs.length < 2;
+    if (cs.length < 2) return;
+    box.append(el("p", "next-t", "비교를 마쳤다면"));
+    const row = el("div", "next-row");
+    if (withLoc.length >= 2 && DJ.addToCourse) {
+      const b = el("button", "btn primary", "이 단지들로 임장 코스 만들기");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        const n = DJ.addToCourse(withLoc.map(c => c.s));
+        if (n < 0) { DJ.toast("임장 코스가 꽉 찼어요", "관심 화면의 임장 코스에서 한 곳을 빼고 다시 넣어 주세요"); return; }
+        DJ.toast(n ? `임장 코스에 ${n}곳 넣었어요` : "이미 임장 코스에 들어 있어요", "순서와 첫 단지 길찾기는 코스 화면에서 볼 수 있어요", 7000, { label: "임장 코스 보기 →", href: (window.DJ_ROOT || "") + "my.html#course" });
+      });
+      row.append(b);
+    }
+    const p = el("a", "btn", "집 찾기 프로젝트에서 이어가기");
+    p.href = (window.DJ_ROOT || "") + "projects.html";
+    row.append(p);
+    box.append(row);
+    if (withLoc.length < cs.length) box.append(el("p", "muted small", "위치 정보가 없는 단지는 코스에 넣을 수 없어요."));
+  }
+
   // 내 조건 기준: '조건으로 찾기'에서 고른 조건과 각 단지의 실제 값을 견줘, 맞는 점·벗어난 점·자료 없음으로 나눕니다 (평가·추천 없음)
   const SURVEY_NAME = { gus: "지역", budget: "예산", py: "평형", age: "연식", stn: "역", sch: "초등학교", must: "필수 조건" };
   function myFit(cs) {
@@ -123,6 +151,7 @@
     const cs = picked.map(s => d.bySlug[s]);
     out.replaceChildren();
     shareBtn.hidden = cs.length < 2;
+    nextStep(cs);
     if (cs.length < 2) { out.append(el("p", "muted center", "비교할 아파트를 2곳 이상 선택해 주세요.")); return; }
 
     // 항목별 1위 횟수

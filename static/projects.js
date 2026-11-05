@@ -142,6 +142,12 @@
     const rows = summaryRows().filter(r => r.visited);
     box.hidden = !rows.length; if (!rows.length) return;
     box.append(el("h3", "", "다녀온 뒤 정리"), el("p", "sv-note", "방문 기록과 현장 체크에서 모은 내용이에요. 어느 집이 낫다는 판단은 하지 않아요."));
+    const again = rows.filter(r => D.bySlug[r.slug]).slice(0, 4).map(r => r.slug);   // 다녀온 단지로 다시 비교 (2곳 이상일 때만)
+    if (again.length >= 2) {
+      const a = el("a", "btn sm", `다녀온 ${again.length}곳 다시 비교하기`);
+      a.href = "compare.html?s=" + again.map(encodeURIComponent).join(",");
+      box.append(a);
+    }
     rows.forEach(r => {
       const d = el("details", "pj-sum-row"); d.open = rows.length <= 2;
       const when = r.visits ? `방문 ${r.visits}번${r.last ? " · 마지막 " + r.last : ""}` : `현장 기록${r.last ? " · " + r.last : ""}`;

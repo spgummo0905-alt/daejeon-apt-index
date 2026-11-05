@@ -1190,3 +1190,34 @@ def test_project_report_and_resume_wiring(tmp_path):
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.activeProject = function" in app and "pj.slugs.length" in app and "!p.archived && p.slugs.length" in app
     assert "data-resume" in (out / "index.html").read_text(encoding="utf-8")
+
+
+def test_ux_home_gates_and_next_actions_wiring(tmp_path):
+    """UX 1차: 홈 입구 3개(찾기·비교·임장), 알림 속 다음 행동, 비교·현장 기록·정리 뒤 다음 행동. 새 저장 구조 없이 기존 기능을 잇고, 자동 이동이 없다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    home = (out / "index.html").read_text(encoding="utf-8")
+    gates = home[home.index("data-gates"):home.index('class="roof-strip"')]          # 위쪽 메뉴의 같은 링크와 섞이지 않게 입구 영역만
+    for key in ("data-gate-compare", "data-gate-visit", 'href="finder.html"', 'href="compare.html"', 'href="projects.html"'):
+        assert key in gates, key
+    assert gates.index('href="finder.html"') < gates.index('href="compare.html"') < gates.index('href="projects.html"')   # 찾기 → 비교 → 임장 순서
+    assert gates.count('class="gate-btn"') == 3 and home.count("data-gates") == 1
+    assert "rooftop.html" in home and "roof-strip" in home       # 옥상은 그대로 있음
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "function gates()" in app and "gates();\n    resume();" in app.replace("\r", "")
+    assert "DJ.activeProject()" in app[app.index("function gates()"):app.index("function gates()") + 900]
+    assert "action.href" in app and "toast-act" in app                                # 알림 속 다음 행동 링크
+    toast = app[app.index("DJ.toast = function"):app.index("DJ.unlock = function")]
+    assert "location" not in toast and "assign(" not in toast and "replace(" not in toast  # 알림은 스스로 이동시키지 않음
+    cmp_js = (out / "static" / "compare.js").read_text(encoding="utf-8")
+    assert 'id="vs-next"' in (out / "compare.html").read_text(encoding="utf-8")
+    assert "function nextStep(" in cmp_js and "DJ.addToCourse(" in cmp_js and "projects.html" in cmp_js
+    field = (out / "static" / "field.js").read_text(encoding="utf-8")
+    assert "function nextAfterVisit()" in field and "if (!was) nextAfterVisit()" in field   # 켤 때만
+    proj = (out / "static" / "projects.js").read_text(encoding="utf-8")
+    assert "다시 비교하기" in proj and "compare.html?s=" in proj
+    css = (out / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".toast-act" in css and "min-height: 44px" in css[css.index(".toast-act"):css.index(".toast-act") + 200]
+    # 새 저장 구조 없음: 이번 변경이 만든 코드가 새 키를 쓰지 않는다
+    for code in (app[app.index("function gates()"):app.index("function gates()") + 1500], cmp_js[cmp_js.index("function nextStep("):cmp_js.index("function nextStep(") + 1800]):
+        assert 'save("' not in code and "localStorage" not in code
