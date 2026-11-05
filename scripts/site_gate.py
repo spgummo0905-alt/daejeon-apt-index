@@ -33,6 +33,10 @@ def check_region(root: Path, region: str) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     if not d.is_dir():
         return [("error" if region in REQUIRED else "warn", f"{region}: 폴더가 없습니다")]
+    # 선택 지역은 만들다 실패하면 빈 폴더만 남을 수 있습니다: 첫 화면도 자료도 없으면 '만들어지지 않음'으로 보고 경고만 합니다
+    # (그 지역만 빠지고 나머지는 배포: 기존 약속). 하나라도 있는데 나머지가 모자라면 깨진 것으로 보고 멈춥니다.
+    if region not in REQUIRED and not (d / "index.html").exists() and not (d / "complexes.json").exists():
+        return [("warn", f"{region}: 만들어지지 않았습니다 (이번 배포에서 빠집니다)")]
     if not (d / "index.html").is_file() or (d / "index.html").stat().st_size < 2000:
         out.append(("error", f"{region}: 첫 화면(index.html)이 없거나 비어 있습니다"))
     cj = d / "complexes.json"

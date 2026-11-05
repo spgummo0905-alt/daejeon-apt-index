@@ -86,6 +86,16 @@ def test_broken_optional_region_fails_but_absent_one_does_not(site, built):
     assert any(m.startswith("sejong:") for m in errors(site))   # 있는데 깨졌으면 올리지 않는다
 
 
+def test_failed_optional_region_leaves_only_a_warning_but_a_half_built_one_fails(site):
+    (site / "seoul").mkdir()                                  # 만들다 실패해 빈 폴더만 남음
+    results, _ = gate.run(site)
+    assert any(lv == "warn" and m.startswith("seoul: 만들어지지 않았습니다") for lv, m in results)
+    assert not any(m.startswith("seoul:") for lv, m in results if lv == "error")
+    assert gate.main(["x", str(site)]) == 0
+    (site / "seoul" / "index.html").write_text("<html>" + "x" * 3000, encoding="utf-8")   # 첫 화면만 있고 자료 없음
+    assert any(m.startswith("seoul:") for m in errors(site))
+
+
 def test_unfilled_service_worker_version_fails(site):
     sw = site / "daejeon" / "sw.js"
     sw.write_text('const VERSION = "__VERSION__";', encoding="utf-8")
