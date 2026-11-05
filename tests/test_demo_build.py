@@ -1369,3 +1369,12 @@ def test_detail_card_budget_line_is_wired_and_hidden_by_default():
     assert apt.index('static/fit.js') < apt.index('static/field.js')
     app = (root / "static" / "app.js").read_text(encoding="utf-8")
     assert 'DJFit.budgetGap' in app and 'DJFit.budgetText' in app
+
+
+def test_share_view_explains_when_photos_are_private():
+    """사진 저장소를 비공개로 옮기면 로그인 없이 보는 가족 화면에서는 사진이 안 열림. 깨진 그림 대신 이유를 알려 주는 문구가 코드에 있어야 함"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    js = (root / "static" / "share.js").read_text(encoding="utf-8")
+    assert 'img.addEventListener("error"' in js and "현장 사진은 보낸 분만 볼 수 있어요." in js
+    assert ".sh-photo-off" in (root / "static" / "style.css").read_text(encoding="utf-8")

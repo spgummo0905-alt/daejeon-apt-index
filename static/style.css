@@ -3292,6 +3292,7 @@ a.acct-in:hover { background: var(--chip); text-decoration: none; }
 .sh-memo { white-space: pre-wrap; padding: 10px 12px; border-radius: 12px; background: var(--chip); }
 .sh-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 10px; }
 .sh-photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; }
+.sh-photo-off { grid-column: 1 / -1; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--chip); font-size: 14px; color: var(--text-2); }
 .sh-course { margin: 0; padding-left: 22px; line-height: 2; }
 .sh-favs { list-style: none; margin: 0; padding: 0; }
 .sh-favs a { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--border); color: var(--text); }
