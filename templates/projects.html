@@ -4,16 +4,20 @@
 {% block head_extra %}{% if not demo %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 {% block body %}
 {% set seg_cur = 'projects' %}{% include "_seg_pj.html" %}
-<section class="page-hero pj-hero">
+<section class="page-hero pj-hero lean">
   <p class="eyebrow">집 찾기 프로젝트</p>
   <h1>집을 찾는 이유마다,<br>후보도 따로.</h1>
-  <p class="lead">후보를 담고, 비교하고, 다녀온 기록까지 한 곳에서 이어가요.</p>
-  <p class="muted" data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 관심 화면에서 파일로 백업하세요.</p>
+  <details class="hero-note">
+    <summary><span>담고, 비교하고, 다녀온 기록까지 한 곳에서</span><svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></summary>
+    <div>
+      <p>프로젝트는 지역별로 관리합니다. 기존 관심 단지와 기록은 그대로 유지됩니다.</p>
+      <p data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 관심 화면에서 파일로 백업하세요.</p>
+    </div>
+  </details>
 </section>
 <div id="projects" data-region="{{ region }}">
   <details class="panel pj-create" data-pj-new open>
-    <summary><b>새 프로젝트 만들기</b><span class="muted">집을 찾는 목적을 하나 더 정리해보세요.</span></summary>
-    <div class="panel-head"><h2>{{ region }}에서 어떤 집을 찾고 있나요?</h2><p class="muted">프로젝트는 지역별로 관리합니다. 기존 관심 단지와 기록은 그대로 유지됩니다.</p></div>
+    <summary><b>{{ region }}에서 어떤 집을 찾고 있나요?</b></summary>
     <form data-pj-create>
       <label>프로젝트 이름<input name="name" required maxlength="50" placeholder="예: 우리 첫 신혼집" autocomplete="off"></label>
       <label><span>중요한 조건 <span class="muted">선택</span></span><input name="goal" maxlength="200" placeholder="예: 역까지 도보권, 주차가 편한 집" autocomplete="off"></label>

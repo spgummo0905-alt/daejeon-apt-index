@@ -128,7 +128,7 @@
       inner.append(back, front);
       slot.append(inner);
       const why = el("p", "tc-why pending");   // 열기 전엔 어떤 후보인지만, 열면 왜 골랐는지
-      const whyText = document.createTextNode(" 카드를 뒤집으면 선정 이유가 표시됩니다.");
+      const whyText = document.createTextNode("");
       why.append(el("b", "", kind.label), whyText);
       col.append(slot, why);
       row.append(col);
