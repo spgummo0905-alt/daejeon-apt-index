@@ -4,6 +4,8 @@
 (function () {
   const SB = window.DJ_SB;
   if (!SB || !SB.url || !SB.key || !window.RoofNet) return;
+  // 자동 조종 브라우저(점검·시험 도구, navigator.webdriver)는 접속자 수에 넣지 않아요: 사람 수가 부풀지 않게
+  if (window.navigator && window.navigator.webdriver) return;
   // 이 브라우저에서 하루 동안만 쓰는 무작위 번호 (날이 바뀌면 새로): 오늘 다녀간 사람 수를 세는 데만 써요
   const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   let id; try { const o = JSON.parse(localStorage.getItem("djdex:oid") || "null"); id = o && o.d === day ? o.id : Math.random().toString(36).slice(2, 10); localStorage.setItem("djdex:oid", JSON.stringify({ d: day, id })); } catch (e) { id = Math.random().toString(36).slice(2, 10); }
