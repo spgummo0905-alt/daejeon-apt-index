@@ -1988,14 +1988,13 @@ body[data-page="projects"] .rcd { display: none; }
 @media (max-width: 560px) {
   .sv { padding: 16px; }
   .sv-svg { max-height: 220px; }
-  /* 좁은 화면: 질문이 먼저 보이게 그림은 아래로, 제목 줄에 개수를 함께 */
+  /* 좁은 화면: 그림(고른 조건이 올라가는 동네)이 질문 위에 먼저 보이게. 높이는 줄여 질문 제목까지 한 화면에, 제목 줄에 개수를 함께 */
   .sv-top { flex-wrap: nowrap; align-items: center; }
   .sv-top p.muted { display: none; }
   .sv-top h2 { font-size: 18px; white-space: nowrap; }
   .sv-count { padding: 8px 12px; gap: 4px; }
   .sv-count span { font-size: 13px; }
   .sv-delta { margin-top: 4px; font-size: 12px; }
-  .sv-art { order: 2; }
   .sv-qt { font-size: 18px; }
   .sv-count b { font-size: 22px; }
   .sv-calc { grid-template-columns: 1fr; }
@@ -4257,3 +4256,49 @@ body[data-page="intro"] .toast-act { color: #13294b; }
   .pj-r-memo { overflow-wrap: anywhere; word-break: break-word; orphans: 3; widows: 3; }
   .pj-r-facts dd, .pj-r-cond, .pj-r-done li, .pj-r-todo li { overflow-wrap: anywhere; }
 }
+
+
+/* ===== 모바일 글자 밀림 정리 (UX 2차) =====
+   원인 세 가지를 공통 규칙으로: ① 숫자 칸 안의 짧은 말이 따로 접힘 ② 문단 마지막 줄에 한두 단어만 남음 ③ 작은 칸 안의 짧은 문구가 어색하게 끊김.
+   text-wrap 을 모르는 브라우저는 예전 그대로 보이고, 아는 브라우저만 좋아집니다. */
+p, li, dd, summary, figcaption { text-wrap: pretty; }
+h1, h2, h3, h4, .lead, .sv-qt, .sv-qs, .sv-delta, .roof-strip-t, .pt-s, .loc-raw, .ls em, .ki-note, .pt-v, .sv-opt small, .sv-opt span,
+.today-text > .muted, .pt-note, .fl-note, .cl-why, .ft-legal, .empty, .album-empty, .cs-empty { text-wrap: balance; }
+.sv-count, .sv-count small, .sv-count span { white-space: nowrap; }
+.ar-m, .ar-p { white-space: nowrap; }
+.mc-rank, .mc-rank b, .mc-rank small { white-space: nowrap; }
+@media (max-width: 560px) {
+  .sv-count .sv-rg { display: none; }   /* 제목에 이미 지역이 나와 있어, 좁은 화면에서는 '전체 571 곳' 으로 */
+}
+
+@media (max-width: 560px) {
+  /* 제목 줄 오른쪽에 개수 칸은 그대로 두고, 그 아래 안내문은 좁은 칸에 갇혀 두 줄로 쪼개지지 않게 가로 전체를 쓰는 둘째 줄로 */
+  .sv-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+  .sv-top > :first-child { min-width: 0; }
+  .sv-count-box { display: contents; }
+  .sv-count { grid-column: 2; grid-row: 1; justify-self: end; }
+  .sv-delta { grid-column: 1 / -1; grid-row: 2; margin: 0; text-align: left; min-height: 0; }
+}
+p.muted { text-wrap: balance; }
+
+/* 숫자 칸 안의 짧은 말은 단어 중간이 아니라 칸 전체가 한 덩어리로 (잘리지 않게 칸 폭이 모자라면 글자 크기가 아니라 줄임표 없이 아래 줄로 통째로) */
+.ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }
+.pt-v { font-size: clamp(17px, 5.4vw, 21px); }
+.prose table td, .prose table th { text-wrap: balance; }
+.prose table td:first-child { min-width: 10.5em; }
+
+/* 조건으로 찾기 (휴대폰): 그림을 맨 위에 두되 낮고 넓게 잘라 보여 줍니다. 질문 제목이 바로 아래에 이어집니다 */
+@media (max-width: 560px) {
+  .sv-body { gap: 12px; }
+  .sv-art-in { border-radius: 14px; }
+  .sv-art .sv-svg { height: 150px; max-height: 150px; object-fit: cover; object-position: center 36%; }
+  .sv-art-tags { min-height: 0; padding: 6px 10px; font-size: 12px; }
+  .sv-art-tags:empty { display: none; }
+  .sv-where { left: 8px; top: 8px; padding: 3px 9px; font-size: 12px; }
+}
+/* 역 화면: 정렬과 역 고르기를 한 상자에. 휴대폰은 선택 상자, 넓은 화면은 아래 바로가기 줄 */
+.st-filter { display: grid; gap: 10px; margin: 14px 0 6px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.st-filter .seg { margin: 0; justify-self: start; max-width: 100%; }
+.st-pick select { width: 100%; min-height: 44px; padding: 0 12px; font: inherit; font-size: 16px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); }
+@media (max-width: 899px) { .station-jump { display: none; } }
+@media (min-width: 900px) { .st-pick { display: none; } .st-filter { background: transparent; border: 0; padding: 0; margin: 14px 0 0; } }

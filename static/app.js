@@ -1196,6 +1196,19 @@
       });
     }));
   }
+  // 역 바로가기 선택 상자: 고른 역을 펼치고 그 자리로 (가로로 밀어 찾는 칩 줄 대신, 휴대폰에서 쓰는 한 상자)
+  function stationJump() {
+    const sel = document.querySelector("[data-st-jump]");
+    if (!sel) return;
+    sel.addEventListener("change", () => {
+      const box = sel.value && document.getElementById(sel.value);
+      if (!box) return;
+      box.open = true;
+      box.classList.add("hit");
+      box.scrollIntoView({ block: "start", behavior: DJ.calm ? "auto" : "smooth" });
+      setTimeout(() => box.classList.remove("hit"), 2400);
+    });
+  }
   // 검색에서 역을 고르고 오면 (stations.html?st=둔산역) 그 역을 펼쳐서 보여줍니다
   function stationFocus() {
     const name = new URLSearchParams(location.search).get("st");
@@ -1661,6 +1674,7 @@
     document.querySelectorAll("nav[data-spy]").forEach(scrollSpy);
     themeLists();
     stationSort();
+    stationJump();
     stationFocus();
     headerSearch();
     document.querySelectorAll("table[data-trades]").forEach(tradeTable);

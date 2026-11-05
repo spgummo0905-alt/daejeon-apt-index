@@ -1309,3 +1309,42 @@ def test_visit_prep_name_is_the_same_everywhere(tmp_path):
     assert "임장 코스" in home                                                                            # 코스 화면 이름은 그대로 남아 있음
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert '"이어하기"' in app and '"이어서 하기"' in app                                                   # 진행 중일 때의 이름은 그대로
+
+
+def test_mobile_text_wrap_rules_stay(tmp_path):
+    """UX 2차: 모바일 글자 밀림 정리. 개수 칸의 '대전 전체'는 좁은 화면에서 '전체'만, 안내문은 한 줄, 문단·제목 끝에 한두 단어만 남지 않도록 text-wrap 규칙을 유지한다"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert '<span class="sv-rg">' in finder and "전체</small>" in finder and "data-sv-all" in finder       # 지역 이름만 접을 수 있게 감쌈, 문구는 그대로
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    tail = css[css.index("모바일 글자 밀림 정리"):]
+    assert "p, li, dd, summary, figcaption { text-wrap: pretty; }" in tail
+    assert "text-wrap: balance" in tail and ".sv-delta" in tail and ".sv-count .sv-rg { display: none; }" in tail
+    assert ".sv-delta { grid-column: 1 / -1; grid-row: 2;" in tail and ".sv-count-box { display: contents; }" in tail   # 안내문은 제목 아래 한 줄
+    assert ".ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }" in tail
+    js = (root / "static" / "finder.js").read_text(encoding="utf-8")
+    assert "조건을 고를수록 좁혀집니다" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로
+
+
+def test_mobile_visual_first_and_station_filter_box(tmp_path):
+    """모바일: 조건으로 찾기는 그림이 질문 위에 먼저(낮게 잘라 질문 제목과 한 화면에), 역 화면은 정렬+역 고르기를 한 상자에 담고 휴대폰에서는 가로로 밀어 찾는 칩 줄 대신 선택 상자를 쓴다"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".sv-art { order: 2; }" not in css                                                                  # 그림을 질문 아래로 보내던 규칙이 없다
+    assert ".sv-art .sv-svg { height: 150px; max-height: 150px; object-fit: cover;" in css
+    finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert finder.index("data-sv-art") < finder.index("data-sv-q")                                             # 마크업 순서도 그림 → 질문
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert 'class="st-filter"' in stations and "data-st-jump" in stations and 'class="page-hero lean"' in stations
+    box = stations[stations.index('class="st-filter"'):stations.index("</section>", stations.index('class="st-filter"'))]
+    assert "data-st-sort" in box and "data-st-jump" in box                                                     # 정렬과 역 고르기가 한 상자 안
+    assert 'class="jump station-jump"' in stations                                                             # 넓은 화면용 바로가기 줄은 그대로
+    assert "@media (max-width: 899px) { .station-jump { display: none; } }" in css
+    js = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "function stationJump()" in js and "stationJump();" in js and "stationFocus();" in js                # 검색에서 들어오는 ?st= 도 그대로
