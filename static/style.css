@@ -4243,3 +4243,8 @@ body[data-page="intro"] .toast-act { color: #13294b; }
 .hero-note p + p { margin-top: 6px; color: var(--muted); font-size: 13px; }
 @media (max-width: 720px) { .page-hero.lean h1 { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .hero-note summary .ic { transition: none; } }
+
+/* 현장 사진 지우기 버튼: 보이는 동그라미는 그대로, 누르는 영역만 44px */
+.fm-ph-del { position: absolute; }
+.fm-ph-del::after { content: ""; position: absolute; inset: -9px; }
+.fm-ph-del:disabled { opacity: .5; }

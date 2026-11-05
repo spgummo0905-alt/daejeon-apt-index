@@ -21,6 +21,18 @@
     return 2 * 6371000 * Math.asin(Math.sqrt(h));
   };
   const keep = () => DJ.saveVisit(slug, v);
+  // 저장이 실제로 됐을 때만 true. 실패하면 부르는 쪽이 화면과 기록을 원래대로 돌립니다 (실패 알림은 DJ.save 가 띄움).
+  // 계정을 연결하는 중에는 DJ.save 가 조용히 false 만 주므로 그때만 여기서 알려요.
+  function persist() {
+    const ok = keep();
+    if (!ok && DJ.sync && DJ.sync.linking) DJ.toast("잠시 뒤 다시 해 주세요", "계정을 연결하는 중이라 지금은 저장할 수 없어요.", 5000);
+    return ok;
+  }
+  // 사진 올리기·지우기가 실패한 이유를 알아듣기 쉽게 (다시 하면 되는지, 로그인이 필요한지)
+  const photoWhy = e => e && e.status === 413 ? "사진이 너무 커요. 더 작은 사진으로 해 주세요."
+    : e && (e.status === 401 || e.status === 403) ? "로그인이 풀렸을 수 있어요. 다시 로그인해 주세요."
+    : (e instanceof TypeError || navigator.onLine === false) ? "인터넷 연결을 확인하고 다시 해 주세요."
+    : "잠시 뒤 다시 해 주세요.";
 
   function open() {
     if (!built) { built = true; DJ.data().then(d => build(d.bySlug[slug], d)).catch(() => build(null)); }
@@ -166,7 +178,12 @@
     const row = (txt, why, on, set) => {
       const lab = el("label", "fm-chk" + (why ? " mine" : ""));
       const cb = el("input"); cb.type = "checkbox"; cb.checked = on;
-      cb.addEventListener("change", () => { set(cb.checked); keep(); paint(); });
+      cb.addEventListener("change", () => {
+        const was = !cb.checked;
+        set(cb.checked);
+        if (!persist()) { set(was); cb.checked = was; }   // 저장하지 못하면 체크도 되돌려 화면과 기록이 같게
+        paint();
+      });
       const t = el("span", "", txt);
       if (why) t.append(el("small", "", why));
       lab.append(cb, t);
@@ -214,7 +231,11 @@
           li.append(el("span", "fm-vs " + (pct > 2 ? "up" : pct < -2 ? "down" : ""), pct === 0 ? "시세와 같아요" : `시세보다 ${pct > 0 ? "+" : "−"}${Math.abs(pct)}%`));
         }
         const del = el("button", "fm-del", "×"); del.type = "button"; del.setAttribute("aria-label", "이 호가 지우기");
-        del.addEventListener("click", () => { v.q.splice(i, 1); keep(); draw(); });
+        del.addEventListener("click", () => {
+          const [gone] = v.q.splice(i, 1);
+          if (!persist()) v.q.splice(i, 0, gone);
+          draw();
+        });
         li.append(del);
         ul.append(li);
       });
@@ -224,9 +245,10 @@
       e.preventDefault();
       const won = Math.round(parseFloat(String(q.value).replace(",", ".")) * 10000);
       if (!(won > 0)) { q.focus(); return; }
-      v.q.unshift([py.value || "", parseInt(fl.value, 10) || "", won, DJ.today()]);
-      v.q = v.q.slice(0, 20);
-      keep(); draw();
+      const prevQ = v.q;
+      v.q = [[py.value || "", parseInt(fl.value, 10) || "", won, DJ.today()], ...v.q].slice(0, 20);
+      if (!persist()) { v.q = prevQ; q.focus(); return; }   // 저장하지 못하면 적은 값을 그대로 남겨 다시 누를 수 있게
+      draw();
       q.value = ""; fl.value = "";
     });
     s.append(form, ul);
@@ -270,10 +292,22 @@
         const img = el("img"); DJ.photoSet(img, path); img.alt = `${name} 현장 사진 ${i + 1}`; img.loading = "lazy";
         a.append(img);
         const del = el("button", "fm-ph-del", "×"); del.type = "button"; del.setAttribute("aria-label", "이 사진 지우기");
-        del.addEventListener("click", () => {
-          if (!confirm("이 사진을 지울까요?")) return;
-          v.p.splice(i, 1); keep(); draw();
-          DJ.photoDel([path]).catch(() => {});
+        del.addEventListener("click", async () => {
+          if (del.disabled || !confirm("이 사진을 지울까요?")) return;
+          del.disabled = true;
+          const at = (v.p || []).findIndex(x => x[0] === path);
+          if (at < 0) { draw(); return; }
+          const [gone] = v.p.splice(at, 1);
+          if (!persist()) { v.p.splice(at, 0, gone); del.disabled = false; return; }   // 기록을 못 바꾸면 파일도 지우지 않음
+          draw();
+          try { await DJ.photoDel([path]); }
+          catch (e) {   // 서버에서 못 지웠으면 사진을 다시 돌려놓고, 왜 안 됐는지와 다시 하는 법을 알림
+            v = DJ.visit(slug);
+            v.p = v.p || [];
+            if (!v.p.some(x => x[0] === path)) { v.p.splice(Math.min(at, v.p.length), 0, gone); persist(); }
+            draw();
+            DJ.toast("사진을 지우지 못했어요", photoWhy(e), 6000);
+          }
         });
         fig.append(a, del);
         grid.append(fig);
@@ -289,10 +323,11 @@
         try {
           const path = await DJ.photoPut(slug, await shrink(f));
           v = DJ.visit(slug);   // 그사이 바뀐 기록 위에
-          v.p = (v.p || []).concat([[path, DJ.today()]]).slice(0, MAXP);
-          keep();
+          const prevP = v.p || [];
+          v.p = prevP.concat([[path, DJ.today()]]).slice(0, MAXP);
+          if (!persist()) { v.p = prevP; DJ.photoDel([path]).catch(() => {}); }   // 기록에 못 남긴 파일이 서버에 혼자 남지 않게
         } catch (e) {
-          DJ.toast("사진을 올리지 못했어요", e.status === 413 ? "사진이 너무 커요." : "잠시 뒤 다시 해 주세요.");
+          DJ.toast("사진을 올리지 못했어요", photoWhy(e), 6000);
         }
         wait.remove();
         draw();
@@ -320,7 +355,7 @@
     t.rows = 3; t.placeholder = "동·층·향, 단지 분위기, 부동산에서 들은 이야기";
     t.setAttribute("aria-label", name + " 메모");
     t.value = v.m || "";
-    t.addEventListener("input", () => { v.m = t.value; keep(); });
+    t.addEventListener("input", () => { v.m = t.value; keep(); });   // 못 남기면 DJ.save 가 알려요. 입력한 글은 칸에 그대로 남아 있어요
     const been = el("button", "btn fm-been", "");
     been.type = "button";
     const paint = () => {
@@ -329,9 +364,10 @@
       been.setAttribute("aria-pressed", v.d ? "true" : "false");
     };
     been.addEventListener("click", () => {
-      const was = !!v.d;
+      const was = !!v.d, prev = v.d;
       if (v.d) delete v.d; else v.d = DJ.today();
-      keep(); paint();
+      if (!persist()) { if (prev) v.d = prev; else delete v.d; paint(); return; }   // 저장하지 못했으면 '다녀왔어요'도 켜지 않고 안내도 하지 않음
+      paint();
       if (!was) nextAfterVisit();   // '다녀왔어요'를 켠 순간에만. 끌 때는 아무 안내도 하지 않음
     });
     paint();

@@ -244,7 +244,12 @@
     const row = (txt, why, on, set) => {
       const lab = el("label", why ? "cs-mine" : "");
       const cb = el("input"); cb.type = "checkbox"; cb.checked = on;
-      cb.addEventListener("change", () => { set(cb.checked); DJ.saveVisit(c.s, v); paint(); });
+      cb.addEventListener("change", () => {
+        const was = !cb.checked;
+        set(cb.checked);
+        if (!DJ.saveVisit(c.s, v)) { set(was); cb.checked = was; }   // 저장하지 못하면 체크도 되돌림 (실패 알림은 DJ.save 가 띄움)
+        paint();
+      });
       const t = el("span", "", txt);
       if (why) t.append(el("small", "", why));
       lab.append(cb, t);
