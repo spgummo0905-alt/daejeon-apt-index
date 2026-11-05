@@ -1385,3 +1385,12 @@ def test_tap_targets_stay_at_least_44px_for_common_controls():
     for rule in (".top-nav > a, .tn-btn { min-height: 44px; }", ".rcd-fab { min-height: 44px; }", ".rail-btn { width: 44px; height: 44px; }",
                  ".tk { min-height: 44px;", ".mcard-turn::after { content: \"\"; position: absolute; inset: -7px;"):
         assert rule in tail, rule
+def test_mobile_chip_rows_are_tidy_grids():
+    """UX 2차: 휴대폰에서 구·면적 칩이 줄마다 폭이 들쭉날쭉하고 한 칩이 혼자 떨어졌음. 폭이 같은 격자로, 숨는 항목 없이"""
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
+    tail = css[css.index("/* 휴대폰: 구·면적 칩을 폭이 같은 격자로"):]
+    assert ".controls > #gu-filter { flex: 1 1 100%; }" in tail      # 가로 배치 칸 안에서 폭 전체를 써야 격자가 줄어들지 않음
+    assert "#gu-filter, [data-area-filter] { display: grid;" in tail
+    assert ".chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tail
+    assert "min-height: 44px" in tail and "overflow-x" not in tail     # 가로로 숨기지 않음
