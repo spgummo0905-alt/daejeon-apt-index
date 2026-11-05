@@ -1371,6 +1371,13 @@ def test_detail_card_budget_line_is_wired_and_hidden_by_default():
     assert 'DJFit.budgetGap' in app and 'DJFit.budgetText' in app
 
 
+def test_share_view_explains_when_photos_are_private():
+    """사진 저장소를 비공개로 옮기면 로그인 없이 보는 가족 화면에서는 사진이 안 열림. 깨진 그림 대신 이유를 알려 주는 문구가 코드에 있어야 함"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    js = (root / "static" / "share.js").read_text(encoding="utf-8")
+    assert 'img.addEventListener("error"' in js and "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요." in js
+    assert ".sh-photo-off" in (root / "static" / "style.css").read_text(encoding="utf-8")
 def test_finder_reserves_space_for_late_drawn_art_and_question():
     """UX 2차: 조건으로 찾기는 그림·질문을 스크립트가 나중에 채워 아래 내용이 밀렸음(레이아웃 흔들림 0.3~0.4). 빈 칸일 때도 같은 크기의 자리를 미리 잡는다"""
     from pathlib import Path

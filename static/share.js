@@ -54,6 +54,12 @@
           v.p.forEach(([path], i) => {
             const a = el("a"); a.href = DJ.photoUrl(path); a.target = "_blank"; a.rel = "noopener";
             const img = el("img"); img.src = DJ.photoUrl(path); img.alt = `${c.n} 현장 사진 ${i + 1}`; img.loading = "lazy";
+            // 사진 저장소를 비공개로 옮기면 이 화면(로그인 없이 보는 가족)에서는 사진이 열리지 않습니다. 깨진 그림 대신 이유를 알려 줍니다
+            img.addEventListener("error", () => {
+              if (ph.dataset.off) return;
+              ph.dataset.off = "1";
+              ph.replaceChildren(el("p", "sh-photo-off", "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요."));
+            });
             a.append(img); ph.append(a);
           });
           art.append(ph);
