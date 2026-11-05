@@ -4248,3 +4248,12 @@ body[data-page="intro"] .toast-act { color: #13294b; }
 .fm-ph-del { position: absolute; }
 .fm-ph-del::after { content: ""; position: absolute; inset: -9px; }
 .fm-ph-del:disabled { opacity: .5; }
+
+/* 한 장 보고서 인쇄: 제목이 쪽 맨 아래에 혼자 남지 않게, 긴 메모는 토막마다 이름표가 붙고, 긴 주소는 줄을 바꿔 오른쪽이 잘리지 않게 */
+@media print {
+  .pj-report h3, .pj-report h4 { break-after: avoid; }
+  .pj-r-mb { break-inside: avoid; }
+  .pj-r-more { margin: 6px 0 0; font-size: 11px; color: #666; }
+  .pj-r-memo { overflow-wrap: anywhere; word-break: break-word; orphans: 3; widows: 3; }
+  .pj-r-facts dd, .pj-r-cond, .pj-r-done li, .pj-r-todo li { overflow-wrap: anywhere; }
+}

@@ -1262,3 +1262,16 @@ def test_field_mode_confirms_only_after_real_save(tmp_path):
     assert "if (!DJ.saveVisit(c.s, v)) { set(was); cb.checked = was; }" in course
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert ".toast:not(.out) > strong" in app                                                           # 같은 알림이 겹겹이 쌓이지 않음
+
+
+def test_project_report_print_keeps_blocks_whole(tmp_path):
+    """한 장 보고서 인쇄: 긴 메모는 토막마다 이름표가 붙고(쪽이 넘어가도 어느 단지인지 보임), 제목이 쪽 끝에 혼자 남거나 긴 주소가 오른쪽에서 잘리지 않는다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "projects.js").read_text(encoding="utf-8")
+    assert "DJProjectReport.chunks(m.text)" in js and "이어서" in js and "pj-r-mb" in js
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")   # 배포본은 공백이 압축돼 원본으로 확인
+    assert ".pj-report h3, .pj-report h4 { break-after: avoid; }" in css
+    assert ".pj-r-mb { break-inside: avoid; }" in css and "overflow-wrap: anywhere" in css
+    assert ".pj-r-mb{break-inside:avoid" in (out / "static" / "style.css").read_text(encoding="utf-8").replace(" ", "") or ".pj-r-mb" in (out / "static" / "style.css").read_text(encoding="utf-8")

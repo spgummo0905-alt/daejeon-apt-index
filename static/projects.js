@@ -177,7 +177,15 @@
       addFacts(art, v.facts);
       if (v.done.length) { art.append(el("h4", "", "직접 확인한 것")); const ul = el("ul", "pj-r-done"); v.done.forEach(x => ul.append(el("li", "", "✓ " + x))); art.append(ul); }
       if (v.todo.length) { art.append(el("h4", "", `아직 확인 못 한 것 ${v.todo.length}가지`)); const ul = el("ul", "pj-r-todo"); v.todo.forEach(x => ul.append(el("li", "", "☐ " + x))); art.append(ul); }
-      if (v.memos.length) { art.append(el("h4", "", "내가 남긴 메모")); v.memos.forEach(m => art.append(el("p", "pj-r-memo", `${m.field ? "현장 메모" : m.date + (m.period ? " " + m.period : "")}: ${m.text}`))); }
+      if (v.memos.length) { art.append(el("h4", "", "내가 남긴 메모")); v.memos.forEach(m => {
+        const head = m.field ? "현장 메모" : m.date + (m.period ? " " + m.period : "");
+        DJProjectReport.chunks(m.text).forEach((part, k) => {
+          const box = el("div", "pj-r-mb");   // 토막 하나는 쪽 중간에서 끊기지 않음
+          if (k) box.append(el("p", "pj-r-more", `${v.name} · ${head} 이어서`));
+          box.append(el("p", "pj-r-memo", k ? part : `${head}: ${part}`));
+          art.append(box);
+        });
+      }); }
       sheet.append(art);
     });
     if (r.pending.length) {

@@ -39,5 +39,23 @@
       notice: "내가 적은 조건과 직접 확인·메모한 내용, 공개 자료 숫자를 따로 모았어요. 기록이 없는 항목은 적지 않았고, 어느 집이 낫다는 판단은 하지 않아요.",
     };
   }
-  window.DJProjectReport = { build, facts };
+  // 아주 긴 메모는 인쇄에서 쪽을 넘으면 다음 쪽이 단지 이름 없이 시작하므로, 문장·띄어쓰기 단위로 토막 내 각 토막이 한 쪽에서 끊기지 않게 합니다.
+  // 글자는 하나도 더하거나 빼지 않습니다 (토막을 이어 붙이면 원문과 같음). 띄어쓰기 없는 긴 주소는 길이로 자릅니다.
+  function chunks(text, max = 420) {
+    const s = String(text == null ? "" : text);
+    if (s.length <= max) return [s];
+    const out = [];
+    let rest = s;
+    while (rest.length > max) {
+      const win = rest.slice(0, max);
+      let cut = Math.max(win.lastIndexOf(". "), win.lastIndexOf("? "), win.lastIndexOf("! "), win.lastIndexOf("\n"));   // 문장 끝(마침표 포함)에서
+      if (cut < max * 0.5) cut = win.lastIndexOf(" ");
+      cut = cut < max * 0.3 ? max : cut + 1;
+      out.push(rest.slice(0, cut));
+      rest = rest.slice(cut);
+    }
+    if (rest) out.push(rest);
+    return out;
+  }
+  window.DJProjectReport = { build, facts, chunks };
 })();
