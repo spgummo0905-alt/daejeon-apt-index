@@ -1348,3 +1348,13 @@ def test_mobile_visual_first_and_station_filter_box(tmp_path):
     assert "@media (max-width: 899px) { .station-jump { display: none; } }" in css
     js = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "function stationJump()" in js and "stationJump();" in js and "stationFocus();" in js                # 검색에서 들어오는 ?st= 도 그대로
+
+
+def test_toast_stays_above_bottom_sheets(tmp_path):
+    """UX 2차: 현장 시트가 열린 채 뜨는 알림('다음 단지 현장 모드 →')이 어두운 뒷판(90)·시트(91) 뒤에 깔려 눌리지 않던 문제. 알림은 시트 위(100), 사진 보기·복사창(110~121) 아래"""
+    from pathlib import Path
+    import re
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
+    z = lambda sel: int(re.findall(re.escape(sel) + r"[^}]*?z-index:\s*(\d+)", css)[-1])
+    assert z(".toast-zone") > z(".sheet") > z(".sheet-back")
+    assert z(".toast-zone") < z(".viewer-back") and z(".toast-zone") < z(".copybox-back")
