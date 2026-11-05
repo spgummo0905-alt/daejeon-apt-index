@@ -4310,3 +4310,31 @@ p.muted { text-wrap: balance; }
 .mc-fit span { display: block; }
 .mc-fit span + span { margin-top: 2px; font-weight: 650; color: var(--sub); }
 .mc-fit { position: relative; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; font-weight: 700; text-align: center; color: var(--ink); background: var(--glass); border: 1px solid var(--line); text-wrap: balance; }
+
+/* 조건으로 찾기: 그림은 자바스크립트가 나중에 그려 넣으므로, 그릴 때까지 같은 크기의 자리를 미리 잡아 아래 내용이 밀리지 않게 합니다 (그림 가로세로 비율 520:330 + 아래 태그줄·테두리) */
+@media (min-width: 561px) { .sv-art:empty { aspect-ratio: 520 / 330; margin-bottom: 36px; } }
+
+/* 휴대폰: 그림(150px+테두리)과 첫 질문(선택지 2열) 자리도 미리 잡아 둡니다 */
+@media (max-width: 560px) { .sv-art:empty { min-height: 152px; } .sv-q:empty { min-height: 276px; } }
+/* 터치 영역: 자주 누르는 것은 44px 이상으로 (보이는 모양은 그대로, 누를 수 있는 칸만 넓힘) */
+.top-nav > a, .tn-btn { min-height: 44px; }
+.rcd-fab { min-height: 44px; }
+.rail-btn { width: 44px; height: 44px; }
+.tk { min-height: 44px; align-items: center; }
+.ticker { padding-block: 1px; }
+.ticker-more, .deck-more { display: inline-flex; align-items: center; min-height: 44px; }
+.deck-more { bottom: -11px; }
+@media (max-width: 720px) { .deck-more { bottom: auto; margin-block: -6px; } }
+.mcard-turn::after { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
+
+/* 홈 표의 단지 이름 링크: 줄 높이를 늘리지 않고 누르는 칸만 위아래로 넓힘 */
+#complex-table td.col-name a { padding-block: 13px; margin-block: -13px; }
+/* 휴대폰: 구·면적 칩을 폭이 같은 격자로 (한 칩만 혼자 다음 줄로 떨어지거나 줄마다 폭이 들쭉날쭉한 것 방지). 숨는 항목 없음 */
+@media (max-width: 560px) {
+  .controls > #gu-filter { flex: 1 1 100%; }   /* 가로 배치 칸 안에서 폭 전체를 쓰게 */
+  #gu-filter, [data-area-filter] { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  .chips.gu-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  #gu-filter .chip, [data-area-filter] .chip, .chips.gu-tabs .chip, .chips.trade-area .chip { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; text-align: center; }
+}
+/* 면적 칩은 글이 길어서 360px 이상에서만 2열 격자(더 좁으면 원래처럼 줄바꿈) */
+@media (min-width: 360px) and (max-width: 560px) { .chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
