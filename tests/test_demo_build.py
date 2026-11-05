@@ -1358,3 +1358,14 @@ def test_toast_stays_above_bottom_sheets(tmp_path):
     z = lambda sel: int(re.findall(re.escape(sel) + r"[^}]*?z-index:\s*(\d+)", css)[-1])
     assert z(".toast-zone") > z(".sheet") > z(".sheet-back")
     assert z(".toast-zone") < z(".viewer-back") and z(".toast-zone") < z(".copybox-back")
+
+
+def test_detail_card_budget_line_is_wired_and_hidden_by_default():
+    """UX 2차: 상세 카드의 '추정 시세 / 내 예산' 한 줄. 기본은 숨김(예산을 정하지 않은 사람에게는 자리도 없음), fit.js 로 계산, 판단어 없음"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    apt = (root / "templates" / "apt.html").read_text(encoding="utf-8")
+    assert 'data-mc-fit hidden' in apt and 'static/fit.js' in apt
+    assert apt.index('static/fit.js') < apt.index('static/field.js')
+    app = (root / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'DJFit.budgetGap' in app and 'DJFit.budgetText' in app

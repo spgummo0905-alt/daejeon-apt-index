@@ -984,6 +984,15 @@
       // 배지 알림이 뜨면 카드 알림은 생략 (두 개가 한꺼번에 뜨지 않게)
       if (!DJ.checkBadges().length && got && ALBUM_MARKS.includes(got))
         DJ.toast(got === 1 ? "카드첩에 첫 단지를 저장했어요" : `카드첩에 ${got}번째 단지를 저장했어요`, "메뉴의 ‘카드첩’(휴대폰은 관심 탭 안)에서 다시 볼 수 있어요");
+      // 내가 정한 예산이 있으면 카드 아래에 한 줄: 추정 시세와 예산의 숫자 차이 (예산이 없거나 시세 자료가 없으면 아무것도 보이지 않음)
+      const fitLine = document.querySelector("[data-mc-fit]");
+      if (fitLine && window.DJFit) DJ.data().then(d => {
+        const s = load("survey", {}), full = d.bySlug[c.s], g = DJFit.budgetGap(s, full);
+        if (!g) return;
+        // 시세 / 예산 두 줄로 나눠 보여줌 (한 줄로 길게 늘어지다 '·' 로 줄이 시작하는 것 방지)
+        fitLine.replaceChildren(...DJFit.budgetText(g, s.budget).split(" · ").map(t => Object.assign(document.createElement("span"), { textContent: t })));
+        fitLine.hidden = false;
+      }).catch(() => {});
       // 상세 위쪽 '비교': 담아 둔 관심 단지가 있으면 이 단지와 함께 (최대 4곳, 이 지역 것만), 없으면 이 단지 하나로 시작
       const cmpHere = document.querySelector("[data-compare-here]");
       if (cmpHere) DJ.data().then(d => {
