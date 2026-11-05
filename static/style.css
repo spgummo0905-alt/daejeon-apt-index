@@ -4310,3 +4310,17 @@ p.muted { text-wrap: balance; }
 .mc-fit span { display: block; }
 .mc-fit span + span { margin-top: 2px; font-weight: 650; color: var(--sub); }
 .mc-fit { position: relative; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; font-weight: 700; text-align: center; color: var(--ink); background: var(--glass); border: 1px solid var(--line); text-wrap: balance; }
+
+/* 터치 영역: 자주 누르는 것은 44px 이상으로 (보이는 모양은 그대로, 누를 수 있는 칸만 넓힘) */
+.top-nav > a, .tn-btn { min-height: 44px; }
+.rcd-fab { min-height: 44px; }
+.rail-btn { width: 44px; height: 44px; }
+.tk { min-height: 44px; align-items: center; }
+.ticker { padding-block: 1px; }
+.ticker-more, .deck-more { display: inline-flex; align-items: center; min-height: 44px; }
+.deck-more { bottom: -11px; }
+@media (max-width: 720px) { .deck-more { bottom: auto; margin-block: -6px; } }
+.mcard-turn::after { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
+
+/* 홈 표의 단지 이름 링크: 줄 높이를 늘리지 않고 누르는 칸만 위아래로 넓힘 */
+#complex-table td.col-name a { padding-block: 13px; margin-block: -13px; }
