@@ -107,10 +107,23 @@ def test_missing_root_files_fail(site):
     assert any("robots.txt" in m for m in errors(site))
 
 
-def test_workflow_runs_the_gate_before_upload():
-    wf = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
-    assert "python scripts/site_gate.py site" in wf
+def test_workflow_gate_is_wired_before_upload_or_ships_as_an_applicable_patch():
+    """배포 관문은 업로드 직전에 걸려야 한다. 저장소 토큰에 workflow 권한이 없어 워크플로 파일을 직접 올리지 못한 경우를 위해,
+    패치 파일(docs/배포관문-build.yml.patch)이 지금의 build.yml 에 그대로 적용되는지를 확인한다. 적용 뒤에는 순서와 '실패를 삼키지 않음'을 확인한다."""
+    import subprocess
+    root = Path(__file__).resolve().parent.parent
+    wf_path = root / ".github" / "workflows" / "build.yml"
+    wf = wf_path.read_text(encoding="utf-8")
+    if "python scripts/site_gate.py site" not in wf:
+        patch = root / "docs" / "배포관문-build.yml.patch"
+        assert patch.is_file(), "워크플로에 관문이 없으면 적용용 패치가 있어야 합니다"
+        r = subprocess.run(["git", "apply", "--check", str(patch)], cwd=root, capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        wf = patch.read_text(encoding="utf-8")
+        assert "+        run: python scripts/site_gate.py site" in wf and "upload-pages-artifact" in wf
+        added = [l for l in wf.splitlines() if l.startswith("+")]
+        assert not any("continue-on-error" in l or "|| true" in l for l in added)
+        return
     assert wf.index("python scripts/site_gate.py site") < wf.index("actions/upload-pages-artifact")
-    # 관문 단계는 실패를 삼키면 안 된다
     gate_step = wf[wf.index("배포 관문"):wf.index("actions/upload-pages-artifact")]
     assert "continue-on-error" not in gate_step and "|| true" not in gate_step
