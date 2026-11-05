@@ -1221,3 +1221,23 @@ def test_ux_home_gates_and_next_actions_wiring(tmp_path):
     # 새 저장 구조 없음: 이번 변경이 만든 코드가 새 키를 쓰지 않는다
     for code in (app[app.index("function gates()"):app.index("function gates()") + 1500], cmp_js[cmp_js.index("function nextStep("):cmp_js.index("function nextStep(") + 1800]):
         assert 'save("' not in code and "localStorage" not in code
+
+
+def test_lean_page_headers_keep_one_note_box(tmp_path):
+    """네 화면(찾기·비교·카드첩·프로젝트)의 머리말: 제목 아래 설명은 접이식 상자 하나에 모으고, 같은 안내를 되풀이하지 않는다. 문구는 지우지 않고 상자 안으로 옮긴다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    pages = {n: (out / f"{n}.html").read_text(encoding="utf-8") for n in ("finder", "compare", "cards", "projects")}
+    for n, h in pages.items():
+        hero = h[h.index('class="page-hero'):h.index("</section>", h.index('class="page-hero'))]
+        assert "page-hero" in hero and "lean" in hero.split(">")[0], n
+        assert hero.count('<details class="hero-note">') == 1 and 'class="lead"' not in hero, n    # 설명 상자 하나, 따로 떠 있는 긴 설명 없음
+        assert len(hero.split("</summary>")[0].split("<summary>")[1]) < 400, n
+    f_hero = pages["finder"][pages["finder"].index('class="page-hero'):pages["finder"].index("</section>")]
+    assert "실거래까지 반영" in f_hero and f_hero.index("<details") < f_hero.index("실거래까지 반영")   # 기준일 안내는 지워지지 않고 상자 안에 있음
+    assert "백업하세요" in pages["cards"] and "백업하세요" in pages["projects"]                      # 저장 안내도 지워지지 않음(상자 안)
+    assert 'data-storage-summary' in pages["cards"] and 'data-storage-summary' in pages["projects"]  # 로그인 시 바뀌는 칸을 계속 이어받음
+    assert pages["projects"].count("어떤 집을 찾고 있나요") == 1 and "새 프로젝트 만들기" not in pages["projects"]   # 같은 뜻의 소제목 두 개를 하나로
+    assert 'data-pj-create' in pages["projects"] and 'name="name"' in pages["projects"]
+    js = (out / "static" / "cards.js").read_text(encoding="utf-8")
+    assert "카드를 뒤집으면 선정 이유가 표시됩니다" not in js and pages["cards"].count("카드를 뒤집으면") == 0   # 같은 안내가 네 번 나오던 것을 없앰

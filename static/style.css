@@ -4228,3 +4228,18 @@ body[data-page="intro"] .toast-act { color: #13294b; }
 }
 
 @media (max-width: 720px) { .next-row .btn { flex: 1 1 100%; justify-content: center; } }
+
+/* 화면 머리말: 제목 아래 설명은 한 줄 요약이 든 상자 하나에 모으고, 자세한 말은 펼쳐 볼 때만 */
+.page-hero.lean { padding: 18px 0 4px; }
+.page-hero.lean h1 { margin: 4px 0 12px; }
+.hero-note { max-width: 560px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.hero-note summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 8px 14px; cursor: pointer;
+  list-style: none; font-size: 14px; color: var(--text-2); }
+.hero-note summary::-webkit-details-marker { display: none; }
+.hero-note summary .ic { flex: none; width: 18px; height: 18px; transition: transform 200ms var(--ease-out); }
+.hero-note[open] summary .ic { transform: rotate(180deg); }
+.hero-note > div { padding: 0 14px 12px; }
+.hero-note p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.hero-note p + p { margin-top: 6px; color: var(--muted); font-size: 13px; }
+@media (max-width: 720px) { .page-hero.lean h1 { font-size: 24px; } }
+@media (prefers-reduced-motion: reduce) { .hero-note summary .ic { transition: none; } }
