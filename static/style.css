@@ -4302,3 +4302,6 @@ p.muted { text-wrap: balance; }
 .st-pick select { width: 100%; min-height: 44px; padding: 0 12px; font: inherit; font-size: 16px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); }
 @media (max-width: 899px) { .station-jump { display: none; } }
 @media (min-width: 900px) { .st-pick { display: none; } .st-filter { background: transparent; border: 0; padding: 0; margin: 14px 0 0; } }
+
+/* 알림은 바닥 시트와 어두운 뒷판 위에 (시트가 열린 채 '다음 단지 현장 모드 →' 같은 링크를 눌러야 해서). 사진 보기·복사창(110~121)보다는 아래 */
+.toast-zone { z-index: 100; }
