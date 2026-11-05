@@ -83,12 +83,20 @@
   DJ.el = el;
 
   // ---------- 알림 ----------
-  DJ.toast = function (title, body, ms) {   // ms: 오래 보여 줄 때 (실패 이유처럼 읽어야 하는 알림)
+  // action: {label, href} 를 주면 알림 안에 '다음 행동' 링크가 붙고 좀 더 오래(7초) 보입니다. 자동으로 이동하지는 않아요.
+  DJ.toast = function (title, body, ms, action) {   // ms: 오래 보여 줄 때 (실패 이유처럼 읽어야 하는 알림)
     const zone = document.getElementById("toast-zone");
     if (!zone) return;
     const t = el("div", "toast");
     t.append(el("strong", "", title));
     if (body) t.append(el("span", "", body));
+    if (action && action.href && action.label) {
+      const a = el("a", "toast-act", action.label);
+      a.href = action.href;
+      t.classList.add("has-act");
+      t.append(a);
+      ms = ms || 7000;
+    }
     zone.append(t);
     setTimeout(() => t.classList.add("out"), ms || 3200);
     setTimeout(() => t.remove(), (ms || 3200) + 600);
@@ -992,7 +1000,15 @@
           if (added) DJ.watchSeen(now);   // 지금부터 바뀌는 것을 새 소식으로
           paint(on);
           if (added && !DJ.calm) { fav.classList.remove("pop"); void fav.offsetWidth; fav.classList.add("pop"); }
-          if (added) { DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"); DJ.checkBadges(); }
+          if (added) {
+            DJ.checkBadges();
+            // 둘 이상 모이면 바로 비교로 (이 지역에 있는 단지만 셈. 누르기 전에는 이동하지 않음)
+            DJ.data().then(d => {
+              const mine = DJ.favs().filter(s => d.bySlug[s]);
+              if (mine.length >= 2) DJ.toast("관심 단지에 저장했습니다", `관심 단지 ${mine.length}곳이에요. 나란히 견줘 볼까요?`, 7000, { label: "관심 단지 비교하기 →", href: ROOT + "compare.html?s=" + mine.slice(0, 4).map(encodeURIComponent).join(",") });
+              else DJ.toast("관심 단지에 저장했습니다", "한 곳만 더 담으면 바로 비교할 수 있어요");
+            }).catch(() => DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"));
+          }
         });
       }
     }
@@ -1538,13 +1554,39 @@
       .filter(p => ok(p) && !p.archived && p.slugs.length)
       .sort((a, b) => (Number(b.updated) || 0) - (Number(a.updated) || 0))[0] || null;
   };
+  // 첫 화면 입구 세 개: 찾기 / 비교 / 임장. 기록이 있으면 같은 자리에서 '바로 이어서'로 바뀝니다 (없으면 기본 문구 그대로, 자동 이동 없음)
+  function gates() {
+    const box = document.querySelector("[data-gates]");
+    if (!box) return;
+    const pj = DJ.activeProject();   // 진행 중인 임장 프로젝트(이 지역, 보관 안 한 것 중 가장 최근에 손댄 것)
+    const v = box.querySelector("[data-gate-visit]");
+    if (pj && v) {
+      v.querySelector("[data-gv-k]").textContent = "이어하기";
+      const h = v.querySelector("[data-gv-h]"); h.replaceChildren("하던 집 찾기,", el("br"), "이어서 볼까요?");
+      v.querySelector("[data-gv-desc]").textContent = `${pj.name} · 후보 ${pj.slugs.length}곳`;
+      v.classList.add("gate-live");   // 휴대폰에서도 어떤 프로젝트인지 보이게
+      v.querySelector("[data-gv-label]").textContent = "이어서 하기";
+    }
+    const favs = DJ.favs();
+    const c = box.querySelector("[data-gate-compare]");
+    if (!c || !favs.length) return;
+    DJ.data().then(d => {
+      const mine = favs.filter(s => d.bySlug[s]).slice(0, 4);
+      if (!mine.length) return;
+      if (mine.length >= 2) {
+        c.querySelector("[data-gc-btn]").href = ROOT + "compare.html?s=" + mine.map(encodeURIComponent).join(",");
+        c.querySelector("[data-gc-label]").textContent = `관심 ${mine.length}곳 비교`;
+        c.querySelector("[data-gc-desc]").textContent = "저장해 둔 단지를 같은 기준으로 나란히 봅니다.";
+      } else c.querySelector("[data-gc-desc]").textContent = "한 곳만 더 담으면 바로 비교할 수 있어요.";
+    }).catch(() => {});
+  }
+
   // 첫 화면 '이어서': 다시 온 사람이 하던 임장 준비(관심 단지·새 소식·코스·마지막에 본 단지)로 바로
   function resume() {
     const box = document.querySelector("[data-resume]");
     if (!box) return;
     const favs = DJ.favs(), rec = DJ.recent(), news = favs.length ? load("watchN", 0) : 0;
-    const pj = DJ.activeProject();   // 진행 중인 임장 프로젝트(이 지역, 보관 안 한 것 중 가장 최근에 손댄 것)
-    if (!favs.length && !rec.length && !pj) return;
+    if (!favs.length && !rec.length) return;
     DJ.data().then(d => {
       const chip = (href, icon, text, cls) => {
         const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
@@ -1554,7 +1596,6 @@
         box.append(a);
       };
       box.append(el("span", "resume-k", "이어서"));
-      if (pj) chip("projects.html", "i-route", `${pj.name} · 후보 ${pj.slugs.length}곳`, "hot");
       if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
       if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
       const n = DJ.courseStops(d).stops.length;
@@ -1604,6 +1645,7 @@
     pwa();
     welcome();
     courseButton();
+    gates();
     resume();
     regionPicker();
     recentDock();
