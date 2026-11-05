@@ -3,18 +3,26 @@
 {% block description %}{{ region }} {{ transit.stop }}에서 직선거리 {{ radius }}m 이내인 아파트를 역별로 모아 가격과 입지 점수를 비교합니다.{% endblock %}
 {% block body %}
 {% set seg_cur = 'stations' %}{% include "_seg_find.html" %}
-<section class="page-hero">
+<section class="page-hero lean">
   <p class="eyebrow">{{ transit.tab }} 단지</p>
   <h1>{{ transit.stop }} 주변 아파트,<br>한눈에 비교</h1>
-  <p class="lead">{{ transit.stop }}에서 직선거리 {{ radius }}m 이내에 있는 아파트를 모았습니다. 역별 가격과 지수를 비교해 보세요. 걷는 시간은 직선거리로 계산한 추정치입니다.</p>
-  {% if stations %}
+  <details class="hero-note">
+    <summary><span>직선 {{ radius }}m 이내 · 걷는 시간은 추정치예요</span><svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></summary>
+    <div>
+      <p>{{ transit.stop }}에서 직선거리 {{ radius }}m 이내에 있는 아파트를 모았습니다. 역별 가격과 지수를 비교해 보세요. 걷는 시간은 직선거리로 계산한 추정치입니다.</p>
+    </div>
+  </details>
+</section>
+{% if stations %}
+{# 정렬과 역 고르기를 한 상자에: 휴대폰에서는 역 수십 곳을 가로로 밀어 보는 대신 목록에서 고릅니다 (app.js stationJump). 넓은 화면은 아래 바로가기 줄 그대로 #}
+<section class="st-filter" aria-label="역 고르기와 정렬">
   <div class="seg" role="group" aria-label="정렬">
     <button type="button" class="seg-btn active" data-st-sort="i" aria-pressed="true">종합 지수 높은 순</button>
     <button type="button" class="seg-btn" data-st-sort="d" aria-pressed="false">{{ transit.short }}에서 가까운 순</button>
   </div>
-  {% endif %}
+  <label class="field st-pick"><span>역 바로가기 · {{ stations | length }}곳</span>
+    <select data-st-jump><option value="">역을 골라 보세요</option>{% for st in stations %}<option value="st-{{ loop.index }}">{{ st.name }} · {{ st.n }}곳</option>{% endfor %}</select></label>
 </section>
-{% if stations %}
 <nav class="jump station-jump">
   {% for st in stations %}<a href="#st-{{ loop.index }}">{{ st.name }} <span class="muted">{{ st.n }}</span></a>{% endfor %}
 </nav>

@@ -1327,3 +1327,24 @@ def test_mobile_text_wrap_rules_stay(tmp_path):
     assert ".ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }" in tail
     js = (root / "static" / "finder.js").read_text(encoding="utf-8")
     assert "조건을 고를수록 좁혀집니다" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로
+
+
+def test_mobile_visual_first_and_station_filter_box(tmp_path):
+    """모바일: 조건으로 찾기는 그림이 질문 위에 먼저(낮게 잘라 질문 제목과 한 화면에), 역 화면은 정렬+역 고르기를 한 상자에 담고 휴대폰에서는 가로로 밀어 찾는 칩 줄 대신 선택 상자를 쓴다"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".sv-art { order: 2; }" not in css                                                                  # 그림을 질문 아래로 보내던 규칙이 없다
+    assert ".sv-art .sv-svg { height: 150px; max-height: 150px; object-fit: cover;" in css
+    finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert finder.index("data-sv-art") < finder.index("data-sv-q")                                             # 마크업 순서도 그림 → 질문
+    stations = (out / "stations.html").read_text(encoding="utf-8")
+    assert 'class="st-filter"' in stations and "data-st-jump" in stations and 'class="page-hero lean"' in stations
+    box = stations[stations.index('class="st-filter"'):stations.index("</section>", stations.index('class="st-filter"'))]
+    assert "data-st-sort" in box and "data-st-jump" in box                                                     # 정렬과 역 고르기가 한 상자 안
+    assert 'class="jump station-jump"' in stations                                                             # 넓은 화면용 바로가기 줄은 그대로
+    assert "@media (max-width: 899px) { .station-jump { display: none; } }" in css
+    js = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "function stationJump()" in js and "stationJump();" in js and "stationFocus();" in js                # 검색에서 들어오는 ?st= 도 그대로
