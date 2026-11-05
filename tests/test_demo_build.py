@@ -1377,3 +1377,11 @@ def test_finder_reserves_space_for_late_drawn_art_and_question():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
     assert ".sv-art:empty { aspect-ratio: 520 / 330;" in css
     assert ".sv-art:empty { min-height: 152px; }" in css and ".sv-q:empty { min-height: 276px; }" in css
+def test_tap_targets_stay_at_least_44px_for_common_controls():
+    """UX 2차: 768폭에서 40px 이던 상단 메뉴·기록 버튼·시세띠·화살표, 30px 이던 카드 뒤집기의 누르는 칸을 44px 이상으로"""
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
+    tail = css[css.index("/* 터치 영역: 자주 누르는 것은 44px 이상으로"):]
+    for rule in (".top-nav > a, .tn-btn { min-height: 44px; }", ".rcd-fab { min-height: 44px; }", ".rail-btn { width: 44px; height: 44px; }",
+                 ".tk { min-height: 44px;", ".mcard-turn::after { content: \"\"; position: absolute; inset: -7px;"):
+        assert rule in tail, rule
