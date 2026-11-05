@@ -1376,5 +1376,5 @@ def test_share_view_explains_when_photos_are_private():
     from pathlib import Path
     root = Path(__file__).resolve().parent.parent
     js = (root / "static" / "share.js").read_text(encoding="utf-8")
-    assert 'img.addEventListener("error"' in js and "현장 사진은 보낸 분만 볼 수 있어요." in js
+    assert 'img.addEventListener("error"' in js and "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요." in js
     assert ".sh-photo-off" in (root / "static" / "style.css").read_text(encoding="utf-8")

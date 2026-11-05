@@ -58,7 +58,7 @@
             img.addEventListener("error", () => {
               if (ph.dataset.off) return;
               ph.dataset.off = "1";
-              ph.replaceChildren(el("p", "sh-photo-off", "현장 사진은 보낸 분만 볼 수 있어요."));
+              ph.replaceChildren(el("p", "sh-photo-off", "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요."));
             });
             a.append(img); ph.append(a);
           });
