@@ -1289,3 +1289,23 @@ def test_apt_detail_has_compare_in_the_action_row(tmp_path):
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "[data-compare-here]" in app and "DJ.favs().filter(s => s !== c.s" in app and ".slice(0, 3)" in app    # 관심 단지 최대 3곳 + 이 단지 = 최대 4곳
     assert "compare.html?a=" in page[page.index("주요 지표 비교"):page.index("주요 지표 비교") + 400]          # 아래쪽 기존 '다른 단지와 비교' 링크는 그대로
+
+
+def test_visit_prep_name_is_the_same_everywhere(tmp_path):
+    """UX 2차: 하단 탭·위 메뉴·전체 메뉴·홈 입구가 같은 이름('임장 준비')을 쓰고, 목적지는 그대로(프로젝트). '임장 코스'는 코스 화면 이름으로만 남는다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    home = (out / "index.html").read_text(encoding="utf-8")
+    tab = home[home.index('class="tabbar"'):home.index("</nav>", home.index('class="tabbar"'))]
+    assert 'data-tab="projects"' in tab and "임장 준비</a>" in tab and "임장</a>" not in tab.replace("임장 준비</a>", "")
+    assert tab.index('href="projects.html"') < tab.index("둘러보기")                                     # 탭 순서·목적지 그대로
+    assert ">임장 준비<svg" in home and ">임장</button>" not in home                                       # 위 메뉴
+    gates = home[home.index("data-gates"):home.index('class="roof-strip"')]
+    assert "data-gv-k>임장 준비<" in gates and "임장 준비 열기" in gates and 'href="projects.html" data-gv-btn' in gates
+    from pathlib import Path
+    allmenu = (Path(__file__).resolve().parent.parent / "templates" / "_allmenu.html").read_text(encoding="utf-8")   # 전체 메뉴는 부분 화면이라 원본에서 확인
+    assert "<h3>임장 준비</h3>" in allmenu and 'aria-label="임장 준비 메뉴"' in allmenu and "<h3>임장</h3>" not in allmenu
+    assert "<li><a href=\"my.html#course\">임장 코스</a></li>" in allmenu                                    # 코스 화면 이름은 그대로
+    assert "임장 코스" in home                                                                            # 코스 화면 이름은 그대로 남아 있음
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert '"이어하기"' in app and '"이어서 하기"' in app                                                   # 진행 중일 때의 이름은 그대로
