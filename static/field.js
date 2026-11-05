@@ -279,7 +279,7 @@
       s.append(go);
       return s;
     }
-    s.append(el("p", "fm-sub", "말로 남기기 어려운 걸 찍어 두세요. 위치 정보 없이 줄여서 계정에 저장하고, 공유 링크를 받은 가족도 볼 수 있어요."));
+    s.append(el("p", "fm-sub", "말로 남기기 어려운 걸 찍어 두세요. 위치 정보 없이 줄여서 계정에 저장하고, 로그인한 나만 볼 수 있어요. 공유 링크로는 보이지 않아요."));
     const grid = el("div", "fm-photos");
     const pick = el("label", "fm-ph-add");
     const inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true;

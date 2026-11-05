@@ -1412,3 +1412,11 @@ def test_photo_wording_matches_private_storage():
     assert "그 주소를 아는 사람만" not in privacy and "임장 노트(사진 포함)" not in privacy
     assert "사진 포함" not in (t / "me.html").read_text(encoding="utf-8")
     assert "메모·사진)예요" not in (t / "share.html").read_text(encoding="utf-8")
+
+
+def test_field_photo_note_matches_private_storage():
+    """사진 저장소가 비공개가 되어 공유 링크로는 사진이 안 보임. 현장 모드의 사진 안내가 '가족도 볼 수 있어요'라고 하면 안 됨"""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "field.js").read_text(encoding="utf-8")
+    assert "로그인한 나만 볼 수 있어요. 공유 링크로는 보이지 않아요." in js
+    assert "공유 링크를 받은 가족도 볼 수 있어요" not in js
