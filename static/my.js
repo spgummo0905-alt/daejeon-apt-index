@@ -89,7 +89,7 @@
         if (v.m) a.append(el("span", "nt-memo", v.m.length > 70 ? v.m.slice(0, 70) + "…" : v.m));
         if ((v.p || []).length && DJ.photoUrl) {   // 현장 사진 앞 3장
           const strip = el("span", "nt-photos");
-          v.p.slice(0, 3).forEach(([path]) => { const img = el("img"); img.src = DJ.photoUrl(path); img.alt = ""; img.loading = "lazy"; strip.append(img); });
+          v.p.slice(0, 3).forEach(([path]) => { const img = el("img"); DJ.photoSet(img, path); img.alt = ""; img.loading = "lazy"; strip.append(img); });
           a.append(strip);
         }
         const li = el("li", "");

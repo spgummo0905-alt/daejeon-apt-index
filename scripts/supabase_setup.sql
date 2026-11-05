@@ -108,7 +108,8 @@ grant execute on function public.shared_view(text) to anon, authenticated;
 -- 경로: <사용자 id>/<단지>/<무작위>.jpg. 사이트가 1280px JPEG 로 줄여 올리고(위치 정보 없음), 한 장 1MB·한 사람 300장까지.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('photos', 'photos', true, 1048576, array['image/jpeg', 'image/webp'])
-on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit,
+-- 이미 있는 버킷의 공개 여부(public)는 건드리지 않습니다: 나중에 비공개로 옮긴 뒤(docs/사진-저장소-감사.md) 이 파일을 다시 실행해도 공개로 되돌아가지 않게
+on conflict (id) do update set file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
 create or replace function public.photo_quota_ok()

@@ -41,7 +41,7 @@ function browser(localStorage = storage(), server = {}, options = {}) {
   ctx.window = ctx;
   ctx.fetch = async (url, opt = {}) => {
     const path = new URL(url).pathname, id = (opt.headers?.Authorization || '').replace('Bearer token-', '');
-    const body = opt.body ? JSON.parse(opt.body) : null;
+    const body = opt.body && !path.startsWith('/storage/v1/object/photos/') ? JSON.parse(opt.body) : null;   // 사진 올리기는 JSON 이 아니라 파일
     requests.push({ path, id, body });
     let data = [];
     if (path === '/auth/v1/token') data = { access_token: 'token-' + options.login, refresh_token: 'refresh-' + options.login, expires_in: 3600, user: { id: options.login, user_metadata: { name: options.login } } };
@@ -50,6 +50,17 @@ function browser(localStorage = storage(), server = {}, options = {}) {
       data = server[id] || [];
       if (options.switchAccountOnRead) localStorage.setItem('djdex-auth', JSON.stringify({ user: { id: 'B' }, at: 'token-B', exp: Date.now() / 1000 + 3600 }));
     }
+    if (path === '/storage/v1/object/photos' && opt.method === 'DELETE') {
+      if (options.failPhotoDelete) return { ok: false, status: 500, text: async () => 'storage down' };
+      (options.deletedPhotos || []).push(...body.prefixes);
+    }
+    if (path === '/rest/v1/rpc/delete_me') options.accountDeleted && (options.accountDeleted.n = (options.accountDeleted.n || 0) + 1);
+    if (path.startsWith('/storage/v1/object/photos/') && opt.method === 'POST') (options.uploaded || []).push(decodeURIComponent(path.slice('/storage/v1/object/photos/'.length)));
+    if (path.startsWith('/storage/v1/object/sign/photos/')) {
+      (options.signRequests || []).push(decodeURIComponent(path.slice('/storage/v1/object/sign/photos/'.length)));
+      if (options.failSign) return { ok: false, status: 400, text: async () => 'not found', json: async () => ({}) };
+      data = { signedURL: '/object/sign/photos/' + path.slice('/storage/v1/object/sign/photos/'.length) + '?token=T' };
+    }
     if (path === '/rest/v1/rpc/my_member') data = { id };
     if (path === '/rest/v1/rpc/sync_put') {
       if (options.failPush) return { ok: false, status: 503, text: async () => 'unavailable' };
@@ -57,7 +68,7 @@ function browser(localStorage = storage(), server = {}, options = {}) {
       for (const item of body.items) rows.set(item.k, { ...item, updated_at: new Date().toISOString() });
       server[id] = [...rows.values()];
     }
-    return { ok: true, text: async () => JSON.stringify(data) };
+    return { ok: true, text: async () => JSON.stringify(data), json: async () => data };
   };
   vm.runInContext(source('records.js'), ctx);
   const R = ctx.DJRecords;
@@ -262,4 +273,68 @@ test('restored visit-log ID conflicts preserve both versions, and remote deletio
   server.A = [{ k: 'visitlog:log-id', v: { version: 1, id: 'log-id', deleted: true, created: 1 }, t: Date.now() + 100, updated_at: '2026-11-02' }];
   const again = browser(s, server); await again.start();
   assert.equal(again.R.get('visitlog:log-id').deleted, true);
+});
+
+
+test('account deletion stops before deleting the account when photo files could not be removed', async () => {
+  const note = { m: 'keep me', c: [true], q: [], p: [['A/apt-1/one.jpg', '11.01'], ['A/apt-1/two.jpg', '11.02']] };
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 }, 'djdex@A:visit:apt-1': note });
+  const deleted = { n: 0 }, toasts = [];
+  const b = browser(s, {}, { failPhotoDelete: true, accountDeleted: deleted }); b.ctx.DJ.toast = (...a) => toasts.push(a); await b.start();
+  await b.ctx.DJ.deleteAccount();
+  assert.equal(deleted.n || 0, 0, 'the account must not be deleted while its public photo files remain');
+  assert.deepEqual(plain(b.R.get('visit:apt-1')).p.map(x => x[0]), ['A/apt-1/one.jpg', 'A/apt-1/two.jpg']);
+  assert.equal(b.R.get('visit:apt-1').m, 'keep me');
+  assert.ok(toasts.length >= 1);
+});
+
+test('account deletion removes every photo file first, in batches of 100, then the account', async () => {
+  const p = Array.from({ length: 250 }, (_, i) => ['A/apt-1/' + i + '.jpg', '11.01']);
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 }, 'djdex@A:visit:apt-1': { m: 'x', c: [], q: [], p } });
+  const deletedPhotos = [], deleted = { n: 0 };
+  const b = browser(s, {}, { deletedPhotos, accountDeleted: deleted }); await b.start();
+  await b.ctx.DJ.deleteAccount();
+  assert.equal(deletedPhotos.length, 250);
+  assert.equal(deleted.n, 1);
+  const order = b.requests.map(r => r.path);
+  assert.ok(order.lastIndexOf('/storage/v1/object/photos') < order.indexOf('/rest/v1/rpc/delete_me'), 'photos first, then the account');
+});
+
+
+test('private photo fallback: only own photos get a signed address, others and failures leave the image alone', async () => {
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 } });
+  const signRequests = [];
+  const b = browser(s, {}, { signRequests }); await b.start();
+  const DJ = b.ctx.DJ;
+  assert.equal(DJ.photoUrl('A/apt-1/x.jpg'), 'https://storage.test/storage/v1/object/public/photos/A/apt-1/x.jpg');
+  const own = await DJ.photoSigned('A/apt-1/x.jpg');
+  assert.equal(own, 'https://storage.test/storage/v1/object/sign/photos/A/apt-1/x.jpg?token=T');
+  assert.equal(await DJ.photoSigned('B/apt-1/other.jpg'), null, "another member's photo is never signed");
+  assert.deepEqual(plain(signRequests), ['A/apt-1/x.jpg'], 'no request was even made for the other member');
+  const failing = browser(s, {}, { failSign: true }); await failing.start();
+  assert.equal(await failing.ctx.DJ.photoSigned('A/apt-1/x.jpg'), null);
+});
+
+test('photoSet shows the public address first and retries once with the signed one when the image fails', async () => {
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 } });
+  const b = browser(s, {}, {}); await b.start();
+  const handlers = [], img = { dataset: {}, parentElement: { tagName: 'A', href: '' }, addEventListener(n, f) { handlers.push([n, f]); } };
+  b.ctx.DJ.photoSet(img, 'A/apt-1/x.jpg');
+  assert.match(img.src, /\/object\/public\/photos\/A\/apt-1\/x\.jpg$/);
+  await handlers.find(h => h[0] === 'error')[1]();
+  assert.match(img.src, /\/object\/sign\/photos\/A\/apt-1\/x\.jpg\?token=T$/);
+  assert.equal(img.parentElement.href, img.src);
+  const before = img.src; await handlers.find(h => h[0] === 'error')[1]();
+  assert.equal(img.src, before, 'a second failure does not loop');
+});
+
+
+test('new photo names are unguessable (96-bit random), inside the member folder, and unique per upload', async () => {
+  const s = storage({ 'djdex-records-v2': true, 'djdex-auth': { user: { id: 'A' }, at: 'token-A', exp: Date.now() / 1000 + 3600 } });
+  const uploaded = [];
+  const b = browser(s, {}, { uploaded }); await b.start();
+  for (let i = 0; i < 20; i++) await b.ctx.DJ.photoPut('apt-1', { size: 1 });
+  assert.equal(uploaded.length, 20);
+  assert.ok(uploaded.every(p => /^A\/apt-1\/[0-9a-f]{24}\.jpg$/.test(p)), uploaded[0]);
+  assert.equal(new Set(uploaded).size, 20);
 });

@@ -213,7 +213,7 @@
       if (v.m) art.append(el("p", "nt-p-memo", "메모: " + v.m));
       if ((v.p || []).length && DJ.photoUrl) {   // 현장 사진도 작게
         const ph = el("div", "nt-p-photos");
-        v.p.slice(0, 6).forEach(([path]) => { const img = el("img"); img.src = DJ.photoUrl(path); img.alt = ""; ph.append(img); });
+        v.p.slice(0, 6).forEach(([path]) => { const img = el("img"); DJ.photoSet(img, path); img.alt = ""; ph.append(img); });
         art.append(ph);
       }
       sheet.append(art);

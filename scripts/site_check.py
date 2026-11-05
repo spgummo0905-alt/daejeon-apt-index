@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import time
@@ -29,6 +30,46 @@ FILLED = {"단지 정보(세대수·주차)": lambda h: 'id="info"' in h,
           "언덕 역 단면": lambda h: 'class="hl-svg"' in h}
 
 
+# 지역마다 이보다 적으면 수집이 끊긴 것으로 봅니다 (배포 관문 scripts/site_gate.py 와 같은 기준)
+MIN_COMPLEX = {"대전": 300, "세종": 100, "청주": 200, "서울": 1500}
+# 대전에서 0곳이면 수집이 깨진 것으로 보는 칸 (나머지는 이어 받는 중일 수 있어 경고만)
+MUST_FILL = ("단지 정보(세대수·주차)", "카카오맵 장소")
+
+
+def judge(region: str, out: dict) -> tuple[list[str], list[str]]:
+    """한 지역의 점검 결과(out)에서 (실패 목록, 경고 목록). 실패가 하나라도 있으면 점검 전체가 실패(종료 코드 1)."""
+    bad, warn = [], []
+    if out.get("상태") != 200:
+        return [f"{region}: 첫 화면이 열리지 않습니다 (상태 {out.get('상태')})"], warn
+    n = out.get("단지 자료")
+    if n is None:
+        bad.append(f"{region}: complexes.json 을 읽지 못했습니다")
+    elif n < MIN_COMPLEX.get(region, 1):
+        bad.append(f"{region}: 단지 자료 {n}곳 (최소 {MIN_COMPLEX.get(region, 1)}곳)")
+    pages = out.get("단지 페이지", 0)
+    if n and pages < n * 0.9:
+        bad.append(f"{region}: sitemap 의 단지 페이지 {pages}개 / 단지 자료 {n}곳")
+    for k in list(COMMON) + ["카드첩 화면", "임장 후보 코드", "동·역·조건 검색 코드", "이용약관", "임장 코스", "역 검색 연결"]:
+        if k in out and out[k] is not True:
+            bad.append(f"{region}: '{k}' 가 빠졌습니다")
+    if "메인에 오늘의 카드 없음" in out and out["메인에 오늘의 카드 없음"] is not True:
+        bad.append(f"{region}: 메인에 오늘의 카드가 다시 나옵니다")
+    ex = out.get("단지 예시")
+    if ex is not None:
+        if ex.get("상태") != 200:
+            bad.append(f"{region}: 단지 페이지 예시가 열리지 않습니다 (상태 {ex.get('상태')})")
+        bad += [f"{region}: 단지 페이지에 '{k}' 가 없습니다" for k in MARKS if ex.get(k) is not True]
+    r = out.get("반영")
+    if r:
+        opened, total = (int(x) for x in str(r.get("열린 단지 페이지", "0 / 0")).split("/"))
+        if total and opened < total * 0.98:
+            bad.append(f"{region}: 단지 페이지 {opened} / {total}곳만 열렸습니다")
+        for k in FILLED:
+            if r.get(k, 0) == 0:
+                (bad if region == "대전" and k in MUST_FILL else warn).append(f"{region}: '{k}' 가 한 곳도 반영되지 않았습니다")
+    return bad, warn
+
+
 def text(html: str, pat: str) -> str:
     m = re.search(pat, html, re.S)
     return re.sub(r"<[^>]+>|\s+", " ", m.group(1)).strip() if m else ""
@@ -53,9 +94,18 @@ def main() -> None:
     s = requests.Session()
     s.headers["User-Agent"] = "Mozilla/5.0 (site-check)"
     s.hooks["response"].append(lambda r, *a, **k: setattr(r, "encoding", "utf-8"))  # 한글이 깨지지 않게
+    only = [x for x in os.environ.get("SITE_CHECK_REGIONS", "").split(",") if x]   # 예: SITE_CHECK_REGIONS=대전 (줄여서 점검)
+    bad_all: list[str] = []
     for region, path in REGIONS.items():
+        if only and region not in only:
+            continue
         url = BASE + path
-        r = s.get(url, timeout=30)
+        try:
+            r = s.get(url, timeout=30)
+        except requests.RequestException as e:
+            print(json.dumps({"지역": region, "주소": url, "상태": f"연결 실패: {type(e).__name__}"}, ensure_ascii=False))
+            bad_all.append(f"{region}: 연결 실패 ({type(e).__name__})")
+            continue
         out = {"지역": region, "주소": url, "상태": r.status_code}
         if r.ok:
             html = r.text
@@ -86,7 +136,7 @@ def main() -> None:
             out["가까운데 값이 다른 곳"] = "data-cliffs" in html and "data-m3d-seg" not in html
             # 배포본은 화면 코드를 압축해 함수 이름이 바뀌므로 문구·속성 이름으로 확인 (scripts/minify_site.sh)
             js = s.get(url + "static/cards.js", timeout=30)
-            out["임장 후보 코드"] = js.ok and "요즘 수요가 몰리는지" in js.text
+            out["임장 후보 코드"] = js.ok and "차이가 어디서 오는지 비교해 보세요" in js.text   # 문구를 다듬을 때 함께 고칠 것: 사라지면 점검이 실패합니다
             app = s.get(url + "static/app.js", timeout=30)
             out["동·역·조건 검색 코드"] = app.ok and ".parseCond=" in app.text.replace(" ", "")
             css = s.get(url + "static/style.css", timeout=30)
@@ -117,6 +167,15 @@ def main() -> None:
                     out["관리비 예시"] = [text(h, r"<h1[^>]*>(.*?)</h1>") + " · " + text(h, r"<dt>관리비</dt>(.*?)</div>")
                                       for h in pages if "<dt>관리비</dt>" in h][:3]
         print(json.dumps(out, ensure_ascii=False))
+        bad, warn = judge(region, out)
+        for m in warn:
+            print(f"::warning::{m}")
+        for m in bad:
+            print(f"::error::{m}")
+        bad_all += bad
+    print(f"사이트 점검: 실패 {len(bad_all)}건")
+    if bad_all:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

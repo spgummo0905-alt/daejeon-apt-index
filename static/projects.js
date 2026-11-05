@@ -123,8 +123,8 @@
     actions();
   }
   // 다녀온 뒤 정리: 후보마다 확인한 것·아직 못 확인한 것·남긴 메모 (방문 기록을 모아 보여 줄 뿐, 평가는 하지 않아요)
-  function summary() {
-    const box = find("[data-pj-summary]"); box.replaceChildren();
+  // 방문 요약 계산 재료 모으기 (다녀온 뒤 정리와 한 장 보고서가 같은 자료를 씀: 후보 순서대로 모든 후보, visited 로 구분)
+  function summaryRows() {
     const logs = DJVisitLog.list({ region: REGION, projectId: current.id });
     const names = Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n]));
     // 현장 모드의 단지 공통 기록: 다녀온 날·메모, 체크는 하나라도 눌렀을 때만 (안 눌렀는데 전부 '못 확인'으로 쏟아지지 않게)
@@ -135,7 +135,11 @@
       const labels = any ? [...DJ.CHECK.map((label, i) => ({ label, on: !!v.c[i] })), ...DJ.visitItems(c, REGION).map(([k, label]) => ({ label, on: !!v.x[k] }))] : null;
       if (v.d || v.m || labels) field[s] = { d: v.d || "", m: v.m || "", labels };
     });
-    const rows = DJVisitSummary.build(current.slugs, logs, names, field).filter(r => r.visited);
+    return DJVisitSummary.build(current.slugs, logs, names, field);
+  }
+  function summary() {
+    const box = find("[data-pj-summary]"); box.replaceChildren();
+    const rows = summaryRows().filter(r => r.visited);
     box.hidden = !rows.length; if (!rows.length) return;
     box.append(el("h3", "", "다녀온 뒤 정리"), el("p", "sv-note", "방문 기록과 현장 체크에서 모은 내용이에요. 어느 집이 낫다는 판단은 하지 않아요."));
     rows.forEach(r => {
@@ -152,6 +156,34 @@
       box.append(d);
     });
   }
+  // 한 장 보고서: 내 조건 / 후보별 공개 자료 숫자 / 확인한 것 / 아직 못 확인한 것 / 내 메모를 따로 모아 인쇄·PDF 로 (계산은 project-report.js).
+  // 임장 노트 엑셀·인쇄(관심 화면)와 달리 한 프로젝트의 후보를 한 장에서 견주어 볼 수 있게 하고, 기록이 없는 칸은 만들지 않아요.
+  function report() {
+    if (!current || !D) return;
+    const r = DJProjectReport.build({ project: current, rows: summaryRows(), bySlug: D.bySlug, today: DJ.today(), region: REGION });
+    const sheet = el("section", "pj-report");
+    sheet.append(el("h2", "", r.title), el("p", "pj-r-sub", `집감 ${REGION} · ${r.date} 정리 · 후보 ${r.totals.candidates}곳 (다녀온 곳 ${r.totals.visited}, 아직 ${r.totals.pending})`));
+    if (r.conditions) { const b = el("div", "pj-r-box"); b.append(el("h3", "", "내가 정한 조건"), el("p", "pj-r-cond", r.conditions)); sheet.append(b); }
+    const addFacts = (art, f) => { if (f.length) { const dl = el("dl", "pj-r-facts"); f.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v))); art.append(dl); } };
+    r.visited.forEach(v => {
+      const art = el("article", "pj-r-c");
+      art.append(el("h3", "", v.name), el("p", "pj-r-meta", [v.place, v.visits ? `방문 ${v.visits}번` : "현장 기록", v.last ? "마지막 " + v.last : "", v.total ? `확인 ${v.checked}/${v.total}` : ""].filter(Boolean).join(" · ")));
+      addFacts(art, v.facts);
+      if (v.done.length) { art.append(el("h4", "", "직접 확인한 것")); const ul = el("ul", "pj-r-done"); v.done.forEach(x => ul.append(el("li", "", "✓ " + x))); art.append(ul); }
+      if (v.todo.length) { art.append(el("h4", "", `아직 확인 못 한 것 ${v.todo.length}가지`)); const ul = el("ul", "pj-r-todo"); v.todo.forEach(x => ul.append(el("li", "", "☐ " + x))); art.append(ul); }
+      if (v.memos.length) { art.append(el("h4", "", "내가 남긴 메모")); v.memos.forEach(m => art.append(el("p", "pj-r-memo", `${m.field ? "현장 메모" : m.date + (m.period ? " " + m.period : "")}: ${m.text}`))); }
+      sheet.append(art);
+    });
+    if (r.pending.length) {
+      const art = el("article", "pj-r-c"); art.append(el("h3", "", "아직 다녀오지 않은 후보"));
+      const ul = el("ul", "pj-r-pend");
+      r.pending.forEach(v => ul.append(el("li", "", [v.name, v.place, ...v.facts.map(([k, x]) => `${k} ${x}`)].filter(Boolean).join(" · "))));
+      art.append(ul); sheet.append(art);
+    }
+    sheet.append(el("p", "pj-r-note", r.notice));
+    return DJ.printSheet(sheet);
+  }
+  find("[data-pj-report]").addEventListener("click", () => { report(); });
   // 한눈에 보는 현황: 후보 수·다녀온 단지·방문 기록, 3단계 진행, 지금 할 일 하나
   function openDiscover() {
     const d = find("[data-pj-add]"); d.open = true;
@@ -168,6 +200,7 @@
   function dash() {
     const n = current.slugs.length, logs = DJVisitLog.list({ region: REGION, projectId: current.id }), went = new Set(logs.map(v => v.slug)).size;
     find("[data-pj-count]").textContent = n ? `${n}곳` : "";
+    find("[data-pj-report]").disabled = !n;
     const stats = find("[data-pj-stats]"); stats.replaceChildren();
     [["후보", n + "곳"], ["다녀온 단지", went + "곳"], ["방문 기록", logs.length + "건"]].forEach(([k, v]) => {
       const box = el("div", "pj-stat"); box.append(el("dd", "", v), el("dt", "", k)); stats.append(box);

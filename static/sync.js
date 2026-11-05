@@ -80,7 +80,8 @@
   DJ.photoPut = async function (slug, blob) {
     const at = await token();
     if (!at || !S.user) throw new Error("로그인이 필요해요");
-    const path = `${S.user.id}/${slug}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const rnd = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join("");   // 96비트: 주소를 추측할 수 없게
+    const path = `${S.user.id}/${slug}/${rnd}.jpg`;
     const r = await fetch(API + "/storage/v1/object/photos/" + path, { method: "POST", body: blob,
       headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "image/jpeg", "x-upsert": "false" } });
     if (!r.ok) { const e = new Error((await r.text()).slice(0, 120) || "HTTP " + r.status); e.status = r.status; throw e; }
@@ -89,8 +90,36 @@
   DJ.photoDel = async function (paths) {
     const at = await token();
     if (!at || !paths.length) return;
-    await fetch(API + "/storage/v1/object/photos", { method: "DELETE", body: JSON.stringify({ prefixes: paths }),
+    const r = await fetch(API + "/storage/v1/object/photos", { method: "DELETE", body: JSON.stringify({ prefixes: paths }),
       headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "application/json" } });
+    if (!r.ok) { const e = new Error("사진을 지우지 못했어요 (HTTP " + r.status + ")"); e.status = r.status; throw e; }
+  };
+  // 사진 보여 주기 (field.js, my.js, prefs.js): 지금은 공개 주소 그대로. 저장소를 비공개로 옮긴 뒤에는(docs/사진-저장소-감사.md)
+  // 공개 주소가 안 열리므로, 본인 폴더 사진에 한해 로그인 토큰으로 받은 임시 주소(1시간)로 한 번만 다시 시도합니다.
+  // 다른 사람이 공유한 사진(share.js)은 임시 주소를 만들 수 없어 이 경로를 쓰지 않습니다.
+  DJ.photoSigned = async function (path) {
+    const at = await token();
+    if (!at || !S.user || !String(path).startsWith(S.user.id + "/")) return null;
+    const r = await fetch(API + "/storage/v1/object/sign/photos/" + String(path).split("/").map(encodeURIComponent).join("/"),
+      { method: "POST", body: JSON.stringify({ expiresIn: 3600 }), headers: { apikey: C.key, Authorization: "Bearer " + at, "Content-Type": "application/json" } });
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    const u = d && (d.signedURL || d.signedUrl);
+    return u ? API + "/storage/v1" + (u.startsWith("/storage/v1") ? u.slice(11) : u) : null;
+  };
+  DJ.photoSet = function (img, path) {
+    img.src = DJ.photoUrl(path);
+    img.addEventListener("error", async () => {
+      if (img.dataset.signed) return;
+      img.dataset.signed = "1";
+      try {
+        const u = await DJ.photoSigned(path);
+        if (!u) return;
+        img.src = u;
+        const a = img.parentElement;
+        if (a && a.tagName === "A") a.href = u;
+      } catch (e) { /* 연결이 없으면 그대로 */ }
+    }, { once: true });
   };
   // 이 계정의 모든 현장 사진 경로 (임장 노트 기록에서)
   const allPhotos = () => localKeys().filter(k => k.startsWith("visit:")).flatMap(k => ((getLocal(k) || {}).p || []).map(x => x[0]));

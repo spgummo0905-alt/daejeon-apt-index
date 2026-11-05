@@ -1529,12 +1529,22 @@
     paint();
   }
 
+  // 진행 중인 임장 프로젝트: project-store.js 와 같은 검사(버전 1, 올바른 id·이름·지역·후보)를 통과한 것만. 잠긴 기록(계정 전환 중)이면 없음
+  DJ.activeProject = function () {
+    if (DJ.locked()) return null;
+    const region = document.body.dataset.region;
+    const ok = p => p && p.version === 1 && /^[a-z0-9-]{1,64}$/.test(p.id) && typeof p.name === "string" && p.name.trim() && p.region === region && Array.isArray(p.slugs);
+    return DJ.records.keys().filter(k => k.startsWith("project:")).map(k => load(k, null))
+      .filter(p => ok(p) && !p.archived && p.slugs.length)
+      .sort((a, b) => (Number(b.updated) || 0) - (Number(a.updated) || 0))[0] || null;
+  };
   // 첫 화면 '이어서': 다시 온 사람이 하던 임장 준비(관심 단지·새 소식·코스·마지막에 본 단지)로 바로
   function resume() {
     const box = document.querySelector("[data-resume]");
     if (!box) return;
     const favs = DJ.favs(), rec = DJ.recent(), news = favs.length ? load("watchN", 0) : 0;
-    if (!favs.length && !rec.length) return;
+    const pj = DJ.activeProject();   // 진행 중인 임장 프로젝트(이 지역, 보관 안 한 것 중 가장 최근에 손댄 것)
+    if (!favs.length && !rec.length && !pj) return;
     DJ.data().then(d => {
       const chip = (href, icon, text, cls) => {
         const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
@@ -1544,6 +1554,7 @@
         box.append(a);
       };
       box.append(el("span", "resume-k", "이어서"));
+      if (pj) chip("projects.html", "i-route", `${pj.name} · 후보 ${pj.slugs.length}곳`, "hot");
       if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
       if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
       const n = DJ.courseStops(d).stops.length;

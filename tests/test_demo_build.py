@@ -1171,3 +1171,22 @@ def test_visited_card_stamp_wiring(tmp_path):
     been = app[app.index("DJ.been = function"):app.index("DJ.been = function") + 500]
     assert "fetch(" not in been and "XMLHttpRequest" not in been and "sendBeacon" not in been
     assert ".mcard-been" in (out / "static" / "style.css").read_text(encoding="utf-8")
+
+
+def test_project_report_and_resume_wiring(tmp_path):
+    """한 장 보고서(프로젝트 화면)와 첫 화면 '이어서'의 진행 중 프로젝트: 기존 요약·인쇄를 재사용하고, 서버로 보내는 코드가 없다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "projects.html").read_text(encoding="utf-8")
+    assert "data-pj-report" in page and "static/project-report.js" in page
+    assert page.index("visit-summary.js") < page.index("project-report.js") < page.index("static/projects.js")
+    pj = (out / "static" / "projects.js").read_text(encoding="utf-8")
+    assert "summaryRows()" in pj and pj.count("DJVisitSummary.build(") == 1     # 다녀온 뒤 정리와 같은 자료를 한 곳에서
+    assert "DJ.printSheet(sheet)" in pj and "DJProjectReport.build(" in pj
+    rep = (out / "static" / "project-report.js").read_text(encoding="utf-8")
+    for bad in ("fetch(", "XMLHttpRequest", "sendBeacon", "localStorage"):
+        assert bad not in rep, bad
+    assert '"static/project-report.js?v=" + VERSION' in (out / "sw.js").read_text(encoding="utf-8")
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    assert "DJ.activeProject = function" in app and "pj.slugs.length" in app and "!p.archived && p.slugs.length" in app
+    assert "data-resume" in (out / "index.html").read_text(encoding="utf-8")
