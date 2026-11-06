@@ -1497,16 +1497,19 @@ def test_detail_check_box_leads_to_field_mode_button():
     assert ".to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px;" in css
 
 
-def test_detail_thin_trade_chip_is_on_first_screen_and_only_when_thin():
-    """명령서 3-C 자료 부족 안내의 정보 계층: 거래 3건 미만 안내가 페이지 한참 아래(약 2,200px)의 문장뿐이었음.
-    첫 화면 칩 줄에 '가격 근거 N건' 칩을 더한다(눌러 설명 보기, 기존 칩과 같은 data-badge 방식). 안내 문구·확인할 것 상자와 같은 조건(thin_n)일 때만"""
+def test_detail_price_board_separates_real_and_estimated_and_shows_thin_notice():
+    """4-A 상세: 가격판(.pb)에 실거래와 비교용 추정을 서로 다른 모양으로 나란히, 기준일·가격 근거 건수(3건 미만일 때만)·내 예산 차이(data-mc-fit)를 그 바로 아래에.
+    h1 은 문서 맨 앞(가격판)에 하나뿐이고, 5개 범주 줄(#catalog)은 금박 카드보다 앞에 있다. 금박 카드 안의 중복 가격 칸은 없다"""
     from pathlib import Path
     apt = (Path(__file__).resolve().parent.parent / "templates" / "apt.html").read_text(encoding="utf-8")
-    strip = apt[apt.index('<div class="mc-strip">'):apt.index('<p class="mc-fit"')]
-    assert '{% if thin_n is not none %}<button type="button" class="mc-chip thin-chip" data-badge' in strip
-    assert "가격 근거 {{ thin_n }}건" in strip and "거래 {{ c.n_trades }}건" in strip
-    assert strip.index("거래 {{ c.n_trades }}건") < strip.index("thin-chip")
-    assert apt.count("thin-chip") == 1
+    board = apt[apt.index('<section class="pb"'):apt.index("</section>", apt.index('<section class="pb"'))]
+    assert 'class="pb-p pb-real"' in board and 'class="pb-p pb-est"' in board and board.index("pb-real") < board.index("pb-est")
+    assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | price }}" in board
+    assert '<p class="pb-fit" data-mc-fit hidden></p>' in board
+    assert "{% if thin_n is not none %}" in board and "가격 근거 {{ thin_n }}건" in board
+    assert apt.count("<h1") == 1 and apt.index("<h1") < apt.index('class="mc g-')
+    assert apt.index('id="catalog"') < apt.index('class="apt-hero"') < apt.index('class="jump apt-jump"')
+    assert 'class="mc-cells"' not in apt and "thin-chip" not in apt and 'class="mc-fit"' not in apt
 
 
 def test_finder_question_header_says_single_or_multiple_choice():

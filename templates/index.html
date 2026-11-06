@@ -40,6 +40,29 @@ try {
       </div>
       {# 다시 온 사람: 하던 임장 준비를 바로 이어서 (app.js resume) #}
       <nav class="resume" data-resume aria-label="이어서 보기" hidden></nav>
+    {# 핵심 두 입구: 입지 검색(찾기)과 임장. 바로가기 4칸·배너를 하나로 모음 #}
+    <div class="gates" data-gates>
+      <section class="gate gate-main" aria-labelledby="gate-find">
+        <p class="gate-k">찾기</p>
+        <h2 id="gate-find">어디에 살지,<br>조건부터 골라 볼까요?</h2>
+        <p>질문 8개에 답하면 맞는 단지를 추려 드려요.</p>
+        <a class="gate-btn" href="finder.html"><span>조건으로 찾기<span class="gate-long"> 시작</span></span></a>
+      </section>
+    {# 비교 입구: 관심 단지가 둘 이상이면 app.js(gates)가 그 단지들로 바로 비교를 엽니다. 없으면 빈 비교 화면 #}
+      <section class="gate" data-gate-compare aria-labelledby="gate-compare">
+        <p class="gate-k">비교</p>
+        <h2 id="gate-compare">마음에 둔 단지,<br>나란히 견줘 볼까요?</h2>
+        <p data-gc-desc>가격·입지·수익률을 같은 기준으로 최대 4곳까지.</p>
+        <a class="gate-btn" href="compare.html" data-gc-btn><span data-gc-label>단지 비교하기</span></a>
+      </section>
+    {# 임장 입구: 진행 중인 프로젝트가 있으면 app.js(gates)가 '이어서 하기'로 바꿉니다 #}
+      <section class="gate gold" data-gate-visit aria-labelledby="gate-visit">
+        <p class="gate-k" data-gv-k>임장 준비</p>
+        <h2 id="gate-visit" data-gv-h>가 볼 단지,<br>한 화면에 모아 둘까요?</h2>
+        <p data-gv-desc>모으고, 비교하고, 다녀온 기록까지 한곳에서.</p>
+        <a class="gate-btn" href="projects.html" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
+      </section>
+    </div>
     </div>
     {% if hero_cards %}
     <div class="hero-deck" aria-label="종합 지수 상위 단지">
@@ -80,29 +103,6 @@ try {
     <a class="ticker-more" href="rank.html">랭킹 <span aria-hidden="true">→</span></a>
   </div>
   {% endif %}
-  {# 핵심 두 입구: 입지 검색(찾기)과 임장. 바로가기 4칸·배너를 하나로 모음 #}
-  <div class="gates" data-gates>
-    <section class="gate" aria-labelledby="gate-find">
-      <p class="gate-k">찾기</p>
-      <h2 id="gate-find">어디에 살지,<br>조건부터 골라 볼까요?</h2>
-      <p>질문 8개에 답하면 맞는 단지를 추려 드려요.</p>
-      <a class="gate-btn" href="finder.html"><span>조건으로 찾기<span class="gate-long"> 시작</span></span></a>
-    </section>
-    {# 비교 입구: 관심 단지가 둘 이상이면 app.js(gates)가 그 단지들로 바로 비교를 엽니다. 없으면 빈 비교 화면 #}
-    <section class="gate" data-gate-compare aria-labelledby="gate-compare">
-      <p class="gate-k">비교</p>
-      <h2 id="gate-compare">마음에 둔 단지,<br>나란히 견줘 볼까요?</h2>
-      <p data-gc-desc>가격·입지·수익률을 같은 기준으로 최대 4곳까지.</p>
-      <a class="gate-btn" href="compare.html" data-gc-btn><span data-gc-label>단지 비교하기</span></a>
-    </section>
-    {# 임장 입구: 진행 중인 프로젝트가 있으면 app.js(gates)가 '이어서 하기'로 바꿉니다 #}
-    <section class="gate gold" data-gate-visit aria-labelledby="gate-visit">
-      <p class="gate-k" data-gv-k>임장 준비</p>
-      <h2 id="gate-visit" data-gv-h>가 볼 단지,<br>한 화면에 모아 둘까요?</h2>
-      <p data-gv-desc>모으고, 비교하고, 다녀온 기록까지 한곳에서.</p>
-      <a class="gate-btn" href="projects.html" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
-    </section>
-  </div>
   <a class="roof-strip" href="rooftop.html"><span class="roof-strip-moon" aria-hidden="true">🌙</span><span class="roof-strip-t"><b>별빛옥상 파티</b> 모닥불·음악·불꽃놀이를 함께해요</span><i aria-hidden="true">→</i></a>
 </section>
 
