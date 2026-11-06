@@ -97,6 +97,7 @@
 <section class="to-check" aria-labelledby="to-check-t">
   <h2 id="to-check-t">임장 때 직접 확인할 것</h2>
   <ul>{% for t, href, name in todo %}<li><span>{{ t }}</span><a href="{{ href }}">{{ name }}</a></li>{% endfor %}</ul>
+  <button type="button" class="btn to-check-go" data-field aria-haspopup="dialog" aria-controls="field-sheet">현장 모드에서 확인하고 기록하기</button>
 </section>
 {% endif %}
 

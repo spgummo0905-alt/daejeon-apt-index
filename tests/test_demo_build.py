@@ -1471,3 +1471,16 @@ def test_home_list_filters_come_back_after_browser_back():
     assert '!(qs.get("area") || qs.get("dong"))' in js and 'location.hash !== "#list"' in js
     assert "sessionStorage.setItem(KEEP" in js and "function reset() { limit = PAGE; apply(); save(); }" in js
 
+
+def test_detail_check_box_leads_to_field_mode_button():
+    """명령서 3-C: '추가로 확인할 것' → 현장 기록 경로. 확인할 것 상자 안에 현장 모드를 여는 큰 버튼(data-field, 기존 현장 모드 시트 재사용).
+    상자는 값이 있을 때만 나오므로 버튼도 그 안에만 있어야 한다(해당 없는 단지에 혼자 뜨지 않음)"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    apt = (root / "templates" / "apt.html").read_text(encoding="utf-8")
+    box = apt[apt.index('<section class="to-check"'):apt.index("</section>", apt.index('<section class="to-check"'))]
+    assert 'class="btn to-check-go" data-field' in box and 'aria-controls="field-sheet"' in box
+    assert apt.count("to-check-go") == 1
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px;" in css
+
