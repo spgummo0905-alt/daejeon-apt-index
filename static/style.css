@@ -4349,3 +4349,4 @@ p.muted { text-wrap: balance; }
 .to-check li:first-child { border-top: 0; }
 .to-check li span { flex: 1 1 200px; font-size: 15px; line-height: 1.5; color: var(--text); text-wrap: balance; }
 .to-check li a { flex: none; display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 700; }
+.to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px; margin-top: 10px; font-weight: 700; }
