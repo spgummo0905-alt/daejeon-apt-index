@@ -1484,3 +1484,13 @@ def test_detail_check_box_leads_to_field_mode_button():
     css = (root / "static" / "style.css").read_text(encoding="utf-8")
     assert ".to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px;" in css
 
+
+def test_finder_question_header_says_single_or_multiple_choice():
+    """명령서 3-B: 조건 찾기에서 단일 선택과 복수 선택을 화면에서 구분. 질문 번호 줄에 '하나만 고르세요 / 여러 개 고를 수 있어요'를 붙인다
+    (지역·평형·필수 조건은 복수, 상황·직장·예산·연식은 단일, 역·학교는 각각 하나)"""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "finder.js").read_text(encoding="utf-8")
+    for step_id, kind in (("status", "one"), ("gu", "many"), ("work", "one"), ("budget", "one"), ("py", "many"), ("age", "one"), ("near", "one"), ("must", "many")):
+        assert f'{{ id: "{step_id}", pick: "{kind}"' in js, step_id
+    assert '여러 개 고를 수 있어요' in js and '하나만 고르세요' in js and '각각 하나만 고르세요' in js
+
