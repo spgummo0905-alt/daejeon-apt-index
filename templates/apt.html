@@ -31,13 +31,72 @@
   </div>
 </div>
 
+{# 가격판: 실제 거래(최근 유효 실거래)와 비교용 추정을 서로 다른 모양으로 나란히. 두 값은 면적 기준이 다를 수 있어 각각 면적을 적고 안내 한 줄을 둠.
+   이 단지의 값만 쓰고(새 계산 없음), 해제(취소) 거래는 대표 가격으로 쓰지 않음(site.py _lead_trade). h1 은 문서 맨 앞인 여기 #}
+{# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
+{% set todo = [] %}
+{% if thin_n is not none %}{% set _ = todo.append(("거래가 " ~ thin_n ~ "건뿐이라 가격이 달라질 수 있어요", "#trades", "최근 거래 보기")) %}{% endif %}
+{% if hill and hill.cls in ("slope", "hill") %}{% set _ = todo.append(("역에서 단지까지 오르막이 있어요", "#hill", "언덕 체크")) %}{% endif %}
+{% if noise and noise.cls in ("near", "mid") %}{% set _ = todo.append(("큰길·철도 소리를 낮과 밤에 들어 보세요", "#noise", "소음 체크")) %}{% endif %}
+{% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
+{% set c10 = c["cagr_%dy" % years[0]] %}
+<section class="pb" aria-labelledby="pb-t">
+  <div class="pb-head">
+    <h1 id="pb-t">{{ c.name }}</h1>
+    <p>{{ region }} {{ c | place }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %}{% if c.ki and c.ki.hh %} · {{ "{:,}".format(c.ki.hh) }}세대{% endif %}</p>
+  </div>
+  <div class="pb-prices">
+    <div class="pb-p pb-real">
+      <span class="pb-k">최근 실거래</span>
+      {% if lead %}<strong>{{ lead.price | price }}</strong>
+      <span class="pb-s pb-area">{{ ar(c, lead.area) }}<i>실제 거래 면적</i></span>
+      <span class="pb-s">{{ lead.date.strftime("%y.%m.%d") }}{% if lead.kind and lead.kind != "매매" %} · {{ lead.kind }}{% endif %}{% if lead.high %}<i class="pb-hi">신고가</i>{% endif %}</span>
+      {% else %}<strong class="pb-none">-</strong><span class="pb-s">{{ lead_note or "거래 내역 없음" }}</span>{% endif %}
+    </div>
+    <div class="pb-p pb-est">
+      <span class="pb-k">추정 · 비교용</span>
+      <strong>{% if c.price_ref is not nan %}{{ c.price_ref | price }}{% else %}-{% endif %}</strong>
+      {% if c.price_ref is nan %}<span class="pb-s">최근 거래가 적어 계산하지 않았어요</span>
+      {% else %}<span class="pb-s pb-area">전용 {{ ref_area }}㎡<i>환산 기준 면적</i></span><span class="pb-s">최근 매매 시세로 계산</span>{% endif %}
+    </div>
+  </div>
+  {% if lead and c.price_ref is not nan %}<p class="pb-note">{% if (lead.area - ref_area) | abs < 1 %}두 가격 모두 전용 {{ ref_area }}㎡ 기준이에요.{% else %}<b>면적 기준이 달라요.</b> 실거래는 실제 거래된 면적, 추정은 전용 {{ ref_area }}㎡로 환산한 값이라 두 숫자를 바로 견줄 수 없어요.{% endif %}</p>
+  {% elif c.price_ref is not nan %}<p class="pb-note">추정은 전용 {{ ref_area }}㎡로 환산한 비교용 값이에요. 실제 거래 가격이 아니에요.</p>{% endif %}
+  <p class="pb-fit" data-mc-fit hidden></p>
+  <dl class="pb-cells">
+    <div><dt>{{ years[0] }}년 평균 상승</dt><dd>{{ c10 | pct }}</dd></div>
+    <div><dt>최고가 대비</dt><dd>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</dd></div>
+  </dl>
+  <p class="pb-asof">{{ meta.updated or meta.asof }} 실거래 기준{% if thin_n is not none %} · <b class="pb-thin">가격 근거 {{ thin_n }}건, 값이 달라질 수 있어요</b>{% endif %} · <a href="#trades">거래 내역</a></p>
+  {% if todo %}<button type="button" class="pb-check" data-field aria-haspopup="dialog" aria-controls="field-sheet"><span>현장에서 확인할 점 {{ todo | length }}개</span><b>확인하고 기록하기 ›</b></button>{% endif %}
+</section>
+
+{# 5개 범주 진입 줄: 무엇을 보려는지로 바로 (대표 숫자 하나만 먼저). 지역 홈·단지 상세가 같은 이름·아이콘·순서를 씁니다 #}
+<nav class="cat" id="catalog" aria-label="이 단지 정보 범주">
+  <a class="cat-row" href="#price"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-coin"/></svg></span>
+    <span class="cat-tx"><b>가격</b><span>시세, 최근 거래, 층별 가격</span></span>
+    <span class="cat-v">{% if c.price_ref is not nan %}{{ ref_area }}㎡ {{ c.price_ref | price }}{% else %}거래 보기{% endif %}</span></a>
+  {% if c.ki %}<a class="cat-row" href="#info"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-home"/></svg></span>
+    <span class="cat-tx"><b>집과 건물</b><span>세대수, 주차, 관리비, 준공 연도</span></span>
+    <span class="cat-v">{% if c.ki.hh %}{{ "{:,}".format(c.ki.hh) }}세대{% elif c.build_year %}{{ c.build_year }}년{% else %}정보 보기{% endif %}</span></a>{% endif %}
+  {% if hill or noise %}<a class="cat-row" href="#{{ 'hill' if hill else 'noise' }}"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-sun"/></svg></span>
+    <span class="cat-tx"><b>해와 환경</b><span>{% if hill and noise %}언덕과 큰길 소음{% elif hill %}언덕{% else %}큰길 소음{% endif %}</span></span>
+    <span class="cat-v">{% if hill %}{{ hill.label }}{% else %}{{ noise.label }}{% endif %}</span></a>{% endif %}
+  <a class="cat-row" href="#loc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-train"/></svg></span>
+    <span class="cat-tx"><b>생활 입지</b><span>역, 학교, 학원, 마트까지 거리</span></span>
+    <span class="cat-v">{% if c.location_top is nan %}자세히{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span></a>
+  <a class="cat-row" href="#index-calc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-rank"/></svg></span>
+    <span class="cat-tx"><b>지수와 후기</b><span>집감 지수 계산과 이용자 후기</span></span>
+    <span class="cat-v">{% if c.index is not nan %}{{ c.index | score }}점{% else %}자세히{% endif %}</span></a>
+</nav>
+
 {% set fresh = recent[:5] %}{# 메인 카드 펼침 목록 #}
 <div class="apt-hero">
 <section class="mc g-{{ c.grade }}" data-apt="{{ c.slug }}" data-gu="{{ c.gu }}" data-dong="{{ c.dong }}" data-grade="{{ c.grade }}" data-name="{{ c.name }}" data-score="{{ c.index | score }}" data-price="{{ c.price_ref | eok if c.price_ref is not nan else '' }}" data-region="{{ region }}" data-high="{{ 1 if c.new_high_recent else 0 }}" data-tc="{{ c.n_trades or 0 }}" data-ld="{{ c.last_date.strftime('%Y.%m.%d') if c.last_date is not none and c.last_date == c.last_date else '' }}" data-lp="{{ c.last_price | eok(2) if c.last_price is not none and c.last_price == c.last_price else '' }}" data-lr="{{ c.last_area | round | int if c.last_area is not none and c.last_area == c.last_area else '' }}" data-p="{{ c.price_ref | int if c.price_ref is not nan else '' }}"><div class="mc-in">
   <div class="mc-top">
     <span class="mc-emblem">{{ "?" if c.grade == "-" else c.grade }}</span>
     <div class="mc-title">
-      <h1>{{ c.name }}</h1>
+      <strong class="mc-name">{{ c.name }}</strong>
       <p>{{ region }} {{ c | place }} {{ c.jibun }}</p>
     </div>
     <div class="mc-score"><small>종합 지수</small><strong>{{ c.index | score }}</strong></div>
@@ -69,8 +128,7 @@
   {# 관심 단지면 지난번 확인한 뒤 새 거래·시세 변화 (app.js 의 DJ.news) #}
   <a class="mc-news" href="#trades" data-watch-news hidden><b>지난번 확인 뒤</b><span data-watch-text></span></a>
   {% set age = (meta.asof[:4] | int) - c.build_year if c.build_year else none %}
-  <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}{% if age is not none and age >= 30 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한(30년) 충족" data-desc="준공 {{ age }}년 차로 재건축 연한(30년)을 넘었습니다. 연한은 재건축 진단을 신청할 수 있는 시기일 뿐, 사업 추진이나 가격을 뜻하지 않습니다.">재건축 연한 충족</button>{% elif age is not none and age >= 25 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한까지 {{ 30 - age }}년" data-desc="준공 {{ age }}년 차입니다. 재건축 연한은 30년이며, 연한은 재건축 진단을 신청할 수 있는 시기일 뿐 사업 추진을 뜻하지 않습니다.">재건축 연한까지 {{ 30 - age }}년</button>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if thin_n is not none %}<button type="button" class="mc-chip thin-chip" data-badge data-title="가격 근거 거래 {{ thin_n }}건" data-desc="이 단지의 기준 가격은 거래 {{ thin_n }}건으로 계산했어요. 건수가 적으면 다음 거래에 따라 값이 크게 달라질 수 있어요. 최근 거래 내역도 함께 확인해 보세요.">가격 근거 {{ thin_n }}건</button>{% endif %}{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
-  <p class="mc-fit" data-mc-fit hidden></p>
+  <div class="mc-strip">{% if c.build_year %}<span>{{ c.build_year }}년 준공</span>{% endif %}{% if age is not none and age >= 30 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한(30년) 충족" data-desc="준공 {{ age }}년 차로 재건축 연한(30년)을 넘었습니다. 연한은 재건축 진단을 신청할 수 있는 시기일 뿐, 사업 추진이나 가격을 뜻하지 않습니다.">재건축 연한 충족</button>{% elif age is not none and age >= 25 %}<button type="button" class="mc-chip" data-badge data-title="재건축 연한까지 {{ 30 - age }}년" data-desc="준공 {{ age }}년 차입니다. 재건축 연한은 30년이며, 연한은 재건축 진단을 신청할 수 있는 시기일 뿐 사업 추진을 뜻하지 않습니다.">재건축 연한까지 {{ 30 - age }}년</button>{% endif %}<span>거래 {{ c.n_trades }}건</span>{% if c.new_high_recent and not (lead and lead.high) %}<span class="hot">최근 신고가</span>{% endif %}{% if c.small %}<span>{{ c.small_reason }}</span>{% endif %}</div>
   <div class="mc-stats" role="group" aria-label="항목별 점수 ({{ region }} 단지 중 몇 번째인지를 0~100점으로 바꾼 값)">
   {% for key, label, desc in stats %}{% set v = c[key] %}
     {% if loop.first %}<div class="mc-grp"><span>종합 지수에 들어가는 항목</span><em>{% if c.index_parts >= 3 %}세 항목 평균 {% endif %}{{ c.index | score }}점</em></div>
@@ -78,21 +136,9 @@
     <div{% if loop.index0 >= 3 %} class="ref"{% endif %} data-stat tabindex="0" role="button" aria-expanded="false"><span class="n">{{ label }}</span><span class="bar"><i style="width: {{ 2 if v is nan else [v, 2] | max | round(1) }}%"></i></span><span class="v">{{ v | score }}</span><span class="ds">{{ desc }}</span></div>
   {% endfor %}
   </div>
-  {% set c10 = c["cagr_%dy" % years[0]] %}
-  <div class="mc-cells">
-    <div><span>84㎡ 기준 가격</span><strong>{{ c.price_ref | eok if c.price_ref is not nan else "-" }}</strong></div>
-    <div><span>{{ years[0] }}년 평균 상승</span><strong>{{ c10 | pct }}</strong></div>
-    <div><span>최고가 대비</span><strong>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</strong></div>
-  </div>
   <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="등급 표시 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
 </div></section>
 
-{# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
-{% set todo = [] %}
-{% if thin_n is not none %}{% set _ = todo.append(("거래가 " ~ thin_n ~ "건뿐이라 가격이 달라질 수 있어요", "#trades", "최근 거래 보기")) %}{% endif %}
-{% if hill and hill.cls in ("slope", "hill") %}{% set _ = todo.append(("역에서 단지까지 오르막이 있어요", "#hill", "언덕 체크")) %}{% endif %}
-{% if noise and noise.cls in ("near", "mid") %}{% set _ = todo.append(("큰길·철도 소리를 낮과 밤에 들어 보세요", "#noise", "소음 체크")) %}{% endif %}
-{% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
 {% if todo %}
 <section class="to-check" aria-labelledby="to-check-t">
   <h2 id="to-check-t">임장 때 직접 확인할 것</h2>
@@ -161,25 +207,6 @@
 
 </div>
 </div>
-
-{# 5개 범주 진입 줄: 무엇을 보려는지로 바로 (대표 숫자 하나만 먼저). 지역 홈·단지 상세가 같은 이름·아이콘·순서를 씁니다 #}
-<nav class="cat" id="catalog" aria-label="이 단지 정보 범주">
-  <a class="cat-row" href="#price"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-coin"/></svg></span>
-    <span class="cat-tx"><b>가격</b><span>시세, 최근 거래, 층별 가격</span></span>
-    <span class="cat-v">{% if c.price_ref is not nan %}{{ ref_area }}㎡ {{ c.price_ref | price }}{% else %}거래 보기{% endif %}</span></a>
-  {% if c.ki %}<a class="cat-row" href="#info"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-home"/></svg></span>
-    <span class="cat-tx"><b>집과 건물</b><span>세대수, 주차, 관리비, 준공 연도</span></span>
-    <span class="cat-v">{% if c.ki.hh %}{{ "{:,}".format(c.ki.hh) }}세대{% elif c.build_year %}{{ c.build_year }}년{% else %}정보 보기{% endif %}</span></a>{% endif %}
-  {% if hill or noise %}<a class="cat-row" href="#{{ 'hill' if hill else 'noise' }}"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-sun"/></svg></span>
-    <span class="cat-tx"><b>해와 환경</b><span>{% if hill and noise %}언덕과 큰길 소음{% elif hill %}언덕{% else %}큰길 소음{% endif %}</span></span>
-    <span class="cat-v">{% if hill %}{{ hill.label }}{% else %}{{ noise.label }}{% endif %}</span></a>{% endif %}
-  <a class="cat-row" href="#loc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-train"/></svg></span>
-    <span class="cat-tx"><b>생활 입지</b><span>역, 학교, 학원, 마트까지 거리</span></span>
-    <span class="cat-v">{% if c.location_top is nan %}자세히{% else %}{{ region }} {{ c.location_top | share }}{% endif %}</span></a>
-  <a class="cat-row" href="#index-calc"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-rank"/></svg></span>
-    <span class="cat-tx"><b>지수와 후기</b><span>집감 지수 계산과 이용자 후기</span></span>
-    <span class="cat-v">{% if c.index is not nan %}{{ c.index | score }}점{% else %}자세히{% endif %}</span></a>
-</nav>
 
 {# 바로가기: 현장에서 휴대폰으로 필요한 칸만 바로 (스크롤 따라 붙고 지금 보는 칸을 표시, app.js scrollSpy) #}
 <nav class="jump apt-jump" data-spy aria-label="이 단지 바로가기">

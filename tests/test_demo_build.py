@@ -1497,16 +1497,19 @@ def test_detail_check_box_leads_to_field_mode_button():
     assert ".to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px;" in css
 
 
-def test_detail_thin_trade_chip_is_on_first_screen_and_only_when_thin():
-    """명령서 3-C 자료 부족 안내의 정보 계층: 거래 3건 미만 안내가 페이지 한참 아래(약 2,200px)의 문장뿐이었음.
-    첫 화면 칩 줄에 '가격 근거 N건' 칩을 더한다(눌러 설명 보기, 기존 칩과 같은 data-badge 방식). 안내 문구·확인할 것 상자와 같은 조건(thin_n)일 때만"""
+def test_detail_price_board_separates_real_and_estimated_and_shows_thin_notice():
+    """4-A 상세: 가격판(.pb)에 실거래와 비교용 추정을 서로 다른 모양으로 나란히, 기준일·가격 근거 건수(3건 미만일 때만)·내 예산 차이(data-mc-fit)를 그 바로 아래에.
+    h1 은 문서 맨 앞(가격판)에 하나뿐이고, 5개 범주 줄(#catalog)은 금박 카드보다 앞에 있다. 금박 카드 안의 중복 가격 칸은 없다"""
     from pathlib import Path
     apt = (Path(__file__).resolve().parent.parent / "templates" / "apt.html").read_text(encoding="utf-8")
-    strip = apt[apt.index('<div class="mc-strip">'):apt.index('<p class="mc-fit"')]
-    assert '{% if thin_n is not none %}<button type="button" class="mc-chip thin-chip" data-badge' in strip
-    assert "가격 근거 {{ thin_n }}건" in strip and "거래 {{ c.n_trades }}건" in strip
-    assert strip.index("거래 {{ c.n_trades }}건") < strip.index("thin-chip")
-    assert apt.count("thin-chip") == 1
+    board = apt[apt.index('<section class="pb"'):apt.index("</section>", apt.index('<section class="pb"'))]
+    assert 'class="pb-p pb-real"' in board and 'class="pb-p pb-est"' in board and board.index("pb-real") < board.index("pb-est")
+    assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | price }}" in board
+    assert '<p class="pb-fit" data-mc-fit hidden></p>' in board
+    assert "{% if thin_n is not none %}" in board and "가격 근거 {{ thin_n }}건" in board
+    assert apt.count("<h1") == 1 and apt.index("<h1") < apt.index('class="mc g-')
+    assert apt.index('id="catalog"') < apt.index('class="apt-hero"') < apt.index('class="jump apt-jump"')
+    assert 'class="mc-cells"' not in apt and "thin-chip" not in apt and 'class="mc-fit"' not in apt
 
 
 def test_finder_question_header_says_single_or_multiple_choice():
@@ -1517,4 +1520,81 @@ def test_finder_question_header_says_single_or_multiple_choice():
     for step_id, kind in (("status", "one"), ("gu", "many"), ("work", "one"), ("budget", "one"), ("py", "many"), ("age", "one"), ("near", "one"), ("must", "many")):
         assert f'{{ id: "{step_id}", pick: "{kind}"' in js, step_id
     assert '여러 개 고를 수 있어요' in js and '하나만 고르세요' in js and '각각 하나만 고르세요' in js
+
+
+def test_home_entries_sit_under_search_with_one_main_action():
+    """4-A 홈: 찾기·비교·임장 입구는 검색창 바로 아래(hero-copy 안)이고 카드덱보다 앞. 으뜸 행동(.gate-main)은 기본 '찾기' 하나,
+    진행 중인 프로젝트가 있으면 app.js 가 그 자리를 '이어서 하기'로 옮김. 으뜸 카드는 CSS order 로 항상 맨 위"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    home = (root / "templates" / "index.html").read_text(encoding="utf-8")
+    app = (root / "static" / "app.js").read_text(encoding="utf-8")
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert home.index("data-search-go") < home.index('data-resume') < home.index("data-gates") < home.index('class="hero-deck"') < home.index('class="roof-strip"')
+    assert home.count("gate-main") == 1 and home.index("gate-main") < home.index("data-gate-compare") < home.index("data-gate-visit")
+    g = app[app.index("function gates()"):app.index("function gates()") + 1400]
+    assert 'classList.remove("gate-main")' in g and 'v.classList.add("gate-main")' in g
+    assert ".gate-main { order: -1;" in css and css.count(".gates { display: grid;") == 1
+
+
+def test_lead_trade_never_shows_cancelled_deal_as_recent_price():
+    """검수 P0: 해제(취소) 거래만 있는 단지에서 취소 거래를 '최근 실거래'로 내세우지 않는다. 데이터는 고치지 않고 목록에는 그대로 둔다"""
+    import datetime as dt
+    from djdex.site import _lead_trade
+    d = lambda m: dt.datetime(2026, m, 1)
+    mk = lambda m, price, **kw: {"price": price, "date": d(m), "area": 84.9, "cancelled": False, "direct": False, "kind": "매매", **kw}
+    # 거래 없음
+    assert _lead_trade([], False) == (None, "거래 내역 없음")
+    # 취소 거래만
+    only_cancel = [mk(6, 90000, cancelled=True), mk(5, 88000, cancelled=True)]
+    lead, why = _lead_trade(only_cancel, False)
+    assert lead is None and "해제" in why and len(only_cancel) == 2 and only_cancel[0]["price"] == 90000
+    # 최신이 취소면 그 다음 유효 거래
+    lead, why = _lead_trade([mk(6, 90000, cancelled=True), mk(5, 80000), mk(4, 79000)], False)
+    assert lead["price"] == 80000 and why is None
+    # 직거래 제외 설정
+    assert _lead_trade([mk(6, 70000, direct=True)], True)[0] is None
+    assert _lead_trade([mk(6, 70000, direct=True)], False)[0]["price"] == 70000
+    # 매매가 있으면 더 최신인 분양권보다 매매를 먼저, 분양권뿐이면 그것(종류는 화면에서 표시)
+    assert _lead_trade([mk(6, 95000, kind="분양권"), mk(3, 80000)], False)[0]["price"] == 80000
+    assert _lead_trade([mk(6, 95000, kind="분양권")], False)[0]["kind"] == "분양권"
+
+
+def _build_detail_pages(tmp_path, rows, **cfg_over):
+    import pandas as pd
+    from djdex import config, metrics, site
+    base = {"gu": "서구", "dong": "둔산동", "jibun": "1", "build_year": 2004, "floor": 7, "direct": False, "cancelled": False}
+    out = []
+    for cid, items in rows.items():
+        for d, area, price, extra in items:
+            out.append({**base, "complex_id": cid, "name": cid, "date": d, "area": area, "price": price, **extra})
+    trades = pd.DataFrame(out)
+    cfg = config.load()
+    table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters)
+    site.build(table, hist, trades, meta, cfg, tmp_path / "s")
+    return {p.stem: p.read_text(encoding="utf-8") for p in (tmp_path / "s" / "apt").glob("*.html")}
+
+
+def test_detail_price_board_states_for_cancelled_only_mixed_area_and_no_estimate(tmp_path):
+    """검수 6: 취소 거래만 / 서로 다른 면적 / 추정 가격 없음 단지의 가격판 표시를 실제 빌드로 확인"""
+    good = [("2026-0%d-01" % m, 84.0, 50000 + m * 100, {}) for m in range(1, 6)]
+    rows = {
+        "OKA": good,
+        "CNL": good + [("2026-06-15", 84.0, 99000, {"cancelled": True}), ("2026-06-20", 84.0, 98000, {"cancelled": True})],
+        "MIX": [("2026-0%d-01" % m, 59.0, 40000 + m * 100, {}) for m in range(1, 6)] + [("2026-06-01", 84.0, 52000, {})] + good,
+        "THN": [("2026-05-01", 84.0, 50000, {}), ("2026-06-01", 84.0, 51000, {})],
+    }
+    pages = _build_detail_pages(tmp_path, rows)
+    assert pages, "상세 페이지가 만들어져야 함"
+    def board(h):
+        a = h.index('<section class="pb"'); return h[a:h.index("</section>", a)]
+    for html in pages.values():
+        b = board(html)
+        assert "최근 실거래" in b and "추정 · 비교용" in b and html.count("<h1") == 1
+        assert ("실제 거래 면적" in b) or ("pb-none" in b)          # 실거래 칸은 면적을 적거나, 없으면 이유를 적는다
+    # 취소 거래 가격(9.9억·9.8억)은 취소 거래가 섞인 단지(CNL)의 가격판에도 대표 가격으로 나오지 않고, 유효 거래 가격이 나온다
+    assert "9.9억" not in board(pages["CNL"]) and "9.8억" not in board(pages["CNL"]) and "5.0" in board(pages["CNL"])
+    # 실거래 면적과 추정 면적이 다르면(MIX 59㎡ 위주 + 84㎡ 한 건) 안내 문구, 같으면 '모두 ... 기준' 문구
+    assert ("면적 기준이 달라요" in board(pages["MIX"])) or ("두 가격 모두 전용" in board(pages["MIX"]))
+    assert all(("면적 기준이 달라요" in board(h)) or ("두 가격 모두 전용" in board(h)) or ("실제 가격이 아니에요" in board(h)) or ("pb-none" in board(h)) for h in pages.values())
 

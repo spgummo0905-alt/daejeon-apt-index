@@ -1594,6 +1594,7 @@
       const h = v.querySelector("[data-gv-h]"); h.replaceChildren("하던 집 찾기,", el("br"), "이어서 볼까요?");
       v.querySelector("[data-gv-desc]").textContent = `${pj.name} · 후보 ${pj.slugs.length}곳`;
       v.classList.add("gate-live");   // 휴대폰에서도 어떤 프로젝트인지 보이게
+      box.querySelector(".gate-main")?.classList.remove("gate-main"); v.classList.add("gate-main");   // 다시 온 사람의 주 행동은 '이어서 하기'
       v.querySelector("[data-gv-label]").textContent = "이어서 하기";
     }
     const favs = DJ.favs();
