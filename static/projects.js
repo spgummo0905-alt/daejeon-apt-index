@@ -219,14 +219,16 @@
     [["후보", n + "곳"], ["다녀온 단지", went + "곳"], ["방문 기록", logs.length + "건"]].forEach(([k, v]) => {
       const box = el("div", "pj-stat"); box.append(el("dd", "", v), el("dt", "", k)); stats.append(box);
     });
+    // 실제 기록이 있는 것만 ✓. 비교·코스는 했다는 기록이 남지 않으므로 완료로 세지 않고 '언제든'(free)으로 둠. 순서는 강요하지 않음(방문을 먼저 해도 3번이 바로 진행 중)
     const steps = [
       { t: "후보 담기", s: n >= 2 ? "done" : "now", d: n ? `${n}곳 담았어요` : "2곳 이상 담아 보세요" },
-      { t: "비교하고 순서 정하기", s: n < 2 ? "todo" : logs.length ? "done" : "now", d: "단지 비교 · 임장 코스" },
+      { t: "비교하고 순서 정하기", s: n < 2 ? "todo" : "free", d: n < 2 ? "후보가 2곳 되면 열려요" : "원할 때 · 단지 비교 · 임장 코스" },
       { t: "다녀와서 기록하기", s: !logs.length ? "todo" : went >= 2 ? "done" : "now", d: logs.length ? `다녀온 단지 ${went}곳` : "방문 기록 0건" }];
     find("[data-pj-steps]").replaceChildren(...steps.map((x, i) => {
       const li = el("li", "pj-step " + x.s); if (x.s === "now") li.setAttribute("aria-current", "step");
       li.append(el("span", "pj-step-n", x.s === "done" ? "✓" : String(i + 1)), el("b", "", x.t), el("span", "muted", x.d)); return li;
     }));
+    find("[data-pj-steps]").setAttribute("aria-describedby", "pj-steps-note");
     const box = find("[data-pj-next]"); box.replaceChildren(); box.hidden = current.archived;
     if (current.archived) return;
     const btns = [], go = (label, fn, primary) => { const b = el("button", "btn sm" + (primary ? " primary" : ""), label); b.type = "button"; b.addEventListener("click", fn); btns.push(b); };

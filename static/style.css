@@ -4096,6 +4096,8 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-step.now { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
 .pj-step.now .pj-step-n { border-color: var(--navy); color: var(--navy); }
 .pj-step.todo { opacity: .72; }
+.pj-step.free { border-style: dashed; }
+.pj-steps-note { margin: -6px 0 14px; font-size: 14px; }
 .pj-next { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 16px 18px; border-radius: 16px; color: #fff; background: linear-gradient(160deg, #13294b, #1e3d6e); }
 .pj-next[hidden] { display: none; }
 .pj-next .pj-next-t { flex-basis: 100%; margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #f0d58a; }
@@ -4159,6 +4161,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 #map, #heat, #movein, #world, #value, #list { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 #map { contain-intrinsic-size: auto 1800px; }
 #heat { contain-intrinsic-size: auto 2100px; }
+#list { contain-intrinsic-size: auto 2400px; }
 
 /* ===== 옥상 개편: 지역 버튼 제거 · 접속 현황 고정 한 줄 · 카테고리(불꽃·굽기·꾸미기·쉬기·야경)를 위쪽 정리 (행동 메뉴는 원래 아래 자리) ===== */
 body[data-page="rooftop"] header.site .rg { display: none; }

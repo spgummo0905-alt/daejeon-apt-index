@@ -21,9 +21,11 @@ try {
   var auth=JSON.parse(localStorage.getItem("djdex-auth")||"null");
   var prefsKey=auth&&auth.user?"djdex@"+auth.user.id+":prefs":"djdex:prefs";
   var P=JSON.parse(localStorage.getItem(prefsKey)||"{}"),G={{ regions | tojson }},go="";
+  // 내 기록(관심 단지·프로젝트·방문 기록)이 이 기기에 있으면 이미 써 본 사람이라 인트로를 건너뜀. 처음 온 사람은 그대로 인트로부터
+  function own(){var pre=auth&&auth.user?"djdex@"+auth.user.id+":":"djdex:";for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(pre+"project:")===0||k.indexOf(pre+"visitlog:")===0)return true;if(k===pre+"favs"){var f=localStorage.getItem(k);if(f&&f!=="[]"&&f!=="null")return true}}return false}
   if(ext&&P.region&&P.region!=={{ region | tojson }})for(var i=0;i<G.length;i++)if(G[i].name===P.region&&G[i].url)go=G[i].url;
   if(go)location.replace(go);
-  else if(ext&&!r&&!sessionStorage.getItem("dj-intro")&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html");
+  else if(ext&&!r&&!sessionStorage.getItem("dj-intro")&&!own()&&!/bot|crawl|spider|slurp|yeti|daum|lighthouse/i.test(navigator.userAgent))location.replace("intro.html");
 }catch(e){}
 </script>
 {% endblock %}
@@ -126,11 +128,11 @@ try {
 
 <nav class="jump" data-spy aria-label="이 페이지 바로가기">
   {% if charts.map or kakao_js_key %}<a href="#map">지도</a>{% endif %}
+  <a href="#list">전체 목록</a>
   {% if board %}<a href="#heat">동네 온도</a>{% endif %}
   {% if movein %}<a href="#movein">입주 물량</a>{% endif %}
   <a href="#world">{{ unit }}별 비교</a>
   {% if value_list %}<a href="#value">입지 대비 가격</a>{% endif %}
-  <a href="#list">전체 목록</a>
 </nav>
 
 {% if charts.map or kakao_js_key %}
@@ -170,6 +172,71 @@ try {
   {{ grade_legend | safe }}
 </section>
 {% endif %}
+
+{# 검색·정렬이 되는 전체 단지 목록은 지도 바로 뒤(예전엔 맨 아래, 모바일 약 8,300px). 동네 온도 이하 구역은 그 뒤 #}
+<section id="list" class="panel">
+  <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬 기준이 바뀝니다.</p></div>
+  <div class="controls">
+    {% if area_groups %}
+    <label class="select-pill" id="gu-select-wrap"><span class="sr-only">{{ unit }} 고르기</span>
+      <select id="gu-select">
+        <option value="">{{ region }} 전체</option>
+        {% for grp in area_groups %}<optgroup label="{{ grp.label }}">{% for it in grp["items"] %}<option value="{{ it.value }}">{{ it.label }} ({{ it.n }})</option>{% endfor %}</optgroup>{% endfor %}
+      </select>
+    </label>
+    {% else %}
+    <div class="chips" id="gu-filter">
+      <button class="chip active" data-gu="">전체</button>
+      {% for g in gus %}<button class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
+    </div>
+    {% endif %}
+    <input id="search" type="search" placeholder="단지명 또는 동 검색">
+  </div>
+  {% if meta.n_small %}
+  <div class="chips type-chips" id="table-type">
+    <button class="chip" type="button" data-type="">전체</button>
+    <button class="chip active" type="button" data-type="apt">아파트 <span class="cnt">{{ "{:,}".format(meta.n_complexes) }}</span></button>
+    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">소규모·원룸형 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
+  </div>
+  {% endif %}
+  <div class="table-wrap">
+  {# 처음엔 상위 30곳만 HTML에 (첫 화면을 가볍게). 나머지는 단지 자료(complexes.json·small.json)로 table.js 가 그림 #}
+  <table id="complex-table" data-lazy data-years="{{ years | join(',') }}">
+    <thead><tr>
+      <th data-sort="num">순위</th>
+      <th data-sort="text" class="col-name">단지</th>
+      <th data-sort="num" class="sorted-desc">지수</th>
+      <th data-sort="text" class="col-place">위치</th>
+      <th data-sort="num" class="col-year">준공</th>
+      <th data-sort="num">{{ ref_area }}㎡ 기준 가격</th>
+      {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
+      <th data-sort="num">입지</th>
+    </tr></thead>
+    <tbody>
+    {% for r in (rows | rejectattr("small") | list)[:30] %}
+    <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
+      <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
+      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
+      <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
+        <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
+        <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
+      <td class="col-place">{{ r | place }}</td>
+      <td data-v="{{ r.build_year or '' }}" class="col-year">{{ r.build_year or "-" }}</td>
+      <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
+      {% for n in years %}{% set v = r["cagr_%dy" % n] %}
+      <td data-v="{{ '' if v is nan else v }}" class="{{ '' if v is nan else ('pos' if v > 0 else 'neg' if v < 0 else '') }}">{{ v | pct }}</td>
+      {% endfor %}
+      <td data-v="{{ '' if r.location_score is nan else r.location_score }}">{{ r.location_score | score }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="pager" id="table-pager" hidden>
+    <span class="muted" id="table-count"></span>
+    <button class="btn" id="table-more" type="button">더 보기</button>
+  </div>
+</section>
 
 {% if board %}
 <section id="heat" class="panel heat">
@@ -400,71 +467,9 @@ try {
 {% endif %}
 
 
-<section id="list" class="panel">
-  <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬 기준이 바뀝니다.</p></div>
-  <div class="controls">
-    {% if area_groups %}
-    <label class="select-pill" id="gu-select-wrap"><span class="sr-only">{{ unit }} 고르기</span>
-      <select id="gu-select">
-        <option value="">{{ region }} 전체</option>
-        {% for grp in area_groups %}<optgroup label="{{ grp.label }}">{% for it in grp["items"] %}<option value="{{ it.value }}">{{ it.label }} ({{ it.n }})</option>{% endfor %}</optgroup>{% endfor %}
-      </select>
-    </label>
-    {% else %}
-    <div class="chips" id="gu-filter">
-      <button class="chip active" data-gu="">전체</button>
-      {% for g in gus %}<button class="chip" data-gu="{{ g }}">{{ g }}</button>{% endfor %}
-    </div>
-    {% endif %}
-    <input id="search" type="search" placeholder="단지명 또는 동 검색">
-  </div>
-  {% if meta.n_small %}
-  <div class="chips type-chips" id="table-type">
-    <button class="chip" type="button" data-type="">전체</button>
-    <button class="chip active" type="button" data-type="apt">아파트 <span class="cnt">{{ "{:,}".format(meta.n_complexes) }}</span></button>
-    <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">소규모·원룸형 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
-  </div>
-  {% endif %}
-  <div class="table-wrap">
-  {# 처음엔 상위 30곳만 HTML에 (첫 화면을 가볍게). 나머지는 단지 자료(complexes.json·small.json)로 table.js 가 그림 #}
-  <table id="complex-table" data-lazy data-years="{{ years | join(',') }}">
-    <thead><tr>
-      <th data-sort="num">순위</th>
-      <th data-sort="text" class="col-name">단지</th>
-      <th data-sort="num" class="sorted-desc">지수</th>
-      <th data-sort="text" class="col-place">위치</th>
-      <th data-sort="num" class="col-year">준공</th>
-      <th data-sort="num">{{ ref_area }}㎡ 기준 가격</th>
-      {% for n in years %}<th data-sort="num">{{ n }}년 수익률</th>{% endfor %}
-      <th data-sort="num">입지</th>
-    </tr></thead>
-    <tbody>
-    {% for r in (rows | rejectattr("small") | list)[:30] %}
-    <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
-      <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
-      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
-      <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
-        <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
-        <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
-      <td class="col-place">{{ r | place }}</td>
-      <td data-v="{{ r.build_year or '' }}" class="col-year">{{ r.build_year or "-" }}</td>
-      <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
-      {% for n in years %}{% set v = r["cagr_%dy" % n] %}
-      <td data-v="{{ '' if v is nan else v }}" class="{{ '' if v is nan else ('pos' if v > 0 else 'neg' if v < 0 else '') }}">{{ v | pct }}</td>
-      {% endfor %}
-      <td data-v="{{ '' if r.location_score is nan else r.location_score }}">{{ r.location_score | score }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  <div class="pager" id="table-pager" hidden>
-    <span class="muted" id="table-count"></span>
-    <button class="btn" id="table-more" type="button">더 보기</button>
-  </div>
-</section>
 {% endblock %}
 {% block scripts %}
+<script src="static/visit-log.js?v={{ v }}"></script>
 <script src="static/table.js?v={{ v }}"></script>
 {% if kakao_js_key %}
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>

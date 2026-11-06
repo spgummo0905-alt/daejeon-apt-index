@@ -1599,6 +1599,44 @@ def test_detail_price_board_states_for_cancelled_only_mixed_area_and_no_estimate
     assert all(("면적 기준이 달라요" in board(h)) or ("두 가격 모두 전용" in board(h)) or ("실제 가격이 아니에요" in board(h)) or ("pb-none" in board(h)) for h in pages.values())
 
 
+def test_home_resume_card_shows_only_recorded_state_and_next_action():
+    """4-B2: 홈 '이어하기' 카드는 실제 기록(후보 수, 이 프로젝트 후보 중 방문 기록이 있는 단지 수)에서만 상태를 만들고,
+    다음 행동도 그 숫자로만 정한다. 비교했는지는 기록이 없어 말하지 않는다. 방문 기록 모듈(visit-log.js)을 홈에서도 불러온다"""
+    home = (ROOT_DIR / "templates" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT_DIR / "static" / "app.js").read_text(encoding="utf-8")
+    g = app[app.index("function gates()"):app.index("function gates()") + 2600]
+    assert "DJVisitLog.list({ region, projectId: pj.id })" in g and "pj.slugs.includes(x)" in g
+    assert "다녀온 ${went}곳" in g and "다음: 후보 더 담기" in g and "안 가 본 후보 ${n - went}곳" in g and "다음: 기록을 보며 다시 비교" in g
+    assert "비교했" not in g and "비교 완료" not in g
+    assert '<script src="static/visit-log.js?v={{ v }}"></script>' in home
+    assert home.index('<script src="static/visit-log.js') < home.index('<script src="static/table.js')
+
+
+def test_project_steps_do_not_force_order_or_claim_unrecorded_compare():
+    """4-B2: 프로젝트 단계 표시는 기록이 남은 것만 완료(✓). 비교·코스는 했다는 기록이 없으니 완료로 세지 않고 '원할 때'(free)로 두며,
+    방문을 먼저 해도 3번째 단계가 바로 진행 중이 된다. 순서가 상관없다는 안내 문구가 있다"""
+    js = (ROOT_DIR / "static" / "projects.js").read_text(encoding="utf-8")
+    html = (ROOT_DIR / "templates" / "projects.html").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    s = js[js.index("const steps = ["):js.index("find(\"[data-pj-steps]\").replaceChildren")]
+    assert 's: n < 2 ? "todo" : "free"' in s and "logs.length ? \"done\"" not in s.split("비교하고")[1].split("다녀와서")[0]
+    assert 's: !logs.length ? "todo" : went >= 2 ? "done" : "now"' in s       # 방문 기록만으로 3번째 단계가 정해짐(후보 수와 무관한 순서 강제 없음)
+    assert "순서는 상관없어요" in html and "pj-steps-note" in html and ".pj-step.free { border-style: dashed; }" in css
+
+
+def test_home_list_follows_map_and_intro_skips_for_people_with_own_records():
+    """4-B2: 검색·정렬이 되는 '전체 단지' 구역은 지도 바로 뒤, 동네 온도 이하는 그 뒤(바로가기 줄도 같은 순서). 인트로는 처음 온 사람만 거치고,
+    이 기기에 관심 단지·프로젝트·방문 기록이 있는 사람은 건너뛴다(빈 관심 목록은 기록으로 세지 않음). 첫 방문 인트로·지역 이동 규칙은 그대로"""
+    home = (ROOT_DIR / "templates" / "index.html").read_text(encoding="utf-8")
+    assert home.index('id="map"') < home.index('<section id="list"') < home.index('id="heat"') < home.index('id="movein"') < home.index('id="world"')
+    j = home[home.index('<nav class="jump"'):home.index("</nav>", home.index('<nav class="jump"'))]
+    assert j.index('href="#list"') < j.index('href="#heat"') < j.index('href="#world"')
+    assert home.count('<section id="list"') == 1 and "contain-intrinsic-size: auto 2400px" in (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    h = home[home.index("function own()"):home.index("function own()") + 520]
+    assert '"project:"' in h and '"visitlog:"' in h and '"favs"' in h and '"[]"' in h
+    assert "&&!own()&&" in home and 'location.replace("intro.html")' in home and 'sessionStorage.getItem("dj-intro")' in home
+
+
 def test_detail_fit_summary_reuses_djfit_and_index_calc_is_an_accordion():
     """4-B1: 상세의 '내 조건과 견줘 보기'는 가격판 바로 뒤에 숨은 채로 있다가, 저장된 조건이 있을 때만 app.js 가 DJFit.evaluate 결과로 채워 보인다
     (새 판정 로직 없음, 자료 없음은 따로, 평가·추천 문구 없음). 지수 계산 구역은 접는 상자 안에 있고 해시로 들어오면 펼쳐진다"""
