@@ -109,22 +109,22 @@
 
   // ---------- 질문 ----------
   const STEPS = [
-    { id: "status", name: "상황", q: "지금 어떤 상황인가요?", sub: "예산 단계의 대출 한도 계산에만 쓰입니다. 결과 수는 바뀌지 않습니다.",
+    { id: "status", pick: "one", name: "상황", q: "지금 어떤 상황인가요?", sub: "예산 단계의 대출 한도 계산에만 쓰입니다. 결과 수는 바뀌지 않습니다.",
       on: () => !!S.status, clear: () => { S.status = ""; }, draw: drawStatus },
-    { id: "gu", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳을 고를 수 있습니다. 건너뛰면 ${REGION} 전체가 대상입니다.`,
+    { id: "gu", pick: "many", name: "지역", q: "어느 지역을 찾으세요?", sub: `여러 곳을 고를 수 있습니다. 건너뛰면 ${REGION} 전체가 대상입니다.`,
       on: () => S.gus.length > 0, clear: () => { S.gus = []; }, draw: drawGu },
-    { id: "work", name: "직장", q: "출퇴근도 고려할까요?", sub: "직장 주소·건물명을 검색하거나 주요 장소를 고르세요. 직장이 없거나 재택근무라면 출퇴근 조건 없이 찾을 수 있습니다.",
+    { id: "work", pick: "one", name: "직장", q: "출퇴근도 고려할까요?", sub: "직장 주소·건물명을 검색하거나 주요 장소를 고르세요. 직장이 없거나 재택근무라면 출퇴근 조건 없이 찾을 수 있습니다.",
       on: () => works(S).length > 0, clear: () => { S.works = blank().works; S.two = false; S.commute = "any"; }, draw: drawWork },
-    { id: "budget", name: "예산", q: "예산은 얼마인가요?", sub: "가격대를 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
+    { id: "budget", pick: "one", name: "예산", q: "예산은 얼마인가요?", sub: "가격대를 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요.",
       on: () => !!S.budget, clear: () => { S.budget = 0; }, draw: drawBudget },
-    { id: "py", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준입니다. 여러 개를 고를 수 있습니다.",
+    { id: "py", pick: "many", name: "평형", q: "몇 평이 필요하세요?", sub: "공급면적 기준입니다. 여러 개를 고를 수 있습니다.",
       on: () => S.py.length > 0, clear: () => { S.py = []; }, draw: drawPy },
-    { id: "age", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도 기준입니다.",
+    { id: "age", pick: "one", name: "연식", q: "원하는 연식이 있나요?", sub: "준공 연도 기준입니다.",
       on: () => !!S.age, clear: () => { S.age = ""; }, draw: drawAge },
-    { id: "near", name: "noStop" in box.dataset ? "학교" : "역·학교",
+    { id: "near", pick: "one", name: "noStop" in box.dataset ? "학교" : "역·학교",
       q: "noStop" in box.dataset ? "초등학교는 얼마나 가까워야 하나요?" : `${DJ.josa(STOP, "과/와")} 학교는 얼마나 가까워야 하나요?`, sub: "단지에서 가장 가까운 곳까지의 직선거리 기준입니다.",
       on: () => !!(S.stn || S.sch), clear: () => { S.stn = 0; S.sch = 0; }, draw: drawNear },
-    { id: "must", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "선택한 조건을 모두 갖춘 단지만 남습니다.",
+    { id: "must", pick: "many", name: "필수 조건", q: "꼭 필요한 조건을 골라 주세요", sub: "선택한 조건을 모두 갖춘 단지만 남습니다.",
       on: () => S.must.length > 0, clear: () => { S.must = []; }, draw: drawMust },
   ];
 
@@ -360,7 +360,7 @@
     }));
     const cur = stepsBox.querySelector(".cur");   // 좁은 화면: 지금 단계가 보이게 가로로 밀기
     if (cur && stepsBox.scrollWidth > stepsBox.clientWidth) stepsBox.scrollLeft = cur.offsetLeft - stepsBox.clientWidth / 2 + cur.offsetWidth / 2;
-    q.replaceChildren(el("p", "sv-qn", `질문 ${S.step + 1} / ${STEPS.length}`), el("h3", "sv-qt", st.q), el("p", "sv-qs", st.sub));
+    q.replaceChildren(el("p", "sv-qn", `질문 ${S.step + 1} / ${STEPS.length} · ${st.pick === "many" ? "여러 개 고를 수 있어요" : st.id === "near" ? "각각 하나만 고르세요" : "하나만 고르세요"}`), el("h3", "sv-qt", st.q), el("p", "sv-qs", st.sub));
     st.draw();
     box.querySelector("[data-sv-prev]").disabled = S.step === 0;
     box.querySelector("[data-sv-skip]").hidden = !st.on();
