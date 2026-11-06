@@ -155,4 +155,27 @@ test('planned date is plain JSON so account sync, backup restore and the guest-c
   const legacy = Object.assign({}, wire); delete legacy.planned;                                  // 예정일 칸이 없는 옛 기기의 저장본
   const b3 = withToday(setup({ 'djdex:project:legacy': Object.assign({}, legacy, { id: 'legacy' }) })); assert.equal(b3.P.read('legacy').planned, '');
 });
+// ---- 4-C1: 앞으로 더해질 칸을 지우지 않음 + 옛 코드의 한계 기록 ----
+test('fields this code does not know yet survive a read-modify-save cycle (so the next added field is not lost like planned was)', () => {
+  const b = withToday(setup({ 'djdex:project:f': { version: 1, id: 'f', name: '미래 칸', goal: '', region: '대전', slugs: ['a'], archived: false, created: 1, updated: 2, nextFeature: 'keep-me', flag: true, n: 7 } }));
+  const p = b.P.update('f', '대전', 2, { name: '이름만 수정' });
+  assert.equal(p.nextFeature, 'keep-me'); assert.equal(p.flag, true); assert.equal(p.n, 7);
+  const raw = JSON.parse(b.storage['djdex:project:f']); assert.equal(raw.nextFeature, 'keep-me'); assert.equal(raw.name, '이름만 수정');
+});
+test('unknown fields cannot override known fields or smuggle objects, long text or script-like keys', () => {
+  const b = withToday(setup({ 'djdex:project:g': { version: 1, id: 'g', name: '안전', goal: '', region: '대전', slugs: [], archived: false, created: 1, updated: 2,
+    obj: { a: 1 }, arr: [1], long: 'x'.repeat(401), '__proto__x': 1, 'bad-key': 1, 'on click': 1, ok: 'fine' } }));
+  const p = b.P.read('g'); assert.equal(p.ok, 'fine');
+  for (const k of ['obj', 'arr', 'long', '__proto__x', 'bad-key', 'on click']) assert.equal(Object.hasOwn(p, k), false, k);
+  assert.equal(p.version, 1); assert.equal(p.id, 'g'); assert.equal(p.name, '안전');
+});
+test('KNOWN LIMIT: a tab still running the pre-4-B3 code drops planned when it edits the project (documented, cannot be fixed from new code)', () => {
+  // 4-B3 이전 project-store.js 의 clean() 과 같은 동작을 그대로 옮긴 것: planned 를 모르므로 수정 저장 때 지워짐
+  const oldClean = v => ({ version: 1, id: v.id, name: v.name.slice(0, 50), goal: String(v.goal || '').slice(0, 200), region: v.region, slugs: v.slugs, archived: !!v.archived, created: Number(v.created) || 0, updated: Number(v.updated) || 0 });
+  const saved = { version: 1, id: 'o', name: '새 기기에서 예정일 설정', goal: '', region: '대전', slugs: ['a'], archived: false, created: 1, updated: 5, planned: '2026-11-20' };
+  const writtenByOldTab = Object.assign(oldClean(saved), { name: '옛 탭에서 수정', updated: 6 });
+  assert.equal(writtenByOldTab.planned, undefined);              // 옛 코드가 쓰면 예정일은 사라짐: 사실로 기록
+  const b = withToday(setup({ 'djdex:project:o': writtenByOldTab }));
+  assert.equal(b.P.read('o').planned, ''); assert.equal(b.P.read('o').name, '옛 탭에서 수정'); assert.deepEqual(plain(b.P.read('o').slugs), ['a']);   // 프로젝트 자체는 멀쩡히 읽힘
+});
 

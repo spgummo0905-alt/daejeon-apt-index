@@ -24,6 +24,10 @@
       <button class="btn primary" type="submit">프로젝트 만들기</button>
     </form>
   </details>
+  {# 이 지역에 진행할 프로젝트가 이미 저장돼 있으면 '새 프로젝트' 상자를 첫 화면부터 접어 둠(스크립트가 늦게 와서 접으면 아래 내용이 위로 밀림). 판단 기준은 projects.js 와 같고, 못 읽으면 그대로 열어 둠 #}
+  <script>try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),pre=a&&a.user?"djdex@"+a.user.id+":":"djdex:",rg={{ region | tojson }},has=false;
+  for(var i=0;i<localStorage.length&&!has;i++){var k=localStorage.key(i);if(k.indexOf(pre+"project:")===0){var v=JSON.parse(localStorage.getItem(k));if(v&&v.version===1&&v.region===rg&&Array.isArray(v.slugs))has=true}}
+  if(has)document.querySelector("[data-pj-new]").removeAttribute("open")}catch(e){}</script>
   <p data-pj-status class="sv-note" role="status"></p>
   <div class="pj-layout">
     <section class="panel pj-sidebar" aria-labelledby="pj-list-title">

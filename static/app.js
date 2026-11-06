@@ -1642,27 +1642,29 @@
   }
 
   // 첫 화면 '이어서': 다시 온 사람이 하던 임장 준비(관심 단지·새 소식·코스·마지막에 본 단지)로 바로
+  // 줄이 보일지는 저장된 기록만으로 바로 알 수 있으니 단지 자료를 기다리지 않고 먼저 보여 줌(자료가 늦게 도착하며 아래 입구 카드를 밀어내던 흔들림 방지).
+  // 단지 이름이 필요한 칩(코스·마지막에 본 단지)만 자료가 오면 뒤에 붙임. 줄 높이는 .resume 의 min-height 가 미리 잡아 둠
   function resume() {
     const box = document.querySelector("[data-resume]");
     if (!box) return;
     const favs = DJ.favs(), rec = DJ.recent(), news = favs.length ? load("watchN", 0) : 0;
     if (!favs.length && !rec.length) return;
+    const chip = (href, icon, text, cls) => {
+      const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
+      a.href = ROOT + href;
+      a.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#${icon}"/></svg>`;
+      a.append(el("span", "", text));
+      box.append(a);
+    };
+    box.append(el("span", "resume-k", "이어서"));
+    if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
+    if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
+    box.hidden = false;
     DJ.data().then(d => {
-      const chip = (href, icon, text, cls) => {
-        const a = el("a", "resume-chip" + (cls ? " " + cls : ""));
-        a.href = ROOT + href;
-        a.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#${icon}"/></svg>`;
-        a.append(el("span", "", text));
-        box.append(a);
-      };
-      box.append(el("span", "resume-k", "이어서"));
-      if (news) chip("my.html#news", "i-bell", `새 소식 ${news}곳`, "hot");
-      if (favs.length) chip("my.html#my-favs", "i-star", `관심 단지 ${favs.length}곳`);
       const n = DJ.courseStops(d).stops.length;
       if (n >= 2) chip("my.html#course", "i-route", `임장 코스 ${n}곳`);
       const last = rec.map(r => d.bySlug[r.s]).find(Boolean);
       if (last) chip("apt/" + last.s + ".html", "i-clock", last.n);
-      box.hidden = false;
     });
   }
 
@@ -1701,12 +1703,16 @@
     }));
   }
 
+  // 입구 카드와 '이어서' 줄은 저장된 기록만 있으면 정해지므로, 그 자리가 이미 화면 문서에 있으면 로딩이 다 끝나길 기다리지 않고 바로 맞춤
+  // (문서 로딩이 끝난 뒤에 바꾸면 첫 화면이 그려진 다음 카드가 커졌다 줄며 아래가 밀림). 한 번만 실행
+  let entriesDone = false;
+  const entries = () => { if (entriesDone) return; entriesDone = true; gates(); resume(); };
+  if (document.querySelector("[data-gates]") && document.querySelector("[data-resume]")) entries();
   document.addEventListener("DOMContentLoaded", () => {
     pwa();
     welcome();
     courseButton();
-    gates();
-    resume();
+    entries();
     regionPicker();
     recentDock();
     document.querySelectorAll("[data-hot]").forEach(hotRoll);
