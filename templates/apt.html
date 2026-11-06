@@ -70,6 +70,15 @@
   <p class="pb-asof">{{ meta.updated or meta.asof }} 실거래 기준{% if thin_n is not none %} · <b class="pb-thin">가격 근거 {{ thin_n }}건, 값이 달라질 수 있어요</b>{% endif %} · <a href="#trades">거래 내역</a></p>
   {% if todo %}<button type="button" class="pb-check" data-field aria-haspopup="dialog" aria-controls="field-sheet"><span>현장에서 확인할 점 {{ todo | length }}개</span><b>확인하고 기록하기 ›</b></button>{% endif %}
 </section>
+{# 내 조건과의 일치: 조건으로 찾기에서 정한 조건이 있을 때만 app.js 가 채우고 보여 줌(DJFit.evaluate 재사용, 새 판정 없음). 평가·추천 문구 없음 #}
+<details class="pf" data-fit-sum hidden>
+  <summary><span class="pf-t">내 조건과 견줘 보기</span><span class="pf-n" data-fit-n></span></summary>
+  <div class="pf-body" data-fit-body></div>
+</details>
+<script>/* 저장된 조건이 있으면 요약 줄과 예산 줄의 자리를 그리는 즉시 잡아 둠(데이터가 늦게 와도 아래 내용이 밀리지 않게). 채우기·다시 숨기기는 app.js */
+(function(){var hs={{ 0 if c.small else 1 }},hb={{ 1 if (not c.small and c.price_ref is not nan) else 0 }};try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),k=(a&&a.user?"djdex@"+a.user.id+":":"djdex:")+"survey",s=JSON.parse(localStorage.getItem(k)||"{}");
+if(s&&((s.gus&&s.gus.length)||s.budget||(s.py&&s.py.length)||s.age||s.stn||s.sch||(s.must&&s.must.length))){var d=document.querySelector("[data-fit-sum]");if(d&&hs){d.hidden=false;d.classList.add("hold")}
+if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=false;f.classList.add("hold")}}}}catch(e){}})();</script>
 
 {# 5개 범주 진입 줄: 무엇을 보려는지로 바로 (대표 숫자 하나만 먼저). 지역 홈·단지 상세가 같은 이름·아이콘·순서를 씁니다 #}
 <nav class="cat" id="catalog" aria-label="이 단지 정보 범주">
@@ -484,11 +493,16 @@
     <h2>종합 지수는 어떻게 계산됐을까요?</h2>
     <p class="muted">입지와 장기 흐름(10년 수익률), 5년 흐름(5년 수익률)을 각각 0~100으로 환산해 평균한 값입니다. 세로선은 {{ region }} 단지들의 중간(50)입니다.</p>
   </div>
+  <details class="acc" data-acc>
+    <summary><span>계산 방식과 {{ region }} 분포 보기</span></summary>
+    <div class="acc-body">
   <div{% if c.index_parts >= 3 %} class="m-hide"{% endif %}>{{ charts.components | safe }}</div>{# 휴대폰은 메인 카드에 같은 막대가 있어 숨김 #}
   {% if c.index_parts < 3 %}<p class="note">이 단지는 거래 이력이 짧아 지수를 {{ c.index_parts }}개 항목만으로 계산했습니다.</p>{% endif %}
   <h3 class="sub">{{ region }} 아파트 중 어느 정도일까요?</h3>
   <p class="muted">{{ region }} 전체 단지의 종합 지수 분포입니다. 이 단지가 속한 구간을 진하게 표시했습니다.</p>
   {{ charts.hist | safe }}
+    </div>
+  </details>
 </section>
 
 {% if neighbors %}
