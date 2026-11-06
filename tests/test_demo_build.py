@@ -1420,3 +1420,13 @@ def test_field_photo_note_matches_private_storage():
     js = (Path(__file__).resolve().parent.parent / "static" / "field.js").read_text(encoding="utf-8")
     assert "로그인한 나만 볼 수 있어요. 공유 링크로는 보이지 않아요." in js
     assert "공유 링크를 받은 가족도 볼 수 있어요" not in js
+
+
+def test_choice_chips_report_their_selected_state_to_assistive_tech():
+    """UI 감사: 한 번에 하나만 고르는 칩·세그먼트는 클릭 처리 코드가 'active' 클래스만 바꿔서 화면 읽기 도구에는 선택 상태가 안 알려졌음(홈 구 칩 16개·테마 칩·가격 기간 버튼 등).
+    클래스 변화를 한 곳에서 aria-pressed 로 맞춘다. 'active' 가 있는 묶음만 대상이라 '단지 추가' 같은 행동 칩과 role=tab(aria-selected 사용)은 건드리지 않음"""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'const BTN = "button.chip, button.seg-btn";' in js
+    assert 'b.getAttribute("role") !== "tab"' in js and 'btns.some(b => b.classList.contains("active"))' in js
+    assert 'attributeFilter: ["class"]' in js and 'setAttribute("aria-pressed", b.classList.contains("active")' in js

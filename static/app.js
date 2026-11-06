@@ -1692,4 +1692,21 @@
     document.querySelectorAll("[data-rail]").forEach(rail);
     document.querySelectorAll("[data-clamp]").forEach(clamp);
   });
+
+  // 한 번에 하나만 고르는 칩·세그먼트 버튼은 '고른 상태'를 화면 읽기 도구(aria-pressed)에도 알립니다.
+  // 화면마다 클릭 처리는 'active' 클래스만 바꾸므로, 클래스가 바뀔 때 한 곳에서 맞춥니다(처리 코드를 일일이 고치지 않음).
+  // 같은 묶음 안에 'active' 가 하나라도 있는 묶음만 대상입니다: '+ 단지 추가'처럼 누르면 행동하는 칩은 건드리지 않고, role=tab 은 aria-selected 를 이미 씁니다.
+  document.addEventListener("DOMContentLoaded", () => {
+    const BTN = "button.chip, button.seg-btn";
+    const sync = group => {
+      const btns = [...group.children].filter(b => b.matches && b.matches(BTN) && b.getAttribute("role") !== "tab");
+      if (!btns.some(b => b.classList.contains("active"))) return;
+      btns.forEach(b => b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false"));
+    };
+    document.querySelectorAll(BTN).forEach(b => b.parentElement && sync(b.parentElement));
+    new MutationObserver(list => {
+      const seen = new Set();
+      list.forEach(m => { const t = m.target; if (t.nodeType === 1 && t.matches(BTN) && t.parentElement && !seen.has(t.parentElement)) { seen.add(t.parentElement); sync(t.parentElement); } });
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+  });
 })();
