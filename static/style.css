@@ -1348,6 +1348,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pb-k { font-size: 13px; font-weight: 800; color: var(--text-2); }
 .pb-p strong { font-size: 32px; line-height: 1.15; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text); }
 .pb-s { font-size: 14px; line-height: 1.4; color: var(--text-2); }
+.pb-s .ar small { opacity: 1; }
 .pb-real { background: var(--chip); border: 1px solid var(--border); }
 .pb-est { border: 1.5px dashed var(--border); }
 .pb-est strong { font-size: 26px; font-weight: 800; }
@@ -1427,7 +1428,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .mc-caret { width: 6px; height: 6px; margin-left: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
   transform: translateY(-2px) rotate(45deg); opacity: .75; transition: transform var(--t-fast); }
 [aria-expanded="true"] .mc-caret { transform: translateY(1px) rotate(-135deg); }
-.mc-hi { margin-left: 4px; padding: 1px 6px; border-radius: 999px; background: #d93f3e; color: #fff; font-size: 12px; font-weight: 800; }
+.mc-hi { margin-left: 4px; padding: 1px 6px; border-radius: 999px; background: #c0302f; color: #fff; font-size: 12px; font-weight: 800; }
 .mc-badges { padding-top: 8px; }   /* 신고가 리본 자리 */
 .mc-medal span small { font-size: inherit; font-weight: inherit; }
 /* 자리가 모자라면(좁은 화면에 배지 넷) 단위와 날짜 줄을 접음. 누르면 다 나옴 */
@@ -3926,7 +3927,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .gates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
 .gate { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 18px; color: var(--text); background: var(--surface); border: 1px solid var(--border); }
 .gate.gold { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(201, 162, 74, .45); }
-.gate-main { grid-column: 1 / -1; padding: 22px 24px; color: #fff; border-color: rgba(255, 255, 255, .16); background: linear-gradient(160deg, #13294b, #1e3d6e); box-shadow: var(--shadow); }
+.gate-main { order: -1; grid-column: 1 / -1; padding: 22px 24px; color: #fff; border-color: rgba(255, 255, 255, .16); background: linear-gradient(160deg, #13294b, #1e3d6e); box-shadow: var(--shadow); }
 .gate-k { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--text-2); }
 .gate-main .gate-k { color: #d3e3f8; }
 .gate-main.gold .gate-k { color: #f0d58a; }

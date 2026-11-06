@@ -1521,3 +1521,18 @@ def test_finder_question_header_says_single_or_multiple_choice():
         assert f'{{ id: "{step_id}", pick: "{kind}"' in js, step_id
     assert '여러 개 고를 수 있어요' in js and '하나만 고르세요' in js and '각각 하나만 고르세요' in js
 
+
+def test_home_entries_sit_under_search_with_one_main_action():
+    """4-A 홈: 찾기·비교·임장 입구는 검색창 바로 아래(hero-copy 안)이고 카드덱보다 앞. 으뜸 행동(.gate-main)은 기본 '찾기' 하나,
+    진행 중인 프로젝트가 있으면 app.js 가 그 자리를 '이어서 하기'로 옮김. 으뜸 카드는 CSS order 로 항상 맨 위"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    home = (root / "templates" / "index.html").read_text(encoding="utf-8")
+    app = (root / "static" / "app.js").read_text(encoding="utf-8")
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert home.index("data-search-go") < home.index('data-resume') < home.index("data-gates") < home.index('class="hero-deck"') < home.index('class="roof-strip"')
+    assert home.count("gate-main") == 1 and home.index("gate-main") < home.index("data-gate-compare") < home.index("data-gate-visit")
+    g = app[app.index("function gates()"):app.index("function gates()") + 1400]
+    assert 'classList.remove("gate-main")' in g and 'v.classList.add("gate-main")' in g
+    assert ".gate-main { order: -1;" in css and css.count(".gates { display: grid;") == 1
+
