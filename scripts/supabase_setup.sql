@@ -55,7 +55,7 @@ grant execute on function public.delete_me() to authenticated;
 grant execute on function public.ping() to anon, authenticated;
 
 -- ===== 가족과 함께 보기: 공유 링크 (관심 화면 '함께 보기') =====
--- 한 사람에 링크 하나. 링크를 아는 사람은 관심 단지·임장 코스·임장 노트(사진 포함)를 볼 수 있고, 끊으면 바로 막힘.
+-- 한 사람에 링크 하나. 링크를 아는 사람은 관심 단지·임장 코스·임장 노트(사진은 제외)를 볼 수 있고, 끊으면 바로 막힘.
 create table if not exists public.shares (
   token      text        primary key check (char_length(token) >= 24),
   user_id    uuid        not null unique references auth.users (id) on delete cascade,
@@ -84,14 +84,20 @@ returns void language sql security definer set search_path = '' as $$
   delete from public.shares where user_id = auth.uid();
 $$;
 
--- 링크로 보는 쪽 (로그인 없이): 닉네임과 관심 단지·코스·임장 노트만
+-- 링크로 보는 쪽 (로그인 없이): 닉네임과 관심 단지·코스, 임장 노트는 체크(c·x)·메모(m)·호가(q)·다녀온 날(d)만. 사진 목록(p) 등 그 밖의 키는 허용 목록 방식으로 뺌
 create or replace function public.shared_view(t text)
 returns jsonb language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
     'name', coalesce(u.raw_user_meta_data->>'nickname', u.raw_user_meta_data->>'name', u.raw_user_meta_data->>'full_name', '카카오 회원'),
     'since', s.created_at,
-    'data', coalesce((select jsonb_object_agg(k.k, k.v) from public.user_kv k
-                      where k.user_id = s.user_id and (k.k in ('favs', 'course') or k.k like 'visit:%')), '{}'::jsonb))
+    'data', coalesce((select jsonb_object_agg(k.k,
+        case when k.k like 'visit:%' then
+          case when jsonb_typeof(k.v) = 'object' then
+            coalesce((select jsonb_object_agg(e.key, e.value) from jsonb_each(k.v) e where e.key in ('c', 'x', 'm', 'q', 'd')), '{}'::jsonb)
+          else '{}'::jsonb end
+        else k.v end)
+      from public.user_kv k
+      where k.user_id = s.user_id and (k.k in ('favs', 'course') or k.k like 'visit:%')), '{}'::jsonb))
   from public.shares s join auth.users u on u.id = s.user_id
   where s.token = t;
 $$;

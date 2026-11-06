@@ -713,7 +713,7 @@ def test_family_share_and_field_photos(tmp_path, monkeypatch):
     me = (out / "me.html").read_text(encoding="utf-8")
     assert "data-share hidden" in me and "data-share-actions" in me
     js = (out / "static" / "share.js").read_text(encoding="utf-8")
-    assert "/rest/v1/rpc/shared_view" in js and "DJ.photoUrl" in js
+    assert "/rest/v1/rpc/shared_view" in js and "DJ.photoUrl" not in js and "sh-photos" not in js   # 공유 화면은 사진을 그리지 않음
     sync = (out / "static" / "sync.js").read_text(encoding="utf-8")
     assert "DJ.photoPut = async function" in sync and "/storage/v1/object/photos/" in sync and "allPhotos()" in sync
     field = (out / "static" / "field.js").read_text(encoding="utf-8")
@@ -1371,13 +1371,30 @@ def test_detail_card_budget_line_is_wired_and_hidden_by_default():
     assert 'DJFit.budgetGap' in app and 'DJFit.budgetText' in app
 
 
-def test_share_view_explains_when_photos_are_private():
-    """사진 저장소를 비공개로 옮기면 로그인 없이 보는 가족 화면에서는 사진이 안 열림. 깨진 그림 대신 이유를 알려 주는 문구가 코드에 있어야 함"""
+def test_share_view_leaves_photos_out_on_server_and_screen():
+    """P0 개인정보: 사진 저장소를 비공개로 닫아도 shared_view 가 방문 기록을 통째로 돌려주면 사진 경로(회원 id 포함)가 로그인 없는 사람에게 나감.
+    서버(SQL)는 방문 기록에서 체크 c·x, 메모 m, 호가 q, 다녀온 날 d 만 돌려주고(허용 목록), 화면(share.js)은 사진을 그리지도 요청하지도 않음"""
+    import re
     from pathlib import Path
     root = Path(__file__).resolve().parent.parent
+    for name in ("scripts/supabase_setup.sql", "scripts/migrations/shared_view_no_photos_apply.sql"):
+        sql = (root / name).read_text(encoding="utf-8")
+        fn = sql[sql.index("function public.shared_view(t text)"):]
+        fn = fn[:fn.index("$$;", fn.index("$$;") + 3) + 3] if fn.count("$$;") > 1 else fn
+        assert "e.key in ('c', 'x', 'm', 'q', 'd')" in fn, name                 # 허용 목록 방식
+        assert "jsonb_each(k.v)" in fn and "else k.v end" in fn, name
+        assert "'p'" not in fn.replace("'p'", "", 0) or "key in ('c', 'x', 'm', 'q', 'd')" in fn, name
+        assert re.search(r"\bin \([^)]*'p'", fn) is None, name                  # 허용 목록에 사진(p)이 들어 있으면 안 됨
+    rb = (root / "scripts/migrations/shared_view_no_photos_rollback.sql").read_text(encoding="utf-8")
+    assert "jsonb_object_agg(k.k, k.v)" in rb                                    # 되돌리기는 옛 동작
     js = (root / "static" / "share.js").read_text(encoding="utf-8")
-    assert 'img.addEventListener("error"' in js and "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요." in js
-    assert ".sh-photo-off" in (root / "static" / "style.css").read_text(encoding="utf-8")
+    for bad in ("photoUrl", "sh-photos", "sh-photo-off", "v.p", "<img", 'el("img")'):
+        assert bad not in js, bad
+    assert "사진은 제외" in js
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".sh-photos" not in css and ".sh-photo-off" not in css                # 죽은 스타일도 없음
+
+
 def test_finder_reserves_space_for_late_drawn_art_and_question():
     """UX 2차: 조건으로 찾기는 그림·질문을 스크립트가 나중에 채워 아래 내용이 밀렸음(레이아웃 흔들림 0.3~0.4). 빈 칸일 때도 같은 크기의 자리를 미리 잡는다"""
     from pathlib import Path
