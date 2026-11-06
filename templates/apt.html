@@ -31,8 +31,14 @@
   </div>
 </div>
 
-{# 가격판: 실제 거래(실거래)와 비교용 추정을 서로 다른 모양으로 나란히. 이 단지의 값만 쓰고(새 계산 없음), 기준일·근거 건수·내 예산과의 차이를 가격 바로 아래에 둠.
-   금박 카드는 아래에서 그대로 이어지고, h1 은 문서 맨 앞인 여기로 옮김 #}
+{# 가격판: 실제 거래(최근 유효 실거래)와 비교용 추정을 서로 다른 모양으로 나란히. 두 값은 면적 기준이 다를 수 있어 각각 면적을 적고 안내 한 줄을 둠.
+   이 단지의 값만 쓰고(새 계산 없음), 해제(취소) 거래는 대표 가격으로 쓰지 않음(site.py _lead_trade). h1 은 문서 맨 앞인 여기 #}
+{# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
+{% set todo = [] %}
+{% if thin_n is not none %}{% set _ = todo.append(("거래가 " ~ thin_n ~ "건뿐이라 가격이 달라질 수 있어요", "#trades", "최근 거래 보기")) %}{% endif %}
+{% if hill and hill.cls in ("slope", "hill") %}{% set _ = todo.append(("역에서 단지까지 오르막이 있어요", "#hill", "언덕 체크")) %}{% endif %}
+{% if noise and noise.cls in ("near", "mid") %}{% set _ = todo.append(("큰길·철도 소리를 낮과 밤에 들어 보세요", "#noise", "소음 체크")) %}{% endif %}
+{% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
 {% set c10 = c["cagr_%dy" % years[0]] %}
 <section class="pb" aria-labelledby="pb-t">
   <div class="pb-head">
@@ -41,23 +47,28 @@
   </div>
   <div class="pb-prices">
     <div class="pb-p pb-real">
-      <span class="pb-k">실거래</span>
+      <span class="pb-k">최근 실거래</span>
       {% if lead %}<strong>{{ lead.price | price }}</strong>
-      <span class="pb-s">{{ ar(c, lead.area) }} · {{ lead.date.strftime("%y.%m.%d") }}{% if lead.high %}<i class="pb-hi">신고가</i>{% endif %}</span>
-      {% else %}<strong>-</strong><span class="pb-s">거래 내역 없음</span>{% endif %}
+      <span class="pb-s pb-area">{{ ar(c, lead.area) }}<i>실제 거래 면적</i></span>
+      <span class="pb-s">{{ lead.date.strftime("%y.%m.%d") }}{% if lead.kind and lead.kind != "매매" %} · {{ lead.kind }}{% endif %}{% if lead.high %}<i class="pb-hi">신고가</i>{% endif %}</span>
+      {% else %}<strong class="pb-none">-</strong><span class="pb-s">{{ lead_note or "거래 내역 없음" }}</span>{% endif %}
     </div>
     <div class="pb-p pb-est">
       <span class="pb-k">추정 · 비교용</span>
       <strong>{% if c.price_ref is not nan %}{{ c.price_ref | price }}{% else %}-{% endif %}</strong>
-      <span class="pb-s">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}전용 {{ ref_area }}㎡ 환산{% endif %}</span>
+      {% if c.price_ref is nan %}<span class="pb-s">최근 거래가 적어 계산하지 않았어요</span>
+      {% else %}<span class="pb-s pb-area">전용 {{ ref_area }}㎡<i>환산 기준 면적</i></span><span class="pb-s">최근 매매 시세로 계산</span>{% endif %}
     </div>
   </div>
+  {% if lead and c.price_ref is not nan %}<p class="pb-note">{% if (lead.area - ref_area) | abs < 1 %}두 가격 모두 전용 {{ ref_area }}㎡ 기준이에요.{% else %}<b>면적 기준이 달라요.</b> 실거래는 실제 거래된 면적, 추정은 전용 {{ ref_area }}㎡로 환산한 값이라 두 숫자를 바로 견줄 수 없어요.{% endif %}</p>
+  {% elif c.price_ref is not nan %}<p class="pb-note">추정은 전용 {{ ref_area }}㎡로 환산한 비교용 값이에요. 실제 거래 가격이 아니에요.</p>{% endif %}
   <p class="pb-fit" data-mc-fit hidden></p>
   <dl class="pb-cells">
     <div><dt>{{ years[0] }}년 평균 상승</dt><dd>{{ c10 | pct }}</dd></div>
     <div><dt>최고가 대비</dt><dd>{% if c.from_peak is defined and c.from_peak is not nan %}{{ "%+.0f" | format(c.from_peak * 100) }}%{% else %}-{% endif %}</dd></div>
   </dl>
   <p class="pb-asof">{{ meta.updated or meta.asof }} 실거래 기준{% if thin_n is not none %} · <b class="pb-thin">가격 근거 {{ thin_n }}건, 값이 달라질 수 있어요</b>{% endif %} · <a href="#trades">거래 내역</a></p>
+  {% if todo %}<button type="button" class="pb-check" data-field aria-haspopup="dialog" aria-controls="field-sheet"><span>현장에서 확인할 점 {{ todo | length }}개</span><b>확인하고 기록하기 ›</b></button>{% endif %}
 </section>
 
 {# 5개 범주 진입 줄: 무엇을 보려는지로 바로 (대표 숫자 하나만 먼저). 지역 홈·단지 상세가 같은 이름·아이콘·순서를 씁니다 #}
@@ -128,12 +139,6 @@
   <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="등급 표시 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
 </div></section>
 
-{# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
-{% set todo = [] %}
-{% if thin_n is not none %}{% set _ = todo.append(("거래가 " ~ thin_n ~ "건뿐이라 가격이 달라질 수 있어요", "#trades", "최근 거래 보기")) %}{% endif %}
-{% if hill and hill.cls in ("slope", "hill") %}{% set _ = todo.append(("역에서 단지까지 오르막이 있어요", "#hill", "언덕 체크")) %}{% endif %}
-{% if noise and noise.cls in ("near", "mid") %}{% set _ = todo.append(("큰길·철도 소리를 낮과 밤에 들어 보세요", "#noise", "소음 체크")) %}{% endif %}
-{% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
 {% if todo %}
 <section class="to-check" aria-labelledby="to-check-t">
   <h2 id="to-check-t">임장 때 직접 확인할 것</h2>

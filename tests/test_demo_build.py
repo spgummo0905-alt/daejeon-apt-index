@@ -1536,3 +1536,65 @@ def test_home_entries_sit_under_search_with_one_main_action():
     assert 'classList.remove("gate-main")' in g and 'v.classList.add("gate-main")' in g
     assert ".gate-main { order: -1;" in css and css.count(".gates { display: grid;") == 1
 
+
+def test_lead_trade_never_shows_cancelled_deal_as_recent_price():
+    """검수 P0: 해제(취소) 거래만 있는 단지에서 취소 거래를 '최근 실거래'로 내세우지 않는다. 데이터는 고치지 않고 목록에는 그대로 둔다"""
+    import datetime as dt
+    from djdex.site import _lead_trade
+    d = lambda m: dt.datetime(2026, m, 1)
+    mk = lambda m, price, **kw: {"price": price, "date": d(m), "area": 84.9, "cancelled": False, "direct": False, "kind": "매매", **kw}
+    # 거래 없음
+    assert _lead_trade([], False) == (None, "거래 내역 없음")
+    # 취소 거래만
+    only_cancel = [mk(6, 90000, cancelled=True), mk(5, 88000, cancelled=True)]
+    lead, why = _lead_trade(only_cancel, False)
+    assert lead is None and "해제" in why and len(only_cancel) == 2 and only_cancel[0]["price"] == 90000
+    # 최신이 취소면 그 다음 유효 거래
+    lead, why = _lead_trade([mk(6, 90000, cancelled=True), mk(5, 80000), mk(4, 79000)], False)
+    assert lead["price"] == 80000 and why is None
+    # 직거래 제외 설정
+    assert _lead_trade([mk(6, 70000, direct=True)], True)[0] is None
+    assert _lead_trade([mk(6, 70000, direct=True)], False)[0]["price"] == 70000
+    # 매매가 있으면 더 최신인 분양권보다 매매를 먼저, 분양권뿐이면 그것(종류는 화면에서 표시)
+    assert _lead_trade([mk(6, 95000, kind="분양권"), mk(3, 80000)], False)[0]["price"] == 80000
+    assert _lead_trade([mk(6, 95000, kind="분양권")], False)[0]["kind"] == "분양권"
+
+
+def _build_detail_pages(tmp_path, rows, **cfg_over):
+    import pandas as pd
+    from djdex import config, metrics, site
+    base = {"gu": "서구", "dong": "둔산동", "jibun": "1", "build_year": 2004, "floor": 7, "direct": False, "cancelled": False}
+    out = []
+    for cid, items in rows.items():
+        for d, area, price, extra in items:
+            out.append({**base, "complex_id": cid, "name": cid, "date": d, "area": area, "price": price, **extra})
+    trades = pd.DataFrame(out)
+    cfg = config.load()
+    table, hist, meta = metrics.compute(trades, cfg.metrics, cfg.filters)
+    site.build(table, hist, trades, meta, cfg, tmp_path / "s")
+    return {p.stem: p.read_text(encoding="utf-8") for p in (tmp_path / "s" / "apt").glob("*.html")}
+
+
+def test_detail_price_board_states_for_cancelled_only_mixed_area_and_no_estimate(tmp_path):
+    """검수 6: 취소 거래만 / 서로 다른 면적 / 추정 가격 없음 단지의 가격판 표시를 실제 빌드로 확인"""
+    good = [("2026-0%d-01" % m, 84.0, 50000 + m * 100, {}) for m in range(1, 6)]
+    rows = {
+        "OKA": good,
+        "CNL": good + [("2026-06-15", 84.0, 99000, {"cancelled": True}), ("2026-06-20", 84.0, 98000, {"cancelled": True})],
+        "MIX": [("2026-0%d-01" % m, 59.0, 40000 + m * 100, {}) for m in range(1, 6)] + [("2026-06-01", 84.0, 52000, {})] + good,
+        "THN": [("2026-05-01", 84.0, 50000, {}), ("2026-06-01", 84.0, 51000, {})],
+    }
+    pages = _build_detail_pages(tmp_path, rows)
+    assert pages, "상세 페이지가 만들어져야 함"
+    def board(h):
+        a = h.index('<section class="pb"'); return h[a:h.index("</section>", a)]
+    for html in pages.values():
+        b = board(html)
+        assert "최근 실거래" in b and "추정 · 비교용" in b and html.count("<h1") == 1
+        assert ("실제 거래 면적" in b) or ("pb-none" in b)          # 실거래 칸은 면적을 적거나, 없으면 이유를 적는다
+    # 취소 거래 가격(9.9억·9.8억)은 취소 거래가 섞인 단지(CNL)의 가격판에도 대표 가격으로 나오지 않고, 유효 거래 가격이 나온다
+    assert "9.9억" not in board(pages["CNL"]) and "9.8억" not in board(pages["CNL"]) and "5.0" in board(pages["CNL"])
+    # 실거래 면적과 추정 면적이 다르면(MIX 59㎡ 위주 + 84㎡ 한 건) 안내 문구, 같으면 '모두 ... 기준' 문구
+    assert ("면적 기준이 달라요" in board(pages["MIX"])) or ("두 가격 모두 전용" in board(pages["MIX"]))
+    assert all(("면적 기준이 달라요" in board(h)) or ("두 가격 모두 전용" in board(h)) or ("실제 가격이 아니에요" in board(h)) or ("pb-none" in board(h)) for h in pages.values())
+

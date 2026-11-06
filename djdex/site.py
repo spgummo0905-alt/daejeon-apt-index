@@ -218,6 +218,24 @@ def _points(c: dict, gu_med: dict, factors: list[dict], region: str, leader: dic
 THIN_TRADES = 3   # 대전 표본 70곳 중 29%가 해당 (5건 미만으로 잡으면 57%라 안내가 흔해져 의미가 없어짐)
 
 
+def _lead_trade(tr_list: list[dict], exclude_direct: bool) -> tuple[dict | None, str | None]:
+    """상세 첫 화면에 '최근 실거래'로 내세울 거래 하나와, 없을 때 이유.
+    최신순 목록에서 해제(취소) 거래와 (설정에 따라) 직거래는 건너뛴다. 매매가 있으면 매매를 먼저, 매매가 없고 분양권·입주권만 유효하면 그것
+    (화면에서 종류를 따로 표시). 유효한 거래가 하나도 없으면 (None, 이유): 취소된 거래를 최근 실거래처럼 보여 주지 않는다.
+    원본 거래 데이터는 고치지 않고 거래 목록(tr_list)에는 그대로 남는다"""
+    ok = [t for t in tr_list if not t.get("cancelled") and not (exclude_direct and t.get("direct"))]
+    sale = [t for t in ok if t.get("kind", "매매") == "매매"]
+    if sale:
+        return sale[0], None
+    if ok:
+        return ok[0], None
+    if not tr_list:
+        return None, "거래 내역 없음"
+    if all(t.get("cancelled") for t in tr_list):
+        return None, "해제(취소)된 거래만 있어요"
+    return None, "제외 대상 거래만 있어요"
+
+
 def _thin_trades(c) -> int | None:
     """가격 근거가 '최근 N개월 매매 N건'인데 N이 THIN_TRADES(3)건 미만이면 그 건수. 건수를 알 수 없거나 충분하면 None.
     (분양권·입주권 기준이거나 가격이 없으면 안내하지 않음: 지어낸 숫자를 보여 주지 않기 위해)"""
@@ -589,8 +607,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             (out_dir / "apt" / "d" / f"{c['slug']}.json").write_text(
                 _json.dumps(pc_data, separators=(",", ":")), encoding="utf-8")
         # 카드에 내세우는 최근 거래는 지수 계산과 같은 기준 (해제·제외한 직거래는 목록에만)
-        lead = next((t for t in tr_list if not t.get("cancelled") and not (t.get("direct") and cfg.filters.get("exclude_direct"))),
-                    tr_list[0] if tr_list else None)
+        lead, lead_note = _lead_trade(tr_list, bool(cfg.filters.get("exclude_direct")))
         has_loc_c = not _nan(c.get("location_score"))
         # 카드의 항목 이름(입지·장기 흐름·5년 흐름)과 같게
         comps = [("입지", c.get("location_score"), fmt_score(c.get("location_score")))]
@@ -628,7 +645,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                 print(f"[미리보기] {c['slug']} 건너뜀: {e}")
         _faq = faq_items(c, cfg.region_name, meta["asof"])
         html = tpl.render(
-            faq=_faq, faq_ld=[{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in _faq], thin_n=_thin_trades(c), og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
+            lead_note=lead_note, faq=_faq, faq_ld=[{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in _faq], thin_n=_thin_trades(c), og_card=og_card, c=c, charts=c_charts, recent=shown, jeonse=jeonse, wolse=wolse, has_pc=bool(pc_data), lm_hubs=lm_hubs,
             area_types=area_types, lead=lead, root="../", page_path=f"apt/{c['slug']}.html",
             latlng=geo.get(cid),
             loc_sets=loc_sets, neighbors=neighbors,
