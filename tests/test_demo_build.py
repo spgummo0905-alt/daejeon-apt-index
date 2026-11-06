@@ -1471,3 +1471,15 @@ def test_home_list_filters_come_back_after_browser_back():
     assert '!(qs.get("area") || qs.get("dong"))' in js and 'location.hash !== "#list"' in js
     assert "sessionStorage.setItem(KEEP" in js and "function reset() { limit = PAGE; apply(); save(); }" in js
 
+
+def test_compare_next_step_sits_above_the_result_table():
+    """명령서 3-F: 비교 후 임장으로 이어지는 기능은 유지하되 표(3,700px) 맨 아래에 있어 멀었음. 결과 표 위로 올려
+    단지를 2곳 이상 고르면 바로 임장 코스·프로젝트로 갈 수 있게 한다(상자는 2곳 미만이면 hidden 그대로)"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    t = (root / "templates" / "compare.html").read_text(encoding="utf-8")
+    assert t.index('id="vs-next"') < t.index('id="vs-result"')
+    assert 'id="vs-next" aria-label="비교 다음 단계" hidden' in t
+    js = (root / "static" / "compare.js").read_text(encoding="utf-8")
+    assert "고른 단지로 이어가기" in js and "box.hidden = cs.length < 2;" in js
+
