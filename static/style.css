@@ -4339,3 +4339,16 @@ p.muted { text-wrap: balance; }
 }
 /* 면적 칩은 글이 길어서 360px 이상에서만 2열 격자(더 좁으면 원래처럼 줄바꿈) */
 @media (min-width: 360px) and (max-width: 560px) { .chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 터치 칸: 가격 계산의 선택칸·입력칸은 44px 이상, 지역 이름 버튼은 누르는 칸만 위아래로 넓힘 (보이는 줄 간격은 그대로) */
+.pay-form select, .pay-form input, .sv-calc .field input, .sv-calc .field select { min-height: 44px; }
+.rg-word { padding-block: 5px; margin-block: -5px; }
+
+/* 상세: 임장 때 직접 확인할 것 (이 단지의 실제 값에서만, 없으면 안 보임) */
+.to-check { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+.to-check h2 { margin: 0 0 8px; font-size: 16px; }
+.to-check ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.to-check li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 44px; border-top: 1px solid var(--border); }
+.to-check li:first-child { border-top: 0; }
+.to-check li span { flex: 1 1 200px; font-size: 15px; line-height: 1.5; color: var(--text); text-wrap: balance; }
+.to-check li a { flex: none; display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 700; }

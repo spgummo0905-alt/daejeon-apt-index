@@ -1420,3 +1420,16 @@ def test_field_photo_note_matches_private_storage():
     js = (Path(__file__).resolve().parent.parent / "static" / "field.js").read_text(encoding="utf-8")
     assert "로그인한 나만 볼 수 있어요. 공유 링크로는 보이지 않아요." in js
     assert "공유 링크를 받은 가족도 볼 수 있어요" not in js
+
+
+def test_detail_to_check_box_uses_only_real_values_and_touch_sizes():
+    """UX 2차: 상세 '임장 때 직접 확인할 것'은 거래 건수 부족·언덕·소음·소규모 단지 값에서만 만들고 해당 없으면 통째로 안 보임. 가격 입력칸·지역 이름 버튼 누르는 칸 44px"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    apt = (root / "templates" / "apt.html").read_text(encoding="utf-8")
+    assert "{% if todo %}" in apt and 'id="to-check-t"' in apt and 'id="points"' in apt
+    for cond in ("thin_n is not none", 'hill.cls in ("slope", "hill")', 'noise.cls in ("near", "mid")', "c.small"):
+        assert cond in apt, cond
+    css = (root / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".pay-form select, .pay-form input, .sv-calc .field input, .sv-calc .field select { min-height: 44px; }" in css
+    assert ".rg-word { padding-block: 5px; margin-block: -5px; }" in css
