@@ -87,9 +87,22 @@
   <div class="mc-foot"><span>{% if c.rank %}No.{{ "%03d" | format(c.rank) }} / {{ n_total }}{% else %}No.---{% endif %}</span><span class="mc-gems" aria-label="등급 표시 {{ gems }}/5">{{ "◆" * gems }}{{ "◇" * (5 - gems) }}</span><span>{{ meta.updated or meta.asof }} 실거래 기준</span></div>
 </div></section>
 
+{# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
+{% set todo = [] %}
+{% if thin_n is not none %}{% set _ = todo.append(("거래가 " ~ thin_n ~ "건뿐이라 가격이 달라질 수 있어요", "#trades", "최근 거래 보기")) %}{% endif %}
+{% if hill and hill.cls in ("slope", "hill") %}{% set _ = todo.append(("역에서 단지까지 오르막이 있어요", "#hill", "언덕 체크")) %}{% endif %}
+{% if noise and noise.cls in ("near", "mid") %}{% set _ = todo.append(("큰길·철도 소리를 낮과 밤에 들어 보세요", "#noise", "소음 체크")) %}{% endif %}
+{% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
+{% if todo %}
+<section class="to-check" aria-labelledby="to-check-t">
+  <h2 id="to-check-t">임장 때 직접 확인할 것</h2>
+  <ul>{% for t, href, name in todo %}<li><span>{{ t }}</span><a href="{{ href }}">{{ name }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
 <div class="apt-side">
 {% if points or c.small %}
-<section class="points">
+<section class="points" id="points">
   <h2>이 아파트의 주요 특징</h2>
   {% if points %}<ul class="pt-grid">
   {% for p in points %}<li class="pt">

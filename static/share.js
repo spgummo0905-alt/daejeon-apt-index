@@ -1,4 +1,4 @@
-// 가족과 함께 보기: 관심 화면에서 만든 링크(share.html?t=…)로 들어와 그 사람의 관심 단지·임장 코스·임장 노트(사진 포함)를
+// 가족과 함께 보기: 관심 화면에서 만든 링크(share.html?t=…)로 들어와 그 사람의 관심 단지·임장 코스·임장 노트(체크·호가·메모, 사진은 제외)를
 // 보기 전용으로 봅니다. 로그인 없이, Supabase shared_view 함수가 링크가 살아 있을 때만 돌려줍니다.
 // 다른 지역 단지는 그 지역 화면의 같은 링크로 안내합니다.
 (function () {
@@ -16,8 +16,8 @@
   Promise.all([DJ.sb.call("/rest/v1/rpc/shared_view", { method: "POST", body: { t } }), DJ.data()]).then(([r, d]) => {
     if (!r || !r.data) { fail("링크가 끊겼거나 바뀌었어요. 보내 준 분께 새 링크를 받아 주세요."); return; }
     const data = r.data, favs = data.favs || [], course = (data.course && data.course.list) || [];
-    const visits = Object.keys(data).filter(k => k.startsWith("visit:")).map(k => ({ s: k.slice(6), v: Object.assign({ c: [], x: {}, m: "", q: [], p: [] }, data[k]) }))
-      .filter(({ v }) => v.d || v.m || v.q.length || v.p.length || v.c.some(Boolean) || Object.values(v.x).some(Boolean));
+    const visits = Object.keys(data).filter(k => k.startsWith("visit:")).map(k => ({ s: k.slice(6), v: Object.assign({ c: [], x: {}, m: "", q: [] }, data[k]) }))
+      .filter(({ v }) => v.d || v.m || v.q.length || v.c.some(Boolean) || Object.values(v.x).some(Boolean));
     const all = new Set([...favs, ...course, ...visits.map(x => x.s)]);
     const here = [...all].filter(s => d.bySlug[s]), away = [...all].filter(s => !d.bySlug[s]);
     title.textContent = `${r.name}님의 임장 기록`;
@@ -49,21 +49,6 @@
           art.append(q);
         }
         if (v.m) art.append(el("p", "sh-memo", v.m));
-        if (v.p.length) {
-          const ph = el("div", "sh-photos");
-          v.p.forEach(([path], i) => {
-            const a = el("a"); a.href = DJ.photoUrl(path); a.target = "_blank"; a.rel = "noopener";
-            const img = el("img"); img.src = DJ.photoUrl(path); img.alt = `${c.n} 현장 사진 ${i + 1}`; img.loading = "lazy";
-            // 사진 저장소를 비공개로 옮기면 이 화면(로그인 없이 보는 가족)에서는 사진이 열리지 않습니다. 깨진 그림 대신 이유를 알려 줍니다
-            img.addEventListener("error", () => {
-              if (ph.dataset.off) return;
-              ph.dataset.off = "1";
-              ph.replaceChildren(el("p", "sh-photo-off", "사진을 불러오지 못했어요. 인터넷이 불안하거나, 보낸 분만 볼 수 있게 바뀌었을 수 있어요."));
-            });
-            a.append(img); ph.append(a);
-          });
-          art.append(ph);
-        }
         sec.append(art);
       });
       box.append(sec);
