@@ -1497,6 +1497,18 @@ def test_detail_check_box_leads_to_field_mode_button():
     assert ".to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px;" in css
 
 
+def test_detail_thin_trade_chip_is_on_first_screen_and_only_when_thin():
+    """명령서 3-C 자료 부족 안내의 정보 계층: 거래 3건 미만 안내가 페이지 한참 아래(약 2,200px)의 문장뿐이었음.
+    첫 화면 칩 줄에 '가격 근거 N건' 칩을 더한다(눌러 설명 보기, 기존 칩과 같은 data-badge 방식). 안내 문구·확인할 것 상자와 같은 조건(thin_n)일 때만"""
+    from pathlib import Path
+    apt = (Path(__file__).resolve().parent.parent / "templates" / "apt.html").read_text(encoding="utf-8")
+    strip = apt[apt.index('<div class="mc-strip">'):apt.index('<p class="mc-fit"')]
+    assert '{% if thin_n is not none %}<button type="button" class="mc-chip thin-chip" data-badge' in strip
+    assert "가격 근거 {{ thin_n }}건" in strip and "거래 {{ c.n_trades }}건" in strip
+    assert strip.index("거래 {{ c.n_trades }}건") < strip.index("thin-chip")
+    assert apt.count("thin-chip") == 1
+
+
 def test_finder_question_header_says_single_or_multiple_choice():
     """명령서 3-B: 조건 찾기에서 단일 선택과 복수 선택을 화면에서 구분. 질문 번호 줄에 '하나만 고르세요 / 여러 개 고를 수 있어요'를 붙인다
     (지역·평형·필수 조건은 복수, 상황·직장·예산·연식은 단일, 역·학교는 각각 하나)"""
