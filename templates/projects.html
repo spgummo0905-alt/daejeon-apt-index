@@ -49,6 +49,17 @@
         </div>
       </div>
       <dl class="pj-stats" data-pj-stats aria-label="프로젝트 현황"></dl>
+      <section class="pj-plan" data-pj-plan aria-labelledby="pj-plan-t">
+        <h3 id="pj-plan-t">방문 예정일</h3>
+        <p class="pj-plan-state" data-pj-plan-state role="status"></p>
+        <form class="pj-plan-form" data-pj-plan-form>
+          <label for="pj-plan-date">날짜 고르기</label>
+          <input id="pj-plan-date" name="planned" type="date" required>
+          <button class="btn sm" type="submit" data-pj-plan-save>예정일 저장</button>
+          <button class="btn ghost sm" type="button" data-pj-plan-clear hidden>예정일 취소</button>
+        </form>
+        <p class="muted pj-plan-note">예정일은 가 볼 계획일 뿐이에요. 다녀온 날은 방문 기록에 따로 남아요.</p>
+      </section>
       <ol class="pj-steps" data-pj-steps aria-label="진행 단계"></ol>
       <p class="pj-steps-note muted" id="pj-steps-note">순서는 상관없어요. 기록이 남은 것만 ✓ 로 표시해요.</p>
       <div class="pj-next" data-pj-next></div>

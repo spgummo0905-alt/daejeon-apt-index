@@ -4098,6 +4098,19 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-step.todo { opacity: .72; }
 .pj-step.free { border-style: dashed; }
 .pj-steps-note { margin: -6px 0 14px; font-size: 14px; }
+/* 방문 예정일: 계획일 뿐이라 현황·단계 사이에 한 칸. 실제 방문일(방문 기록)과 문구로 구분 */
+.pj-plan { margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.pj-plan[hidden] { display: none; }
+.pj-plan h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--text-2); }
+.pj-plan-state { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 10px; font-size: 16px; line-height: 1.45; }
+.pj-plan-state .muted { flex-basis: 100%; font-size: 14px; }
+.pj-plan-state .btn { min-height: 48px; margin: 4px 0 0; }
+.pj-plan-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pj-plan-form label { font-size: 14px; font-weight: 700; color: var(--text-2); }
+.pj-plan-form input[type=date] { min-height: 48px; padding: 0 12px; font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
+.pj-plan-form .btn { min-height: 48px; margin: 0; }
+.pj-plan-note { margin: 8px 0 0; font-size: 13px; }
+@media (max-width: 720px) { .pj-plan-form label { flex-basis: 100%; } .pj-plan-form input[type=date] { flex: 1 1 160px; } }
 .pj-next { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 16px 18px; border-radius: 16px; color: #fff; background: linear-gradient(160deg, #13294b, #1e3d6e); }
 .pj-next[hidden] { display: none; }
 .pj-next .pj-next-t { flex-basis: 100%; margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #f0d58a; }

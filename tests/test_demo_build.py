@@ -1668,3 +1668,17 @@ def test_detail_fit_slots_are_reserved_before_data_arrives():
     assert 'fitSum.classList.remove("hold")' in app and 'fitLine.classList.remove("hold")' in app
     assert ".pb-fit.hold { min-height: 66px; }" in css and ".pf.hold { min-height: 62px; }" in css
 
+
+def test_projects_page_has_planned_date_box_with_native_date_input_and_keeps_visits_separate():
+    """4-B3: 프로젝트 화면의 방문 예정일 상자는 기본 날짜 입력(무거운 달력 라이브러리 없음)을 쓰고, 오늘 이후만 고르게 하며,
+    저장·변경·취소가 모두 기존 프로젝트 저장(P.update)을 거친다. 예정일(계획)과 방문 기록(실제)은 날짜로만 견주고 서로 바꾸지 않는다"""
+    html = (ROOT_DIR / "templates" / "projects.html").read_text(encoding="utf-8")
+    js = (ROOT_DIR / "static" / "projects.js").read_text(encoding="utf-8")
+    store = (ROOT_DIR / "static" / "project-store.js").read_text(encoding="utf-8")
+    assert 'data-pj-plan-form' in html and 'name="planned" type="date" required' in html and 'data-pj-plan-clear' in html and "계획일 뿐이에요" in html
+    assert html.index("data-pj-stats") < html.index("data-pj-plan") < html.index("data-pj-steps")
+    assert "date.min = today" in js and 'mutate({ planned: e.target.elements.planned.value })' in js and 'mutate({ planned: "" })' in js
+    assert "DJVisitLog.list({ region: REGION, projectId: current.id })" in js and "visitlog" not in js[js.index("function plan()"):js.index("function dash()")].replace("DJVisitLog", "")
+    assert "version: 1" in store and "version: 2" not in store and "planned: plannedOf(value.planned)" in store
+    assert "<script src" not in html or "flatpickr" not in html and "datepicker" not in html.lower()
+

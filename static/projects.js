@@ -15,7 +15,7 @@
   wsDialog.addEventListener("close", () => { if (current && D) summary(); });   // 현장 체크·방문 기록을 닫으면 정리를 새로 모아요
   function error(e) {
     status.textContent = e.message === "conflict" ? "다른 화면에서 프로젝트가 바뀌었어요. 내용을 복사해 두고 새로고침한 뒤 다시 저장해 주세요."
-      : e.message === "fields" ? "프로젝트 이름은 1~50자, 중요한 조건은 200자 이내로 적어 주세요."
+      : e.message === "fields" ? "프로젝트 이름은 1~50자, 중요한 조건은 200자 이내로, 방문 예정일은 오늘 이후 날짜로 적어 주세요."
       : e.message === "limit" ? "진행 중인 프로젝트와 프로젝트별 후보는 각각 100개까지예요. 끝난 프로젝트는 보관해 주세요."
       : "프로젝트를 저장하지 못했어요. 계정 연결 상태와 브라우저 저장 공간을 확인해 주세요.";
     DJ.toast("변경을 저장하지 못했어요", status.textContent);
@@ -115,7 +115,7 @@
       }
       cards.append(wrap);
     });
-    dash(); summary();
+    dash(); plan(); summary();
     journal = DJVisitLogUI({ region: REGION, projectId: current.id, candidates: current.slugs.map(s => D.bySlug[s]).filter(Boolean),
       names: Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n])), archived: current.archived, data: D });
     find("[data-pj-journal]").replaceChildren(journal.element);
@@ -211,6 +211,29 @@
     picked.clear(); list.slice(0, kind === "course" ? 8 : 4).forEach(s => picked.add(s));
     render(); workspace.open(kind);
   }
+  // 방문 예정일: 예정일(계획)과 실제 방문 기록(visitlog)을 날짜로만 견줘 보여 줌. 서로의 데이터는 바꾸지 않음
+  const dayDiff = (a, b) => Math.round((new Date(a + "T12:00:00Z") - new Date(b + "T12:00:00Z")) / 86400000);
+  const niceDate = d => `${+d.slice(5, 7)}월 ${+d.slice(8, 10)}일`;
+  function plan() {
+    const box = find("[data-pj-plan]"), state = find("[data-pj-plan-state]"), f = find("[data-pj-plan-form]"), clear = find("[data-pj-plan-clear]");
+    const date = f.elements.planned, today = DJ.today();
+    box.hidden = current.archived; if (current.archived) return;
+    date.min = today; date.value = current.planned || "";
+    f.querySelector("[data-pj-plan-save]").textContent = current.planned ? "예정일 바꾸기" : "예정일 저장";
+    clear.hidden = !current.planned;
+    state.replaceChildren();
+    if (!current.planned) { state.textContent = "아직 정한 방문 예정일이 없어요."; return; }
+    const d = dayDiff(current.planned, today);
+    const logs = DJVisitLog.list({ region: REGION, projectId: current.id }), onDay = logs.filter(v => v.date === current.planned).length;
+    const whenText = d > 0 ? `${niceDate(current.planned)} (${d}일 남음)` : d === 0 ? `${niceDate(current.planned)} (오늘)` : `${niceDate(current.planned)} (${-d}일 지남)`;
+    state.append(el("b", "", "예정 · " + whenText));
+    if (d < 0 && !onDay) {
+      state.append(el("span", "muted", "예정일이 지났어요. 다녀왔다면 방문 기록을 남기고, 일정이 바뀌었다면 새 날짜를 골라 주세요."));
+      const go = el("button", "btn sm", "방문 기록 남기기"); go.type = "button"; go.addEventListener("click", () => workspace.open("history")); state.append(go);
+    } else if (onDay) state.append(el("span", "muted", `예정일에 남긴 방문 기록이 ${onDay}건 있어요.`));
+  }
+  find("[data-pj-plan-form]").addEventListener("submit", e => { e.preventDefault(); mutate({ planned: e.target.elements.planned.value }); });
+  find("[data-pj-plan-clear]").addEventListener("click", () => { if (current && confirm("방문 예정일을 취소할까요? 후보와 방문 기록은 그대로예요.")) mutate({ planned: "" }); });
   function dash() {
     const n = current.slugs.length, logs = DJVisitLog.list({ region: REGION, projectId: current.id }), went = new Set(logs.map(v => v.slug)).size;
     find("[data-pj-count]").textContent = n ? `${n}곳` : "";
