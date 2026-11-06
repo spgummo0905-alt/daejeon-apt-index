@@ -2818,7 +2818,7 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
   background: var(--quad); color: var(--accent); }
 .cs-leg:hover, .cs-first:hover { text-decoration: none; filter: brightness(.97); }
 /* 첫 화면 '이어서' (다시 온 사람) */
-.resume { display: flex; align-items: center; gap: 8px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.resume { display: flex; align-items: center; gap: 8px; margin-top: 12px; min-height: 36px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .resume::-webkit-scrollbar { display: none; }
 .resume-k { flex: none; font-size: 13px; font-weight: 800; color: var(--muted); }
 .resume-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border);
@@ -4095,7 +4095,8 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-step.done .pj-step-n { background: var(--navy); border-color: var(--navy); color: var(--on-navy); }
 .pj-step.now { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
 .pj-step.now .pj-step-n { border-color: var(--navy); color: var(--navy); }
-.pj-step.todo { opacity: .72; }
+.pj-step.todo { color: var(--text-2); }
+.pj-step.todo .muted { color: var(--text-2); }
 .pj-step.free { border-style: dashed; }
 .pj-steps-note { margin: -6px 0 14px; font-size: 14px; }
 /* 방문 예정일: 계획일 뿐이라 현황·단계 사이에 한 칸. 실제 방문일(방문 기록)과 문구로 구분 */

@@ -1204,7 +1204,7 @@ def test_ux_home_gates_and_next_actions_wiring(tmp_path):
     assert gates.count('class="gate-btn"') == 3 and home.count("data-gates") == 1
     assert "rooftop.html" in home and "roof-strip" in home       # 옥상은 그대로 있음
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
-    assert "function gates()" in app and "gates();\n    resume();" in app.replace("\r", "")
+    assert "function gates()" in app and "const entries = () => {" in app and "gates(); resume(); };" in app
     assert "DJ.activeProject()" in app[app.index("function gates()"):app.index("function gates()") + 900]
     assert "action.href" in app and "toast-act" in app                                # 알림 속 다음 행동 링크
     toast = app[app.index("DJ.toast = function"):app.index("DJ.unlock = function")]
@@ -1681,4 +1681,28 @@ def test_projects_page_has_planned_date_box_with_native_date_input_and_keeps_vis
     assert "DJVisitLog.list({ region: REGION, projectId: current.id })" in js and "visitlog" not in js[js.index("function plan()"):js.index("function dash()")].replace("DJVisitLog", "")
     assert "version: 1" in store and "version: 2" not in store and "planned: plannedOf(value.planned)" in store
     assert "<script src" not in html or "flatpickr" not in html and "datepicker" not in html.lower()
+
+
+def test_late_layout_shifts_are_removed_by_deciding_from_saved_records_before_first_paint():
+    """4-C1: 홈(1280 재방문 0.075)과 프로젝트 화면(다크 0.036)의 화면 흔들림 원인은 '저장된 기록만 있으면 정해지는 것'을 단지 자료·문서 로딩이 끝난 뒤에야 바꾸던 것.
+    입구 카드·이어서 줄은 문서에 자리가 있으면 바로 맞추고, 프로젝트 화면은 목록과 새 프로젝트 상자를 자료보다 먼저 맞춘다. 높이를 크게 잡아 두는 방식이 아님"""
+    app = (ROOT_DIR / "static" / "app.js").read_text(encoding="utf-8")
+    pj = (ROOT_DIR / "static" / "projects.js").read_text(encoding="utf-8")
+    html = (ROOT_DIR / "templates" / "projects.html").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert 'if (document.querySelector("[data-gates]") && document.querySelector("[data-resume]")) entries();' in app
+    assert app.count("entries();") >= 2 and "gates();\n    resume();\n    regionPicker" not in app          # DOMContentLoaded 안에서만 부르지 않음
+    r = app[app.index("function resume()"):app.index("// ---------- 앱처럼 쓰기")]
+    assert r.index("box.hidden = false;") < r.index("DJ.data().then")                                     # 줄은 자료보다 먼저 보임
+    assert "min-height: 36px" in css[css.index(".resume {"):css.index(".resume {") + 200]
+    assert pj.index('find("[data-pj-new]").open = !P.list(REGION).length;') < pj.index("DJ.data().then(d => {\n    D = d;")
+    assert "editor.hidden = !current || !D;" in pj
+    assert 'removeAttribute("open")' in html and html.index("data-pj-new") < html.index('removeAttribute("open")')   # 스크립트가 늦게 와도 첫 화면부터 접힘
+
+
+def test_project_store_keeps_unknown_fields_but_never_lets_them_override_known_ones():
+    """4-C1: 옛 코드를 가진 탭이 새 칸(planned)을 지우는 문제의 재발 방지. 앞으로 더해질 칸은 읽고 다시 저장할 때 그대로 이어 주되 알려진 칸을 덮지 못한다"""
+    store = (ROOT_DIR / "static" / "project-store.js").read_text(encoding="utf-8")
+    assert "const KNOWN = new Set(" in store and "...extra, version: 1" in store            # 모르는 칸을 먼저 펼치고 알려진 칸이 뒤에서 덮음
+    assert "version: 2" not in store and "slice(0, 20)" in store and "String(v).length <= 400" in store
 

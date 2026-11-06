@@ -72,7 +72,7 @@
     const other = P.list().filter(p => p.region !== REGION).length;
     find("[data-pj-other]").hidden = !other;
     find("[data-pj-other]").textContent = `다른 지역 프로젝트 ${other}개는 위쪽 지역을 바꾸면 이어 볼 수 있어요.`;
-    editor.hidden = !current;
+    editor.hidden = !current || !D;   // 단지 자료가 오기 전에는 비어 있는 편집 영역을 먼저 보이지 않음(보였다 바뀌며 아래가 밀림)
     if (!current || !D) { workspace.reset(); return; }
     find("[data-pj-title]").textContent = current.name;
     find("[data-pj-goal]").textContent = current.goal || "후보를 살펴보며 나에게 중요한 조건을 정해보세요.";
@@ -309,9 +309,12 @@
     find("[data-pj-candidates]").querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; }); actions();
   });
   find("[data-pj-none]").addEventListener("click", () => { picked.clear(); find("[data-pj-candidates]").querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; }); actions(); });
+  // 목록·'새 프로젝트' 상자는 저장된 기록만으로 정해지니 단지 자료를 기다리지 않고 먼저 맞춰 둠(자료가 도착한 뒤 상자가 접히며 아래가 밀리던 흔들림 방지)
+  current = P.list(REGION).find(p => !p.archived) || P.list(REGION)[0] || null;
+  find("[data-pj-new]").open = !P.list(REGION).length;
+  render();
   DJ.data().then(d => {
     D = d; current = P.list(REGION).find(p => !p.archived) || P.list(REGION)[0] || null;
-    find("[data-pj-new]").open = !P.list(REGION).length;
     const district = find("[data-pj-district]");
     [...new Set(D.complexes.map(c => c.gu))].sort().forEach(gu => { const o = el("option", "", gu); o.value = gu; district.append(o); });
     render();

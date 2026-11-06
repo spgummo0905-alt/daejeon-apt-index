@@ -7,10 +7,17 @@
   // 이 칸이 없는 기존 프로젝트는 예정일 없음으로 읽히고 한 글자도 바뀌지 않음. 실제 방문 기록(visitlog:)과는 따로 두고 날짜로만 견줌.
   const dateShape = s => { if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T12:00:00Z"); return Number.isFinite(+d) && d.toISOString().slice(0, 10) === s; };
   const plannedOf = v => (dateShape(v) ? v : "");
+  const KNOWN = new Set(["version", "id", "name", "goal", "region", "slugs", "archived", "created", "updated", "planned"]);
   const clean = value => {
     if (!value || value.version !== 1 || !idOK(value.id) || typeof value.name !== "string" || !value.name.trim()
       || typeof value.region !== "string" || !value.region || !Array.isArray(value.slugs)) return null;
-    return { version: 1, id: value.id, name: value.name.slice(0, 50), goal: String(value.goal || "").slice(0, 200),
+    // 앞으로 더해질 칸(이 코드가 아직 모르는 칸)도 읽고 다시 저장할 때 지우지 않고 그대로 이어 줌: 새 칸을 만든 기기의 값을 옛 화면이 수정하며 잃는 일을 막기 위함
+    // (실제로 4-B3 의 planned 가 옛 코드의 수정에서 사라지는 것을 시험으로 재현함). 알려진 칸은 아래에서 다시 검사한 값으로 덮고, 모르는 칸은 단순 값·최대 20개까지만
+    const extra = {};
+    Object.keys(value).filter(k => !KNOWN.has(k) && /^[a-z][a-zA-Z0-9]{0,23}$/.test(k)).slice(0, 20).forEach(k => {
+      const v = value[k]; if (v === null || ["string", "number", "boolean"].includes(typeof v) && String(v).length <= 400) extra[k] = v;
+    });
+    return { ...extra, version: 1, id: value.id, name: value.name.slice(0, 50), goal: String(value.goal || "").slice(0, 200),
       region: value.region, slugs: [...new Set(value.slugs.filter(slugOK))].slice(0, MAX), archived: !!value.archived,
       created: Number(value.created) || 0, updated: Number(value.updated) || 0, planned: plannedOf(value.planned) };
   };
