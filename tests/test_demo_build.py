@@ -1439,6 +1439,16 @@ def test_field_photo_note_matches_private_storage():
     assert "공유 링크를 받은 가족도 볼 수 있어요" not in js
 
 
+def test_choice_chips_report_their_selected_state_to_assistive_tech():
+    """UI 감사: 한 번에 하나만 고르는 칩·세그먼트는 클릭 처리 코드가 'active' 클래스만 바꿔서 화면 읽기 도구에는 선택 상태가 안 알려졌음(홈 구 칩 16개·테마 칩·가격 기간 버튼 등).
+    클래스 변화를 한 곳에서 aria-pressed 로 맞춘다. 'active' 가 있는 묶음만 대상이라 '단지 추가' 같은 행동 칩과 role=tab(aria-selected 사용)은 건드리지 않음"""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'const BTN = "button.chip, button.seg-btn";' in js
+    assert 'b.getAttribute("role") !== "tab"' in js and 'btns.some(b => b.classList.contains("active"))' in js
+    assert 'attributeFilter: ["class"]' in js and 'setAttribute("aria-pressed", b.classList.contains("active")' in js
+
+
 def test_detail_to_check_box_uses_only_real_values_and_touch_sizes():
     """UX 2차: 상세 '임장 때 직접 확인할 것'은 거래 건수 부족·언덕·소음·소규모 단지 값에서만 만들고 해당 없으면 통째로 안 보임. 가격 입력칸·지역 이름 버튼 누르는 칸 44px"""
     from pathlib import Path
