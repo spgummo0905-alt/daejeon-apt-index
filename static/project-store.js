@@ -3,12 +3,16 @@
   const PREFIX = "project:", MAX = 100;
   const idOK = id => typeof id === "string" && /^[a-z0-9-]{1,64}$/.test(id);
   const slugOK = s => typeof s === "string" && /^[\w.-]{1,80}$/.test(s);
+  // 방문 예정일(선택): 'YYYY-MM-DD' 또는 빈 값. 새 칸을 선택 항목으로만 더하고 버전은 1 그대로(버전을 올리면 옛 화면을 가진 기기에서 프로젝트가 통째로 안 보임).
+  // 이 칸이 없는 기존 프로젝트는 예정일 없음으로 읽히고 한 글자도 바뀌지 않음. 실제 방문 기록(visitlog:)과는 따로 두고 날짜로만 견줌.
+  const dateShape = s => { if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T12:00:00Z"); return Number.isFinite(+d) && d.toISOString().slice(0, 10) === s; };
+  const plannedOf = v => (dateShape(v) ? v : "");
   const clean = value => {
     if (!value || value.version !== 1 || !idOK(value.id) || typeof value.name !== "string" || !value.name.trim()
       || typeof value.region !== "string" || !value.region || !Array.isArray(value.slugs)) return null;
     return { version: 1, id: value.id, name: value.name.slice(0, 50), goal: String(value.goal || "").slice(0, 200),
       region: value.region, slugs: [...new Set(value.slugs.filter(slugOK))].slice(0, MAX), archived: !!value.archived,
-      created: Number(value.created) || 0, updated: Number(value.updated) || 0 };
+      created: Number(value.created) || 0, updated: Number(value.updated) || 0, planned: plannedOf(value.planned) };
   };
   function read(id) {
     if (!idOK(id)) return null;
@@ -33,7 +37,7 @@
     const id = crypto.randomUUID();
     if (DJ.load(PREFIX + id, null) !== null) throw new Error("conflict");
     const now = Date.now();
-    return save({ version: 1, id, ...fields(name, goal), region, slugs: [], archived: false, created: now, updated: now });
+    return save({ version: 1, id, ...fields(name, goal), region, slugs: [], archived: false, created: now, updated: now, planned: "" });
   }
   function update(id, region, expected, patch) {
     const p = read(id);
@@ -47,6 +51,11 @@
     if (typeof patch.archived === "boolean") {
       if (p.archived && !patch.archived && list().filter(x => !x.archived).length >= MAX) throw new Error("limit");
       next.archived = patch.archived;
+    }
+    if (patch.planned !== undefined && patch.planned !== p.planned) {
+      // 비우기는 언제든, 새 날짜는 오늘 이후만(이미 저장된 지난 날짜는 그대로 둘 수 있음)
+      if (patch.planned !== "" && !(dateShape(patch.planned) && patch.planned >= DJ.today())) throw new Error("fields");
+      next.planned = patch.planned;
     }
     next.updated = Math.max(Date.now(), p.updated + 1);
     return save(next);

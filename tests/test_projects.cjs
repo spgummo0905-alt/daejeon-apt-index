@@ -83,3 +83,76 @@ test('project edits preserve identity and cannot change region or creation time'
   assert.equal(changed.id, p.id); assert.equal(changed.region, p.region); assert.equal(changed.created, p.created);
   assert.ok(changed.updated > p.updated);
 });
+// ---- 4-B3 방문 예정일 ----
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const later = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function withToday(b) { b.ctx.DJ.today = today; return b; }
+test('existing projects without a planned date read as no date and are not rewritten', () => {
+  const old = { version: 1, id: 'old', name: '옛 프로젝트', goal: '역세권', region: '대전', slugs: ['a-1'], archived: false, created: 5, updated: 9 };
+  const b = withToday(setup({ 'djdex:project:old': old }));
+  const raw = b.storage['djdex:project:old'];
+  const p = b.P.read('old'); assert.equal(p.planned, ''); assert.equal(p.name, '옛 프로젝트');
+  assert.equal(b.P.list().length, 1); assert.equal(b.storage['djdex:project:old'], raw);       // 읽기만으로는 저장 내용이 바뀌지 않음
+  const q = b.P.update('old', '대전', p.updated, { name: '이름만 수정' });                          // 예정일을 건드리지 않는 수정도 정상
+  assert.equal(q.planned, ''); assert.equal(plain(q.slugs)[0], 'a-1');
+});
+test('planned date can be set, changed and cancelled without touching candidates, archive state or other projects', () => {
+  const b = withToday(setup()); let p = b.P.create('A', '', '대전'); const other = b.P.create('B', '', '대전');
+  p = b.P.update(p.id, p.region, p.updated, { slugs: ['x-1', 'x-2'] });
+  p = b.P.update(p.id, p.region, p.updated, { planned: later(3) }); assert.equal(p.planned, later(3)); assert.deepEqual(plain(p.slugs), ['x-1', 'x-2']);
+  p = b.P.update(p.id, p.region, p.updated, { planned: later(7) }); assert.equal(p.planned, later(7));        // 변경
+  p = b.P.update(p.id, p.region, p.updated, { planned: '' }); assert.equal(p.planned, '');                    // 취소
+  assert.equal(b.P.read(other.id).planned, ''); assert.equal(b.P.read(other.id).updated, other.updated);
+});
+test('planned date survives archive and reopen, and unrelated edits keep it', () => {
+  const b = withToday(setup()); let p = b.P.create('A', '', '대전');
+  p = b.P.update(p.id, p.region, p.updated, { planned: later(2) });
+  p = b.P.update(p.id, p.region, p.updated, { archived: true }); assert.equal(p.planned, later(2));
+  p = b.P.update(p.id, p.region, p.updated, { archived: false }); assert.equal(p.planned, later(2));
+  p = b.P.update(p.id, p.region, p.updated, { goal: '학교' }); assert.equal(p.planned, later(2));
+  p = b.P.update(p.id, p.region, p.updated, { slugs: ['z-1'] }); assert.equal(p.planned, later(2));
+});
+test('invalid or past planned dates are rejected and the saved project is untouched', () => {
+  const b = withToday(setup()), p = b.P.create('A', '', '대전'); const raw = b.storage['djdex:project:' + p.id];
+  for (const bad of ['2026-02-30', '내일', '2026/11/10', later(-1), '2026-13-01', 20261110, null])
+    assert.throws(() => b.P.update(p.id, '대전', p.updated, { planned: bad }), /fields/);
+  assert.equal(b.storage['djdex:project:' + p.id], raw);
+  const ok = b.P.update(p.id, '대전', p.updated, { planned: today() }); assert.equal(ok.planned, today());    // 오늘은 가능
+});
+test('a stored past date stays readable (the visit day has passed) and can be cleared', () => {
+  const b = withToday(setup({ 'djdex:project:p': { version: 1, id: 'p', name: '지난 일정', goal: '', region: '대전', slugs: [], archived: false, created: 1, updated: 2, planned: '2020-01-02' } }));
+  let p = b.P.read('p'); assert.equal(p.planned, '2020-01-02');
+  p = b.P.update('p', '대전', p.updated, { name: '이름 수정' }); assert.equal(p.planned, '2020-01-02');      // 다른 수정이 지난 날짜를 지우지 않음
+  p = b.P.update('p', '대전', p.updated, { planned: '' }); assert.equal(p.planned, '');
+});
+test('a malformed planned value in a backup is read as no date instead of breaking the project', () => {
+  const b = withToday(setup({ 'djdex:project:p': { version: 1, id: 'p', name: '깨진 날짜', goal: '', region: '대전', slugs: ['a'], archived: false, created: 1, updated: 2, planned: '곧' } }));
+  const p = b.P.read('p'); assert.equal(p.planned, ''); assert.equal(b.P.list().length, 1); assert.deepEqual(plain(p.slugs), ['a']);
+});
+test('stale planned-date edit from another device is rejected and the newer date is kept', () => {
+  const b = withToday(setup()), p = b.P.create('A', '', '대전');
+  b.P.update(p.id, '대전', p.updated, { planned: later(5) });                                                // 다른 기기에서 먼저 저장
+  assert.throws(() => b.P.update(p.id, '대전', p.updated, { planned: later(9) }), /conflict/);                // 오래된 화면의 저장은 거절
+  assert.equal(b.P.read(p.id).planned, later(5));
+});
+test('failed persistence while setting a planned date leaves the project unchanged', () => {
+  const b = withToday(setup()), p = b.P.create('A', '', '대전'); b.ctx.DJ.save = () => false;
+  assert.throws(() => b.P.update(p.id, '대전', p.updated, { planned: later(1) }), /save/);
+  assert.equal(b.P.read(p.id).planned, '');
+});
+test('guest and account planned dates stay isolated', () => {
+  const b = withToday(setup()); const g = b.P.create('비회원', '', '대전'); b.P.update(g.id, '대전', g.updated, { planned: later(4) });
+  b.storage.setItem('djdex-auth', JSON.stringify({ user: { id: 'A' } })); b.R.activate('A');
+  assert.equal(b.P.list().length, 0); const a = b.P.create('A', '', '대전'); assert.equal(a.planned, '');
+  b.storage.removeItem('djdex-auth'); b.R.activate(null); assert.equal(b.P.list()[0].planned, later(4));
+});
+test('planned date is plain JSON so account sync, backup restore and the guest-copy path carry it unchanged', () => {
+  const b = withToday(setup()); let p = b.P.create('A', '목표', '대전'); p = b.P.update(p.id, '대전', p.updated, { planned: later(6), slugs: ['x-1'] });
+  const wire = JSON.parse(JSON.stringify(b.R.get('project:' + p.id)));                           // 계정으로 보내고 받는 것과 같은 JSON 왕복
+  assert.equal(wire.planned, later(6)); assert.equal(wire.version, 1);                           // 버전을 올리지 않아 옛 읽기 코드도 프로젝트를 그대로 읽음
+  const copy = Object.assign({}, wire, { id: 'copy-1' });                                         // sync.js 의 같은 ID 충돌 사본 만들기와 같은 방식
+  const b2 = withToday(setup({ 'djdex:project:copy-1': copy })); assert.equal(b2.P.read('copy-1').planned, later(6));
+  const legacy = Object.assign({}, wire); delete legacy.planned;                                  // 예정일 칸이 없는 옛 기기의 저장본
+  const b3 = withToday(setup({ 'djdex:project:legacy': Object.assign({}, legacy, { id: 'legacy' }) })); assert.equal(b3.P.read('legacy').planned, '');
+});
+
