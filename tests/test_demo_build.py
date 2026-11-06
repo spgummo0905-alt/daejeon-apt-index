@@ -1460,3 +1460,14 @@ def test_detail_to_check_box_uses_only_real_values_and_touch_sizes():
     css = (root / "static" / "style.css").read_text(encoding="utf-8")
     assert ".pay-form select, .pay-form input, .sv-calc .field input, .sv-calc .field select { min-height: 44px; }" in css
     assert ".rg-word { padding-block: 5px; margin-block: -5px; }" in css
+
+
+def test_home_list_filters_come_back_after_browser_back():
+    """상세를 보고 뒤로 가면 홈 표의 구·검색어·종류 선택이 풀려 있던 문제. 뒤로·앞으로 이동일 때만 탭 기억(sessionStorage)에서 되살린다.
+    새로 열기·새로고침·'?area=' 로 들어온 경우는 기존 동작 그대로여야 하므로 조건을 함께 지킨다"""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "table.js").read_text(encoding="utf-8")
+    assert 'nav.type === "back_forward"' in js
+    assert '!(qs.get("area") || qs.get("dong"))' in js and 'location.hash !== "#list"' in js
+    assert "sessionStorage.setItem(KEEP" in js and "function reset() { limit = PAGE; apply(); save(); }" in js
+

@@ -49,7 +49,11 @@
         more.textContent = `${Math.min(PAGE, n - shown)}개 더 보기`;
       }
     }
-    function reset() { limit = PAGE; apply(); }
+    // 뒤로 가기로 돌아왔을 때 고른 구·검색어·종류를 되살립니다 (상세를 보고 오면 선택이 풀려 있던 문제).
+    // 탭 안에서만 기억하고(sessionStorage), 뒤로·앞으로 이동일 때만 쓰므로 새로 들어온 사람에게는 영향이 없습니다.
+    const KEEP = "djdex:list:" + location.pathname;
+    const save = () => { try { sessionStorage.setItem(KEEP, JSON.stringify({ gu, q, type })); } catch (e) {} };
+    function reset() { limit = PAGE; apply(); save(); }
     if (more) more.addEventListener("click", () => { limit += PAGE; apply(); });
 
     // 구(또는 동) 거르기: 구가 몇 개뿐이면 칩, 동이 많은 지역(세종)은 묶음 고르기 상자
@@ -112,6 +116,16 @@
         reset();
       });
     });
+    try {
+      const nav = performance.getEntriesByType("navigation")[0];
+      const back = nav && nav.type === "back_forward" && !(qs.get("area") || qs.get("dong")) && location.hash !== "#list";
+      const old = back ? JSON.parse(sessionStorage.getItem(KEEP) || "null") : null;
+      if (old) {
+        if (old.type) { type = old.type; document.querySelectorAll("#table-type .chip").forEach(b => b.classList.toggle("active", b.dataset.type === type)); }
+        if (old.q && search) { search.value = old.q; q = old.q; }
+        if (old.gu) { gu = old.gu; chips.forEach(b => b.classList.toggle("active", b.dataset.gu === gu)); if (select) select.value = gu; }
+      }
+    } catch (e) {}
     apply();
   }
   if (table.hasAttribute("data-lazy")) {
