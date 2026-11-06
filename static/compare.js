@@ -42,7 +42,7 @@
     const withLoc = cs.filter(c => Number.isFinite(c.la) && Number.isFinite(c.ln));
     box.hidden = cs.length < 2;
     if (cs.length < 2) return;
-    box.append(el("p", "next-t", "비교를 마쳤다면"));
+    box.append(el("p", "next-t", "고른 단지로 이어가기"));
     const row = el("div", "next-row");
     if (withLoc.length >= 2 && DJ.addToCourse) {
       const b = el("button", "btn primary", "이 단지들로 임장 코스 만들기");

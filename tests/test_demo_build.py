@@ -1472,6 +1472,18 @@ def test_home_list_filters_come_back_after_browser_back():
     assert "sessionStorage.setItem(KEEP" in js and "function reset() { limit = PAGE; apply(); save(); }" in js
 
 
+def test_compare_next_step_sits_above_the_result_table():
+    """명령서 3-F: 비교 후 임장으로 이어지는 기능은 유지하되 표(3,700px) 맨 아래에 있어 멀었음. 결과 표 위로 올려
+    단지를 2곳 이상 고르면 바로 임장 코스·프로젝트로 갈 수 있게 한다(상자는 2곳 미만이면 hidden 그대로)"""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    t = (root / "templates" / "compare.html").read_text(encoding="utf-8")
+    assert t.index('id="vs-next"') < t.index('id="vs-result"')
+    assert 'id="vs-next" aria-label="비교 다음 단계" hidden' in t
+    js = (root / "static" / "compare.js").read_text(encoding="utf-8")
+    assert "고른 단지로 이어가기" in js and "box.hidden = cs.length < 2;" in js
+
+
 def test_detail_check_box_leads_to_field_mode_button():
     """명령서 3-C: '추가로 확인할 것' → 현장 기록 경로. 확인할 것 상자 안에 현장 모드를 여는 큰 버튼(data-field, 기존 현장 모드 시트 재사용).
     상자는 값이 있을 때만 나오므로 버튼도 그 안에만 있어야 한다(해당 없는 단지에 혼자 뜨지 않음)"""
