@@ -988,10 +988,36 @@
       const fitLine = document.querySelector("[data-mc-fit]");
       if (fitLine && window.DJFit) DJ.data().then(d => {
         const s = load("survey", {}), full = d.bySlug[c.s], g = DJFit.budgetGap(s, full);
-        if (!g) return;
+        if (!g) { fitLine.hidden = true; fitLine.classList.remove("hold"); return; }
+        fitLine.classList.remove("hold");
         // 시세 / 예산 두 줄로 나눠 보여줌 (한 줄로 길게 늘어지다 '·' 로 줄이 시작하는 것 방지)
         fitLine.replaceChildren(...DJFit.budgetText(g, s.budget).split(" · ").map(t => Object.assign(document.createElement("span"), { textContent: t })));
         fitLine.hidden = false;
+      }).catch(() => {});
+      // 5개 범주·바로가기로 접힌 구역(#index-calc 등)에 들어오면 펼쳐서 보여 줌
+      const openHash = () => { const t = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1))); const d = t && t.querySelector("details[data-acc]"); if (d && !d.open) { d.open = true; t.scrollIntoView(); } };
+      openHash(); addEventListener("hashchange", openHash);
+      // 내 조건과 견줘 보기: 조건으로 찾기에서 정한 조건이 있을 때만. 맞는 점·벗어난 점·자료 없음을 실제 값과 함께 (fit.js 의 판정을 그대로 씀, 평가·추천 없음)
+      const fitSum = document.querySelector("[data-fit-sum]");
+      if (fitSum && window.DJFit) DJ.data().then(d => {
+        const s = load("survey", {}), full = d.bySlug[c.s];
+        if (!full || !DJFit.hasConditions(s)) { fitSum.hidden = true; fitSum.classList.remove("hold"); return; }
+        const r = DJFit.evaluate(s, full, new Date().getFullYear());
+        if (!r.ok.length && !r.miss.length && !r.unknown.length) { fitSum.hidden = true; fitSum.classList.remove("hold"); return; }
+        fitSum.querySelector("[data-fit-n]").textContent = `맞음 ${r.ok.length} · 벗어남 ${r.miss.length}${r.unknown.length ? " · 자료 없음 " + r.unknown.length : ""}`;
+        const body = fitSum.querySelector("[data-fit-body]");
+        body.replaceChildren();
+        [["ok", "맞는 점", "✓"], ["miss", "벗어난 점", "−"], ["unknown", "자료 없음 (맞다고 세지 않아요)", "?"]].forEach(([key, title, mark]) => {
+          if (!r[key].length) return;
+          body.append(el("p", "pf-h", title));
+          const ul = el("ul", "pf-" + key);
+          r[key].forEach(x => ul.append(el("li", "", `${mark} ${x.label} · ${x.detail}`)));
+          body.append(ul);
+        });
+        if (r.skipped && r.skipped.length) body.append(el("p", "pf-note", "학원가·학군·병원 조건은 지역 전체 순위가 필요해 여기서는 판정하지 않았어요. 조건으로 찾기 결과에서 확인해 주세요."));
+        body.append(el("p", "pf-note", "조건과 단지의 실제 값을 견준 것이고, 어느 집이 낫다는 판단은 아니에요."));
+        const a = el("a", "pf-edit", "조건 바꾸기"); a.href = ROOT + "finder.html"; body.append(a);
+        fitSum.hidden = false; fitSum.classList.remove("hold");
       }).catch(() => {});
       // 상세 위쪽 '비교': 담아 둔 관심 단지가 있으면 이 단지와 함께 (최대 4곳, 이 지역 것만), 없으면 이 단지 하나로 시작
       const cmpHere = document.querySelector("[data-compare-here]");

@@ -1636,3 +1636,35 @@ def test_home_list_follows_map_and_intro_skips_for_people_with_own_records():
     assert '"project:"' in h and '"visitlog:"' in h and '"favs"' in h and '"[]"' in h
     assert "&&!own()&&" in home and 'location.replace("intro.html")' in home and 'sessionStorage.getItem("dj-intro")' in home
 
+
+def test_detail_fit_summary_reuses_djfit_and_index_calc_is_an_accordion():
+    """4-B1: 상세의 '내 조건과 견줘 보기'는 가격판 바로 뒤에 숨은 채로 있다가, 저장된 조건이 있을 때만 app.js 가 DJFit.evaluate 결과로 채워 보인다
+    (새 판정 로직 없음, 자료 없음은 따로, 평가·추천 문구 없음). 지수 계산 구역은 접는 상자 안에 있고 해시로 들어오면 펼쳐진다"""
+    from pathlib import Path
+    apt = (ROOT_DIR / "templates" / "apt.html").read_text(encoding="utf-8")
+    app = (ROOT_DIR / "static" / "app.js").read_text(encoding="utf-8")
+    assert apt.index('class="pb"') < apt.index("data-fit-sum") < apt.index('id="catalog"') and apt.count('<details class="pf" data-fit-sum') == 1
+    assert '<details class="pf" data-fit-sum hidden>' in apt
+    g = app[app.index('const fitSum = document.querySelector("[data-fit-sum]")'):]
+    g = g[:g.index("상세 위쪽 '비교'")]
+    assert "DJFit.hasConditions(s)" in g and "DJFit.evaluate(s, full," in g and "자료 없음 (맞다고 세지 않아요)" in g
+    assert "추천" not in g and "합격" not in g and "불합격" not in g
+    calc = apt[apt.index('id="index-calc"'):]
+    calc = calc[:calc.index("</section>")]
+    assert '<details class="acc" data-acc>' in calc and "charts.hist" in calc and "charts.components" in calc
+    assert 'details[data-acc]' in app and 'hashchange' in app
+    assert ".pf[hidden] { display: none; }" in (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+
+
+def test_detail_fit_slots_are_reserved_before_data_arrives():
+    """4-B1: 저장된 조건·예산이 있으면 요약 줄과 예산 줄 자리를 그리는 즉시 잡아 둬, 데이터가 늦게 와도 아래 내용이 밀리지 않는다(화면 흔들림 방지).
+    채우기·다시 숨기기는 app.js 에서 한다(결과가 없으면 hold 를 풀고 숨김)"""
+    apt = (ROOT_DIR / "templates" / "apt.html").read_text(encoding="utf-8")
+    app = (ROOT_DIR / "static" / "app.js").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    i = apt.index("data-fit-sum"); s = apt[i:i + 1500]
+    assert 'classList.add("hold")' in s and "djdex@" in s and "survey" in s
+    assert "c.small" in s and "c.price_ref is not nan" in s       # 소규모·추정 없는 단지는 자리를 잡지 않음(잡았다 비우면 오히려 흔들림)
+    assert 'fitSum.classList.remove("hold")' in app and 'fitLine.classList.remove("hold")' in app
+    assert ".pb-fit.hold { min-height: 66px; }" in css and ".pf.hold { min-height: 62px; }" in css
+
