@@ -1592,7 +1592,11 @@
     if (pj && v) {
       v.querySelector("[data-gv-k]").textContent = "이어하기";
       const h = v.querySelector("[data-gv-h]"); h.replaceChildren("하던 집 찾기,", el("br"), "이어서 볼까요?");
-      v.querySelector("[data-gv-desc]").textContent = `${pj.name} · 후보 ${pj.slugs.length}곳`;
+      // 실제 기록으로 확인되는 것만: 후보 수, 이 프로젝트 후보 중 방문 기록이 있는 단지 수. 다음 행동은 그 숫자에서만 정함(비교 여부는 기록이 없어 말하지 않음)
+      const n = pj.slugs.length, region = document.body.dataset.region;
+      const went = window.DJVisitLog ? new Set(DJVisitLog.list({ region, projectId: pj.id }).map(x => x.slug).filter(x => pj.slugs.includes(x))).size : 0;
+      const next = n < 2 ? "다음: 후보 더 담기" : went === 0 ? "다음: 비교하거나 가 볼 순서 정하기" : went < n ? `다음: 안 가 본 후보 ${n - went}곳 둘러보기` : "다음: 기록을 보며 다시 비교";
+      v.querySelector("[data-gv-desc]").replaceChildren(el("span", "", `${pj.name} · 후보 ${n}곳${went ? ` · 다녀온 ${went}곳` : ""}`), el("br"), el("span", "gv-next", next));
       v.classList.add("gate-live");   // 휴대폰에서도 어떤 프로젝트인지 보이게
       box.querySelector(".gate-main")?.classList.remove("gate-main"); v.classList.add("gate-main");   // 다시 온 사람의 주 행동은 '이어서 하기'
       v.querySelector("[data-gv-label]").textContent = "이어서 하기";
