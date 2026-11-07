@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱을 켤 때 사이트가 뜨기 전 잠깐 보이는 바탕을 흰 화면이 아니라 사이트 바탕색으로 (번쩍임 방지) -->
+    <style name="AppLaunch" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/pageBg</item>
+        <item name="android:statusBarColor">@color/pageBg</item>
+        <item name="android:navigationBarColor">@color/navigationBar</item>
+    </style>
+</resources>

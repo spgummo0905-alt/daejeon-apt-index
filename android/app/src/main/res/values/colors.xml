@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#13294B</color>
-    <color name="colorPrimary">#182848</color>
-    <color name="colorPrimaryDark">#182848</color>
+    <!-- 상태바·하단 시스템바: 사이트 화면 바탕(밝게 #F4F3EF / 어둡게 #111110)과 하단 탭 색에 맞춤 -->
+    <color name="colorPrimary">#F4F3EF</color>
+    <color name="colorPrimaryDark">#F4F3EF</color>
     <color name="navigationBar">#FFFFFF</color>
+    <color name="pageBg">#F4F3EF</color>
 </resources>
