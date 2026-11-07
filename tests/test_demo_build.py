@@ -1324,7 +1324,9 @@ def test_mobile_text_wrap_rules_stay(tmp_path):
     assert "p, li, dd, summary, figcaption { text-wrap: pretty; }" in tail
     assert "text-wrap: balance" in tail and ".sv-delta" in tail and ".sv-count .sv-rg { display: none; }" in tail
     assert ".sv-delta { grid-column: 1 / -1; grid-row: 2;" in tail and ".sv-count-box { display: contents; }" in tail   # 안내문은 제목 아래 한 줄
-    assert ".ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }" in tail
+    assert ".ls em, .pt-v, .loc-pct { white-space: nowrap; }" in tail
+    # .ki-note(단지 정보 칸의 긴 안내)는 줄바꿈을 허용: nowrap 이면 휴대폰에서 칸 밖으로 밀려 화면 전체가 옆으로 움직였다(Android 앱 UX)
+    assert ".ki-note { white-space: normal; overflow-wrap: anywhere; }" in tail
     js = (root / "static" / "finder.js").read_text(encoding="utf-8")
     assert "조건을 고를수록 좁혀집니다" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로
 

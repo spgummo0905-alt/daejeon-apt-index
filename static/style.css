@@ -49,7 +49,11 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 .nw { white-space: nowrap; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth;
+  touch-action: manipulation;                 /* 빠르게 두 번 눌러 확대되는 것만 막음: 두 손가락 확대(접근성)와 스크롤은 그대로 */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;   /* 가로로 돌릴 때 글자가 제멋대로 커지는 것 방지(시스템 글자 크기 설정은 따름) */
+  -webkit-tap-highlight-color: transparent; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; background: var(--bg); color: var(--text);
   font: 15.5px/1.7 "Pretendard Variable", "Noto Sans KR", sans-serif;
   word-break: keep-all; }
@@ -665,7 +669,9 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; z-index: 50; left: 0; right: 0; bottom: 0;
     background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--border); padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); }
-  .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); margin: 0; padding: 4px 0; }
+  .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; color: var(--muted); margin: 0; padding: 4px 0; min-height: 48px; }
+  .kb-open .tabbar { display: none; }   /* 키보드가 올라오면 입력칸을 가리지 않게 (static/shell.js 가 kb-open 을 붙임) */
+  .kb-open body { padding-bottom: 0; }
   .tabbar .ic { width: 23px; height: 23px; }
   .tabbar a.on { color: var(--navy); font-weight: 700; }
   .hero-main h1 { font-size: 31px; }
@@ -1761,9 +1767,10 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pc-how { margin-top: 12px; font-size: 13px; }
 .pc-how summary { cursor: pointer; color: var(--text-2); font-weight: 600; }
 .pc-how p { margin: 8px 0 0; line-height: 1.6; }
-.pc-tables { display: grid; gap: 20px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.pc-tables { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.pc-tables > .pc-sec { min-width: 0; }   /* 표가 넓어도 칸이 늘어나 화면을 옆으로 밀지 않게 (표는 .table-wrap 안에서 옆으로 넘김) */
 /* 넓은 화면: 지역과 비교 표와 연도별 거래량을 나란히 (하나만 있으면 한 줄 전체) */
-@media (min-width: 900px) { .pc-tables { grid-template-columns: 1fr 1fr; gap: 20px 32px; align-items: start; }
+@media (min-width: 900px) { .pc-tables { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; align-items: start; }
   .pc-tables .pc-sec:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 .pc-sec h3.sub { margin: 0 0 8px; font-size: 15px; }
 .pc-sec h3.sub .muted { font-size: 12px; font-weight: 500; }
@@ -4374,7 +4381,8 @@ h1, h2, h3, h4, .lead, .sv-qt, .sv-qs, .sv-delta, .roof-strip-t, .pt-s, .loc-raw
 p.muted { text-wrap: balance; }
 
 /* 숫자 칸 안의 짧은 말은 단어 중간이 아니라 칸 전체가 한 덩어리로 (잘리지 않게 칸 폭이 모자라면 글자 크기가 아니라 줄임표 없이 아래 줄로 통째로) */
-.ls em, .pt-v, .ki-note, .loc-pct { white-space: nowrap; }
+.ls em, .pt-v, .loc-pct { white-space: nowrap; }
+.ki-note { white-space: normal; overflow-wrap: anywhere; }   /* 긴 안내(관리비·주차 등)는 줄바꿈: nowrap 이면 휴대폰에서 칸 밖으로 밀려 화면 전체가 옆으로 움직였음 */
 .pt-v { font-size: clamp(17px, 5.4vw, 21px); }
 .prose table td, .prose table th { text-wrap: balance; }
 .prose table td:first-child { min-width: 10.5em; }

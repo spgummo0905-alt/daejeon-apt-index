@@ -31,7 +31,10 @@
 <link rel="icon" href="{{ root }}static/brand/favicon-96.png" type="image/png" sizes="96x96">
 <link rel="manifest" href="{{ root }}manifest.webmanifest">
 <link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
-<meta name="theme-color" content="#0f1b33">
+<meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)">
+{# 하단 탭 4곳은 눌러 보기 전에 미리 받아 둠(받기만 하고 실행은 안 함). 지원 안 하는 브라우저는 그냥 무시 #}
+<script type="speculationrules">{"prefetch":[{"urls":["{{ root }}index.html","{{ root }}finder.html","{{ root }}projects.html","{{ root }}rank.html","{{ root }}my.html"],"eagerness":"moderate"}]}</script>
 <meta name="apple-mobile-web-app-title" content="집감">
 {# 글꼴은 외부(CDN) 조각 14개 대신 우리 파일 두 개: 쓰는 글자(A)는 바로, 나머지 흔한 한글(B)은 필요할 때만 (scripts/build_font.py) #}
 <link rel="preload" as="font" type="font/woff2" href="{{ root }}static/fonts/pv-a.woff2" crossorigin>
@@ -218,6 +221,7 @@
 <script>window.DJ_ROOT = "{{ root }}";</script>
 <script src="{{ root }}static/records.js?v={{ v }}"></script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>
+<script src="{{ root }}static/shell.js?v={{ v }}" defer></script>
 {% if account %}<script>window.DJ_SB = {{ {"url": account.url, "key": account.key, "provider": account.provider or "kakao"} | tojson }};</script>
 <script src="{{ root }}static/sync.js?v={{ v }}"></script>
 <script src="{{ root }}static/rooftop-net.js?v={{ v }}"></script><script src="{{ root }}static/online.js?v={{ v }}"></script>{% endif %}
