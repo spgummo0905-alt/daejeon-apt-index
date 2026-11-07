@@ -214,6 +214,7 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 
 /* 단지 페이지 */
 .crumb { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.crumb a { display: inline-block; padding: 14px 0; margin: -14px 0; }   /* 글자 크기는 그대로, 누르는 범위만 위아래로 넓힘(44px) */
 /* 단지 페이지 맨 위: 왼쪽 경로, 오른쪽 관심·공유 아이콘 */
 .apt-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; margin-top: 8px; }
 .apt-topbar .crumb { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2799,22 +2800,22 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
 .cs-no { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px;
   color: #fff; background: #13294b; box-shadow: 0 0 0 2px #e8c66c; }
 .cs-t { display: flex; flex-direction: column; min-width: 0; }
-.cs-t a { font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-t a { font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 0; margin: -8px 0; }
 .cs-t .muted { font-size: 13px; }
-.cs-del { width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--chip); color: var(--text-2); font-size: 18px; line-height: 1; cursor: pointer; }
+.cs-del { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--chip); color: var(--text-2); font-size: 18px; line-height: 1; cursor: pointer; }
 .cs-check { margin-top: 10px; font-size: 14px; }
 .cs-check summary { cursor: pointer; color: var(--text-2); font-weight: 700; }
 .cs-cnt { margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; font-variant-numeric: tabular-nums; }
 .cs-cnt.done { background: #13795b; color: #fff; }
 .cs-check ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
-.cs-check label { display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; cursor: pointer; }
+.cs-check label { display: flex; gap: 8px; align-items: flex-start; min-height: 44px; padding: 8px 0; line-height: 1.45; cursor: pointer; }
 .cs-check input[type=checkbox] { margin-top: 3px; width: 17px; height: 17px; accent-color: #13294b; flex: none; }
 .cs-check label small { display: block; font-size: 13px; color: var(--muted); }
 .cs-check label.cs-mine > span { font-weight: 700; }
 .cs-been { margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--s3) 14%, var(--surface)); color: var(--text);
   font-size: 12px; font-weight: 700; }
 .cs-memo { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; resize: vertical; }
-.cs-leg, .cs-first { display: block; margin-top: 10px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+.cs-leg, .cs-first { display: flex; align-items: center; min-height: 44px; margin-top: 10px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
   background: var(--quad); color: var(--accent); }
 .cs-leg:hover, .cs-first:hover { text-decoration: none; filter: brightness(.97); }
 /* 첫 화면 '이어서' (다시 온 사람) */

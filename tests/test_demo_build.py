@@ -1721,3 +1721,14 @@ def test_late_script_and_data_arrival_no_longer_moves_the_page_on_production_lik
     assert 'classList.add("pj-wait")' in proj and "pj-wait" in pj and ".pj-wait .pj-layout { min-height: 720px; }" in css
     assert "@media (min-width: 901px) { .pj-wait .pj-layout" in css
 
+
+def test_course_and_crumb_tap_targets_reach_44px_without_changing_text_size():
+    """4-C2: 임장 코스의 코스에서 빼기(×) 30→44px, 확인 목록 한 줄 44px, 첫 단지 길찾기 44px, 단지 목록 위치 링크의 누르는 범위 44px.
+    글자 크기는 그대로(누르는 범위만 넓힘). 모바일 390px 실측에서 작은 대상 수가 줄었음을 확인한 변경"""
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert ".cs-del { width: 44px; height: 44px;" in css
+    assert ".cs-check label { display: flex; gap: 8px; align-items: flex-start; min-height: 44px;" in css
+    assert ".cs-leg, .cs-first { display: flex; align-items: center; min-height: 44px;" in css
+    assert ".crumb a { display: inline-block; padding: 14px 0; margin: -14px 0; }" in css
+    assert ".cs-t a { font-weight: 800;" in css and "padding: 8px 0; margin: -8px 0; }" in css
+
