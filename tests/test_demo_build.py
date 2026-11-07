@@ -610,7 +610,7 @@ def test_convenience_course_everywhere_and_shortcuts(tmp_path):
     apt = next(p for p in (out / "apt").glob("*.html") if "data-course-add" in p.read_text(encoding="utf-8")).read_text(encoding="utf-8")
     assert 'aria-label="임장 코스에 넣기"' in apt
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert "data-my-jump" in my and 'href="#course"' in my and 'id="recent-sec"' in my
+    assert "data-my-seg" in my and 'data-mg-btn="visit"' in my and 'id="course"' in my and 'id="recent-sec"' in my   # 세 칸 탭(내 후보·임장·최근·설정)
     assert "fav-rail" in (out / "static" / "my.js").read_text(encoding="utf-8")
     assert "data-resume" in (out / "index.html").read_text(encoding="utf-8")
 
@@ -1741,7 +1741,7 @@ def test_my_screen_folds_intro_and_storage_note_but_keeps_the_login_aware_note_h
     my = (ROOT_DIR / "templates" / "my.html").read_text(encoding="utf-8")
     i = my.index('<details class="hero-note">'); box = my[i:my.index("</details>", i)]
     assert "data-storage-summary" in box and "후보를 모아 비교하고" in box          # 안내는 지우지 않고 접어 둠
-    assert my.count("data-storage-summary") == 1 and my.index("hero-note") < my.index("data-my-jump")
+    assert my.count("data-storage-summary") == 1 and my.index("hero-note") < my.index("data-my-seg")
 
 
 def test_finder_count_hint_line_reserves_its_text_height_so_results_do_not_shift():

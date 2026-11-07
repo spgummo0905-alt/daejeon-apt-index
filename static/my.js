@@ -1,4 +1,32 @@
 (function () {
+  // 세 칸 탭: 저장 자료는 건드리지 않고 칸마다 보이기/가리기만 한다. 스크립트가 없으면 전부 보임.
+  const seg = document.querySelector("[data-my-seg]");
+  if (!seg) return;
+  const KEY = "my-seg", GROUPS = ["favs", "visit", "more"];
+  const secs = Array.from(document.querySelectorAll("[data-mg]"));
+  const groupOf = id => { const e = id && document.getElementById(id); const s = e && e.closest("[data-mg]"); return s ? s.dataset.mg : null; };
+  function show(g) {
+    if (!GROUPS.includes(g)) g = "favs";
+    secs.forEach(e => e.classList.toggle("mg-off", e.dataset.mg !== g));
+    seg.querySelectorAll("[data-mg-btn]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mgBtn === g)));
+    try { sessionStorage.setItem(KEY, g); } catch (e) {}
+  }
+  DJ.myShow = show;
+  function fromHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const g = groupOf(id);
+    if (!g) return false;
+    show(g);
+    const e = document.getElementById(id); if (e && e.tagName === "DETAILS") e.open = true;
+    if (e) e.scrollIntoView({ block: "start" });
+    return true;
+  }
+  seg.addEventListener("click", ev => { const b = ev.target.closest("[data-mg-btn]"); if (b) { show(b.dataset.mgBtn); scrollTo(0, 0); } });
+  addEventListener("hashchange", fromHash);
+  let saved = null; try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+  if (!fromHash()) show(saved);
+})();
+(function () {
   const { el } = DJ;
   DJ.data().then(d => {
     // 카드첩으로 가는 카드: 모은 카드·받은 배지 수
@@ -140,6 +168,17 @@
     const nt = document.querySelector("[data-notes]"), na = document.querySelector("[data-mj-notes]");
     if (nt && na) { na.hidden = nt.hidden; mj("notes", nt.querySelectorAll("[data-notes-list] > li").length); }
     if (favs.length > 1) favBox.classList.add("fav-rail");   // 휴대폰은 옆으로 넘기기
+    // 다음 행동 한 줄 (새 저장 없음: 지금 있는 관심·코스 수만 보고 안내)
+    const nx = document.querySelector("[data-my-next]");
+    if (nx) {
+      const stops = DJ.courseStops(d).stops.length;
+      let msg, label, act;
+      if (!favs.length) { msg = "아직 담은 단지가 없어요"; label = "조건으로 단지 찾기"; act = () => { location.href = (window.DJ_ROOT || "") + "finder.html"; }; }
+      else if (!stops) { msg = `관심 단지 ${favs.length}곳`; label = "임장 코스 만들기"; act = () => { DJ.myShow && DJ.myShow("visit"); scrollTo(0, 0); }; }
+      else { msg = `임장 코스 ${stops}곳이 있어요`; label = "코스 보기"; act = () => { DJ.myShow && DJ.myShow("visit"); scrollTo(0, 0); }; }
+      const b = el("button", "btn primary", label); b.type = "button"; b.addEventListener("click", act);
+      nx.replaceChildren(el("span", "my-next-t", msg), b); nx.hidden = false;
+    }
   });
 
   // 다녀온 단지 나란히 비교: 임장 노트를 단지끼리 한 표로 (체크·확인 못 한 것·들은 호가와 시세 차이·메모·사진).
