@@ -525,7 +525,7 @@
     document.querySelector("[data-sv-wait]").hidden = !idle;
     document.querySelector("#results .seg").hidden = idle;
     if (idle) {   // 조건을 고르기 전엔 단지를 늘어놓지 않아요
-      list = []; shown = 0;
+      list = []; shown = 0; peek();
       document.querySelector("[data-sv-res-n]").textContent = "";
       document.querySelector("[data-sv-tags]").replaceChildren();
       gridBox.replaceChildren();
@@ -542,6 +542,23 @@
     shown = 0;
     page();
     if (!list.length) gridBox.append(relax());
+    peek();
+  }
+  // 질문 바로 위 '바로 보기' 줄: 조건을 바꿀 때마다 지금 맨 위 후보 3곳이 바뀐다 (결과 목록과 같은 계산, 새 저장 없음)
+  function peek() {
+    const pk = box.querySelector("[data-sv-peek]");
+    if (!pk) return;
+    if (!narrowed()) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "조건을 고르면 맞는 단지가 여기에 바로 보여요")); return; }
+    if (!list.length) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "맞는 단지가 없어요. 조건을 하나 풀어 보세요")); return; }
+    pk.className = "sv-peek";
+    const row = el("div", "sv-peek-row");
+    list.slice(0, 3).forEach(({ c, f }) => {
+      const a = el("a", "sv-peek-card"); a.href = DJ.href(c);
+      a.append(el("b", "", c.n), el("span", "", f.length ? `${f[0][0]}평 ${eok(f[0][1])}` : (DJ.place(c) || "")));
+      row.append(a);
+    });
+    if (list.length > 3) { const m = el("a", "sv-peek-card more", `${(list.length - 3).toLocaleString()}곳 더`); m.href = "#results"; row.append(m); }
+    pk.replaceChildren(row);
   }
   // 결과가 없을 때: 어떤 조건을 빼면 몇 곳이 되는지 보여주고 바로 뺄 수 있게
   function relax() {
