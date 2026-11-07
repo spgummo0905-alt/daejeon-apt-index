@@ -325,7 +325,7 @@ function drawTower() {
     const vy = y - Dy / 2 + hh / 2 + 4;
     if ((sel || x.f === 1 || x.f === top || x.f % 5 === 0) && hh >= 9 && Math.abs(vy - lastY) >= 13) { g += '<text class="tw-val" x="' + (L + W + Dx + 6) + '" y="' + vy + '">' + C.durText(x.min) + '</text>'; lastY = vy; }
   });
-  const svg = '<svg class="tw-svg" viewBox="0 0 ' + (L + W + Dx + R) + ' ' + (base + 18) + '" role="img" aria-label="' + esc(C.label(b)) + ' ' + top + '층 건물의 층별 직사광 시간(' + dn.name + ' 기준, 추정). 밝은 노랑일수록 오래 닿고 어두운 남색일수록 짧게 닿아요.">' +
+  const svg = '<svg class="tw-svg" viewBox="0 0 ' + (L + W + Dx + R) + ' ' + (base + 18) + '" role="group" aria-label="' + esc(C.label(b)) + ' ' + top + '층 건물의 층별 직사광 시간(' + dn.name + ' 기준, 추정). 밝은 노랑일수록 오래 닿고 어두운 남색일수록 짧게 닿아요.">' +
     '<ellipse cx="' + (L + (W + Dx) / 2) + '" cy="' + (base + 6) + '" rx="' + ((W + Dx) / 1.6) + '" ry="8" class="tw-shadow"/>' + g +
     '<polygon class="tw-roof" points="' + L + ',' + y0 + ' ' + (L + W) + ',' + y0 + ' ' + (L + W + Dx) + ',' + (y0 - Dy) + ' ' + (L + Dx) + ',' + (y0 - Dy) + '"/></svg>';
   const best = fl.reduce((a, x) => (x.min > a.min ? x : a), fl[0]), worst = fl.reduce((a, x) => (x.min < a.min ? x : a), fl[0]);
