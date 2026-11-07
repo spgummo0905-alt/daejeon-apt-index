@@ -1706,3 +1706,18 @@ def test_project_store_keeps_unknown_fields_but_never_lets_them_override_known_o
     assert "const KNOWN = new Set(" in store and "...extra, version: 1" in store            # 모르는 칸을 먼저 펼치고 알려진 칸이 뒤에서 덮음
     assert "version: 2" not in store and "slice(0, 20)" in store and "String(v).length <= 400" in store
 
+
+def test_late_script_and_data_arrival_no_longer_moves_the_page_on_production_like_networks():
+    """4-C1b: 운영에서 재 보니 #279 후에도 홈 1280(0.079)과 프로젝트(0.045)가 흔들렸다. 데모는 스크립트·단지 자료가 빨리 와서 0이었던 것.
+    원인: app.js 와 complexes.json 이 첫 그림 뒤에 도착하면 (홈) 입구 카드가 '이어서 하기'로 바뀌며 높이가 줄고, (프로젝트) 편집 영역이 나타나며 바닥글이 밀려남.
+    고침: 저장된 기록만으로 정해지는 입구 카드 상태를 문서에서 바로 맞추고, 프로젝트는 자료 대기 동안 자리를 미리 잡는다. 지연을 건 시험(900ms)에서 홈·프로젝트 모두 0.001 이하"""
+    home = (ROOT_DIR / "templates" / "index.html").read_text(encoding="utf-8")
+    proj = (ROOT_DIR / "templates" / "projects.html").read_text(encoding="utf-8")
+    pj = (ROOT_DIR / "static" / "projects.js").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    i = home.index("data-gv-btn"); s = home[i:i + 2600]
+    assert "<script>try{var a=JSON.parse" in s and 'classList.add("gate-live")' in s and '"gate"+"-main"' in s      # 문서 안에서 바로 맞춤
+    assert "p.version===1" in s and "!p.archived" in s and "p.slugs.length" in s                       # app.js 의 activeProject 와 같은 기준
+    assert 'classList.add("pj-wait")' in proj and "pj-wait" in pj and ".pj-wait .pj-layout { min-height: 720px; }" in css
+    assert "@media (min-width: 901px) { .pj-wait .pj-layout" in css
+
