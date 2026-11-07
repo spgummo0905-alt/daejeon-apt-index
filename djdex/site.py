@@ -322,6 +322,27 @@ def _account(cfg) -> dict | None:
     return dict(acc, url=url, key=key)
 
 
+def _preview_setup(cfg, out_dir: Path, demo: bool = False, src_root: Path | None = None) -> set[str]:
+    """일조 미리보기: data/preview/<지역 폴더>/<단지>.json (scripts/preview_build.py 가 만든 A·B 등급 단지) 을 사이트에 싣고,
+    열린 단지 목록(preview/list.json)을 만듭니다. 자료가 없는 지역·데모에서는 아무것도 하지 않습니다. 반환: 열린 단지 slug 집합"""
+    import json
+    folder = urlparse(cfg.site.get("base_url", "")).path.strip("/").split("/")[-1]
+    src = (src_root or ROOT / "data" / "preview") / folder
+    if (demo and not os.environ.get("DJ_PREVIEW_DEMO")) or not folder or not src.is_dir():   # DJ_PREVIEW_DEMO=1: 데모 사이트에서도 화면을 열어 보기 위한 시험용 스위치
+        return set()
+    dst = out_dir / "preview"
+    dst.mkdir(parents=True, exist_ok=True)
+    items = []
+    for f in sorted(src.glob("*.json")):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        m = doc["m"]
+        shutil.copyfile(f, dst / f.name)
+        items.append({"s": m["id"], "n": m.get("name", ""), "gu": m.get("gu", ""), "d": m.get("dong", "")})
+    items.sort(key=lambda x: (x["gu"], x["d"], x["n"]))
+    (dst / "list.json").write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return {x["s"] for x in items}
+
+
 def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: dict,
           cfg, out_dir: Path, demo: bool = False, kakao_js_key: str | None = None,
           geo: dict | None = None, macro: dict | None = None, rents: pd.DataFrame | None = None,
@@ -559,6 +580,10 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             env.get_template(f"{name}.html").render(root="", page_path=f"{name}.html", finder_cfg=finder_cfg,
                                                        finder=cfg.raw.get("finder", {}), **common),
             encoding="utf-8")
+    preview_ok = _preview_setup(cfg, out_dir, demo)
+    if preview_ok:
+        (out_dir / "preview.html").write_text(
+            env.get_template("preview.html").render(root="", page_path="preview.html", **common), encoding="utf-8")
     if _transit(cfg)["page"]:
         (out_dir / "stations.html").write_text(env.get_template("stations.html").render(
             root="", page_path="stations.html", stations=station_groups(rows), radius=STATION_RADIUS, **common), encoding="utf-8")
@@ -651,7 +676,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             loc_sets=loc_sets, neighbors=neighbors,
             points=_points(c, gu_med, factors, cfg.region_name, leader_by_gu.get(c["gu"])),
             n_total=n_total, badges=_card_badges(c), gems=GEMS.get(c["grade"], 1),
-            hill=hill_view(c), noise=noise_view(c), **common)
+            hill=hill_view(c), noise=noise_view(c), preview_ok=c['slug'] in preview_ok, **common)
         (out_dir / "apt" / f"{c['slug']}.html").write_text(html, encoding="utf-8")
     # 빌드 로그: 평형별 시세에 전세·월세가 붙은 단지 (전체 반영률, 거래 기준)
     tot = sum(r.get("n_trades") or 0 for r in rows) or 1

@@ -1882,6 +1882,11 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pj-entry > span:first-child { display: grid; gap: 5px; }
 .pj-entry b { font-size: 18px; }
 .pj-entry span span { font-size: 14px; color: var(--muted); }
+/* 단지 상세 위쪽의 '일조 미리보기' 링크 카드 (건물 자료가 갖춰진 단지에만 보임) */
+.pv-link { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 14px 16px; min-height: 56px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); text-decoration: none; }
+.pv-link .ic { width: 24px; height: 24px; flex: none; color: var(--gold); }
+.pv-link > span { display: grid; gap: 2px; font-weight: 800; font-size: 18px; }
+.pv-link small { font-weight: 500; font-size: 14px; color: var(--muted); line-height: 1.45; }
 .pj-create form, .pj-editor form { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
 .pj-create > summary { cursor: pointer; display: list-item; }
 .pj-create > summary b { font-size: 18px; }
