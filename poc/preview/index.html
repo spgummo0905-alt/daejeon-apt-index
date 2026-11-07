@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>집감 미리보기 (시제품) | 가보기 전에, 먼저 살펴보세요</title>
+<style>
+:root{
+  --bg:#eff2f5; --surface:#fff; --ink:#15212c; --muted:#46535f; --line:#c9d2db;
+  --accent:#17508f; --accent-ink:#fff; --sun:#f5b21a; --shade:#44566a; --warn:#b45309;
+  --r:10px; --tap:48px;
+  font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:18px;line-height:1.55;overflow-wrap:anywhere;word-break:keep-all}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #0b5fd1;outline-offset:2px}
+.band{background:var(--ink);color:#ffd36b;font-weight:800;font-size:19px;line-height:1.4;text-align:center;padding:12px 16px;
+  border-bottom:6px solid var(--sun)}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 56px}
+h1{font-size:28px;line-height:1.25;margin:4px 0 4px;letter-spacing:-.01em}
+.sub{margin:0 0 18px;color:var(--muted);font-size:19px}
+h2{font-size:21px;line-height:1.3;margin:0 0 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:0 0 14px}
+.lab{display:block;font-weight:800;margin:0 0 8px}
+.lab small{font-weight:500;color:var(--muted);font-size:16px}
+.chips{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+.chips.wide{grid-template-columns:1fr}
+.chip{white-space:nowrap;min-height:var(--tap);padding:8px 10px;border:2px solid var(--line);background:#fff;border-radius:var(--r);cursor:pointer;
+  font-weight:700;text-align:center;line-height:1.25;touch-action:manipulation}
+.chip small{white-space:normal;display:block;font-weight:500;font-size:15px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"] small{color:#dbe7f5}
+.chip[aria-pressed="true"]::before{content:"\2713\00a0"}
+.chip:hover{border-color:var(--accent)}
+.row{display:flex;gap:8px;align-items:center}
+.stepbtn{flex:0 0 56px;height:56px;border:2px solid var(--line);border-radius:var(--r);background:#fff;font-size:26px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.stepbtn:hover{border-color:var(--accent)}
+input[type=range]{flex:1;min-width:0;height:56px;margin:0;accent-color:var(--accent);background:transparent}
+.val{font-weight:800}
+.hint{color:var(--muted);font-size:16px;margin:6px 0 0}
+.result{border:2px solid var(--ink)}
+.result .big{font-size:34px;line-height:1.2;font-weight:900;margin:2px 0 2px;letter-spacing:-.01em}
+.result .kicker{font-weight:700;margin:0}
+.result .warnline{margin:10px 0 0;padding:10px 12px;background:#fff6dc;border-left:6px solid var(--sun);font-size:17px}
+ul.plain{margin:6px 0 0;padding-left:1.15em}
+ul.plain li{margin:4px 0}
+.nowrap{white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:17px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:16px;color:var(--muted);font-weight:700}
+tr.cur td{background:#e8f0fa;font-weight:700}
+td small{white-space:nowrap;font-weight:500;color:var(--muted)}
+.planbox{padding:12px}
+.plan{display:block;width:100%;aspect-ratio:1/1;background:#fafbfc;border:1px solid var(--line);border-radius:var(--r);touch-action:manipulation}
+.plan text{font-family:inherit;paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}
+.plan text.on{stroke:none}
+.state{margin:10px 0 0;padding:10px 12px;border-radius:var(--r);border:2px solid var(--line);font-weight:800;font-size:19px}
+.state.sun{background:#fff3cf;border-color:var(--sun)}
+.state.shade{background:#e4e9ee;border-color:var(--shade)}
+.state.back,.state.night{background:#f4f5f6}
+.timebar{position:relative;margin:14px 0 0}
+.cells{display:flex;height:48px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;cursor:pointer}
+.cell{flex:1 1 0;min-width:0}
+.cell.sun{background:var(--sun)}
+.cell.shade{background:repeating-linear-gradient(135deg,#44566a 0 4px,#fff 4px 6px)}
+.cell.back{background:radial-gradient(circle,#7a8794 1.2px,transparent 1.6px) 0 0/6px 6px,#e6eaee}
+.cell.night{background:#f7f8f9}
+.marker{position:absolute;top:-6px;bottom:22px;width:0;border-left:3px solid #c1121f;pointer-events:none}
+.ticks{position:relative;height:24px;font-size:15px;color:var(--muted)}
+.ticks span{position:absolute;top:2px;transform:translateX(-50%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0 0;padding:0;list-style:none;font-size:16px}
+.legend li{display:flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:26px;height:18px;border:1.5px solid var(--ink);border-radius:3px;flex:none}
+.sw.sun{background:var(--sun)}
+.sw.shade{background:repeating-linear-gradient(135deg,#44566a 0 4px,#fff 4px 6px)}
+.sw.back{background:radial-gradient(circle,#7a8794 1.2px,transparent 1.6px) 0 0/6px 6px,#e6eaee}
+.sw.night{background:#f7f8f9}
+.sw.me{background:var(--accent)}
+.sw.front{background:#fbdcb8;border:2.5px solid var(--warn)}
+.sw.sh{background:repeating-linear-gradient(135deg,rgba(68,86,106,.75) 0 2px,rgba(68,86,106,.12) 2px 5px);border-style:solid}
+.sw.na{background:#e3e5e8;border-style:dashed;border-color:#6d7783}
+.btnrow{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;min-height:var(--tap);border:2px solid var(--line);background:#fff;border-radius:var(--r);font-weight:700;cursor:pointer;touch-action:manipulation;padding:6px 10px}
+.btn:hover{border-color:var(--accent)}
+.notes li{margin:6px 0}
+.notes strong{font-weight:800}
+.tag{display:inline-block;padding:0 8px;border-radius:6px;font-size:15px;font-weight:800;border:1.5px solid currentColor;white-space:nowrap}
+.tag.hub{color:#0b6b3a}.tag.vworld{color:#6a4a00}.tag.est{color:#9a2a00}.tag.none{color:#46535f}
+.field{background:#f3f8ee;border-color:#9bbf86}
+.foot{color:var(--muted);font-size:16px}
+.loading{padding:30px 16px;text-align:center;font-weight:700}
+@media (min-width:980px){
+  .layout{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px;align-items:start}
+  .col-plan{position:sticky;top:12px}
+  .plan{aspect-ratio:4/3}
+  h1{font-size:34px}
+}
+@media (min-width:600px) and (max-width:979px){ .plan{aspect-ratio:4/3} .chips{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))} }
+@media (prefers-reduced-motion:no-preference){ .chip,.btn,.stepbtn{transition:background-color .12s,border-color .12s,transform .08s} .chip:active,.btn:active,.stepbtn:active{transform:scale(.98)} }
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important;scroll-behavior:auto!important} }
+</style>
+</head>
+<body>
+<div class="band" role="note">시제품 · 일부 단지 · 참고용 · 정식 서비스 아님</div>
+<main class="wrap">
+  <h1>집감 미리보기</h1>
+  <p class="sub">가보기 전에, 먼저 살펴보세요. 앞 동이 햇빛을 가리는 시간대를 미리 계산해 봅니다.</p>
+
+  <div class="layout">
+    <div class="col-ctl">
+      <section class="card" aria-labelledby="l-cx">
+        <span class="lab" id="l-cx">1. 단지 <small>(시제품은 3곳만 있어요)</small></span>
+        <div class="chips wide" id="cx" role="group" aria-labelledby="l-cx"></div>
+      </section>
+      <section class="card" aria-labelledby="l-dong">
+        <span class="lab" id="l-dong">2. 동 <small>(지도에서 눌러도 돼요)</small></span>
+        <div class="chips" id="dong" role="group" aria-labelledby="l-dong"></div>
+      </section>
+      <section class="card" aria-labelledby="l-floor">
+        <label class="lab" id="l-floor" for="floor">3. 층 <span class="val" id="floorVal"></span></label>
+        <div class="row">
+          <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
+          <input id="floor" type="range" min="1" max="10" step="1" value="1">
+          <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
+        </div>
+        <p class="hint" id="floorHint"></p>
+      </section>
+      <section class="card" aria-labelledby="l-date">
+        <span class="lab" id="l-date">4. 날짜</span>
+        <div class="chips" id="date" role="group" aria-labelledby="l-date"></div>
+      </section>
+
+      <section class="card result" aria-labelledby="h-res" aria-live="polite" id="result"></section>
+      <section class="card" id="cmp" aria-labelledby="h-cmp"></section>
+    </div>
+
+    <div class="col-plan">
+      <section class="card planbox" aria-labelledby="h-plan">
+        <h2 id="h-plan">위에서 본 모습</h2>
+        <svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="state" id="state"></div>
+        <div style="margin-top:12px">
+          <label class="lab" for="time">시각 <span class="val" id="timeVal"></span></label>
+          <div class="row">
+            <button class="stepbtn" id="tdn" type="button" aria-label="15분 전으로">&lt;</button>
+            <input id="time" type="range" min="300" max="1185" step="15" value="750">
+            <button class="stepbtn" id="tup" type="button" aria-label="15분 뒤로">&gt;</button>
+          </div>
+        </div>
+        <div class="timebar" id="timebar">
+          <div class="cells" id="cells"></div><div class="marker" id="marker"></div>
+          <div class="ticks" id="ticks" aria-hidden="true"></div>
+        </div>
+        <ul class="legend" id="legend1"></ul>
+        <ul class="legend" id="legend2" style="margin-top:8px"></ul>
+        <div class="btnrow"><button class="btn" id="zoom" type="button" aria-pressed="false">넓게 보기</button></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card field" aria-labelledby="h-field" id="field"></section>
+  <section class="card" aria-labelledby="h-ev" id="evidence"></section>
+  <p class="foot" id="foot"></p>
+</main>
+
+<script src="../../static/shadow.js"></script>
+<script src="calc.js"></script>
+<script>
+(function () {
+'use strict';
+const S = window.DJShadow, C = window.PVCalc;
+const COMPLEXES = [
+  { id: '30200-631', short: '트리풀시티 5단지', where: '대전 유성구 상대동' },
+  { id: '36110-203', short: '첫마을 5단지', where: '세종 한솔동' },
+  { id: '36110-421', short: '나릿재마을 2단지', where: '세종 나성동' },
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const today = C.kstToday();
+const DATES = [
+  { key: 'dec', name: '동지', date: { year: today.year, month: 12, day: 21 } },
+  { key: 'jun', name: '하지', date: { year: today.year, month: 6, day: 21 } },
+  { key: 'today', name: '오늘', date: today },
+];
+const dtxt = d => d.month + '월 ' + d.day + '일';
+const NO_LABEL = { sun: '직사광이 닿을 가능성이 있음', shade: '앞 동에 가려짐', back: '해가 이 면의 반대쪽에 있어 닿지 않음', night: '해가 지평선 근처이거나 아래에 있음' };
+
+const st = { cid: COMPLEXES[0].id, tid: null, fl: 1, dk: 'dec', t: 750, wide: false };
+const cache = {};          // 단지 자료
+let ctx = null, sums = null, slots = null, view = null;
+
+// ---------- 자료 읽기 (file:// 에서도 되도록 <script> 로 읽음) ----------
+function loadComplex(id) {
+  return new Promise((res, rej) => {
+    if (cache[id]) return res(cache[id]);
+    window.PV_DATA = window.PV_DATA || {};
+    const sc = document.createElement('script');
+    sc.src = 'data/' + id + '.js';
+    sc.onload = () => { if (!window.PV_DATA[id]) return rej(new Error('자료 형식')); cache[id] = C.prepare(window.PV_DATA[id]); res(cache[id]); };
+    sc.onerror = () => rej(new Error('자료 파일'));
+    document.head.appendChild(sc);
+  });
+}
+
+// ---------- 계산 ----------
+function curDate() { return DATES.find(d => d.key === st.dk).date; }
+function recompute() {
+  sums = {}; slots = {};
+  for (const d of DATES) { const s = C.run(ctx, st.tid, st.fl, d.date); slots[d.key] = s; sums[d.key] = C.summarize(ctx, s); }
+}
+function tgt() { return ctx.byId[st.tid]; }
+function ownDongs() { return ctx.items.filter(b => b.k === 'own' && C.calcable(b)).sort((a, b) => (+C.dongNo(a.dn)) - (+C.dongNo(b.dn))); }
+
+function pickDefault() {
+  const own = ownDongs(); let best = null;
+  for (const b of own) {
+    const fl = Math.max(1, Math.round(b.f / 3));
+    const sm = C.summarize(ctx, C.run(ctx, b.id, fl, DATES[0].date));
+    if (sm.shadeMin > 0 && (!best || sm.shadeMin > best.s)) best = { b, fl, s: sm.shadeMin };
+  }
+  return best ? { tid: best.b.id, fl: best.fl } : { tid: own[0].id, fl: Math.max(1, Math.round(own[0].f / 3)) };
+}
+
+// ---------- 컨트롤 그리기 ----------
+function chipHTML(label, pressed, extra, data) {
+  return '<button type="button" class="chip" aria-pressed="' + pressed + '" ' + data + '>' + esc(label) + (extra ? '<small>' + esc(extra) + '</small>' : '') + '</button>';
+}
+function drawControls() {
+  $('cx').innerHTML = COMPLEXES.map(c => chipHTML(c.short, c.id === st.cid, c.where, 'data-cx="' + c.id + '"')).join('');
+  $('dong').innerHTML = ownDongs().map(b => chipHTML(C.dongNo(b.dn) + '동', b.id === st.tid, '', 'data-dong="' + b.id + '" aria-label="' + C.dongNo(b.dn) + '동, ' + b.f + '층 건물"')).join('');
+  $('date').innerHTML = DATES.map(d => chipHTML(d.name, d.key === st.dk, dtxt(d.date), 'data-date="' + d.key + '"')).join('');
+  drawFloor();
+}
+function drawFloor() {
+  const b = tgt(), el = $('floor');
+  el.max = b.f; el.min = 1; el.value = st.fl;
+  const fh = C.baseFh(ctx, b), z = (st.fl - 0.5) * fh;
+  $('floorVal').textContent = ': ' + st.fl + '층 (지상 약 ' + z.toFixed(1) + ' m)';
+  el.setAttribute('aria-valuetext', st.fl + '층, 지상 약 ' + z.toFixed(0) + '미터');
+  $('floorHint').textContent = C.label(b) + '은 지상 ' + b.f + '층 건물이에요. 한 층 높이는 약 ' + fh.toFixed(2) + ' m로 계산했어요.';
+}
+
+// ---------- 결과 ----------
+function rangeTxt(r) { return C.minToHM(r.start) + ' ~ ' + C.minToHM(r.end); }
+function blockersTxt(sm) {
+  return sm.blockers.length ? sm.blockers.map(b => b.label + ' (약 ' + C.durText(b.min) + ')').join(', ') : '';
+}
+function drawResult() {
+  const sm = sums[st.dk], d = DATES.find(x => x.key === st.dk), b = tgt();
+  const head = C.label(b) + ' ' + st.fl + '층 · ' + d.name + ' (' + dtxt(d.date) + ')';
+  let h = '<h2 id="h-res">' + esc(head) + '</h2>';
+  h += '<p class="kicker">이 조건에서 직사광이 닿을 가능성이 있는 시간대</p>';
+  h += '<p class="big">약 ' + C.durText(sm.sunMin) + ' <span style="font-size:20px;font-weight:700">(추정)</span></p>';
+  if (sm.sunRanges.length) h += '<p style="margin:2px 0 0">' + sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') + '</p>';
+  else h += '<p style="margin:2px 0 0">이 조건에서는 직사광이 닿는 시간대가 계산되지 않았어요.</p>';
+  h += '<ul class="plain">';
+  h += sm.shadeMin ? '<li><strong>앞 동에 가려지는 시간</strong> 약 ' + C.durText(sm.shadeMin) + (sm.shadeRanges.length ? ' (' + sm.shadeRanges.map(rangeTxt).join(', ') + ')' : '') + '</li>'
+                   : '<li><strong>앞 동에 가려지는 시간</strong>은 이 조건에서 계산되지 않았어요.</li>';
+  if (sm.blockers.length) h += '<li><strong>가리는 동</strong>: ' + sm.blockers.map(x => esc(x.label) + ' (약 ' + C.durText(x.min) + ', ' + C.SRC_LABEL[x.src] + ')').join(', ') + '</li>';
+  if (sm.backMin) h += '<li>해가 이 동 남쪽 면의 반대쪽에 있어 닿지 않는 시간 약 ' + C.durText(sm.backMin) + '</li>';
+  h += '</ul>';
+  h += '<p class="warnline">실내 채광이나 법적 일조권을 뜻하지 않는 참고용 추정이에요. 지형·나무·창 방향은 반영하지 않았어요.</p>';
+  $('result').innerHTML = h;
+
+  const rows = DATES.map(x => {
+    const s = sums[x.key];
+    return '<tr' + (x.key === st.dk ? ' class="cur" aria-current="true"' : '') + '><td>' + x.name + '<br><small>' + dtxt(x.date) + '</small></td><td>약 ' + C.durText(s.sunMin) + '</td><td>' +
+      (s.blockers.length ? s.blockers.slice(0, 3).map(y => esc(y.label)).join(', ') + (s.blockers.length > 3 ? ' 외 ' + (s.blockers.length - 3) + '동' : '') : '없음') + '</td></tr>';
+  }).join('');
+  $('cmp').innerHTML = '<h2 id="h-cmp">날짜별로 견주기</h2><table><thead><tr><th scope="col">날짜</th><th scope="col">직사광 가능 시간(추정)</th><th scope="col">가리는 동</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<p class="hint">같은 동·같은 층으로 계산한 값이에요. 15분 칸으로 세어서 15분 단위로만 나와요.</p>';
+}
+
+// ---------- 시간대 막대 ----------
+function drawBar() {
+  const sl = slots[st.dk], sm = sums[st.dk];
+  $('cells').innerHTML = sl.map(s => '<span class="cell ' + s.state + '"></span>').join('');
+  const n = sl.length;
+  $('ticks').innerHTML = [6, 9, 12, 15, 18].map(h => '<span style="left:' + ((h * 60 - C.START) / (C.END - C.START) * 100) + '%">' + h + '시</span>').join('');
+  $('legend1').innerHTML = '<li><span class="sw sun"></span>직사광 가능</li><li><span class="sw shade"></span>앞 동에 가림</li><li><span class="sw back"></span>해가 벽 반대편</li><li><span class="sw night"></span>해가 없음</li>';
+  const parts = ['시간대 막대 ' + C.minToHM(C.START) + '부터 ' + C.minToHM(C.END) + '까지, 15분 간격.'];
+  parts.push('직사광 가능 ' + (sm.sunRanges.length ? sm.sunRanges.map(rangeTxt).join(', ') : '없음') + '.');
+  parts.push('앞 동에 가림 ' + (sm.shadeRanges.length ? sm.shadeRanges.map(rangeTxt).join(', ') : '없음') + '.');
+  $('cells').setAttribute('role', 'img'); $('cells').setAttribute('aria-label', parts.join(' '));
+  drawMarker();
+}
+function drawMarker() {
+  const pos = (st.t - C.START + 7.5) / (C.END - C.START) * 100;
+  $('marker').style.left = pos + '%';
+}
+
+// ---------- 평면도 ----------
+const NS = 'http://www.w3.org/2000/svg';
+function polyPts(p) { return p.map(q => q[0].toFixed(1) + ',' + (-q[1]).toFixed(1)).join(' '); }
+function centroid(p) { let x = 0, y = 0; for (const q of p) { x += q[0]; y += q[1]; } return [x / p.length, y / p.length]; }
+function computeView(svg) {
+  const sm = sums[st.dk]; let pts = [];
+  const add = b => { for (const q of b.rect === b.poly ? b.poly : b.poly) pts.push(q); };
+  if (st.wide) { const R = 255; pts = [[-R, -R], [R, R]]; }
+  else {
+    for (const q of tgt().rect) pts.push(q);
+    for (const bl of sm.blockers.slice(0, 3)) add(ctx.byId[bl.id]);
+    if (pts.length < 6) pts.push([-40, -40], [40, 40]);
+  }
+  let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0])), y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+  const pad = st.wide ? 0 : 38; x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
+  const rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, asp = rw / rh;
+  let w = x1 - x0, h = y1 - y0; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const minW = 150; if (w < minW) w = minW; if (h < minW / asp) h = minW / asp;
+  if (w / h < asp) w = h * asp; else h = w / asp;
+  return { x: cx - w / 2, y: -(cy + h / 2), w, h, k: w / rw };   // y: SVG 좌표(북이 위 = -y)
+}
+function drawPlan() {
+  const svg = $('plan'), sm = sums[st.dk], slot = slots[st.dk][Math.round((st.t - C.START) / C.STEP)], d = curDate();
+  view = computeView(svg);
+  const k = view.k, fs = 14 * k;
+  const sun = { alt: slot.alt, az: slot.az, up: slot.alt > 1 };
+  const blockIds = new Set(sm.blockers.map(b => b.id)), nowIds = new Set(slot.state === 'shade' ? slot.by : []);
+  let s = '<title id="planTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층 주변의 위에서 본 평면도</title>';
+  s += '<desc id="planDesc">북쪽이 위쪽입니다. 파란 건물이 선택한 동이고, 주황 테두리 건물이 하루 중 햇빛을 가리는 앞 동입니다. 줄무늬 영역은 가리는 동이 선택한 시각에 만드는 그림자이고, 점선 회색 건물은 분석 자료가 없는 건물입니다.</desc>';
+  s += '<defs>' +
+    '<pattern id="pShadow" patternUnits="userSpaceOnUse" width="' + 7 * k + '" height="' + 7 * k + '" patternTransform="rotate(45)"><rect width="' + 7 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.16)"/><rect width="' + 2.2 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.62)"/></pattern>' +
+    '<pattern id="pNA" patternUnits="userSpaceOnUse" width="' + 6 * k + '" height="' + 6 * k + '"><rect width="' + 6 * k + '" height="' + 6 * k + '" fill="#e6e8eb"/><circle cx="' + 3 * k + '" cy="' + 3 * k + '" r="' + 0.9 * k + '" fill="#8b95a1"/></pattern>' +
+    '<pattern id="pFront" patternUnits="userSpaceOnUse" width="' + 8 * k + '" height="' + 8 * k + '" patternTransform="rotate(-45)"><rect width="' + 8 * k + '" height="' + 8 * k + '" fill="#fbdcb8"/><rect width="' + 2.4 * k + '" height="' + 8 * k + '" fill="#f1b172"/></pattern>' +
+    '</defs>';
+  // 그림자 (선택한 시각)
+  if (sun.up && sun.alt >= 1) {
+    for (const b of ctx.calc) {
+      if (!blockIds.has(b.id)) continue;                       // 가리는 동의 그림자만 그린다(그림이 너무 빽빽해지는 것을 막음)
+      const sp = S.shadowPoly({ poly: b.poly, h: b.h, f: b.f }, sun);
+      if (sp) s += '<polygon points="' + polyPts(sp) + '" fill="url(#pShadow)" opacity="' + (nowIds.has(b.id) ? 1 : .45) + '" stroke="none"/>';
+    }
+  }
+  // 건물: 자료 없음 -> 일반 -> 앞 동 -> 내 동 순서로 위에 쌓는다
+  const na = ctx.excluded, norm = ctx.calc.filter(b => b.id !== st.tid && !blockIds.has(b.id)), fronts = ctx.calc.filter(b => blockIds.has(b.id) && b.id !== st.tid);
+  for (const b of na) s += '<polygon points="' + polyPts(b.poly) + '" fill="url(#pNA)" stroke="#6d7783" stroke-width="' + 1.4 * k + '" stroke-dasharray="' + 4 * k + ' ' + 3 * k + '"><title>' + esc(C.label(b)) + ': 분석 자료 없음' + (b.st === 'unknown' ? ' (소속 불명)' : '') + '</title></polygon>';
+  for (const b of norm) s += '<polygon points="' + polyPts(b.poly) + '" fill="' + (b.k === 'own' ? '#c4d4e6' : '#dde3e9') + '" stroke="#6d7783" stroke-width="' + 1.1 * k + '" data-b="' + b.id + '"' + (b.k === 'own' ? ' style="cursor:pointer"' : '') + '><title>' + esc(C.label(b)) + ' ' + b.f + '층 · ' + (b.h ? b.h.toFixed(1) + ' m' : '') + ' · ' + C.SRC_LABEL[b.src] + '</title></polygon>';
+  for (const b of fronts) s += '<polygon points="' + polyPts(b.poly) + '" fill="url(#pFront)" stroke="#b45309" stroke-width="' + (nowIds.has(b.id) ? 4.2 : 2.2) * k + '" ' + (nowIds.has(b.id) ? '' : 'stroke-dasharray="' + 6 * k + ' ' + 3 * k + '"') + ' data-b="' + b.id + '"><title>' + esc(C.label(b)) + ': 하루 중 가리는 동 (' + b.f + '층, ' + b.h.toFixed(1) + ' m, ' + C.SRC_LABEL[b.src] + ')</title></polygon>';
+  const t = tgt();
+  s += '<polygon points="' + polyPts(t.poly) + '" fill="#17508f" stroke="#0a2f57" stroke-width="' + 2.5 * k + '"><title>선택한 동 ' + esc(C.label(t)) + '</title></polygon>';
+  // 관측점과 해 쪽 선
+  const fi = C.faceInfo(ctx, st.tid), px = fi.cx, py = fi.cy;
+  const ux = Math.sin(slot.az * Math.PI / 180), uy = Math.cos(slot.az * Math.PI / 180);
+  // 남쪽 면 표시(굵은 노랑 선) + 관측점
+  const f0 = fi.a, len = fi.len, f1 = [f0[0] + fi.ex * len, f0[1] + fi.ey * len];
+  s += '<line x1="' + (f0[0] + fi.nx * 0.3) + '" y1="' + -(f0[1] + fi.ny * 0.3) + '" x2="' + (f1[0] + fi.nx * 0.3) + '" y2="' + -(f1[1] + fi.ny * 0.3) + '" stroke="#f5b21a" stroke-width="' + 4 * k + '" stroke-linecap="butt"/>';
+  s += '<circle cx="' + px + '" cy="' + -py + '" r="' + 5 * k + '" fill="#fff" stroke="#15212c" stroke-width="' + 2 * k + '"/>';
+  if (sun.up) {
+    const L = 60 * k; s += '<line x1="' + px + '" y1="' + -py + '" x2="' + (px + ux * L) + '" y2="' + -(py + uy * L) + '" stroke="#c1121f" stroke-width="' + 2.4 * k + '" stroke-dasharray="' + 5 * k + ' ' + 3 * k + '"/>';
+    const ex = px + ux * L, ey = -(py + uy * L), a = Math.atan2(-uy, ux), ah = 9 * k;
+    s += '<polygon points="' + ex + ',' + ey + ' ' + (ex - ah * Math.cos(a - .45)) + ',' + (ey - ah * Math.sin(a - .45)) + ' ' + (ex - ah * Math.cos(a + .45)) + ',' + (ey - ah * Math.sin(a + .45)) + '" fill="#c1121f"/>';
+    s += '<text class="" x="' + (ex + ux * 6 * k) + '" y="' + (ey - uy * 6 * k) + '" font-size="' + fs + '" font-weight="800" fill="#c1121f" text-anchor="middle" dominant-baseline="middle">해</text>';
+  }
+  // 이름표: 동 번호만(단지 이름은 위 칩에 있음). 글씨에 흰 테두리를 둘러 도형·무늬 위에서도 읽힌다.
+  const inView = c => c[0] > view.x + 8 * k && c[0] < view.x + view.w - 8 * k && -c[1] > view.y + 8 * k && -c[1] < view.y + view.h - 8 * k;
+  const txt = (c, t, size, fill, dy, w) => '<text x="' + c[0].toFixed(1) + '" y="' + (-c[1] + dy).toFixed(1) + '" font-size="' + size + '" font-weight="' + (w || 800) + '" text-anchor="middle" dominant-baseline="middle" fill="' + fill + '">' + esc(t) + '</text>';
+  const num = b => (C.dongNo(b.dn) ? C.dongNo(b.dn) + '동' : '');
+  const placed = [];                                                    // 이미 쓴 이름표 자리(겹치면 건너뜀)
+  const free = (c, t) => { const w = t.length * 0.62 * fs + 4, h = fs + 2; for (const q of placed) if (Math.abs(q.x - c[0]) < (q.w + w) / 2 && Math.abs(q.y - -c[1]) < (q.h + h) / 2) return false; placed.push({ x: c[0], y: -c[1], w, h }); return true; };
+  placed.push({ x: view.x + view.w - 26 * k, y: view.y + 22 * k, w: 40 * k, h: 56 * k }, { x: view.x + 14 * k + 40 * k, y: view.y + view.h - 24 * k, w: 100 * k, h: 40 * k });
+  const ct = centroid(t.rect);
+  { const ys = t.rect.map(q => q[1]); free([ct[0], Math.max(...ys) + 12 * k], '내 동 000동'); }
+  for (const b of fronts) { const c = centroid(b.rect); if (inView(c) && num(b) && free(c, num(b) + '앞')) { s += txt(c, num(b), fs, '#6b2c00', -fs * 0.1) + txt(c, '앞 동', fs * 0.82, '#8a3d00', fs * 0.95, 700); } }
+  for (const b of norm.filter(b => (b.k === 'own' || b.k === 'near') && num(b))) { const c = centroid(b.rect); if (inView(c) && free(c, num(b))) s += txt(c, num(b), fs * 0.9, '#15212c', 0, 700); }
+  for (const b of na.filter(b => b.k !== 'other')) { const c = centroid(b.poly); if (inView(c) && free(c, '자료 없음')) s += txt(c, '자료 없음', fs * 0.82, '#46535f', 0, 700); }
+  { const ys = t.rect.map(q => q[1]); s += '<text x="' + ct[0].toFixed(1) + '" y="' + (-Math.max(...ys) - 9 * k).toFixed(1) + '" font-size="' + fs * 1.15 + '" font-weight="900" text-anchor="middle" fill="#0a2f57">내 동 ' + esc(num(t)) + '</text>'; }
+  // 북쪽 표시와 축척
+  const nx = view.x + view.w - 26 * k, ny = view.y + 34 * k;
+  s += '<rect x="' + (nx - 18 * k) + '" y="' + (ny - 26 * k) + '" width="' + 36 * k + '" height="' + 50 * k + '" rx="' + 6 * k + '" fill="#fff" fill-opacity=".92" stroke="#c9d2db" stroke-width="' + k + '"/>';
+  s += '<g><polygon points="' + nx + ',' + (ny - 20 * k) + ' ' + (nx - 8 * k) + ',' + ny + ' ' + (nx + 8 * k) + ',' + ny + '" fill="#15212c"/><text x="' + nx + '" y="' + (ny + 16 * k) + '" font-size="' + fs + '" font-weight="800" text-anchor="middle" fill="#15212c">북</text></g>';
+  const cand = [10, 20, 25, 50, 100], bar = cand.find(v => v / k >= 70) || 100;
+  const bx = view.x + 14 * k, by = view.y + view.h - 16 * k;
+  s += '<rect x="' + (bx - 8 * k) + '" y="' + (by - 26 * k) + '" width="' + (bar + 16 * k) + '" height="' + 38 * k + '" rx="' + 6 * k + '" fill="#fff" fill-opacity=".92" stroke="#c9d2db" stroke-width="' + k + '"/>';
+  s += '<g><line x1="' + bx + '" y1="' + by + '" x2="' + (bx + bar) + '" y2="' + by + '" stroke="#15212c" stroke-width="' + 3 * k + '"/><text x="' + (bx + bar / 2) + '" y="' + (by - 7 * k) + '" font-size="' + fs + '" font-weight="700" text-anchor="middle" fill="#15212c">' + bar + ' m</text></g>';
+  svg.setAttribute('viewBox', [view.x, view.y, view.w, view.h].map(v => v.toFixed(2)).join(' '));
+  svg.innerHTML = s;
+  svg.querySelectorAll('[data-b]').forEach(el => { el.addEventListener('click', () => { const b = ctx.byId[el.getAttribute('data-b')]; if (b && b.k === 'own' && C.calcable(b)) select(b.id); }); });
+
+  // 시각 상태 문구
+  const names = slot.state === 'shade' ? slot.by.map(id => ctx.byId[id].label) : [];
+  const el = $('state'); el.className = 'state ' + slot.state;
+  el.textContent = C.minToHM(st.t) + ' · ' + (slot.state === 'shade' ? names.join(', ') + '에 가려짐' : NO_LABEL[slot.state]) + (slot.alt > 0 ? ' · 해는 ' + C.dirName(slot.az) + '쪽 하늘, 지평선 위 ' + Math.round(slot.alt) + '도' : '');
+  $('timeVal').textContent = ': ' + C.minToHM(st.t) + ' (' + dtxt(d) + ')';
+  $('time').setAttribute('aria-valuetext', C.minToHM(st.t) + ', ' + (slot.state === 'shade' ? '앞 동에 가려짐' : NO_LABEL[slot.state]));
+  $('legend2').innerHTML = '<li><span class="sw me"></span>내 동</li><li><span class="sw front"></span>하루 중 가리는 앞 동</li><li><span class="sw sh"></span>선택한 시각의 그림자</li><li><span class="sw na"></span>분석 자료 없음</li>';
+}
+
+// ---------- 근거, 한계, 현장 확인 ----------
+function drawEvidence() {
+  const b = tgt(), sm = sums[st.dk], m = ctx.doc.meta, ms = m.match_summary, fi = C.faceInfo(ctx, st.tid);
+  const fh = C.baseFh(ctx, b), z = (st.fl - 0.5) * fh;
+  const srcTag = x => '<span class="tag ' + x + '">' + C.SRC_LABEL[x] + '</span>';
+  let h = '<h2 id="h-ev">이 계산의 근거와 한계</h2><ul class="plain notes">';
+  h += '<li><strong>내 동 높이</strong>: ' + esc(C.label(b)) + ' ' + b.f + '층, ' + b.h.toFixed(1) + ' m ' + srcTag(b.src) +
+       (b.src === 'est' ? ' 층수 x ' + ctx.floorH + ' m로 어림한 값이라 실제와 다를 수 있어요.' : '') + '</li>';
+  h += '<li><strong>창 높이</strong>: ' + st.fl + '층 = 지상 약 ' + z.toFixed(1) + ' m ((층 - 0.5) x ' + fh.toFixed(2) + ' m). 한 층 높이는 ' + (b.src === 'est' ? '이 단지 실측 중간값' : '이 동 높이 / 층수') + '로 정했어요.</li>';
+  if (sm.blockers.length) h += '<li><strong>가리는 동 높이</strong>: ' + sm.blockers.map(x => esc(x.label) + ' ' + x.h.toFixed(1) + ' m ' + srcTag(x.src)).join(' · ') + '</li>';
+  h += '<li><strong>창 방향은 가정</strong>: 도형에서 남쪽을 가장 많이 보는 긴 면(' + fi.dir + '쪽 면' + (fi.offSouth > 5 ? ', 정남에서 ' + Math.round(fi.offSouth) + '도 틀어짐' : '') + ')의 가운데에 창이 있다고 봤어요. 실제 창 방향은 자료에 없어요.</li>';
+  h += '<li><strong>지형 미반영</strong>: 모든 건물이 같은 평지 위에 있다고 봤어요. 언덕이나 단 차이는 계산에 없어요.</li>';
+  h += '<li><strong>반영하지 않은 것</strong>: 나무, 담장, 건물 옥상 구조물, 구름과 미세먼지. 건물 높이는 꼭대기 하나뿐이고 층별 높이는 몰라요.</li>';
+  h += '<li><strong>조망</strong>: 수면 자료가 부족해 아직 계산하지 않음.</li>';
+  h += '<li><strong>법적 일조권 아님</strong>: 실내 채광이나 법적 일조권 판단 자료가 아니에요.</li>';
+  // 민감도
+  const sen = C.sensitivity(ctx, st.tid, st.fl, curDate());
+  const rg = r => r.min === r.max ? '변화 없음' : C.durText(r.min) + ' ~ ' + C.durText(r.max);
+  h += '<li><strong>입력이 조금 달라지면</strong> (' + DATES.find(x => x.key === st.dk).name + ' 기준 ' + C.durText(sen.base) + '): ' + sen.rows.map(r => r.name + ' ' + rg(r)).join(' · ') + '. 모두 합치면 ' + C.durText(sen.min) + ' ~ ' + C.durText(sen.max) + '.</li>';
+  h += '</ul>';
+  const own = ownDongs().length, drawn = ctx.items.filter(x => x.k === 'own').length;
+  h += '<h2 style="margin-top:16px">자료 현황</h2><ul class="plain notes">';
+  h += '<li>이 단지 ' + ms['건축HUB 이 단지 동 수(숫자 동)'] + '개 동 중 ' + ms['이 단지 동 중 건축HUB 일치'] + '개 동이 건축물대장(건축HUB)과 이어졌어요. 도형이 있는 동은 ' + drawn + '개예요.</li>';
+  h += '<li>평면도에 담은 건물 ' + ctx.items.length + '개 중 ' + ctx.calc.length + '개는 계산에 쓰고, ' + ctx.excluded.length + '개는 분석 자료 없음으로 뺐어요' + (ctx.excluded.some(x => x.st === 'unknown') ? ' (소속 불명 ' + ctx.excluded.filter(x => x.st === 'unknown').length + '개 포함)' : '') + '.</li>';
+  const hs = {}; for (const x of ctx.calc) hs[x.src] = (hs[x.src] || 0) + 1;
+  h += '<li>계산에 쓴 건물의 높이 출처: 건축물대장 ' + (hs.hub || 0) + '개, 브이월드 ' + (hs.vworld || 0) + '개, 층수로 추정 ' + (hs.est || 0) + '개.</li>';
+  h += '<li>자료: 브이월드 건물 데이터(' + esc((m.sources[0].date || '').replace(' UTC', ' UTC 기준')) + '), 건축HUB 건축물대장 표제부. 단지 중심에서 약 ' + m.radius_m + ' m 안만 담았어요.</li>';
+  h += '</ul>';
+  $('evidence').innerHTML = h;
+
+  // 현장 확인
+  const dec = sums.dec, tm = ctx.byId[st.tid];
+  const bl = (dec.blockers[0] ? dec.blockers[0].label : null);
+  let f = '<h2 id="h-field">현장에서 확인할 것</h2><ul class="plain notes">';
+  f += '<li><strong>앞 동 그림자 위치</strong>: ' + (bl ? '겨울(동지 무렵) 한낮에 ' + esc(bl) + ' 쪽 그림자가 ' + esc(C.label(tm)) + ' 벽에 닿는지, 몇 층 높이까지 닿는지 직접 보세요.' : '겨울 한낮에 앞 동 그림자가 ' + esc(C.label(tm)) + ' 벽에 닿는지 직접 보세요.') + '</li>';
+  const sr = sums[st.dk].sunRanges[0];
+  f += '<li><strong>해 드는 시간대</strong>: ' + (sr ? '이 계산은 ' + rangeTxt(sr) + ' 무렵에 직사광이 닿을 수 있다고 봤어요. 그 시각에 방문해 거실과 방에 해가 드는지 확인하세요.' : '방문한 시각에 거실과 방에 해가 드는지 확인하세요.') + '</li>';
+  f += '<li><strong>창 방향</strong>: 이 계산은 ' + fi.dir + '쪽 면에 창이 있다고 가정했어요. 휴대폰 나침반으로 거실 창이 실제로 어느 쪽을 보는지 재 보세요.</li>';
+  f += '<li><strong>나무와 가림막</strong>: 계산에 없는 나무, 담장, 옆 건물이 창 앞에 있는지 보세요.</li>';
+  f += '</ul>';
+  $('field').innerHTML = f;
+  $('foot').innerHTML = '시제품입니다. 건물 자료(브이월드, 건축HUB)의 이용 조건이 아직 확정되지 않아 정식 서비스에 올릴 수 없어요. 해 위치는 날짜와 단지 중심 좌표로 계산한 천문 값이에요.';
+}
+
+// ---------- 갱신 ----------
+function fullRender() {
+  drawControls(); recompute(); drawResult(); drawBar(); drawPlan(); drawEvidence();
+}
+function select(tid) {
+  st.tid = tid; const b = tgt(); st.fl = Math.min(Math.max(1, st.fl), b.f); fullRender(); writeHash();
+}
+async function chooseComplex(id) {
+  $('result').innerHTML = '<p class="loading">자료를 불러오는 중이에요.</p>';
+  try { ctx = await loadComplex(id); } catch (e) { $('result').innerHTML = '<p class="loading">이 단지 자료를 불러오지 못했어요. 새로고침해 보세요.</p>'; return; }
+  st.cid = id;
+  const own = ownDongs();
+  if (!st.tid || !ctx.byId[st.tid] || !own.some(x => x.id === st.tid)) { const d = pickDefault(); st.tid = d.tid; st.fl = d.fl; }
+  st.fl = Math.min(Math.max(1, st.fl), tgt().f);
+  fullRender(); writeHash();
+}
+function writeHash() {
+  const b = tgt(); try { history.replaceState(null, '', '#c=' + st.cid + '&d=' + C.dongNo(b.dn) + '&f=' + st.fl + '&date=' + st.dk + '&t=' + st.t + (st.wide ? '&wide=1' : '')); } catch (e) { /* file:// 일부 */ }
+}
+function readHash() {
+  const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+  if (COMPLEXES.some(c => c.id === p.get('c'))) st.cid = p.get('c');
+  if (DATES.some(d => d.key === p.get('date'))) st.dk = p.get('date');
+  const t = +p.get('t'); if (t >= 300 && t <= 1185) st.t = Math.round(t / 15) * 15;
+  st.wide = p.get('wide') === '1';
+  st._dong = p.get('d'); st._fl = +p.get('f') || 0;
+}
+
+document.addEventListener('click', ev => {
+  const bt = ev.target.closest('button'); if (!bt || !ctx) return;
+  if (bt.dataset.cx) { if (bt.dataset.cx !== st.cid) { st.tid = null; chooseComplex(bt.dataset.cx); } }
+  else if (bt.dataset.dong) select(bt.dataset.dong);
+  else if (bt.dataset.date) { st.dk = bt.dataset.date; fullRender(); writeHash(); }
+  else if (bt.id === 'fdn' || bt.id === 'fup') { st.fl = Math.min(tgt().f, Math.max(1, st.fl + (bt.id === 'fup' ? 1 : -1))); fullRender(); writeHash(); }
+  else if (bt.id === 'tdn' || bt.id === 'tup') { st.t = Math.min(1185, Math.max(300, st.t + (bt.id === 'tup' ? 15 : -15))); $('time').value = st.t; tick(); }
+  else if (bt.id === 'zoom') { st.wide = !st.wide; bt.setAttribute('aria-pressed', st.wide); bt.textContent = st.wide ? '가까이 보기' : '넓게 보기'; drawPlan(); writeHash(); }
+});
+$('floor').addEventListener('input', e => { st.fl = +e.target.value; fullRender(); writeHash(); });
+$('time').addEventListener('input', e => { st.t = +e.target.value; tick(); });
+$('cells').addEventListener('click', e => {
+  const r = $('cells').getBoundingClientRect(), i = Math.min(slots[st.dk].length - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * slots[st.dk].length)));
+  st.t = C.START + i * C.STEP; $('time').value = st.t; tick();
+});
+function tick() { drawMarker(); drawPlan(); writeHash(); }
+let rz = 0; window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (ctx) drawPlan(); }); });
+
+readHash();
+$('zoom').setAttribute('aria-pressed', st.wide); if (st.wide) $('zoom').textContent = '가까이 보기';
+$('time').value = st.t;
+chooseComplex(st.cid).then(() => {
+  if (st._dong) { const b = ownDongs().find(x => C.dongNo(x.dn) === st._dong); if (b) { st.tid = b.id; if (st._fl) st.fl = Math.min(b.f, st._fl); fullRender(); } }
+});
+})();
+</script>
+</body>
+</html>

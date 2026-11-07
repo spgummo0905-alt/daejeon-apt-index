@@ -6,8 +6,9 @@
   const RAD = Math.PI / 180, FLOOR_H = 2.7;
 
   // 해 고도·방위(북 0, 시계 방향) — NOAA 간이식. 한국은 표준시 UTC+9, 서머타임 없음.
-  function sun(lat, lon, month, day, hour) {
-    const doy = Math.round((Date.UTC(2026, month - 1, day) - Date.UTC(2026, 0, 0)) / 864e5);
+  function sun(lat, lon, month, day, hour, year) {
+    year = year || 2026;                                        // 연도를 안 주면 예전처럼 2026 (날짜 번호 계산에만 쓰이며 하루 안팎의 차이)
+    const doy = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 0)) / 864e5);
     const g = 2 * Math.PI / 365 * (doy - 1 + (hour - 12) / 24);
     const eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
     const dec = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
@@ -61,21 +62,25 @@
 
   // 한 칸(동 b의 남쪽 면, 폭 위치 w(0~1), 층 fl(1부터))에 해가 드는가
   //  'sun' 해가 듦 · 'shade' 앞 동 그림자 · 'back' 해가 면의 반대편 · 'night' 해가 없음
-  function cell(blds, b, fl, w, s) {
-    if (!s.up) return 'night';
+  //  fh: 층고(m). 안 주면 FLOOR_H(2.7). 시제품은 실측 층고(동 높이/층수)를 넘긴다.
+  //  cellBy 는 같은 판정에 더해 '어느 동이 가렸는지'(가장 가까운 동 by, 가린 모든 동 all)를 함께 돌려준다.
+  function cellBy(blds, b, fl, w, s, fh) {
+    if (!s.up) return { state: 'night', by: null, all: [] };
     const fc = face(b), alt = s.alt * RAD, az = s.az * RAD;
     const ux = Math.sin(az), uy = Math.cos(az);                  // 해 쪽 수평 방향(동 +x, 북 +y)
-    if (ux * fc.nx + uy * fc.ny <= 0.05) return 'back';
+    if (ux * fc.nx + uy * fc.ny <= 0.05) return { state: 'back', by: null, all: [] };
     const wl = fc.ex >= 0 ? w : 1 - w;                              // 폭 위치는 서쪽(0)에서 동쪽(1) 으로 통일
     const px = fc.a[0] + fc.ex * fc.len * wl + fc.nx * 0.3, py = fc.a[1] + fc.ey * fc.len * wl + fc.ny * 0.3;
-    const z = (fl - 0.5) * FLOOR_H, tan = Math.tan(alt);
+    const z = (fl - 0.5) * (fh || FLOOR_H), tan = Math.tan(alt);
+    let near = null, nearT = Infinity; const all = [];
     for (const o of blds) {
       if (o === b) continue;
       const t = hitT(px, py, ux, uy, o.poly);
-      if (t !== null && z + t * tan < hOf(o)) return 'shade';
+      if (t !== null && z + t * tan < hOf(o)) { all.push(o); if (t < nearT) { nearT = t; near = o; } }
     }
-    return 'sun';
+    return near ? { state: 'shade', by: near, all } : { state: 'sun', by: null, all };
   }
+  function cell(blds, b, fl, w, s, fh) { return cellBy(blds, b, fl, w, s, fh).state; }
 
   // 위에서 본 그림자 모양: 지붕 높이 / tan(고도) 만큼 해 반대쪽으로 늘인 영역 (볼록 껍질)
   function hull(pts) {
@@ -94,17 +99,17 @@
   }
 
   // 하루 중 층별 해 드는 시간(시간 단위, 15분 간격 합) — 동의 남쪽 면 가운데 열 기준
-  function sunHours(blds, b, fl, lat, lon, month, day) {
+  function sunHours(blds, b, fl, lat, lon, month, day, fh, year) {
     let n = 0;
     for (let m = 6 * 60; m <= 19 * 60; m += 15) {
-      const s = sun(lat, lon, month, day, m / 60);
-      if (cell(blds, b, fl, 0.5, s) === 'sun') n++;
+      const s = sun(lat, lon, month, day, m / 60, year);
+      if (cell(blds, b, fl, 0.5, s, fh) === 'sun') n++;
     }
     return n * 0.25;
   }
 
   // 화면에 시간을 보여 줄 때 반드시 함께 보여 줄 문구. 실제 공간 자료와 견주어 검증하기 전까지는 '정확한 일조시간'이라고 쓰지 않습니다.
   const NOTICE = "추정한 참고용 그림이에요. 높이·창 방향·나무·지형을 다 반영하지 못해 법적 일조권 판단 자료가 아니에요.";
-  const api = { sun, face, cell, shadowPoly, sunHours, hOf, estOf, FLOOR_H, NOTICE };
+  const api = { sun, face, cell, cellBy, shadowPoly, sunHours, hOf, estOf, FLOOR_H, NOTICE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DJShadow = api;
 })(typeof window !== 'undefined' ? window : globalThis);
