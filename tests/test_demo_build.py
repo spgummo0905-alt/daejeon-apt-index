@@ -1749,3 +1749,12 @@ def test_finder_count_hint_line_reserves_its_text_height_so_results_do_not_shift
     line = next(l for l in css.splitlines() if l.startswith(".sv-delta {"))
     assert "min-height: 24px" in line and "min-height: 18px" not in line
 
+
+def test_my_screen_reserves_favorites_row_height_from_saved_favs_before_data_arrives():
+    """4-C4: 관심 화면에서 카드가 자료 로딩 뒤에 92→300px대로 커지며 아래 계정·임장 코스 칸이 밀렸음(운영 1280px 0.03~0.065, 기준 0.02).
+    문서 안 작은 스크립트가 저장된 관심 단지 수를 읽어 #favs 에 fav-wait(카드 줄) / fav-wait0(빈 안내) 를 먼저 붙여 높이를 미리 잡음"""
+    my = (ROOT_DIR / "templates" / "my.html").read_text(encoding="utf-8")
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    assert my.index('id="favs"') < my.index("fav-wait0") and "fav-wait" in my and "djdex-auth" in my
+    assert "#favs.fav-wait { min-height: 305px; }" in css and "#favs.fav-wait0 { min-height: 158px; }" in css
+
