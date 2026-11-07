@@ -1741,3 +1741,11 @@ def test_my_screen_folds_intro_and_storage_note_but_keeps_the_login_aware_note_h
     assert "data-storage-summary" in box and "후보를 모아 비교하고" in box          # 안내는 지우지 않고 접어 둠
     assert my.count("data-storage-summary") == 1 and my.index("hero-note") < my.index("data-my-jump")
 
+
+def test_finder_count_hint_line_reserves_its_text_height_so_results_do_not_shift():
+    """4-C3: 찾기 화면 결과 개수 상자 아래 안내 줄(.sv-delta)이 비어 있다가 글자가 들어오며 6px 커져 1280px에서 화면이 흔들렸음(운영 0.024, 기준 0.02).
+    글자 한 줄 높이(13px × 1.8 = 23.4px)에 맞춰 미리 24px 확보"""
+    css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+    line = next(l for l in css.splitlines() if l.startswith(".sv-delta {"))
+    assert "min-height: 24px" in line and "min-height: 18px" not in line
+

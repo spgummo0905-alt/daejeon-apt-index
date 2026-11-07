@@ -1801,7 +1801,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-count.idle { border-color: var(--border); background: var(--bg); }
 .sv-count.idle b { color: var(--text); }
 .sv-count.idle .ic { display: none; }
-.sv-delta { margin: 6px 0 0; min-height: 18px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.sv-delta { margin: 6px 0 0; min-height: 24px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .sv-delta.down { color: color-mix(in srgb, var(--s3) 75%, var(--text)); } .sv-delta.up { color: var(--accent); }
 .sv-steps-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
 .sv-steps { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; flex: 1; min-width: 0;
