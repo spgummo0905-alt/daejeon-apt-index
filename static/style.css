@@ -4076,6 +4076,9 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-create:not([open]) > summary { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 18px; }
 .pj-create:not([open]) > summary b::before { content: "+ "; }
 @media (min-width: 901px) { .pj-layout { grid-template-columns: 260px minmax(0, 1fr); } }
+/* 단지 자료가 오기 전: 편집 영역 자리를 미리 잡아 바닥글이 첫 화면 안에 있다가 밀려나지 않게(자료가 오면 이 표시가 사라짐) */
+.pj-wait .pj-layout { min-height: 1000px; }
+@media (min-width: 901px) { .pj-wait .pj-layout { min-height: 720px; } }
 .pj-item { min-height: 64px; }
 .pj-item span { font-size: 13px; }
 .pj-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap; }

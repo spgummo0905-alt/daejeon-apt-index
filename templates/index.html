@@ -65,6 +65,13 @@ try {
         <a class="gate-btn" href="projects.html" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
       </section>
     </div>
+    {# 다시 온 사람의 첫 화면 자리 맞춤: app.js(gates·resume)가 늦게 도착해도 카드가 커졌다 줄며 아래가 밀리지 않게, 저장된 기록만으로 정해지는 부분(진행 중 프로젝트면 임장 입구가 으뜸이 됨, 이어서 줄 자리)을 문서에서 바로 맞춤. 판단 기준은 app.js(DJ.activeProject·resume)와 같고 못 읽으면 아무것도 안 함. 세부 문구(방문 수·다음 할 일)는 app.js 가 채움 #}
+    <script>try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),pre=a&&a.user?"djdex@"+a.user.id+":":"djdex:",rg={{ region | tojson }},best=null,L=function(k,f){try{var v=JSON.parse(localStorage.getItem(pre+k));return v==null?f:v}catch(e){return f}};
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(pre+"project:")===0){var p=L(k.slice(pre.length),null);if(p&&p.version===1&&/^[a-z0-9-]{1,64}$/.test(p.id)&&typeof p.name==="string"&&p.name.trim()&&p.region===rg&&Array.isArray(p.slugs)&&!p.archived&&p.slugs.length&&(!best||(+p.updated||0)>(+best.updated||0)))best=p}}
+    var f=L("favs",[]),r=L("recent",[]),rs=document.querySelector("[data-resume]");if(rs&&(f.length||r.length))rs.hidden=false;
+    var v=document.querySelector("[data-gate-visit]");if(best&&v){v.querySelector("[data-gv-k]").textContent="이어하기";var h=v.querySelector("[data-gv-h]");h.textContent="하던 집 찾기,";h.appendChild(document.createElement("br"));h.appendChild(document.createTextNode("이어서 볼까요?"));
+    var d=v.querySelector("[data-gv-desc]"),s1=document.createElement("span");s1.textContent=best.name+" · 후보 "+best.slugs.length+"곳";var s2=document.createElement("span");s2.className="gv-next";s2.innerHTML="&nbsp;";d.textContent="";d.appendChild(s1);d.appendChild(document.createElement("br"));d.appendChild(s2);
+    v.classList.add("gate-live");var m=document.querySelector(".gates>.gate:first-child");if(m)m.classList.remove("gate"+"-main");v.classList.add("gate"+"-main");v.querySelector("[data-gv-label]").textContent="이어서 하기"}}catch(e){}</script>
     </div>
     {% if hero_cards %}
     <div class="hero-deck" aria-label="종합 지수 상위 단지">
