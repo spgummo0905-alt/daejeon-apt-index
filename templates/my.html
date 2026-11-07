@@ -5,8 +5,14 @@
 <section class="page-hero">
   <p class="eyebrow">관심 단지</p>
   <h1>눈여겨본 집부터<br>다녀온 기록까지, 한곳에</h1>
-  <p class="lead">후보를 모아 비교하고, 방문 순서를 정하고, 현장에서 확인한 내용을 남겨 보세요.</p>
-  <p class="muted" data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 내 설정에서 파일로 백업하세요.</p>
+  {# 설명과 저장 안내는 접어 둠(첫 화면에서 핵심인 관심 단지가 먼저 보이게). 프로젝트 화면과 같은 hero-note 모양. 저장 안내 칸은 로그인 상태에 따라 sync.js 가 문구를 바꿈 #}
+  <details class="hero-note">
+    <summary><span>모으고, 비교하고, 다녀온 기록까지</span><svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg></summary>
+    <div>
+      <p>후보를 모아 비교하고, 방문 순서를 정하고, 현장에서 확인한 내용을 남겨 보세요.</p>
+      <p data-storage-summary>이 브라우저에 저장 중 · 중요한 기록은 내 설정에서 파일로 백업하세요.</p>
+    </div>
+  </details>
 </section>
 {# 바로가기: 관심 단지가 많아도 코스·노트로 바로 (my.js 가 수를 채움, 노트가 없으면 숨김) #}
 <nav class="jump my-jump" aria-label="관심 화면 바로가기" data-my-jump>

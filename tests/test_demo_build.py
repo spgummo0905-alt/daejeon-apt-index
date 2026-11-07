@@ -1732,3 +1732,12 @@ def test_course_and_crumb_tap_targets_reach_44px_without_changing_text_size():
     assert ".crumb a { display: inline-block; padding: 14px 0; margin: -14px 0; }" in css
     assert ".cs-t a { font-weight: 800;" in css and "padding: 8px 0; margin: -8px 0; }" in css
 
+
+def test_my_screen_folds_intro_and_storage_note_but_keeps_the_login_aware_note_hook():
+    """4-C2: 관심 화면 윗부분의 설명 2줄과 저장 안내를 한 줄로 접어 핵심인 '관심 단지'가 첫 화면에서 더 위에 보이게 함(390px에서 y646→553).
+    저장 안내 칸(data-storage-summary)은 접힌 안에 그대로 두어 로그인 상태에 따라 sync.js 가 문구를 바꾸는 기능을 유지"""
+    my = (ROOT_DIR / "templates" / "my.html").read_text(encoding="utf-8")
+    i = my.index('<details class="hero-note">'); box = my[i:my.index("</details>", i)]
+    assert "data-storage-summary" in box and "후보를 모아 비교하고" in box          # 안내는 지우지 않고 접어 둠
+    assert my.count("data-storage-summary") == 1 and my.index("hero-note") < my.index("data-my-jump")
+
