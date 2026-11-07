@@ -94,6 +94,17 @@ h3.sub { margin-top: 28px; }
 .jump a:hover { text-decoration: none; }
 .jump a.on { background: var(--navy); color: var(--on-navy); }
 main .panel[id], main section[id] { scroll-margin-top: 62px; }
+/* 나의 집감 세 칸 탭 */
+.my-seg { display: flex; gap: 0; margin: 14px 0 12px; position: sticky; top: 0; z-index: 5; border: 2px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.my-seg button { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 6px 8px; border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.my-seg button:last-child { border-right: 0; }
+.my-seg button b { margin-left: 6px; font-weight: 800; }
+.my-seg button[aria-pressed="true"] { background: var(--navy); color: var(--on-navy); }
+.my-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); }
+.my-next[hidden] { display: none; }
+.my-next-t { font-size: 16px; font-weight: 700; }
+.my-next .btn { margin: 0; min-height: 48px; }
+.mg-off { display: none !important; }
 @media (max-width: 720px) {  /* 휴대폰: 바로가기는 한 줄로 밀어서 */
   .jump { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
   .jump::-webkit-scrollbar { display: none; }
