@@ -1813,7 +1813,17 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-count.idle b { color: var(--text); }
 .sv-count.idle .ic { display: none; }
 .sv-delta { margin: 6px 0 0; min-height: 24px; font-size: 13px; font-weight: 700; color: var(--muted); }
-.sv-delta.down { color: color-mix(in srgb, var(--s3) 75%, var(--text)); } .sv-delta.up { color: var(--accent); }
+.sv-delta.down { color: color-mix(in srgb, var(--s3) 55%, var(--text)); } .sv-delta.up { color: var(--accent); }
+/* 바로 보기 줄: 질문 위에서 지금 조건의 맨 위 후보 3곳. 높이를 미리 잡아 두어 화면이 흔들리지 않음 */
+.sv-peek { margin: 12px 0 0; height: 68px; }
+.sv-peek-row { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; height: 100%; }
+.sv-peek-row::-webkit-scrollbar { display: none; }
+.sv-peek-card { flex: 0 0 auto; display: grid; gap: 2px; align-content: center; min-width: 120px; max-width: 190px; height: 100%; padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); text-decoration: none; }
+.sv-peek-card b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-peek-card span { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.sv-peek-card.more { justify-items: center; font-weight: 800; font-size: 14px; min-width: 76px; color: var(--text); border-style: dashed; }
+.sv-peek.idle { display: grid; align-items: center; border: 1px dashed var(--axis); border-radius: 14px; padding: 0 14px; box-sizing: border-box; }
+.sv-peek-hint { margin: 0; font-size: 14px; color: var(--text-2); font-weight: 600; }
 .sv-steps-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
 .sv-steps { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; flex: 1; min-width: 0;
   overflow-x: auto; scrollbar-width: none; }
@@ -1837,7 +1847,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .sv-where { position: absolute; left: 12px; top: 12px; z-index: 1; padding: 5px 11px; border-radius: 10px; background: var(--surface);
   border: 1px solid var(--border); font-size: 13px; font-weight: 800; color: var(--text); box-shadow: var(--shadow); }
 .sv-art-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; min-height: 34px; padding: 8px 12px; border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--s3) 6%, var(--surface)); font-size: 13px; font-weight: 800; color: color-mix(in srgb, var(--s3) 75%, var(--text)); }
+  background: color-mix(in srgb, var(--s3) 6%, var(--surface)); font-size: 13px; font-weight: 800; color: color-mix(in srgb, var(--s3) 55%, var(--text)); }
 .art-ground { fill: var(--land); }
 .art-road { stroke: var(--surface); stroke-width: 5; opacity: .9; }
 .art-lot { fill: var(--grid); stroke: var(--axis); stroke-dasharray: 4 4; }
