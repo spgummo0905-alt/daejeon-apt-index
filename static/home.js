@@ -1,6 +1,27 @@
 // 메인: 찜한 단지 줄, 지역 카드를 누르면 목록을 그 구로 거르기, 구별 비교 탭
 (function () {
   const { el } = DJ;
+  // 긴 분석 구역(동네 온도·입주 물량·구별 비교·입지 대비 가격)은 휴대폰에서 제목만 먼저 보이게 접어 둔다. 내용·자료는 그대로이고 주소(#heat 등)로 오면 펼쳐진다.
+  (function foldLong() {
+    if (!matchMedia("(max-width: 719px)").matches) return;
+    const secs = ["heat", "movein", "world", "value"].map(id => document.getElementById(id)).filter(Boolean);
+    const setOpen = (sec, open) => {
+      sec.classList.toggle("hm-closed", !open);
+      const b = sec.querySelector(".hm-toggle"); if (b) { b.setAttribute("aria-expanded", String(open)); b.textContent = open ? "접기" : "펼쳐 보기"; }
+    };
+    secs.forEach(sec => {
+      const head = sec.querySelector(".panel-head"); if (!head) return;
+      sec.classList.add("hm-fold");
+      const b = el("button", "btn hm-toggle", "펼쳐 보기");
+      b.type = "button"; b.setAttribute("aria-expanded", "false");
+      const body = sec.id;
+      b.addEventListener("click", () => setOpen(sec, sec.classList.contains("hm-closed")));
+      head.append(b);
+      setOpen(sec, false);
+    });
+    const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); const sec = secs.find(x => x.id === id); if (sec) { setOpen(sec, true); sec.scrollIntoView({ block: "start" }); } };
+    fromHash(); addEventListener("hashchange", fromHash);
+  })();
   // 관심 단지·최근 본 단지 줄 (이 브라우저에만 남는 목록)
   const strip = (slugs, sec, box) => {
     if (!slugs.length || !document.getElementById(sec)) return;
