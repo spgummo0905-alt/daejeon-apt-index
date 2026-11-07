@@ -93,6 +93,10 @@ h3.sub { margin-top: 28px; }
   transition: background var(--t-fast), color var(--t-fast); }
 .jump a:hover { text-decoration: none; }
 .jump a.on { background: var(--navy); color: var(--on-navy); }
+/* 홈의 긴 구역: 휴대폰에서 제목 + [펼쳐 보기] 만 먼저 */
+.hm-fold .hm-toggle { margin: 10px 0 0; min-height: 48px; width: 100%; justify-content: center; }
+.hm-fold.hm-closed > :not(.panel-head) { display: none; }
+.hm-fold.hm-closed .panel-head p { display: none; }
 main .panel[id], main section[id] { scroll-margin-top: 62px; }
 @media (max-width: 720px) {  /* 휴대폰: 바로가기는 한 줄로 밀어서 */
   .jump { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
@@ -4216,6 +4220,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 #map { contain-intrinsic-size: auto 1800px; }
 #heat { contain-intrinsic-size: auto 2100px; }
 #list { contain-intrinsic-size: auto 2400px; }
+#heat.hm-closed, #movein.hm-closed, #world.hm-closed, #value.hm-closed { contain-intrinsic-size: auto 0; content-visibility: visible; }   /* 접힌 구역은 미리 잡아 둔 높이를 쓰지 않음 */
 
 /* ===== 옥상 개편: 지역 버튼 제거 · 접속 현황 고정 한 줄 · 카테고리(불꽃·굽기·꾸미기·쉬기·야경)를 위쪽 정리 (행동 메뉴는 원래 아래 자리) ===== */
 body[data-page="rooftop"] header.site .rg { display: none; }
