@@ -110,6 +110,6 @@
 
   // 화면에 시간을 보여 줄 때 반드시 함께 보여 줄 문구. 실제 공간 자료와 견주어 검증하기 전까지는 '정확한 일조시간'이라고 쓰지 않습니다.
   const NOTICE = "추정한 참고용 그림이에요. 높이·창 방향·나무·지형을 다 반영하지 못해 법적 일조권 판단 자료가 아니에요.";
-  const api = { sun, face, cell, cellBy, shadowPoly, sunHours, hOf, estOf, FLOOR_H, NOTICE };
+  const api = { sun, face, cell, cellBy, shadowPoly, sunHours, hOf, estOf, hitT, FLOOR_H, NOTICE };   // hitT: 입체 그림(preview-iso.js)이 같은 판정으로 해 쪽 선을 끊을 때 씀
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DJShadow = api;
 })(typeof window !== 'undefined' ? window : globalThis);

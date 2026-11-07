@@ -46,6 +46,7 @@ def test_demo_site_has_no_preview_unless_switched_on(tmp_path):
 def test_preview_page_template_keeps_disclaimer_noindex_and_credits():
     t = (ROOT_DIR / "templates" / "preview.html").read_text(encoding="utf-8")
     assert "추정한 참고용" in t and "법적 일조권" in t and 'content="noindex"' in t
+    assert "브이월드" in t and "건축HUB" in t                                   # 출처는 접지 않고 항상 보이는 바닥 문구에 둔다
     js = (ROOT_DIR / "static" / "preview.js").read_text(encoding="utf-8")
-    assert "브이월드" in js and "건축HUB" in js and "추정한 참고용" in js          # 출처 표기와 한계 문구
+    assert "브이월드" in js and "건축HUB" in js and "법적 일조권" in js          # 근거 칸에도 출처·한계
     assert re.search(r"font-size:\s*18px", (ROOT_DIR / "static" / "preview.css").read_text(encoding="utf-8"))
