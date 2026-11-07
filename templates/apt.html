@@ -31,6 +31,7 @@
   </div>
 </div>
 
+{% if preview_ok %}<a class="pv-link" href="{{ root }}preview.html#c={{ c.slug | urlencode }}"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조 미리보기<small>동·층을 고르면 앞 동이 햇빛을 가리는 시간을 추정해 보여 줘요 (추정한 참고용)</small></span></a>{% endif %}
 {# 가격판: 실제 거래(최근 유효 실거래)와 비교용 추정을 서로 다른 모양으로 나란히. 두 값은 면적 기준이 다를 수 있어 각각 면적을 적고 안내 한 줄을 둠.
    이 단지의 값만 쓰고(새 계산 없음), 해제(취소) 거래는 대표 가격으로 쓰지 않음(site.py _lead_trade). h1 은 문서 맨 앞인 여기 #}
 {# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
