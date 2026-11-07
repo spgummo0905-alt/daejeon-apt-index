@@ -109,6 +109,27 @@
     render(d);
   });
 
+  // 2곳 미만: 막다른 화면 대신 '담는 칸 + 진행 표시 + 다음 행동'. 새 저장 없음(관심·최근 본 단지와 주소의 단지 목록만 사용)
+  function emptyStart(cs, quick) {
+    const root = (window.DJ_ROOT || "");
+    const box = el("div", "vs-start");
+    const slots = el("ol", "vs-slots");
+    for (let i = 0; i < MAX; i++) {
+      const li = el("li", "vs-slot" + (cs[i] ? " on" : ""), cs[i] ? cs[i].n : (i < 2 ? "비어 있음" : "선택"));
+      slots.append(li);
+    }
+    const need = Math.max(0, 2 - cs.length);
+    box.append(el("p", "vs-prog", `${cs.length} / 2곳 이상`), slots,
+      el("p", "vs-need", need ? `${need}곳 더 담으면 비교할 수 있어요` : ""));
+    if (!quick.length && !cs.length) {
+      box.append(el("p", "muted center", "아직 관심·최근 본 단지가 없어요."));
+      const a = el("a", "btn primary", "조건으로 단지 찾으러 가기"); a.href = root + "finder.html"; box.append(a);
+    } else if (!quick.length) {
+      const a = el("a", "btn", "다른 단지 찾으러 가기"); a.href = root + "finder.html"; box.append(a);
+    }
+    return box;
+  }
+
   function render(d) {
     if (picked.length >= 2 && DJ.act) DJ.act("cmp");   // 임장 배지 '나란히 비교'
     const box = document.getElementById("picked");
@@ -152,7 +173,7 @@
     out.replaceChildren();
     shareBtn.hidden = cs.length < 2;
     nextStep(cs);
-    if (cs.length < 2) { out.append(el("p", "muted center", "비교할 아파트를 2곳 이상 선택해 주세요.")); return; }
+    if (cs.length < 2) { out.append(emptyStart(cs, quick)); return; }
 
     // 항목별 1위 횟수
     const wins = cs.map(() => 0);
@@ -166,9 +187,11 @@
     // 항목별 1위 세기: 가격·종합 지수, 좋고 나쁨이 없는 줄, 학군 세부(·로 시작)는 빼고 셉니다
     const counted = (name, better) => better && name !== "84㎡ 기준 가격" && name !== "종합 지수" && !name.startsWith("· ");
     const rows = ROWS.filter(([, get]) => !cs.every(c => get(c) == null));  // 모두 값이 없는 줄(아직 자료 없는 항목)은 빼기
+    const KEY = new Set(["종합 지수", "84㎡ 기준 가격", "입지", "지하철역", "학군 점수", "준공"]);   // 처음엔 이 줄만 보이고 나머지는 '더 보기'
     const nCounted = rows.filter(([n, , , b]) => counted(n, b)).length;
     rows.forEach(([name, get, show, better]) => {
       const tr = el("tr");
+      if (!KEY.has(name)) tr.className = "more-row";
       tr.append(el("th", name.startsWith("· ") ? "sub" : "", name.replace(/^· /, "")));
       const vals = cs.map(get);
       const valid = vals.filter(v => v != null);
@@ -187,10 +210,19 @@
       ? (wins[0] === wins[1] ? "우세한 항목 수가 같습니다. 예산과 생활 조건도 함께 비교하세요"
          : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + nCounted + "개 중 " + wins[top] + "개에서 앞섭니다")
       : "항목별 우위: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
-    const wrap = el("div", "table-wrap cmp-wrap"); wrap.append(table);
+    const wrap = el("div", "table-wrap cmp-wrap collapsed"); wrap.append(table);
+    const nMore = rows.filter(([n]) => !KEY.has(n)).length;
+    const moreBtn = el("button", "btn cmp-more", `나머지 ${nMore}개 항목 더 보기`);
+    moreBtn.type = "button"; moreBtn.setAttribute("aria-expanded", "false");
+    moreBtn.addEventListener("click", () => {
+      const open = wrap.classList.toggle("collapsed") === false;
+      moreBtn.setAttribute("aria-expanded", String(open));
+      moreBtn.textContent = open ? "핵심 항목만 보기" : `나머지 ${nMore}개 항목 더 보기`;
+    });
+    if (!nMore) moreBtn.hidden = true;
     const cards = el("div", "card-grid");
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(verdict, myFit(cs), wrap, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
+    out.append(verdict, myFit(cs), wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {
