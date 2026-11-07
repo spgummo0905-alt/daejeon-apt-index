@@ -101,6 +101,29 @@ td small{white-space:nowrap;font-weight:500;color:var(--muted)}
 @media (min-width:600px) and (max-width:979px){ .plan{aspect-ratio:4/3} .chips{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))} }
 @media (prefers-reduced-motion:no-preference){ .chip,.btn,.stepbtn{transition:background-color .12s,border-color .12s,transform .08s} .chip:active,.btn:active,.stepbtn:active{transform:scale(.98)} }
 @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important;scroll-behavior:auto!important} }
+
+.twbox{display:grid;grid-template-columns:1fr;gap:8px 20px;align-items:center}
+@media (min-width:600px) and (max-width:979px){.twbox{grid-template-columns:minmax(0,240px) minmax(0,1fr)}}
+@media (min-width:1200px){.twbox{grid-template-columns:1fr}}
+.tw-svg{display:block;width:100%;max-width:300px;margin:0 auto;height:auto;max-height:420px;overflow:visible}
+.tw-row{cursor:pointer;outline:none}
+.tw-row:focus-visible .tw-front{stroke:#0b5fd1;stroke-width:3}
+.tw-front{stroke:#fff;stroke-width:.6}
+.tw-side{filter:brightness(.78);stroke:#fff;stroke-width:.6}
+.tw-roof{fill:#c9c7bd}
+.tw-sel .tw-front{stroke:#c1121f;stroke-width:2.2}
+.tw-lab{font-size:11px;fill:#46535f;font-variant-numeric:tabular-nums}
+.tw-val{font-size:11px;font-weight:700;fill:#15212c;font-variant-numeric:tabular-nums}
+.tw-shadow{fill:rgba(10,20,40,.10)}
+.tw-t0{fill:#3b4a5c}.tw-t1{fill:#6f84a0}.tw-t2{fill:#c8c2a6}.tw-t3{fill:#f2c75c}.tw-t4{fill:#f5a300}
+.tw-key{display:inline-flex;align-items:center;gap:6px;margin:2px 12px 2px 0;font-size:16px}
+.tw-sw{display:inline-block;width:18px;height:18px;border-radius:4px;border:1.5px solid #15212c}
+.tw-sw.tw-t0{background:#3b4a5c}.tw-sw.tw-t1{background:#6f84a0}.tw-sw.tw-t2{background:#c8c2a6}.tw-sw.tw-t3{background:#f2c75c}.tw-sw.tw-t4{background:#f5a300}
+.tw-sum{margin:0 0 8px;font-size:19px;font-weight:800}
+.tw-list{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.tw-list li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;padding:8px 10px;border:1.5px solid var(--line);border-radius:var(--r);font-size:17px}
+.tw-list li span{word-break:keep-all}
+.tw-list b{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -134,6 +157,7 @@ td small{white-space:nowrap;font-weight:500;color:var(--muted)}
       </section>
 
       <section class="card result" aria-labelledby="h-res" aria-live="polite" id="result"></section>
+      <section class="card" id="tower" aria-labelledby="h-tw"></section>
       <section class="card" id="cmp" aria-labelledby="h-cmp"></section>
     </div>
 
@@ -272,6 +296,51 @@ function drawResult() {
   }).join('');
   $('cmp').innerHTML = '<h2 id="h-cmp">날짜별로 견주기</h2><table><thead><tr><th scope="col">날짜</th><th scope="col">직사광 가능 시간(추정)</th><th scope="col">가리는 동</th></tr></thead><tbody>' + rows + '</tbody></table>' +
     '<p class="hint">같은 동·같은 층으로 계산한 값이에요. 15분 칸으로 세어서 15분 단위로만 나와요.</p>';
+}
+
+
+// ---------- 층별 햇빛 (층별 시세 건물 그림과 같은 모양) ----------
+const TW_TONES = [['1시간 미만', m => m < 60], ['1~2시간', m => m < 120], ['2~3시간', m => m < 180], ['3~4시간', m => m < 240], ['4시간 넘게', () => true]];
+const twTone = m => TW_TONES.findIndex(t => t[1](m));
+const twCache = {};
+function twFloors() {
+  const b = tgt(), key = st.cid + '|' + st.tid + '|' + st.dk;
+  if (twCache[key]) return twCache[key];
+  const d = curDate(), out = [];
+  for (let f = 1; f <= b.f; f++) out.push({ f, min: C.summarize(ctx, C.run(ctx, st.tid, f, d)).sunMin });
+  return (twCache[key] = out);
+}
+function drawTower() {
+  const b = tgt(), box = $('tower'), dn = DATES.find(x => x.key === st.dk);
+  const fl = twFloors(), top = b.f;
+  const hh = Math.max(6, Math.min(16, Math.floor(320 / top))), W = 112, Dx = 34, Dy = 17, L = 34, R = 56;
+  const H = top * hh, y0 = Dy + 6, base = y0 + H, NSV = 'http://www.w3.org/2000/svg';
+  let g = '', lastY = -1e9;
+  fl.forEach(x => {
+    const y = base - x.f * hh, t = twTone(x.min), sel = x.f === st.fl;
+    g += '<g class="tw-row' + (sel ? ' tw-sel' : '') + '" data-tw="' + x.f + '" role="button" tabindex="0" aria-label="' + x.f + '층, ' + dn.name + ' 직사광 약 ' + C.durText(x.min) + (sel ? ', 지금 고른 층' : '') + '"><title>' + x.f + '층 · ' + dn.name + ' 약 ' + C.durText(x.min) + '</title>' +
+      '<rect class="tw-front tw-t' + t + '" x="' + L + '" y="' + y + '" width="' + W + '" height="' + hh + '"/>' +
+      '<polygon class="tw-side tw-t' + t + '" points="' + (L + W) + ',' + y + ' ' + (L + W + Dx) + ',' + (y - Dy) + ' ' + (L + W + Dx) + ',' + (y - Dy + hh) + ' ' + (L + W) + ',' + (y + hh) + '"/></g>';
+    if (x.f === 1 || x.f === top || x.f % 5 === 0 || sel) g += '<text class="tw-lab" x="' + (L - 6) + '" y="' + (y + hh / 2 + 4) + '" text-anchor="end">' + x.f + '층</text>';
+    const vy = y - Dy / 2 + hh / 2 + 4;
+    if ((sel || x.f === 1 || x.f === top || x.f % 5 === 0) && hh >= 9 && Math.abs(vy - lastY) >= 13) { g += '<text class="tw-val" x="' + (L + W + Dx + 6) + '" y="' + vy + '">' + C.durText(x.min) + '</text>'; lastY = vy; }
+  });
+  const svg = '<svg class="tw-svg" viewBox="0 0 ' + (L + W + Dx + R) + ' ' + (base + 18) + '" role="img" aria-label="' + esc(C.label(b)) + ' ' + top + '층 건물의 층별 직사광 시간(' + dn.name + ' 기준, 추정). 밝은 노랑일수록 오래 닿고 어두운 남색일수록 짧게 닿아요.">' +
+    '<ellipse cx="' + (L + (W + Dx) / 2) + '" cy="' + (base + 6) + '" rx="' + ((W + Dx) / 1.6) + '" ry="8" class="tw-shadow"/>' + g +
+    '<polygon class="tw-roof" points="' + L + ',' + y0 + ' ' + (L + W) + ',' + y0 + ' ' + (L + W + Dx) + ',' + (y0 - Dy) + ' ' + (L + Dx) + ',' + (y0 - Dy) + '"/></svg>';
+  const best = fl.reduce((a, x) => (x.min > a.min ? x : a), fl[0]), worst = fl.reduce((a, x) => (x.min < a.min ? x : a), fl[0]);
+  const spread = best.min - worst.min;
+  let side = '<p class="tw-sum">' + (spread >= 15 ? '층에 따라 최대 약 ' + C.durText(spread) + ' 차이' : '층에 따른 차이가 거의 없어요') + ' <span style="font-size:16px;font-weight:600">(추정)</span></p>';
+  side += '<p class="hint" style="margin:0 0 6px">' + dn.name + '(' + dtxt(dn.date) + ') 기준 직사광이 닿을 가능성이 있는 시간이에요. 층을 누르면 위 결과가 그 층으로 바뀌어요.</p>';
+  side += '<div>' + TW_TONES.map((t, i) => '<span class="tw-key"><i class="tw-sw tw-t' + i + '"></i>' + t[0] + '</span>').join('') + '</div>';
+  side += '<ul class="tw-list"><li><span>가장 많이 드는 층</span><b>' + best.f + '층 · 약 ' + C.durText(best.min) + '</b></li><li><span>가장 적게 드는 층</span><b>' + worst.f + '층 · 약 ' + C.durText(worst.min) + '</b></li><li><span>지금 고른 층</span><b>' + st.fl + '층 · 약 ' + C.durText(fl[st.fl - 1].min) + '</b></li></ul>';
+  box.innerHTML = '<h2 id="h-tw">층별 햇빛 한눈에 보기</h2><div class="twbox"><figure style="margin:0">' + svg + '</figure><div>' + side + '</div></div>' +
+    '<p class="hint">' + esc(C.label(b)) + ' 한 동만 같은 방식으로 층마다 계산했어요. 앞 동과 건물 높이 자료가 달라지면 색도 달라져요. 실내 채광이나 법적 일조권이 아니에요.</p>';
+  box.querySelectorAll('[data-tw]').forEach(el => {
+    const pick = () => { st.fl = +el.getAttribute('data-tw'); fullRender(); writeHash(); const n = $('tower').querySelector('[data-tw="' + st.fl + '"]'); if (n) n.focus({ preventScroll: true }); };
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  });
 }
 
 // ---------- 시간대 막대 ----------
@@ -434,7 +503,7 @@ function drawEvidence() {
 
 // ---------- 갱신 ----------
 function fullRender() {
-  drawControls(); recompute(); drawResult(); drawBar(); drawPlan(); drawEvidence();
+  drawControls(); recompute(); drawResult(); drawTower(); drawBar(); drawPlan(); drawEvidence();
 }
 function select(tid) {
   st.tid = tid; const b = tgt(); st.fl = Math.min(Math.max(1, st.fl), b.f); fullRender(); writeHash();
