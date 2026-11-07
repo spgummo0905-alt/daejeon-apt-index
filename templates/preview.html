@@ -5,8 +5,7 @@
 {% block body %}
 <div class="pv">
   <h1>일조 미리보기</h1>
-  <p class="sub">가보기 전에, 먼저 살펴보세요. 동과 층을 고르면 앞 동이 햇빛을 가리는 시간대를 미리 계산해 봐요.</p>
-  <p class="pvnote" role="note"><strong>추정한 참고용이에요.</strong> 건물 높이와 위치 자료로 계산한 값이라 실제와 다를 수 있고, 실내 채광이나 법적 일조권을 뜻하지 않아요. 현장에서 꼭 확인하세요.</p>
+  <p class="pvnote" role="note"><strong>추정한 참고용이에요.</strong> 실내 채광이나 법적 일조권이 아니고 실제와 다를 수 있어요. 현장에서 꼭 확인하세요.</p>
 
   <details class="pick" id="pv-pick" open>
     <summary>단지 고르기 <span class="count" id="pickCount" style="margin:0 0 0 10px"></span></summary>
@@ -17,39 +16,40 @@
 
   {# 단지를 바로 열 때(주소에 #c=...) 자료가 올 때까지 자리를 잡아 둠: 빈 카드가 먼저 보였다 채워지며 화면이 흔들리지 않게 #}
   <p class="pvload" id="pv-load" role="status" hidden>건물 자료를 불러오는 중이에요.</p>
-  <script>if(/[#&]c=/.test(location.hash)){document.getElementById("pv-load").hidden=false;document.getElementById("pv-pick").removeAttribute("open")}</script>
+  <script>if(/[#&]c=/.test(location.hash)){document.body.classList.add("pv-has");document.getElementById("pv-load").hidden=false;document.getElementById("pv-pick").removeAttribute("open")}</script>
   <div id="pv-tool" hidden>
   <div class="layout">
-    <div class="col-ctl">
-      <section class="card" aria-labelledby="l-cx">
-        <span class="lab" id="l-cx">1. 단지</span>
-        <div id="cx"></div>
-      </section>
-      <section class="card" aria-labelledby="l-dong">
-        <span class="lab" id="l-dong">2. 동 <small>(지도에서 눌러도 돼요)</small></span>
-        <div class="chips" id="dong" role="group" aria-labelledby="l-dong"></div>
-      </section>
-      <section class="card" aria-labelledby="l-floor">
-        <label class="lab" id="l-floor" for="floor">3. 층 <span class="val" id="floorVal"></span></label>
-        <div class="row">
-          <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
-          <input id="floor" type="range" min="1" max="10" step="1" value="1">
-          <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
-        </div>
-        <p class="hint" id="floorHint"></p>
-      </section>
-      <section class="card" aria-labelledby="l-date">
-        <span class="lab" id="l-date">4. 날짜</span>
-        <div class="chips" id="date" role="group" aria-labelledby="l-date"></div>
-      </section>
-      <section class="card result" aria-labelledby="h-res" aria-live="polite" id="result"></section>
-      <section class="card" id="tower" aria-labelledby="h-tw"></section>
-      <section class="card" id="cmp" aria-labelledby="h-cmp"></section>
-    </div>
-    <div class="col-plan">
-      <section class="card planbox" aria-labelledby="h-plan">
-        <h2 id="h-plan">위에서 본 모습</h2>
-        <svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg>
+    <section class="card cond" aria-label="보고 싶은 조건">
+      <div id="cx"></div>
+      <span class="lab" id="l-dong">동</span>
+      <div id="dong" role="group" aria-labelledby="l-dong"></div>
+      <label class="lab" id="l-floor" for="floor">층 <span class="val" id="floorVal"></span></label>
+      <div class="row">
+        <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
+        <input id="floor" type="range" min="1" max="10" step="1" value="1">
+        <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
+      </div>
+      <span class="lab" id="l-date">날짜</span>
+      <div class="seg" id="date" role="group" aria-labelledby="l-date"></div>
+    </section>
+
+    <section class="card result" aria-labelledby="h-res" id="result-card">
+      <div id="result" aria-live="polite"></div>
+      <div class="timebar" id="timebar">
+        <div class="cells" id="cells"></div><div class="marker" id="marker"></div>
+        <div class="ticks" id="ticks" aria-hidden="true"></div>
+      </div>
+      <ul class="legend" id="legend1"></ul>
+    </section>
+
+    <section class="card viewbox" aria-labelledby="h-view" id="viewbox">
+      <h2 id="h-view">왜 가려지나요?</h2>
+      <p class="vcap" id="vcap"></p>
+      <div class="seg" id="seg-view" role="group" aria-label="보기 방식"></div>
+      <div id="vp-iso" class="vp"><svg class="iso" id="iso" role="img" aria-labelledby="isoTitle isoDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div id="vp-plan" class="vp" hidden><svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div id="vp-floor" class="vp" hidden><div id="tower"></div></div>
+      <div id="vtime">
         <div class="state" id="state"></div>
         <div style="margin-top:12px">
           <label class="lab" for="time">시각 <span class="val" id="timeVal"></span></label>
@@ -59,22 +59,20 @@
             <button class="stepbtn" id="tup" type="button" aria-label="15분 뒤로">&gt;</button>
           </div>
         </div>
-        <div class="timebar" id="timebar">
-          <div class="cells" id="cells"></div><div class="marker" id="marker"></div>
-          <div class="ticks" id="ticks" aria-hidden="true"></div>
-        </div>
-        <ul class="legend" id="legend1"></ul>
-        <ul class="legend" id="legend2" style="margin-top:8px"></ul>
+        <ul class="legend" id="legend2" style="margin-top:10px"></ul>
         <div class="btnrow"><button class="btn" id="zoom" type="button" aria-pressed="false">넓게 보기</button></div>
-      </section>
-    </div>
+      </div>
+    </section>
+
+    <section class="card cmpbox" id="cmp" aria-labelledby="h-cmp"></section>
   </div>
-  <section class="card field" aria-labelledby="h-field" id="field"></section>
-  <section class="card" aria-labelledby="h-ev" id="evidence"></section>
-  <p class="foot" id="foot"></p>
+  <details class="card fold field" id="field"><summary id="h-field">현장에서 확인할 것</summary><div id="fieldBody"></div></details>
+  <details class="card fold" id="evidence"><summary id="h-ev">계산 근거 · 한계 · 자료 출처</summary><div id="evBody"></div></details>
+  <p class="foot" id="foot">건물 윤곽은 브이월드(국토교통부), 건물 높이·층수는 국토교통부 건축HUB 건축물대장을 바탕으로 한 <strong>추정한 참고용</strong> 계산이에요. 해 위치는 날짜와 단지 중심 좌표로 계산한 천문 값이에요.</p>
   </div>
 </div>
 {% endblock %}
 {% block scripts %}<script src="static/shadow.js?v={{ v }}"></script>
 <script src="static/preview-calc.js?v={{ v }}"></script>
+<script src="static/preview-iso.js?v={{ v }}"></script>
 <script src="static/preview.js?v={{ v }}" defer></script>{% endblock %}
