@@ -507,6 +507,10 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .gfav[aria-pressed="true"] .ic { fill: var(--gold); stroke: #b8912f; }
 .gfav.pop { animation: fav-pop 420ms var(--ease-spring); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; margin-top: 12px; }
+/* 관심 화면: 카드 한 줄(305~319px)·빈 안내(158~210px) 높이를 자료가 오기 전에 미리 잡음 (my.html 의 작은 스크립트가 클래스를 붙임) */
+#favs.fav-wait { min-height: 305px; }
+#favs.fav-wait0 { min-height: 158px; }
+@media (max-width: 719px) { #favs.fav-wait0 { min-height: 184px; } }
 
 /* S: 남색 바탕 금박 / A: 그라파이트 바탕 백금박 */
 .gcard.g-S, .gcard.g-A { border: 2px solid transparent; color: #f6f0e1; box-shadow: 0 10px 30px rgba(10,20,40,.28); }

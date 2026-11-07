@@ -37,6 +37,8 @@
     <ul class="wn-list" data-news-list></ul>
   </div>
   <div class="card-grid" id="favs"></div>
+  {# 저장된 관심 단지 수를 문서에서 먼저 읽어 첫 줄 높이를 미리 잡음(자료가 늦게 와도 아래 계정·코스 칸이 밀리지 않게). 카드는 my.js 가 채움 #}
+  <script>try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),f=JSON.parse(localStorage.getItem((a&&a.user?"djdex@"+a.user.id+":":"djdex:")+"favs")||"[]");document.getElementById("favs").classList.add(Array.isArray(f)&&f.length?"fav-wait":"fav-wait0")}catch(e){}</script>
 </section>
 {% if account %}
 <section class="acct" id="account" data-account aria-labelledby="acct-title">
