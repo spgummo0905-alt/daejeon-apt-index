@@ -951,10 +951,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
     // 현재 화면이 속한 메뉴 묶음: 찾기(조건·테마·역세권) / 임장(프로젝트·비교) / 나의 집감(관심·카드첩)
-    const tabOf = { themes: "finder", stations: "finder", compare: "projects", cards: "my" }[page] || page;
-    document.querySelectorAll(".tabbar a").forEach(a => {
-      if (a.dataset.tab === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); }
-    });
+    const tabOf = { themes: "finder", stations: "finder", cards: "my" }[page] || page;
+    const tabbarOf = { rank: "index" }[page] || tabOf;   // 아래 탭: 둘러보기(순위)는 홈 묶음
+    document.querySelectorAll(".tabbar a").forEach(a => { if (a.dataset.tab === tabbarOf && !a.classList.contains("on")) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
     document.querySelectorAll(".top-nav > a[data-nav]").forEach(a => { if (a.dataset.nav === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
     const grp = { finder: "finder", themes: "finder", stations: "finder", projects: "project", compare: "project", cards: "project" }[page];
     if (grp) document.querySelectorAll('.tn-grp[data-tn="' + grp + '"]').forEach(g => g.classList.add("on"));
