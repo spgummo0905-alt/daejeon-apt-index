@@ -107,6 +107,10 @@ h3.sub { margin-top: 28px; }
 .hm-fold.hm-closed .panel-head p { display: none; }
 main .panel[id], main section[id] { scroll-margin-top: 62px; }
 /* 나의 집감 세 칸 탭 */
+.my-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 0; }
+.my-stats > div { padding: 10px 12px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.my-stats dt { font-size: 14px; color: var(--muted); }
+.my-stats dd { margin: 2px 0 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .my-seg { display: flex; gap: 4px; margin: 12px 0 12px; position: sticky; top: 0; z-index: 5; padding: 4px; border: 0; border-radius: var(--r-md); background: var(--chip); }
 .my-seg button { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 6px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .my-seg button b { margin-left: 6px; font-weight: 800; }
