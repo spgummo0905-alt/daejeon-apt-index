@@ -424,11 +424,11 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
 .mp-seg { flex: none; display: flex; gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--chip); }
 .mp-seg button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .mp-seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow); }
-.mp-bar { display: flex; align-items: center; gap: 10px; }
+.mp-bar { display: flex; align-items: center; gap: 10px; min-height: 52px; }
 .mp-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; padding: 2px 0; }
 .mp-chips .chip { flex: none; min-height: 44px; padding: 0 14px; border: 0; font-size: 15px; font-weight: 600; }
 .mp-chips .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-.mp-count { flex: none; margin: 0; font-size: 15px; color: var(--muted); }
+.mp-count { flex: none; margin: 0; min-width: 3.2em; text-align: right; font-size: 15px; color: var(--muted); }
 .mp-stage { position: relative; height: calc(100svh - 280px); min-height: 360px; overflow: hidden; border-radius: var(--r-lg); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: var(--shadow); }
 .mp-svg { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .mp-svg:active { cursor: grabbing; }
