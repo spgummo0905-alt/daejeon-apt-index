@@ -49,7 +49,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 const val SITE = "https://www.jipgam.kr/"
 
 data class Region(val label: String, val path: String)
-val REGIONS = listOf(Region("대전", "daejeon/"), Region("세종", "sejong/"), Region("청주", "cheongju/"))
+val REGIONS = listOf(Region("대전", "daejeon/"), Region("세종", "sejong/"), Region("청주", "cheongju/"), Region("서울", "seoul/"))   // 웹 지역 메뉴와 같은 4곳
 
 data class Tab(val label: String, val page: String, val icon: ImageVector)
 val TABS = listOf(
@@ -62,8 +62,10 @@ val TABS = listOf(
 
 // 같은 집감 주소와 로그인(카카오) 주소는 앱 안에서, 나머지는 외부 브라우저로 연다
 fun staysInApp(uri: Uri): Boolean {
-    val h = uri.host ?: return false
-    return h == "www.jipgam.kr" || h == "jipgam.kr" || h.endsWith("kakao.com") || h.endsWith("kakaocdn.net") || h.endsWith("supabase.co")
+    if (uri.scheme != "https") return false                       // http·intent·file 등은 앱 안에서 열지 않는다
+    val h = (uri.host ?: return false).lowercase()
+    fun isOrSub(d: String) = h == d || h.endsWith(".$d")          // 'evilkakao.com' 같은 비슷한 이름은 통과시키지 않는다
+    return h == "www.jipgam.kr" || h == "jipgam.kr" || isOrSub("kakao.com") || isOrSub("kakaocdn.net") || isOrSub("supabase.co")
 }
 
 class MainActivity : ComponentActivity() {
@@ -99,7 +101,8 @@ fun makeWebView(ctx: android.content.Context, onProgress: (Int) -> Unit): WebVie
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest): Boolean {
             if (staysInApp(r.url)) return false
-            runCatching { v.context.startActivity(Intent(Intent.ACTION_VIEW, r.url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            // 밖으로 여는 건 웹 주소·전화·메일만. intent: 같은 다른 형식은 열지 않고 막는다
+            if (r.url.scheme in setOf("https", "http", "tel", "mailto")) runCatching { v.context.startActivity(Intent(Intent.ACTION_VIEW, r.url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             return true
         }
         override fun onPageStarted(v: WebView, url: String?, f: Bitmap?) { onProgress(10) }
