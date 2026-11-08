@@ -71,6 +71,7 @@ p a:not([class]), li > a:not([class]):only-child:not(:first-child), .note a:not(
 main { max-width: 1080px; margin: 0 auto; padding: 0 16px 56px; }
 header.site { display: flex; justify-content: space-between; align-items: center; gap: 12px;
   max-width: 1080px; margin: 0 auto; padding: 16px; flex-wrap: wrap; }
+.hd-back, .hd-title { display: none; }
 .brand { font-weight: 800; font-size: 18px; color: var(--text); letter-spacing: -0.01em; }
 nav a { margin-left: 16px; color: var(--text-2); }
 footer { max-width: 1080px; margin: 0 auto; padding: 24px 16px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
@@ -698,6 +699,13 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   .hero-main h1 { font-size: 28px; }
   .hero-main .lead { display: none; }   /* 첫 화면은 제목·검색·입구만 */
   .page-hero h1 { font-size: 27px; }
+  /* 하위 화면 머리: ‹ 제목 (집감 로고·지역 이름은 홈에서) */
+  header.site:has(.hd-back) { flex-wrap: nowrap; gap: 6px; padding: 8px 12px; }
+  header.site:has(.hd-back) .brand { display: none; }
+  .hd-back { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px; margin-left: -8px; border: 0; border-radius: 50%; background: transparent; color: var(--text); cursor: pointer; }
+  .hd-back .ic { width: 26px; height: 26px; }
+  .hd-title { display: block; flex: 1 1 auto; min-width: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .page-hero.lean .eyebrow, body[data-page="my"] .page-hero .eyebrow { display: none; }   /* 제목 위 파란 소제목: 머리 제목과 겹쳐 정리 */
   .vs-pick { grid-template-columns: 1fr; }
   .vs-mark { padding: 0; text-align: center; }
   .vs-cards { grid-template-columns: 1fr; }
