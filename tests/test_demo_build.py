@@ -1776,3 +1776,14 @@ def test_map_screen_is_wired(tmp_path):
     home = (out / "index.html").read_text(encoding="utf-8"); finder = (out / "finder.html").read_text(encoding="utf-8")
     assert 'href="map.html"' in home and 'href="map.html"' in finder and 'id="map"' in home      # 입구 연결, 옛 지도 구역 보존
     assert 'data-tab="map"' not in page and 'data-tab="finder"' in page
+
+def test_apt_fixed_cta_reuses_existing_course_button(tmp_path):
+    """단지 상세 아래 고정 버튼: 새 저장 없이 기존 '임장 코스에 넣기'(없으면 관심) 버튼을 대신 누른다"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
+    assert 'data-apt-cta hidden' in page and 'data-apt-cta-btn' in page and "임장 코스에 넣기" in page
+    app = (out / "static" / "app.js").read_text(encoding="utf-8")
+    body = app[app.index("function aptCta()"):app.index("function aptCta()") + 1300]
+    assert "base.click()" in body and "localStorage" not in body and "DJ.addToCourse" not in body      # 저장은 원래 버튼이 함
+    assert app.index("courseButton();\n    aptCta();") > 0

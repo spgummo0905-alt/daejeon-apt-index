@@ -1575,6 +1575,24 @@
     main.prepend(box);
   }
 
+  // 단지 화면 아래 고정 버튼(휴대폰): 위쪽 '임장 코스에 넣기'(위치 정보가 없으면 '관심')를 대신 눌러 줌. 상태 글자만 따라 바꾸고 저장은 원래 버튼이 함
+  function aptCta() {
+    const bar = document.querySelector("[data-apt-cta]");
+    if (!bar) return;
+    const src = document.querySelector("[data-course-add]"), isCourse = !!src, base = src || document.querySelector("[data-fav]");
+    if (!base) return;
+    const btn = bar.querySelector("[data-apt-cta-btn]"), t = bar.querySelector("[data-apt-cta-t]");
+    const paint = () => {
+      const on = base.getAttribute("aria-pressed") === "true";
+      t.textContent = isCourse ? (on ? "임장 코스에 있어요" : "임장 코스에 넣기") : (on ? "관심 단지예요" : "관심 단지에 담기");
+      btn.classList.toggle("done", on); btn.setAttribute("aria-pressed", String(on));
+    };
+    btn.addEventListener("click", () => { base.click(); setTimeout(paint, 60); setTimeout(paint, 400); });
+    new MutationObserver(paint).observe(base, { attributes: true, attributeFilter: ["aria-pressed", "class"] });
+    document.addEventListener("dj:course", paint);
+    paint(); bar.hidden = false;
+  }
+
   // 단지 페이지 위쪽 '임장 코스에 넣기' (누르면 넣고, 다시 누르면 빼기). 현장 모드에서 넣거나 빼도 같이 바뀜
   function courseButton() {
     const b = document.querySelector("[data-course-add]");
@@ -1716,6 +1734,7 @@
     pwa();
     welcome();
     courseButton();
+    aptCta();
     entries();
     regionPicker();
     recentDock();

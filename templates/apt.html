@@ -591,6 +591,10 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
   <p class="sheet-hint" data-sheet-hint hidden></p>
   <button type="button" class="btn sheet-close" data-sheet-close>닫기</button>
 </div>
+{# 아래 고정 행동 버튼(휴대폰): 기존 '임장 코스에 넣기'(없으면 '관심')를 그대로 누름. 새 저장 방식 없음 (app.js aptCta) #}
+<div class="apt-cta" data-apt-cta hidden>
+  <button type="button" class="btn primary" data-apt-cta-btn><span data-apt-cta-t>임장 코스에 넣기</span><span class="apt-cta-plus" aria-hidden="true">＋</span></button>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
