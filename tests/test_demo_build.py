@@ -1155,7 +1155,7 @@ def test_rank_tab_is_named_browse(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     page = (out / "index.html").read_text(encoding="utf-8")
-    assert 'data-tab="rank"><svg class="ic"><use href="#i-rank"/></svg>둘러보기</a>' in page
+    assert 'data-tab="rank"' not in page and 'href="rank.html"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>' in page   # 탭에서는 빠지고 홈 둘러보기 입구로
     assert 'data-nav="rank">둘러보기</a>' in page and 'data-nav="rank">랭킹</a>' not in page
     assert (out / "rank.html").exists()
 
@@ -1297,8 +1297,8 @@ def test_visit_prep_name_is_the_same_everywhere(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     home = (out / "index.html").read_text(encoding="utf-8")
     tab = home[home.index('class="tabbar"'):home.index("</nav>", home.index('class="tabbar"'))]
-    assert 'data-tab="projects"' in tab and "임장 준비</a>" in tab and "임장</a>" not in tab.replace("임장 준비</a>", "")
-    assert tab.index('href="projects.html"') < tab.index("둘러보기")                                     # 탭 순서·목적지 그대로
+    assert 'data-tab="projects"' in tab and "임장</a>" in tab
+    assert [tab.index(h) for h in ('index.html', 'finder.html', 'compare.html', 'projects.html', 'my.html')] == sorted(tab.index(h) for h in ('index.html', 'finder.html', 'compare.html', 'projects.html', 'my.html'))   # 탭 순서: 홈·찾기·비교·임장·MY
     assert ">임장 준비<svg" in home and ">임장</button>" not in home                                       # 위 메뉴
     gates = home[home.index("data-gates"):home.index('class="roof-strip"')]
     assert "data-gv-k>임장 준비<" in gates and "임장 준비 열기" in gates and 'href="projects.html" data-gv-btn' in gates

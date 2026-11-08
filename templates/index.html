@@ -65,6 +65,12 @@ try {
         <a class="gate-btn" href="projects.html" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
       </section>
     </div>
+    {# 둘러보기: 하단 탭에서 빠진 순위·테마·지도를 홈에서 한 번에 (주소는 그대로) #}
+    <nav class="browse" aria-label="둘러보기">
+      <a href="rank.html"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>
+      <a href="themes.html"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>테마</a>
+      <a href="#map"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>지도</a>
+    </nav>
     {# 다시 온 사람의 첫 화면 자리 맞춤: app.js(gates·resume)가 늦게 도착해도 카드가 커졌다 줄며 아래가 밀리지 않게, 저장된 기록만으로 정해지는 부분(진행 중 프로젝트면 임장 입구가 으뜸이 됨, 이어서 줄 자리)을 문서에서 바로 맞춤. 판단 기준은 app.js(DJ.activeProject·resume)와 같고 못 읽으면 아무것도 안 함. 세부 문구(방문 수·다음 할 일)는 app.js 가 채움 #}
     <script>try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),pre=a&&a.user?"djdex@"+a.user.id+":":"djdex:",rg={{ region | tojson }},best=null,L=function(k,f){try{var v=JSON.parse(localStorage.getItem(pre+k));return v==null?f:v}catch(e){return f}};
     for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(pre+"project:")===0){var p=L(k.slice(pre.length),null);if(p&&p.version===1&&/^[a-z0-9-]{1,64}$/.test(p.id)&&typeof p.name==="string"&&p.name.trim()&&p.region===rg&&Array.isArray(p.slugs)&&!p.archived&&p.slugs.length&&(!best||(+p.updated||0)>(+best.updated||0)))best=p}}
