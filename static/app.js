@@ -958,6 +958,11 @@
     const grp = { finder: "finder", themes: "finder", stations: "finder", projects: "project", compare: "project", cards: "project" }[page];
     if (grp) document.querySelectorAll('.tn-grp[data-tn="' + grp + '"]').forEach(g => g.classList.add("on"));
     topNav();
+    // 하위 화면 머리의 ‹: 같은 사이트에서 왔으면 이전 화면, 아니면 홈으로
+    document.querySelectorAll("[data-hd-back]").forEach(b => b.addEventListener("click", () => {
+      let same = false; try { same = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch (e) { same = false; }
+      if (same && history.length > 1) history.back(); else location.href = (window.DJ_ROOT || "") + "index.html";
+    }));
     // 단지 페이지: 최근 본 단지 기록, 관심 단지·공유·비교 버튼
     const apt = document.querySelector("[data-apt]");
     if (apt) {
