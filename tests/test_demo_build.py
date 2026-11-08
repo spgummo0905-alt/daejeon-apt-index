@@ -1788,3 +1788,12 @@ def test_apt_fixed_cta_reuses_existing_course_button(tmp_path):
     body = app[app.index("function aptCta()"):app.index("function aptCta()") + 1300]
     assert "base.click()" in body and "localStorage" not in body and "DJ.addToCourse" not in body      # 저장은 원래 버튼이 함
     assert app.index("courseButton();\n    aptCta();") > 0
+
+
+def test_map_list_marks_complexes_without_coordinates(tmp_path):
+    """좌표가 없는 단지는 지도에 점을 만들지 않고, 목록 끝에 '위치 미확인'으로만 알린다(임의 위치 금지)"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "map.js").read_text(encoding="utf-8")
+    assert "NOXY" in js and "위치 미확인" in js
+    assert "ALL = d.complexes.filter(c => c.la != null && c.ln != null)" in js      # 지도 점은 좌표 있는 단지만
