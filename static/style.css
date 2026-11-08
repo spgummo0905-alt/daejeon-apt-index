@@ -476,6 +476,8 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
 .mp-ul-p { font-size: 15px; color: var(--muted); }
 .mp-ul-v { flex: none; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .mp-empty { padding: 24px 4px; font-size: 16px; }
+.mp-unk-h { margin: 18px 4px 8px; font-size: 15px; font-weight: 700; color: var(--muted); }
+.mp-unk a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 16px; border-radius: var(--r-md); background: var(--chip); color: var(--text); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { .mp-sheet, .mp-sheet.open { transition: none; } }
 @media (min-width: 721px) { .mp { max-width: 760px; margin: 0 auto; } .mp-stage { height: 560px; } }
 

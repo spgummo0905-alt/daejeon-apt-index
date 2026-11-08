@@ -12,7 +12,7 @@
   const BANDS = [["전체", 0], ["3억 이하", 30000], ["5억 이하", 50000], ["7억 이하", 70000]];   // p 는 만원 단위
   const svg = $("[data-mp-svg]"), stage = $("[data-mp-stage]"), listBox = $("[data-mp-list]"), sheet = $("[data-mp-sheet]");
   const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let km = null, ALL = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
+  let km = null, ALL = [], NOXY = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
   const norm = s => String(s || "").replace(/\s+/g, "").toLowerCase();
   const gLayer = mk("g", {}), lLayer = mk("g", {});
   svg.append(gLayer, lLayer);
@@ -104,6 +104,14 @@
       const l = document.createElement("span"); l.className = "mp-ul-l"; l.append(n, p); b.append(l, v); li.append(b); ul.append(li);
     });
     listBox.append(ul);
+    // 좌표가 없는 단지: 지도에는 점을 만들지 않고(임의 위치 금지) 목록 끝에 '위치 미확인'으로만 알림
+    const nq = norm(q), unk = NOXY.filter(c => !nq || norm(c.n + c.gu + c.d).includes(nq));
+    if (unk.length && !band) {
+      const h = document.createElement("p"); h.className = "mp-unk-h"; h.textContent = `위치 미확인 ${unk.length}곳 · 지도에는 표시하지 못했어요`;
+      const ul2 = document.createElement("ul"); ul2.className = "mp-ul mp-unk";
+      unk.slice(0, 30).forEach(c => { const li = document.createElement("li"), a = document.createElement("a"); a.href = DJ.href(c); const l = document.createElement("span"); l.className = "mp-ul-l"; const n = document.createElement("b"), p = document.createElement("span"); n.textContent = c.n; p.className = "mp-ul-p"; p.textContent = DJ.place(c) + " · 위치 미확인"; l.append(n, p); const v = document.createElement("span"); v.className = "mp-ul-v"; v.textContent = c.pt || "-"; a.append(l, v); li.append(a); ul2.append(li); });
+      listBox.append(h, ul2);
+    }
     if (!rows.length) { const p = document.createElement("p"); p.className = "muted mp-empty"; p.textContent = "조건에 맞는 단지가 없어요. 가격대나 검색어를 바꿔 보세요."; listBox.append(p); }
     if (more) { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = `나머지 ${rows.length - 60}곳 더 보기`; b.addEventListener("click", () => { listBox.dataset.all = "1"; buildList(); }); listBox.append(b); }
   }
@@ -230,7 +238,7 @@
   BANDS.forEach((b, i) => { const x = document.createElement("button"); x.type = "button"; x.className = "chip"; x.dataset.band = i; x.setAttribute("aria-pressed", i === 0); x.textContent = b[0]; chips.append(x); });
 
   DJ.data().then(d => {
-    ALL = d.complexes.filter(c => c.la != null && c.ln != null);
+    ALL = d.complexes.filter(c => c.la != null && c.ln != null); NOXY = d.complexes.filter(c => c.la == null || c.ln == null);
     if (!ALL.length) { root.querySelector(".mp-note").textContent = "표시할 단지 위치 자료가 아직 없어요"; return; }
     project(); fit(); build(); tryReal();
     const p = new URLSearchParams(location.search), qs = p.get("q");

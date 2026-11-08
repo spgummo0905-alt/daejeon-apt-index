@@ -1799,3 +1799,11 @@ def test_preview_buildings_are_touch_and_keyboard_selectable(tmp_path):
     assert "requestAnimationFrame(() => { tickRaf = 0" in js
     calc = (out / "static" / "preview-calc.js").read_text(encoding="utf-8")
     assert "wireBuildings" not in calc            # 계산 엔진은 건드리지 않음
+
+def test_map_list_marks_complexes_without_coordinates(tmp_path):
+    """좌표가 없는 단지는 지도에 점을 만들지 않고, 목록 끝에 '위치 미확인'으로만 알린다(임의 위치 금지)"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "map.js").read_text(encoding="utf-8")
+    assert "NOXY" in js and "위치 미확인" in js
+    assert "ALL = d.complexes.filter(c => c.la != null && c.ln != null)" in js      # 지도 점은 좌표 있는 단지만
