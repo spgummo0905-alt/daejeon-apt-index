@@ -695,7 +695,8 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   .kb-open body { padding-bottom: 0; }
   .tabbar .ic { width: 23px; height: 23px; }
   .tabbar a.on { color: var(--accent); font-weight: 700; }
-  .hero-main h1 { font-size: 31px; }
+  .hero-main h1 { font-size: 28px; }
+  .hero-main .lead { display: none; }   /* 첫 화면은 제목·검색·입구만 */
   .page-hero h1 { font-size: 27px; }
   .vs-pick { grid-template-columns: 1fr; }
   .vs-mark { padding: 0; text-align: center; }
@@ -4015,26 +4016,22 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .seg-nav a[aria-current="page"] { background: var(--navy); border-color: var(--navy); color: var(--on-navy); }
 
 /* 홈 입구(찾기·비교·임장): 검색창 바로 아래. 으뜸 행동 하나(.gate-main)만 진한 남색, 나머지는 옅은 카드. 으뜸은 처음 온 사람은 '찾기', 하던 일이 있으면 '이어서 하기'(app.js gates) */
-.gates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
-.gate { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 18px; color: var(--text); background: var(--surface); border: 1px solid var(--border); }
-.gate.gold { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(201, 162, 74, .45); }
-.gate-main { order: -1; grid-column: 1 / -1; padding: 22px 24px; color: #fff; border-color: rgba(255, 255, 255, .16); background: linear-gradient(160deg, #13294b, #1e3d6e); box-shadow: var(--shadow); }
+.gates { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 22px; }   /* 앱처럼 세로 한 줄씩: 카드 전체가 버튼 */
+.gate { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border-radius: var(--r-lg); color: var(--text); background: var(--surface); border: 1px solid transparent; box-shadow: var(--shadow); }
+.gate.gold { }   /* 금색은 등급에만 쓴다: 임장 입구의 금색 테두리 제거 */
+.gate-main { order: -1; grid-column: 1 / -1; padding: 20px; border-color: var(--accent); }   /* 으뜸 행동은 남색 면 대신 행동색 선 하나 */
 .gate-k { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--text-2); }
-.gate-main .gate-k { color: #d3e3f8; }
-.gate-main.gold .gate-k { color: #f0d58a; }
-.gate h2 { margin: 0; font-size: 19px; line-height: 1.3; letter-spacing: -.01em; }
-.gate-main h2 { font-size: 24px; }
+.gate-main .gate-k { color: var(--accent); }
+.gate-main.gold .gate-k { color: var(--accent); }
+.gate h2 { margin: 0; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; }
+.gate-main h2 { font-size: 22px; }
 .gate p { margin: 0; font-size: 16px; color: var(--text-2); }
-.gate-main p { color: rgba(255, 255, 255, .84); }
-.gate-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; margin-top: auto; padding: 0 18px; border-radius: 14px;
-  background: var(--chip); border: 1px solid var(--border); color: var(--text); font-size: 17px; font-weight: 800; transition: background var(--t-fast), transform .15s; }
-.gate-btn:hover { background: var(--border); text-decoration: none; }
-.gate.gold .gate-btn { border-color: var(--gold); }
-.gate-main .gate-btn { border-color: transparent; background: #fff; color: #13294b; }
-.gate-main .gate-btn:hover { background: #e9f1fc; }
-.gate-main.gold .gate-btn { background: #ecc96f; color: #2a1d02; }
-.gate-main.gold .gate-btn:hover { background: #f4d98d; }
-.gate-main .gate-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.gate-main p { color: var(--text-2); }
+.gate-btn { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 44px; margin-top: 2px; padding: 0; background: none; border: 0; color: var(--accent); font-size: 18px; font-weight: 700; }
+.gate-btn::after { content: "›"; font-size: 24px; line-height: 1; }
+.gate-btn::before { content: ""; position: absolute; inset: 0; border-radius: var(--r-lg); }   /* 카드 어디를 눌러도 이동 */
+.gate-btn:hover { text-decoration: none; }
+.gate-btn:focus-visible::before { outline: 3px solid var(--accent); outline-offset: 2px; }
 .am-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .am-grid h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
 .am-grid ul { margin: 0; padding: 0; list-style: none; }
