@@ -2091,7 +2091,7 @@ body[data-page="projects"] .rcd { display: none; }
 .sv-nav .btn { margin: 0; padding: 10px 18px; font-weight: 700; }
 .sv-nav .btn:disabled { opacity: .4; cursor: default; }
 .sv-nav-r { display: flex; gap: 8px; }
-.sv-nav .btn.primary { background: color-mix(in srgb, var(--s3) 68%, #000); border-color: transparent; color: #fff; min-width: 96px; justify-content: center; }
+.sv-nav .btn.primary { background: var(--accent); border-color: transparent; color: var(--on-accent); min-width: 96px; justify-content: center; }
 .sv-results { margin-top: 26px; scroll-margin-top: 70px; }
 .sv-res-title { margin: 0; font-size: 20px; }
 .sv-res-title span { color: var(--accent); }
