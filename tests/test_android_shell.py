@@ -31,7 +31,7 @@ def test_android_manifest_theme_and_system_bar_colors_follow_light_and_dark():
     assert "user-scalable" not in m
     assert (ROOT_DIR / "android/app/src/main/res/values-night/colors.xml").exists()
     base = _read("templates/base.html")
-    assert 'name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)"' in base
+    assert 'name="theme-color" content="#f6f8fb" media="(prefers-color-scheme: light)"' in base
     assert 'name="theme-color" content="#111110" media="(prefers-color-scheme: dark)"' in base
 
 
