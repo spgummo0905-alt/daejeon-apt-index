@@ -387,6 +387,8 @@
     if (n === 0) d.textContent += " · 조건을 하나 풀어 보세요";
     lastN = n;
     box.querySelector("[data-sv-n]").textContent = n.toLocaleString();
+    const nr = box.querySelector("[data-sv-navres]");   // 아래 고정 줄: 위쪽과 같은 개수·같은 조건, 조건이 없거나 0곳이면 숨김
+    nr.hidden = idle || n === 0; box.querySelector("[data-sv-navn]").textContent = n.toLocaleString();
     render();
     results();
   }
