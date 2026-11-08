@@ -88,7 +88,7 @@
 <header class="site">
   {# 하위 화면(휴대폰): ‹ 뒤로 + 현재 위치 제목. 홈·소개 화면은 그대로 #}
   {% set _pk = page_path.split('/')[0].replace('.html', '') %}
-  {% set _titles = {"finder": "조건 찾기", "themes": "테마로 찾기", "stations": (transit.tab ~ " 단지") if transit and transit.tab else "역 주변", "compare": "비교", "projects": "임장", "my": "나의 집감", "cards": "카드첩", "rank": "순위", "preview": "일조", "apt": "단지 상세"} %}
+  {% set _titles = {"finder": "조건 찾기", "themes": "테마로 찾기", "stations": (transit.tab ~ " 단지") if transit and transit.tab else "역 주변", "compare": "비교", "projects": "임장", "my": "나의 집감", "cards": "카드첩", "rank": "순위", "preview": "일조", "apt": "단지 상세", "map": "지도"} %}
   {% if _titles.get(_pk) %}<button type="button" class="hd-back" data-hd-back aria-label="이전 화면으로"><svg class="ic" aria-hidden="true"><use href="#i-chev-left"/></svg></button><span class="hd-title" aria-hidden="true">{{ _titles[_pk] }}</span>{% endif %}
   {# 브랜드 '집감'(집 + 감각) + 지역 버튼 하나. 눌러서 권역별 지역 카드에서 고릅니다 (늘어나도 위쪽은 그대로) #}
   <a class="brand" href="{% if landing %}/{% else %}{{ root }}index.html{% endif %}" aria-label="집감 {% if not landing %}{{ region }} {% endif %}첫 화면"><img class="brand-sym" src="{{ root }}static/brand/symbol-96.png" width="30" height="30" alt=""><span class="brand-word">집감<i class="brand-dot" aria-hidden="true"></i></span>{% if regions | length <= 1 %}<span class="brand-sub">{{ region }}</span>{% endif %}</a>
@@ -123,7 +123,7 @@
             <li><a class="tn-lead" href="{{ root }}finder.html"><b>조건으로 찾기</b><span>질문 8개로 내게 맞는 단지 추리기</span></a></li>
             <li><a href="{{ root }}themes.html"><b>테마로 찾기</b><span>학교·학원가·역세권·준공연도</span></a></li>
             {% if transit.page %}<li><a href="{{ root }}stations.html"><b>{{ transit.tab }} 단지</b><span>{{ transit.stop }} 주변 아파트 비교</span></a></li>{% endif %}
-            <li><a href="{{ root }}index.html#map"><b>지도에서 보기</b><span>동네별 시세와 단지 위치</span></a></li>
+            <li><a href="{{ root }}map.html"><b>지도에서 보기</b><span>동네별 시세와 단지 위치</span></a></li>
           </ul>
         </div>
       </div>

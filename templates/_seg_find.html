@@ -3,6 +3,6 @@
   <a href="finder.html"{% if seg_cur == 'finder' %} aria-current="page"{% endif %}>조건으로</a>
   <a href="themes.html"{% if seg_cur == 'themes' %} aria-current="page"{% endif %}>테마로</a>
   {% if transit.page %}<a href="stations.html"{% if seg_cur == 'stations' %} aria-current="page"{% endif %}>{{ transit.tab }} 주변</a>{% endif %}
-  <a href="index.html#map">지도에서</a>
+  <a href="map.html"{% if seg_cur == 'map' %} aria-current="page"{% endif %}>지도에서</a>
   <a href="rank.html">순위로</a>
 </nav>

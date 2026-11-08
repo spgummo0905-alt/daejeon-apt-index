@@ -550,6 +550,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 사이트 맨 앞 주소(www.jipgam.kr/)용 인트로: 같은 화면이지만 지역을 먼저 고르게 (landing.py 가 맨 앞에 옮겨 둠)
     (out_dir / "landing.html").write_text(env.get_template("intro.html").render(page_path="landing.html", landing=True,
                                                                                  **intro_ctx), encoding="utf-8")
+    (out_dir / "map.html").write_text(env.get_template("map.html").render(root="", page_path="map.html", **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"],
         tops=[t for t in tops if t["tab"] != "신고가"], **common), encoding="utf-8")

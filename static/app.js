@@ -880,7 +880,7 @@
     { id: "dong", group: "둘러보기", icon: "map", name: "동네 한 바퀴", goal: 3,
       n: st => most(seenList(st).filter(([, v]) => v[2]).map(([s, v]) => DJ.sido(s) + v[1] + v[2])),
       how: "같은 동의 단지 세 곳을 열어 보세요.", why: "임장은 한 단지가 아니라 동네 안에서 비교하는 일입니다. 옆 단지와의 가격 차이를 알아야 적정 가격을 가늠할 수 있습니다.",
-      tip: "옆 단지와 비교해야 적정가가 보여요", go: ["지도에서 고르기", "index.html#map"] },
+      tip: "옆 단지와 비교해야 적정가가 보여요", go: ["지도에서 고르기", "map.html"] },
     { id: "ten", group: "둘러보기", icon: "walk", name: "발품 10곳", goal: 10, n: st => seenList(st).length,
       how: "단지 열 곳을 열어 보세요.", why: "여러 단지를 볼수록 '이 동네에서 이 가격이면 높은지 낮은지'를 가늠하는 기준이 생깁니다.",
       tip: "많이 볼수록 시세 감이 생겨요", go: ["랭킹에서 고르기", "rank.html"] },
@@ -951,7 +951,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const page = document.body.dataset.page;
     // 현재 화면이 속한 메뉴 묶음: 찾기(조건·테마·역세권) / 임장(프로젝트·비교) / 나의 집감(관심·카드첩)
-    const tabOf = { themes: "finder", stations: "finder", cards: "my" }[page] || page;
+    const tabOf = { themes: "finder", stations: "finder", map: "finder", cards: "my" }[page] || page;
     const tabbarOf = { rank: "index" }[page] || tabOf;   // 아래 탭: 둘러보기(순위)는 홈 묶음
     document.querySelectorAll(".tabbar a").forEach(a => { if (a.dataset.tab === tabbarOf && !a.classList.contains("on")) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
     document.querySelectorAll(".top-nav > a[data-nav]").forEach(a => { if (a.dataset.nav === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
