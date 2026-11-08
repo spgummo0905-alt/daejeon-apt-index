@@ -107,6 +107,10 @@ h3.sub { margin-top: 28px; }
 .hm-fold.hm-closed .panel-head p { display: none; }
 main .panel[id], main section[id] { scroll-margin-top: 62px; }
 /* 나의 집감 세 칸 탭 */
+.my-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 0; }
+.my-stats > div { padding: 10px 12px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.my-stats dt { font-size: 14px; color: var(--muted); }
+.my-stats dd { margin: 2px 0 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .my-seg { display: flex; gap: 4px; margin: 12px 0 12px; position: sticky; top: 0; z-index: 5; padding: 4px; border: 0; border-radius: var(--r-md); background: var(--chip); }
 .my-seg button { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 6px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .my-seg button b { margin-left: 6px; font-weight: 800; }
@@ -2298,8 +2302,13 @@ body[data-page="projects"] .rcd { display: none; }
   .sv-nav { position: sticky; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 5; margin: 14px -16px -16px; padding: 10px 16px;
     background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-radius: 0 0 16px 16px; }
+  .sv-nav { flex-wrap: wrap; }
+  .sv-nav-res:not([hidden]) { flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 14px; border-radius: var(--r-md); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 16px; font-weight: 700; text-decoration: none; }
+  .sv-nav-res b { font-size: 20px; font-variant-numeric: tabular-nums; }
   .sv-nav .btn { padding: 10px 14px; }
+  .kb-open .sv-nav-res { display: none !important; }
 }
+@media (min-width: 721px) { .sv-nav-res { display: none !important; } }
 
 /* 단지 정보 (K-apt) */
 .ki-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; }
@@ -4135,6 +4144,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .browse a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 0 8px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow); color: var(--text); font-size: 16px; font-weight: 600; white-space: nowrap; }
 .browse a:hover { text-decoration: none; filter: brightness(.97); }
 .browse .ic { width: 20px; height: 20px; color: var(--accent); }
+@media (max-width: 720px) and (max-height: 780px) { .hero-main .eyebrow { display: none; } .hero-main { padding-top: 8px; } .hero-main h1 { font-size: 26px; } .gate-k { display: none; } .gate { padding: 12px 14px; } .gate-ic { width: 44px; height: 44px; } .gate-main { padding: 14px; } .gates { margin-top: 10px; } }
 .gate-btn:focus-visible::before { outline: 3px solid var(--accent); outline-offset: 2px; }
 .am-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .am-grid h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
@@ -4209,6 +4219,8 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .gate-k { font-size: 13px; }
   .gate h2 { font-size: 18px; line-height: 1.3; }
   .gate-long { display: none; }
+  .gate-main { padding: 16px; }
+  .browse { margin-top: 10px; }
   .gate > p:not(.gate-k) { display: none; }
   .gate h2 br { display: none; }
   .gate-btn { min-height: 44px; margin-top: 2px; padding: 0; font-size: 16px; }
@@ -4282,10 +4294,10 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-actions { margin-top: 10px; padding: 10px 0 4px; }
 .pj-actions h3 { display: none; }
 .pj-candidates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
-.pj-candidate { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "chk main state btn rm" "chk note note note note"; column-gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.pj-candidate { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; grid-template-areas: "chk main state btn mv rm" "chk note note note note note"; column-gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .pj-candidate .pj-check { grid-area: chk; display: grid; place-items: center; width: 44px; height: 44px; margin: 0; }
 .pj-candidate .pj-check input { width: 24px; height: 24px; }
-.pj-cand-main { grid-area: main; display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 52px; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+.pj-cand-main { grid-area: main; justify-self: stretch; width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-width: 0; min-height: 52px; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
 .pj-cand-main:hover b { text-decoration: underline; }
 .pj-cand-info { display: grid; gap: 2px; min-width: 0; }
 .pj-cand-info b { font-size: 17px; overflow-wrap: anywhere; }
@@ -4297,6 +4309,18 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-candidate > .pj-remove { grid-area: rm; border: 0; color: var(--muted); background: none; font-size: 13px; }
 .pj-candidate > .pj-note { grid-area: note; margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
 .pj-candidate .grade { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font-weight: 800; }
+.pj-no { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 800; }
+.pj-mv { grid-area: mv; display: inline-flex; gap: 4px; }
+.pj-mvb { width: 44px; height: 44px; border: 0; border-radius: var(--r-md); background: var(--chip); color: var(--text); font-size: 18px; font-weight: 800; cursor: pointer; }
+.pj-mvb:disabled { opacity: .35; cursor: default; }
+.pj-start { margin-top: 14px; }
+.pj-start .btn { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 56px; padding: 0 20px; border-radius: var(--r-md); font-size: 17px; font-weight: 800; }
+@media (max-width: 719px) {
+  .pj-start:not([hidden]) { position: fixed; z-index: 49; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); margin: 0; padding: 8px 16px; background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
+  .pj-start .btn { pointer-events: auto; box-shadow: var(--shadow-float); }
+  body[data-page="projects"] { padding-bottom: 150px; }
+  .pj-docked .pj-start, .pj-next-seen .pj-start, .kb-open .pj-start { display: none !important; }
+}
 .pj-pj-empty, .pj-empty { padding: 28px 16px; text-align: center; border: 1px dashed var(--border); border-radius: 16px; }
 .pj-discover { margin-top: 22px; }
 .pj-discover > summary { display: flex; align-items: center; gap: 10px; min-height: 48px; font-size: 16px; }
@@ -4322,10 +4346,12 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .pj-next { padding: 14px; }
   .pj-next .pj-next-m { font-size: 16px; }
   .pj-next .btn { flex: 1 1 calc(50% - 6px); justify-content: center; padding: 0 10px; }
-  .pj-candidate { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "chk main" "chk state" "btn btn" "rm rm" "note note"; padding: 12px; }
+  .pj-candidate { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "chk main" "chk state" "btn btn" "mv mv" "rm rm" "note note"; padding: 12px; }
   .pj-cand-state { justify-self: start; margin: 4px 0 0; }
   .pj-candidate > .btn:not(.pj-remove) { grid-area: btn; justify-self: stretch; margin-top: 8px; }
   .pj-candidate > .pj-remove { justify-self: end; }
+  .pj-candidate > .pj-mv { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+  .pj-candidate > .pj-remove { grid-column: 1 / -1; }
 }
 
 /* 첫 화면 아래 큰 구역은 화면에 가까워질 때까지 그리기를 미룹니다(휴대폰 첫 로딩 속도).

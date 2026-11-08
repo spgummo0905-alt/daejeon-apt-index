@@ -205,6 +205,7 @@ body.pv-has .pv .foot{order:21}
 .pv .iso text{font-family:inherit}
 .pv .iso-t{paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}.pv .iso-t.on{stroke:none}
 .pv .iso-b{cursor:default}.pv .iso-b[data-b]{cursor:pointer}
+.pv .iso-b[data-b]:focus{outline:none}.pv .iso-b[data-b]:focus-visible .iso-r,.pv .iso-b[data-b]:focus-visible .iso-w{stroke:#f5b21a;stroke-width:3px}
 .pv .iso-w{stroke-linejoin:round;stroke-width:.5;stroke:rgba(21,33,44,.35)}
 .pv .iso-oth .iso-wa{fill:#cfd6de}.pv .iso-oth .iso-wb{fill:#b9c2cc}.pv .iso-oth .iso-r{fill:#e4e9ee}
 .pv .iso-blk .iso-wa{fill:#e4d3c1}.pv .iso-blk .iso-wb{fill:#d3bea8}.pv .iso-blk .iso-r{fill:#f1e6d9}   /* 하루 중 가리는 동: 흐린 주황 */

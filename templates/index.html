@@ -488,8 +488,14 @@ try {
 <script src="static/visit-log.js?v={{ v }}"></script>
 <script src="static/table.js?v={{ v }}"></script>
 {% if kakao_js_key %}
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>
-<script src="static/kmap.js?v={{ v }}"></script>
+{# 카카오 지도는 홈 아래쪽 구역이라 첫 화면에 필요 없어서(실행에 약 1초), 지도 구역에 가까워지거나 #map 주소로 들어올 때 불러옵니다. 그 전까지는 그림 지도(map-fallback)가 자리를 지킵니다 #}
+<script>(function(){var w=document.getElementById("kmap-wrap");if(!w)return;var done=0;
+function go(){if(done)return;done=1;var s=document.createElement("script");s.src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false";
+s.onload=function(){var k=document.createElement("script");k.src="static/kmap.js?v={{ v }}";document.body.appendChild(k)};document.body.appendChild(s)}
+window.djLoadMap=go;
+if(location.hash==="#map"||!("IntersectionObserver" in window)){go();return}
+var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();go()}},{rootMargin:"900px 0px"});io.observe(w);
+addEventListener("hashchange",function(){if(location.hash==="#map")go()})})();</script>
 {% endif %}
 {% if charts.map or kakao_js_key %}<script src="static/cliffs.js?v={{ v }}"></script>{% endif %}
 <script src="static/home.js?v={{ v }}"></script>

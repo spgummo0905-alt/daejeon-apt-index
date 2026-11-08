@@ -178,7 +178,27 @@ function drawIso() {
   setVB(svg, v);
   svg.innerHTML = '<title id="isoTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층에서 본 입체 그림</title>' +
     '<desc id="isoDesc">남쪽 위에서 바라본 고정 시점의 입체 그림입니다. 파란 건물이 선택한 동이고 노란 띠가 고른 층이며, 주황 건물은 하루 중 햇빛을 가리는 앞 동입니다. 고른 층의 창에서 해 쪽으로 그은 선이 앞 동에 닿아 엑스 표시가 되면 그 시각에는 가려진다는 뜻입니다. 높이 자료가 없는 건물 ' + nNA + '개는 그리지 않았습니다. 실제 건물 모양이나 실내로 드는 햇빛이 아닙니다.</desc>' + ISO.render(o, v, rw);
-  svg.querySelectorAll('[data-b]').forEach(el => { el.addEventListener('click', () => { const bb = ctx.byId[el.getAttribute('data-b')]; if (bb && bb.k === 'own' && C.calcable(bb)) select(bb.id); }); });
+  wireBuildings(svg);
+}
+// 건물 고르기: 터치와 키보드가 같은 길을 쓴다. 고를 수 없는 건물은 이유를 알려 준다(조용히 무시하지 않음).
+function whyNot(g) {
+  if (g.classList.contains('iso-oth')) return '다른 단지·다른 건물이에요. 이 단지의 동만 고를 수 있어요.';
+  if (g.classList.contains('iso-blk')) return '내 동 앞에서 그림자를 만드는 건물이에요. 동은 위쪽 동 번호에서 고를 수 있어요.';
+  return '높이 자료가 없어 이 건물은 계산하지 않았어요.';
+}
+function wireBuildings(svg) {
+  svg.querySelectorAll('g.iso-b').forEach(g => {
+    const id = g.getAttribute('data-b'), bb = id && ctx.byId[id];
+    if (bb) {
+      g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
+      g.setAttribute('aria-label', C.label(bb) + ' ' + bb.f + '층 건물' + (id === st.tid ? ', 지금 고른 동' : '. 누르면 이 동으로 바꿔요'));
+      const pick = () => { if (id !== st.tid) { select(id); const n = $('iso').querySelector('[data-b="' + id + '"]'); if (n) n.focus({ preventScroll: true }); } };
+      g.addEventListener('click', pick);
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    } else {
+      g.addEventListener('click', () => { if (window.DJ && DJ.toast) DJ.toast('이 건물은 고를 수 없어요', whyNot(g), 2600); });
+    }
+  });
 }
 
 function drawState() {
@@ -478,7 +498,11 @@ function closeFloorSheet() { const d = $('floorSheet'); if (d.close) d.close(); 
 $('floorSheet').addEventListener('click', e => { if (e.target === $('floorSheet')) closeFloorSheet(); });   // 바깥(어두운 곳)을 누르면 닫힘
 $('floor').addEventListener('input', e => { st.fl = +e.target.value; onFloor(); writeHash(); });
 $('time').addEventListener('input', e => { st.t = +e.target.value; tick(); });
-function tick() { drawMarker(); if (st.view !== 'floor') drawView(); writeHash(); }
+let tickRaf = 0;
+function tick() {   // 시간 바를 끄는 동안 입력이 프레임보다 자주 와도 그림은 프레임마다 한 번만 다시 그림 (계산·값은 그대로)
+  if (tickRaf) return;
+  tickRaf = requestAnimationFrame(() => { tickRaf = 0; drawMarker(); if (st.view !== 'floor') drawView(); writeHash(); });
+}
 $('evidence').addEventListener('toggle', () => { if ($('evidence').open && ctx) drawEvidence(); });
 $('field').addEventListener('toggle', () => { if ($('field').open && ctx) drawEvidence(); });
 let rz = 0; const onResize = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (ctx) { fitStage(); if (st.view !== 'floor') drawView(); } }); };
