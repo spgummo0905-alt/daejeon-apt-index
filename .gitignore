@@ -12,3 +12,4 @@ scripts/og/*.png
 scripts/og/*.ttf
 
 scripts/gl/node_modules/
+scripts/device/node_modules/

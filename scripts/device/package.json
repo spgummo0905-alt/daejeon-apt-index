@@ -1,0 +1,1 @@
+{ "name": "jipgam-device-bench", "private": true, "type": "module", "dependencies": { "playwright-core": "1.49.1" } }

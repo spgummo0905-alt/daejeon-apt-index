@@ -203,7 +203,7 @@ function drawGL() {
     if (!glWanted() || !ctx) return;
     if (!glInst) {
       box.hidden = false; svg.style.visibility = 'hidden';
-      glInst = PVGL.mount(box, { quality: (location.hash.match(/[#&]q=(hi|lo)/) || [])[1] || 'auto', onSlow: () => glOff('이 기기에서는 3D가 느려서 기존 입체 그림으로 바꿨어요.'), onLost: () => glOff('화면 그리기가 끊겨 기존 입체 그림으로 바꿨어요.'), onPick: id => pickBuilding(id) });
+      glInst = PVGL.mount(box, { quality: (location.hash.match(/[#&]q=(hi|lo)/) || [])[1] || 'auto', onSlow: () => glOff('이 기기에서는 3D가 느려서 기존 입체 그림으로 바꿨어요.'), onLost: () => glOff('화면 그리기가 끊겨 기존 입체 그림으로 바꿨어요.'), onPick: id => pickBuilding(id), canPick: id => { const bb = ctx.byId[id]; return !!(bb && bb.k === 'own' && C.calcable(bb)); } });
     }
     box.hidden = false; svg.style.visibility = 'hidden';
     const o = isoOpts();

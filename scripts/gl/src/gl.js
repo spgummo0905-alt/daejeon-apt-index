@@ -248,15 +248,23 @@ function mount(el, cb) {
     if (d > 10 || dt > 600) return;
     const rect = canvas.getBoundingClientRect(); ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     rc.setFromCamera(ndc, cam); const hit = rc.intersectObjects(pickMeshes, false)[0];
-    if (hit && cb.onPick) cb.onPick(hit.object.userData.id);
+    let id = hit && hit.object.userData.id;
+    if ((!id || !(cb.canPick ? cb.canPick(id) : true)) && cb.canPick) {                  // 손가락이 건물 가장자리를 빗나가도 가장 가까운 '고를 수 있는 동'(반경 30px 이내)을 고른다
+      let best = null, bd = 30;
+      for (const [bid, en] of cache) { if (!en.group.visible || !cb.canPick(bid)) continue; const q = projectCenter(bid); if (!q) continue; const dd = Math.hypot(q.x - (e.clientX - rect.left), q.y - (e.clientY - rect.top)); if (dd < bd) { bd = dd; best = bid; } }
+      if (best) id = best;
+    }
+    if (id && cb.onPick) cb.onPick(id);
   });
 
   function stats() { const i = renderer.info; return { level, calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, buildings: pickMeshes.length, renderMs: +rms.toFixed(2), pixelRatio: pr, canvas: W + 'x' + H }; }
   function bench(n) { const gl = renderer.getContext(); const t0 = performance.now(); for (let i = 0; i < n; i++) { renderer.render(scene, cam); } gl.finish(); return (performance.now() - t0) / n; }
   function dispose() { cancelAnimationFrame(raf); if (ro) ro.disconnect(); clearAll(); renderer.dispose(); try { renderer.forceContextLoss(); } catch (e) { /* 무시 */ } canvas.remove(); labs.remove(); }
   resize(); setPal();
+  function projectCenter(id) { const e = cache.get(id); if (!e) return null; e.mesh.geometry.computeBoundingBox(); const bb = e.mesh.geometry.boundingBox, c = bb.getCenter(new Vector3()); c.y = bb.max.y * 0.55; const v = c.project(cam); return { x: (v.x * 0.5 + 0.5) * W, y: (-v.y * 0.5 + 0.5) * H }; }
+  function project(id) { const e = cache.get(id); if (!e || !e.group.visible) return null; e.mesh.geometry.computeBoundingBox(); const bb = e.mesh.geometry.boundingBox; const c = bb.getCenter(new Vector3()); c.y = bb.max.y * 0.55; const v = c.project(cam); return { x: (v.x * 0.5 + 0.5) * W, y: (-v.y * 0.5 + 0.5) * H, ok: Math.abs(v.x) < 1 && Math.abs(v.y) < 1 }; }
   function roles() { const r = {}; for (const [id, e] of cache) if (e.group.visible) r[id] = e.role; return r; }
-  return { update, resize, dispose, stats, bench, roles, redraw: kick };
+  return { update, resize, dispose, stats, bench, roles, project, redraw: kick };
 }
 
 window.PVGL = { supported, mount };
