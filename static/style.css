@@ -239,7 +239,7 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .neighbor { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
 
 /* 단지 페이지 */
-.crumb { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.crumb { margin: 8px 0 0; font-size: 15px; color: var(--muted); }
 .crumb a { display: inline-block; padding: 14px 0; margin: -14px 0; }   /* 글자 크기는 그대로, 누르는 범위만 위아래로 넓힘(44px) */
 /* 단지 페이지 맨 위: 왼쪽 경로, 오른쪽 관심·공유 아이콘 */
 .apt-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; margin-top: 8px; }
@@ -266,7 +266,7 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 @keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-color-scheme: dark) { .icon-btn[data-fav].on { background: #3a3012; color: var(--gold); } }
 /* 한눈에 보기: 메인 카드에 없는 강점·비교를 숫자 타일로 */
-.points { margin-top: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px 18px; box-shadow: var(--shadow); }
+.points { margin-top: 16px; background: var(--surface); border: 1px solid transparent; border-radius: var(--r-lg); padding: 16px 18px 18px; box-shadow: var(--shadow); }
 .points h2 { margin: 0 0 12px; font-size: 16px; }
 .pt-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .pt { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 14px; border-radius: 12px; background: var(--chip); }
@@ -1373,22 +1373,22 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   .apt-hero > .mc:has(.mc-deals:not([hidden])) { position: static; }  /* 거래 내역을 펼치면 화면보다 길어지니 따라오지 않게 */
 }
 /* 상세 가격판: 실제 거래(실거래)는 굵고 진하게, 비교용 추정은 점선 상자에 한 단계 작게. 같은 줄에 나란히 두되 서로 다른 값임을 모양으로 구분 */
-.pb { margin-top: 14px; padding: 18px 18px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.pb { margin-top: 14px; padding: 20px 20px 14px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid transparent; box-shadow: var(--shadow); }
 .pb-head h1 { margin: 0; font-size: 26px; line-height: 1.25; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .pb-head p { margin: 4px 0 0; font-size: 15px; color: var(--text-2); }
-.pb-prices { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 14px; }
-.pb-p { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 12px 14px; border-radius: 14px; }
-.pb-k { font-size: 13px; font-weight: 800; color: var(--text-2); }
-.pb-p strong { font-size: 32px; line-height: 1.15; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text); }
-.pb-s { font-size: 14px; line-height: 1.4; color: var(--text-2); }
+.pb-prices { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; margin-top: 14px; }
+.pb-p { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 6px 14px 6px 0; }
+.pb-k { font-size: 15px; font-weight: 700; color: var(--text-2); }
+.pb-p strong { font-size: 36px; line-height: 1.15; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text); }
+.pb-s { font-size: 15px; line-height: 1.4; color: var(--text-2); }
 .pb-area { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-weight: 700; color: var(--text); }
 .pb-area i { font-style: normal; font-size: 12px; font-weight: 700; color: var(--text-2); }
 .pb-none { color: var(--text-2); }
-.pb-note { margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; color: var(--text-2); background: var(--chip); }
+.pb-note { margin: 12px 0 0; padding: 0; border-radius: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); background: none; }   /* 안내 띠 → 글 한 줄 */
 .pb-note b { color: var(--text); }
-.pb-check { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 48px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: transparent; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
-.pb-check b { font-size: 14px; color: var(--accent); white-space: nowrap; }
-.pb-check:hover { background: var(--chip); }
+.pb-check { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 56px; margin-top: 12px; padding: 0 16px; border: 0; border-radius: var(--r-md); background: var(--chip); color: var(--text); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
+.pb-check b { font-size: 16px; color: var(--accent); white-space: nowrap; }
+.pb-check:hover { filter: brightness(.97); }
 /* 내 조건과 견줘 보기: 접힌 한 줄(맞음·벗어남·자료 없음 개수), 펼치면 항목별 실제 값 */
 .pf { margin-top: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .pf[hidden] { display: none; }
@@ -1415,15 +1415,15 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 @media (prefers-reduced-motion: reduce) { .acc summary::after { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .pf summary::after { transition: none; } }
 .pb-s .ar small { opacity: 1; }
-.pb-real { background: var(--chip); border: 1px solid var(--border); }
-.pb-est { border: 1.5px dashed var(--border); }
-.pb-est strong { font-size: 26px; font-weight: 800; }
+.pb-real { }
+.pb-est { padding-left: 16px; border-left: 1px solid var(--border); }   /* 두 박스 대신 구분선 하나: 실거래가 먼저, 추정은 한 단계 낮게 */
+.pb-est strong { font-size: 24px; font-weight: 700; }
 .pb-hi { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #c0302f; color: #fff; font-style: normal; font-size: 12px; font-weight: 800; white-space: nowrap; }
 .pb-cells { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
 .pb-cells div { min-width: 0; }
-.pb-cells dt { font-size: 13px; font-weight: 700; color: var(--text-2); }
+.pb-cells dt { font-size: 15px; font-weight: 600; color: var(--text-2); }
 .pb-cells dd { margin: 2px 0 0; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.pb-asof { margin: 12px 0 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.pb-asof { margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .pb-thin { color: var(--text); font-weight: 800; }
 @media (max-width: 400px) { .pb { padding: 16px 14px 12px; } .pb-p { padding: 10px 11px; } .pb-p strong { font-size: 28px; } .pb-est strong { font-size: 23px; } }
 @media (min-width: 900px) { .pb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 4px 28px; align-items: start; }
@@ -4483,7 +4483,7 @@ p.muted { text-wrap: balance; }
 .rg-word { padding-block: 5px; margin-block: -5px; }
 
 /* 상세: 임장 때 직접 확인할 것 (이 단지의 실제 값에서만, 없으면 안 보임) */
-.to-check { margin: 14px 0 0; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+.to-check { margin: 14px 0 0; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid transparent; background: var(--surface); box-shadow: var(--shadow); }
 .to-check h2 { margin: 0 0 8px; font-size: 16px; }
 .to-check ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .to-check li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 44px; border-top: 1px solid var(--border); }
