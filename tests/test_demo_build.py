@@ -1787,3 +1787,14 @@ def test_apt_fixed_cta_reuses_existing_course_button(tmp_path):
     body = app[app.index("function aptCta()"):app.index("function aptCta()") + 1300]
     assert "base.click()" in body and "localStorage" not in body and "DJ.addToCourse" not in body      # 저장은 원래 버튼이 함
     assert app.index("courseButton();\n    aptCta();") > 0
+
+
+def test_preview_buildings_are_touch_and_keyboard_selectable(tmp_path):
+    """일조 입체 그림: 건물 터치·키보드가 같은 선택 함수를 쓰고, 고를 수 없는 건물은 이유를 안내한다. 계산 코드는 그대로"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    js = (out / "static" / "preview.js").read_text(encoding="utf-8")
+    assert "function wireBuildings" in js and "function whyNot" in js and "tabindex" in js
+    assert "requestAnimationFrame(() => { tickRaf = 0" in js
+    calc = (out / "static" / "preview-calc.js").read_text(encoding="utf-8")
+    assert "wireBuildings" not in calc            # 계산 엔진은 건드리지 않음
