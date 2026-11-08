@@ -1813,7 +1813,9 @@ def test_preview_stage_first_layout_has_dong_sheet():
     """일조 화면 재배치: 장면 위·결과 카드·동 버튼+날짜·시간 순서, 동 목록은 시트로. 계산 파일은 그대로"""
     root = Path(__file__).resolve().parent.parent
     html = (root / "templates" / "preview.html").read_text(encoding="utf-8")
-    assert html.index('class="st-main"') < html.index('id="result-card"') < html.index('id="dongBtn"') < html.index('id="vtime"')
+    # 동·날짜·층 조작은 장면 위에 겹쳐 있고(st-main 안), 그 아래에 결과 카드와 시간 바가 온다
+    assert html.index('class="st-main"') < html.index('id="dongBtn"') < html.index('id="floor"') < html.index('id="result-card"') < html.index('id="vtime"')
+    assert 'id="glbox"' in html and 'id="engBtn"' in html
     assert 'id="dongSheet"' in html and 'id="dong"' in html
     js = (root / "static" / "preview.js").read_text(encoding="utf-8")
     assert "function openDongSheet" in js and "앞 동에 가려져요" in js

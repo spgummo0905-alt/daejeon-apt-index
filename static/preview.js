@@ -16,7 +16,7 @@ const NO_LABEL = { sun: '직사광이 닿을 가능성이 있음', shade: '앞 �
 const DJ_calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const VIEWS = [['iso', '입체'], ['plan', '평면'], ['floor', '층별']];
 
-const st = { cid: null, tid: null, fl: 1, dk: 'dec', t: 750, wide: false, view: 'iso' };
+const st = { cid: null, tid: null, fl: 1, dk: 'dec', t: 750, wide: false, view: 'iso', eng: 'svg' };   // eng: svg(기본·대체) | gl(3D 시제품)
 const cache = {};          // 단지 자료
 const memo = {};           // 계산 결과(조건마다 한 번만): 날짜를 바꾸거나 시각을 옮길 때 다시 계산하지 않는다
 let ctx = null, view = null;
@@ -168,7 +168,7 @@ function isoOpts() {
   const nowIds = new Set(slot.state === 'shade' ? slot.by : []), blockIds = new Set(sm.blockers.map(x => x.id));
   const ray = ISO.ray(fi, z, slot, blds, st.tid);
   return { items: ctx.calc, tid: st.tid, fl: st.fl, fh, sun, state: slot.state, blockIds, nowIds, fitIds: sm.blockers.slice(0, 3).map(x => x.id), fi, ray, wide: st.wide,
-           label: C.label, num: bb => (C.dongNo(bb.dn) ? C.dongNo(bb.dn) + '동' : ''), SRC: bb => C.SRC_LABEL[bb.src], calcable: C.calcable };
+           label: C.label, num: bb => (C.dongNo(bb.dn) ? C.dongNo(bb.dn) + '동' : ''), SRC: bb => C.SRC_LABEL[bb.src], calcable: C.calcable, fh0: bb => C.baseFh(ctx, bb) };
 }
 let vbNow = null, vbRaf = 0;
 function setVB(svg, v) {                      // 이전 시점에서 새 시점으로 240ms 동안 이동(보이는 부분만 바뀌고 계산은 그대로)
@@ -180,9 +180,54 @@ function setVB(svg, v) {                      // 이전 시점에서 새 시점�
   const step = now => { const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3); svg.setAttribute('viewBox', fmt(from.map((f, i) => f + (to[i] - f) * e))); if (k < 1) vbRaf = requestAnimationFrame(step); };
   vbRaf = requestAnimationFrame(step);
 }
+// ---------- 3D 시제품(WebGL) ----------
+let glMod = null, glInst = null, glTried = false;
+function glWanted() { return st.eng === 'gl' && st.view === 'iso'; }
+function loadGL() {
+  if (window.PVGL) return Promise.resolve(true);
+  if (glMod) return glMod;
+  return (glMod = new Promise(res => { const s = document.createElement('script'); s.src = 'static/preview-gl.js?v=' + (window.PV_V || '1'); s.onload = () => res(!!window.PVGL); s.onerror = () => res(false); document.head.appendChild(s); }));
+}
+function glOff(why) {                        // 3D를 못 쓰면 조용히 SVG 그림으로 돌아간다
+  st.eng = 'svg'; if (glInst) { try { glInst.dispose(); } catch (e) { /* 무시 */ } glInst = null; }
+  $('glbox').hidden = true; $('iso').style.visibility = ''; syncEngBtn();
+  if (why && window.DJ && DJ.toast) DJ.toast('3D 그림을 쓸 수 없어요', why, 2600);
+  writeHash(); drawIso();
+}
+function syncEngBtn() { const b = $('engBtn'); if (!b) return; b.hidden = !(window.PVGL ? PVGL.supported() : (glTried ? false : true)) || st.view !== 'iso'; b.setAttribute('aria-pressed', st.eng === 'gl'); b.textContent = st.eng === 'gl' ? '3D 끄기' : '3D 보기'; }
+function drawGL() {
+  const box = $('glbox'), svg = $('iso');
+  loadGL().then(ok => {
+    glTried = true;
+    if (!ok || !PVGL.supported()) { glOff('이 기기에서는 3D가 열리지 않아 기존 입체 그림으로 보여 드려요.'); return; }
+    if (!glWanted() || !ctx) return;
+    if (!glInst) {
+      box.hidden = false; svg.style.visibility = 'hidden';
+      glInst = PVGL.mount(box, { quality: (location.hash.match(/[#&]q=(hi|lo)/) || [])[1] || 'auto', onSlow: () => glOff('이 기기에서는 3D가 느려서 기존 입체 그림으로 바꿨어요.'), onLost: () => glOff('화면 그리기가 끊겨 기존 입체 그림으로 바꿨어요.'), onPick: id => pickBuilding(id) });
+    }
+    box.hidden = false; svg.style.visibility = 'hidden';
+    const o = isoOpts();
+    glInst.update(o, { polyOf: ISO.polyOf, inset: ISO_INSET_L, top: ISO_INSET_T, bot: ISO_INSET_B, instant: DJ_calm() });
+    $('glDesc').textContent = '3D 입체 그림: ' + C.label(tgt()) + ' ' + st.fl + '층, ' + $('state').textContent + '. 동은 동 목록 버튼이나 건물 터치로 바꿀 수 있고, 같은 내용이 위 결과 카드에 글로 있어요. 실제 건물 외관이 아니라 높이와 위치만 단순하게 그린 그림이에요.';
+    window.__gl = glInst; syncEngBtn();
+  });
+}
+function pickBuilding(id) {
+  const bb = ctx.byId[id];
+  if (bb && bb.k === 'own' && C.calcable(bb)) { if (id !== st.tid) select(id); return; }
+  if (window.DJ && DJ.toast) DJ.toast('이 건물은 고를 수 없어요', !bb ? '' : (bb.k !== 'own' ? '다른 단지·다른 건물이에요. 이 단지의 동만 고를 수 있어요.' : '높이 자료가 없어 이 건물은 계산하지 않았어요.'), 2600);
+}
+const ISO_INSET_T = 60, ISO_INSET_B = 58;     // 위(동·날짜)·아래(보기·3D·전체 보기) 겹침 조작부 높이(px)
+const ISO_INSET_L = 58;                       // 왼쪽에 겹쳐 있는 층 조작부 폭(px): 건물 그림이 그 뒤로 들어가지 않게 비워 둔다
 function drawIso() {
-  const svg = $('iso'), o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358;
-  const v = ISO.bounds(o, rw / rh);
+  const svg = $('iso');
+  if (glWanted()) { drawGL(); return; }
+  if (glInst) { try { glInst.dispose(); } catch (e) { /* 무시 */ } glInst = null; window.__gl = null; }
+  $('glbox').hidden = true; svg.style.visibility = '';
+  const o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, L = Math.min(ISO_INSET_L, rw * 0.2);
+  const T = Math.min(ISO_INSET_T, rh * 0.18), B = Math.min(ISO_INSET_B, rh * 0.18);
+  const v0 = ISO.bounds(o, (rw - L) / (rh - T - B)), s0 = v0.w / (rw - L);
+  const v = { x: v0.x - L * s0, y: v0.y - T * s0, w: v0.w + L * s0, h: v0.h + (T + B) * s0 };
   const nNA = ctx.excluded.length;
   setVB(svg, v);
   svg.innerHTML = '<title id="isoTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층에서 본 입체 그림</title>' +
@@ -227,7 +272,7 @@ function drawView() {
   const v = st.view;
   ['iso', 'plan', 'floor'].forEach(k => { $('vp-' + k).hidden = k !== v; });
   $('vtime').hidden = v === 'floor';
-  $('zoom').hidden = v === 'floor';
+  $('zoom').hidden = v === 'floor'; syncEngBtn();
   $('vcap').textContent = CAP[v];
   $('seg-view').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
   if (v === 'floor') { drawTower(); return; }
@@ -476,7 +521,7 @@ async function chooseComplex(id) {
   fullRender(); writeHash();
 }
 function writeHash() {
-  const b = tgt(); try { history.replaceState(null, '', '#c=' + st.cid + '&d=' + C.dongNo(b.dn) + '&f=' + st.fl + '&date=' + st.dk + '&t=' + st.t + (st.wide ? '&wide=1' : '') + (st.view !== 'iso' ? '&v=' + st.view : '')); } catch (e) { /* file:// 일부 */ }
+  const b = tgt(); try { history.replaceState(null, '', '#c=' + st.cid + '&d=' + C.dongNo(b.dn) + '&f=' + st.fl + '&date=' + st.dk + '&t=' + st.t + (st.wide ? '&wide=1' : '') + (st.view !== 'iso' ? '&v=' + st.view : '') + (st.eng === 'gl' ? '&e=gl' : '')); } catch (e) { /* file:// 일부 */ }
 }
 function readHash() {
   const p = new URLSearchParams(location.hash.replace(/^#/, ''));
@@ -485,6 +530,7 @@ function readHash() {
   if (VIEWS.some(v => v[0] === p.get('v'))) st.view = p.get('v');
   const t = +p.get('t'); if (t >= 300 && t <= 1185) st.t = Math.round(t / 15) * 15;
   st.wide = p.get('wide') === '1';
+  st.eng = p.get('e') === 'gl' ? 'gl' : 'svg';
   st._dong = p.get('d'); st._fl = +p.get('f') || 0;
 }
 
@@ -502,6 +548,7 @@ document.addEventListener('click', ev => {
   else if (bt.dataset.fl) { st.fl = +bt.dataset.fl; closeFloorSheet(); onFloor(); writeHash(); }
   else if (bt.id === 'floorSheetX') closeFloorSheet();
   else if (bt.id === 'tdn' || bt.id === 'tup') { st.t = Math.min(1185, Math.max(300, st.t + (bt.id === 'tup' ? 15 : -15))); $('time').value = st.t; tick(); }
+  else if (bt.id === 'engBtn') { st.eng = st.eng === 'gl' ? 'svg' : 'gl'; if (st.eng === 'svg') { if (glInst) { try { glInst.dispose(); } catch (e) { /* 무시 */ } glInst = null; } } st.cam = true; syncEngBtn(); drawView(); writeHash(); }
   else if (bt.id === 'zoom') { st.wide = !st.wide; bt.setAttribute('aria-pressed', st.wide); bt.textContent = st.wide ? '가까이 보기' : '전체 보기'; st.cam = true; drawView(); writeHash(); }
   else if (bt.id === 'saveFav') toggleSave();
   else if (bt.hasAttribute('data-pick-x')) $('pv-pick').open = false;
