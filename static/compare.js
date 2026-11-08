@@ -41,6 +41,7 @@
     box.replaceChildren();
     const withLoc = cs.filter(c => Number.isFinite(c.la) && Number.isFinite(c.ln));
     box.hidden = cs.length < 2;
+    document.body.classList.toggle("cmp-ready", cs.length >= 2);   // 모양만 바꿈: 입력 구역을 줄이고 다음 행동을 아래에 고정
     if (cs.length < 2) return;
     box.append(el("p", "next-t", "고른 단지로 이어가기"));
     const row = el("div", "next-row");

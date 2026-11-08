@@ -593,7 +593,7 @@ details.station.hit { box-shadow: 0 0 0 2px var(--accent); transition: box-shado
 .gstat-val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .gbar { height: 8px; background: var(--chip); border-radius: 999px; overflow: hidden; }
 .gbar > span { display: block; height: 100%; background: var(--s1); border-radius: 999px; transition: width .6s ease-out; }
-.gstat.win .gbar > span { background: var(--s3); } .gstat.win .gstat-val { color: var(--s3); }
+.gstat.win .gbar > span { background: var(--s3); } .gstat.win .gstat-val { color: color-mix(in srgb, var(--s3) 62%, var(--text)); }   /* 초록 숫자를 글자색 쪽으로 섞어 대비 확보(기존 접근성 3건) */
 .gstat .lead-mark { color: var(--s3); font-size: 12px; }
 .gstat.lose .gbar > span { opacity: .45; }
 .gcard-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text-2); position: relative; z-index: 2; }
@@ -831,8 +831,8 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .cmp-table tbody th { text-align: left; color: var(--text-2); font-weight: 600; font-size: 14px; position: sticky; left: 0; background: var(--surface); }
 .cmp-table thead th { color: var(--text); font-size: 14px; }
 .cmp-table thead th a { color: var(--text); font-weight: 700; }
-.cmp-table td.best { background: rgba(201,162,74,.16); font-weight: 800; color: var(--text); }
-.cmp-table td.best::after { content: " ●"; color: var(--gold); font-size: 9px; vertical-align: 2px; }
+.cmp-table td.best { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); font-weight: 800; color: var(--text); }   /* 금색은 등급에만: 기준별 우위 칸은 행동색 면 */
+.cmp-table td.best::after { content: " ●"; color: var(--accent); font-size: 9px; vertical-align: 2px; }
 /* 휴대폰: 단지 이름을 줄바꿈해서 두 단지가 한 화면에 나란히 보이게 */
 @media (max-width: 640px) {
   .cmp-table th, .cmp-table td { padding: 9px 8px; font-size: 14px; }
@@ -4448,6 +4448,24 @@ body[data-page="intro"] .toast-act { color: #13294b; }
 }
 
 @media (max-width: 720px) { .next-row .btn { flex: 1 1 100%; justify-content: center; } }
+/* 비교(휴대폰): 2곳 이상 고르면 설명·예시 버튼을 접어 핵심 차이를 위로, 다음 행동('임장 코스 만들기')은 하단 탭 위에 고정 */
+@media (max-width: 719px) {
+  body.cmp-ready .page-hero .hero-note, body.cmp-ready #vs-random, body.cmp-ready .quick-add { display: none; }
+  body.cmp-ready .page-hero.lean { padding-top: 6px; }
+  body.cmp-ready .page-hero.lean h1 { font-size: 20px; margin-bottom: 8px; }
+  body.cmp-ready .vs-result { margin-top: 12px; display: flex; flex-direction: column; }
+  body.cmp-ready .vs-result > .cmp-wrap { order: 1; }          /* 핵심 차이 표를 먼저, 내 조건 기준·단지별 카드는 그 아래 (내용은 그대로) */
+  body.cmp-ready .vs-result > .cmp-more { order: 2; }
+  body.cmp-ready .vs-result > p.small { order: 3; }
+  body.cmp-ready .vs-result > .cmp-fit { order: 4; }
+  body.cmp-ready .vs-result > .card-grid { order: 5; }
+  body.cmp-ready .next-step { position: fixed; z-index: 49; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); margin: 0; padding: 8px 16px; border: 0; border-radius: 0; background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
+  body.cmp-ready .next-step .next-t, body.cmp-ready .next-step .muted, body.cmp-ready .next-step a.btn { display: none; }
+  body.cmp-ready .next-step .btn.primary { pointer-events: auto; width: 100%; min-height: 56px; font-size: 17px; font-weight: 800; border-radius: var(--r-md); box-shadow: var(--shadow-float); }
+  body.cmp-ready .next-step .btn.primary::after { content: "›"; margin-left: auto; font-size: 24px; }
+  body.cmp-ready { padding-bottom: 150px; }
+  .kb-open .next-step { display: none !important; }
+}
 
 /* 화면 머리말: 제목 아래 설명은 한 줄 요약이 든 상자 하나에 모으고, 자세한 말은 펼쳐 볼 때만 */
 .page-hero.lean { padding: 18px 0 4px; }
