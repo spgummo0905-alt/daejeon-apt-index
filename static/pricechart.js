@@ -581,7 +581,7 @@
     const t = el("table", "pc-table"), th = el("thead"), tr = el("tr"), tb = el("tbody");
     heads.forEach(h => tr.append(el("th", "", h)));
     th.append(tr); t.append(th, tb);
-    const wrap = el("div", "table-wrap"); wrap.append(t);
+    const wrap = el("div", "table-wrap"); wrap.tabIndex = 0; wrap.setAttribute("role", "region"); wrap.setAttribute("aria-label", "표(옆으로 밀어서 보기)"); wrap.append(t);
     return { t: wrap, tb };
   }
   function section(title, sub, ...kids) {

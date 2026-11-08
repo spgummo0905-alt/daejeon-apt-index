@@ -4,7 +4,7 @@
 /* font-faces:end */
 /* 색 토큰. 차트 색은 dataviz 팔레트 검증(라이트/다크 각각)을 통과한 값입니다. */
 :root {
-  --bg: #f4f3ef; --surface: #ffffff; --text: #14171f; --text-2: #52514e; --muted: #6b6963;
+  --bg: #f4f3ef; --surface: #ffffff; --text: #14171f; --text-2: #52514e; --muted: #5b6472;
   --border: rgba(11, 11, 11, 0.10); --grid: #e9e8e2; --axis: #c3c2b7; --chip: #efeee9;
   --accent: #1f66c1; --pos: #b03a0a; --neg: #1d4ed8;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --dim: #d3d2cb; --ref: #898781;
@@ -17,7 +17,11 @@
   --brand-grad: linear-gradient(135deg, var(--brand-sky), var(--brand-blue) 45%, var(--brand-violet));
   --quad: rgba(42, 120, 214, 0.06);
   --banner: #fff4d6; --banner-text: #6b4e00;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  /* 통일 토큰(Visual Quality Sprint): 반지름 3단계, 그림자 2단계, 행동색 하나. 카드는 선이나 그림자 중 하나만 */
+  --on-accent: #ffffff;
+  --r-sm: 8px; --r-md: 14px; --r-lg: 20px;
+  --shadow: 0 1px 2px rgba(20, 23, 31, 0.06), 0 2px 8px rgba(20, 23, 31, 0.04);
+  --shadow-float: 0 8px 24px rgba(20, 23, 31, 0.14), 0 2px 6px rgba(20, 23, 31, 0.08);
   /* 동네 온도: 빨강(뜨거움) → 주황 → 호박 → 크림, 차가운 동네는 회색.
      빨강↔파랑으로 나누면 선거 지도처럼 보여 열기 색 하나로만 갑니다. 이웃 단계 OKLab ΔE ≥ 10 */
   --h5: #d7352d; --h4: #f38a4a; --h3: #fcc069; --h2: #f7e7b7; --h1: #c2c1bd;
@@ -41,11 +45,14 @@
     --quad: rgba(57, 135, 229, 0.10);
     --banner: #3a3012; --banner-text: #f5d98a;
     --shadow: none;
+    --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --on-accent: #0d1b2e;
     --h5: #fa534a; --h4: #c56a31; --h3: #95642d; --h2: #674e3a; --h1: #41403d;
     --h5-ink: #2a0d0d; --h4-ink: #1f0f04; --h3-ink: #ffffff; --h2-ink: #f5ecd9; --h1-ink: #e6e5e0;
     --h0: #232321; --land: #252523;
   }
 }
+@media (prefers-color-scheme: dark) { .panel { border-color: var(--border); } }   /* 다크는 그림자가 안 보여서 선으로 구분 */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 .nw { white-space: nowrap; }
@@ -115,7 +122,7 @@ main .panel[id], main section[id] { scroll-margin-top: 62px; }
 }
 
 /* 패널 */
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+.panel { background: var(--surface); border: 1px solid transparent; border-radius: var(--r-lg); padding: 20px;
   margin-top: 16px; box-shadow: var(--shadow); scroll-margin-top: 56px; }
 .panel-head { margin-bottom: 12px; }
 .panel-head p { margin: 2px 0 0; font-size: 14px; }
@@ -409,14 +416,13 @@ body[data-page="intro"] .brand-dot { background: #a28cff; }
 .hd-end { display: flex; align-items: center; gap: 14px; margin-left: auto; }
 @media (max-width: 1000px) { .hd-end { gap: 10px; } }
 h1 { letter-spacing: -0.03em; font-weight: 800; }
-.panel { border-radius: 20px; }
 .center { text-align: center; }
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none !important; padding: 9px 14px; border-radius: 12px; margin-top: 0; }
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none !important; padding: 9px 14px; border-radius: var(--r-md); margin-top: 0; min-height: 44px; }
 .btn:hover { border-color: var(--text-2); }
-.btn.primary { background: var(--navy); color: var(--on-navy); border-color: var(--navy); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .pop { animation: pop 0.35s ease-out; }
 @keyframes pop { from { transform: translateY(4px); opacity: 0.5; } to { transform: none; opacity: 1; } }
 
@@ -682,13 +688,13 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
   body { padding-bottom: 76px; }
   .top-nav { display: none; }
   .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; z-index: 50; left: 0; right: 0; bottom: 0;
-    background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--border); padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); }
-  .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; color: var(--muted); margin: 0; padding: 4px 0; min-height: 48px; }
+  .tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 14px; font-weight: 500; color: var(--muted); margin: 0; padding: 4px 0; min-height: 56px; }
   .kb-open .tabbar { display: none; }   /* 키보드가 올라오면 입력칸을 가리지 않게 (static/shell.js 가 kb-open 을 붙임) */
   .kb-open body { padding-bottom: 0; }
   .tabbar .ic { width: 23px; height: 23px; }
-  .tabbar a.on { color: var(--navy); font-weight: 700; }
+  .tabbar a.on { color: var(--accent); font-weight: 700; }
   .hero-main h1 { font-size: 31px; }
   .page-hero h1 { font-size: 27px; }
   .vs-pick { grid-template-columns: 1fr; }
@@ -702,10 +708,10 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .station-jump { flex-wrap: nowrap; overflow-x: auto; }
 @media (min-width: 900px) { .station-jump { flex-wrap: wrap; overflow: visible; } }
 /* 두세 개 중 하나를 고르는 버튼 묶음 (정렬 등) */
-.seg { display: inline-flex; gap: 2px; margin-top: 14px; padding: 3px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); }
-.seg-btn { padding: 7px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--text-2); font: inherit; font-size: 14px;
+.seg { display: inline-flex; gap: 2px; margin-top: 14px; padding: 4px; border-radius: var(--r-md); background: var(--chip); border: 0; }
+.seg-btn { padding: 7px 14px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--text-2); font: inherit; font-size: 14px;
   font-weight: 600; cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
-.seg-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.seg-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .st-walk { color: var(--text-2); font-weight: 600; }
 .station-jump a { white-space: nowrap; }
 .station-list { display: flex; flex-direction: column; gap: 12px; }
@@ -1380,7 +1386,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pb-note { margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; color: var(--text-2); background: var(--chip); }
 .pb-note b { color: var(--text); }
 .pb-check { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 48px; margin-top: 12px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: transparent; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
-.pb-check b { font-size: 14px; color: #1f5fb4; white-space: nowrap; }
+.pb-check b { font-size: 14px; color: var(--accent); white-space: nowrap; }
 .pb-check:hover { background: var(--chip); }
 /* 내 조건과 견줘 보기: 접힌 한 줄(맞음·벗어남·자료 없음 개수), 펼치면 항목별 실제 값 */
 .pf { margin-top: 10px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
@@ -4039,9 +4045,7 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .top-nav { display: none; }
   .hs-label { display: none; }
   .hs-btn { width: 38px; padding: 0; }
-  .tabbar a.tab-key .ic { width: 20px; height: 20px; padding: 5px; box-sizing: content-box; border-radius: 12px; background: var(--navy); color: var(--on-navy);
-    box-shadow: 0 0 0 2px var(--gold); }
-  .tabbar a.tab-key { font-weight: 700; color: var(--text); }
+  .tabbar a.tab-key { font-weight: 600; }   /* 가운데 '임장 준비'만 남색 원·금색 링으로 튀던 것을 없앰: 금색은 등급에만 */
   .am-grid { grid-template-columns: 1fr 1fr; gap: 12px 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .tn-btn .ic, .gate-btn { transition: none; } }
