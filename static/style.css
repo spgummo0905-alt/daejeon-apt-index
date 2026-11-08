@@ -4,8 +4,8 @@
 /* font-faces:end */
 /* 색 토큰. 차트 색은 dataviz 팔레트 검증(라이트/다크 각각)을 통과한 값입니다. */
 :root {
-  --bg: #f4f3ef; --surface: #ffffff; --text: #14171f; --text-2: #52514e; --muted: #5b6472;
-  --border: rgba(11, 11, 11, 0.10); --grid: #e9e8e2; --axis: #c3c2b7; --chip: #efeee9;
+  --bg: #f6f8fb; --surface: #ffffff; --text: #172338; --text-2: #4a5568; --muted: #5b6472;
+  --border: rgba(11, 11, 11, 0.10); --grid: #e6eaf0; --axis: #c3c9d3; --chip: #eef2f7;
   --accent: #1f66c1; --pos: #b03a0a; --neg: #1d4ed8;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --dim: #d3d2cb; --ref: #898781;
   --g-S: #b8912f; --g-A: #8b95a7; --g-B: #2f6fb8; --g-C: #66738a; --g-D: #b9c0ca;
