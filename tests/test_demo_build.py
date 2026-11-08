@@ -1772,7 +1772,8 @@ def test_map_screen_is_wired(tmp_path):
     assert "추정 시세예요" in page and "static/map.js" in page and 'class="hd-title"' in page      # 추정 표시·머리 제목
     js = (out / "static" / "map.js").read_text(encoding="utf-8")
     assert "DJ.toggleFav" in js and "preview.html#c=" in js and "preview/list.json" in js         # 기존 저장·일조 연결 재사용
-    assert "kakao" not in js                                                                     # 외부 지도 SDK 없음
+    assert "window.kakao" in js and "kakao.maps.load" in js and "mp-note" in js                  # 카카오 지도는 있을 때만, 없으면 점 지도가 대체
+    assert "dapi.kakao.com" not in page                                                         # 데모(키 없음)는 외부 SDK를 부르지 않음
     home = (out / "index.html").read_text(encoding="utf-8"); finder = (out / "finder.html").read_text(encoding="utf-8")
     assert 'href="map.html"' in home and 'href="map.html"' in finder and 'id="map"' in home      # 입구 연결, 옛 지도 구역 보존
     assert 'data-tab="map"' not in page and 'data-tab="finder"' in page

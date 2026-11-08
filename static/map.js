@@ -1,4 +1,5 @@
-// 지도 화면: 단지 좌표를 점으로 그리고, 점을 누르면 아래 요약 시트를 엽니다 (바탕 지도·외부 지도 SDK 없음).
+// 지도 화면: 단지 좌표를 점으로 그리고, 점을 누르면 아래 요약 시트를 엽니다.
+// 카카오 지도 SDK(홈과 같은 공개 JavaScript 키)가 준비되면 실제 지도 위에 가격 핀을 올리고, 키·도메인·쿼터·네트워크 문제로 안 뜨면 점 지도가 그대로 대체합니다.
 // 가격·지수는 complexes.json 값 그대로(84㎡ 기준 추정 시세). 일조는 미리보기가 열린 단지에만 연결합니다.
 // 지도는 끌어서 이동·두 손가락 확대·+/− 버튼, 키보드와 화면 읽기는 같은 선택을 쓰는 '목록' 보기로 합니다.
 (function () {
@@ -11,7 +12,7 @@
   const BANDS = [["전체", 0], ["3억 이하", 30000], ["5억 이하", 50000], ["7억 이하", 70000]];   // p 는 만원 단위
   const svg = $("[data-mp-svg]"), stage = $("[data-mp-stage]"), listBox = $("[data-mp-list]"), sheet = $("[data-mp-sheet]");
   const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let ALL = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
+  let km = null, ALL = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
   const norm = s => String(s || "").replace(/\s+/g, "").toLowerCase();
   const gLayer = mk("g", {}), lLayer = mk("g", {});
   svg.append(gLayer, lLayer);
@@ -90,7 +91,7 @@
     gLayer.append(frag);
     if (sel && !pinOf.has(sel)) closeSheet();
     $("[data-mp-count]").textContent = `${shown.length.toLocaleString()}곳`;
-    apply(); if (view === "list") buildList();
+    apply(); if (km) realShow(); if (view === "list") buildList();
   }
   function buildList() {
     const rows = shown.slice().sort((a, b) => (b.i == null ? -1 : b.i) - (a.i == null ? -1 : a.i)), more = rows.length > 60 && !listBox.dataset.all;
@@ -124,16 +125,62 @@
     sheet.classList.add("open");
     if (first) try { history.pushState({ mp: 1 }, ""); } catch (e) {}
     if (view === "list") setView("map");
+    if (km) { realFocus(c); if (opts && opts.focus) sheet.querySelector("a,button").focus({ preventScroll: true }); return; }
     // 고른 점을 요약 시트에 가리지 않는 위쪽 40% 자리로
     const w = Math.min(vb.w, Math.max(full.w / 12, Math.min(vb.w, full.w / 6))), h = w * vb.h / vb.w;
     setVb({ x: c._x - w / 2, y: c._y - h * .38, w, h }, true);
     if (opts && opts.focus) sheet.querySelector("a,button").focus({ preventScroll: true });
   }
-  function closeSheet() { sel = null; sheet.classList.remove("open"); apply(); if (history.state && history.state.mp) try { history.back(); } catch (e) {} }
+  function closeSheet() { sel = null; sheet.classList.remove("open"); apply(); realPaint(); if (history.state && history.state.mp) try { history.back(); } catch (e) {} }
   function setView(v) {
     view = v; stage.hidden = v !== "map"; listBox.hidden = v !== "list";
     $$("[data-mp-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mpView === v));
-    if (v === "list") buildList(); else { fit(); apply(); }
+    if (v === "list") buildList(); else { fit(); apply(); if (km) km.map.relayout(); }
+  }
+
+  // ----- 실제 지도(카카오): 준비되면 점 지도를 가리고 가격 핀을 올립니다. 안 되면 아무것도 바꾸지 않습니다 -----
+  const note = () => root.querySelector(".mp-note");
+  function realPaint() {
+    if (!km) return;
+    km.ov.forEach((o, s) => { const on = s === sel; o.el.classList.toggle("on", on); o.ov.setZIndex(on ? 9 : 1); });
+  }
+  function realShow() {   // 지금 조건(가격대·검색)에 맞는 단지만 지도에 둠
+    km.clus.clear(); km.clus.addMarkers(shown.map(c => km.ov.get(c.s).ov)); realPaint();
+  }
+  function realFocus(c) {   // 고른 단지를 요약 시트에 가리지 않는 위쪽으로, 묶음에 숨지 않게 가까이
+    const m = km.map, pos = new kakao.maps.LatLng(c.la, c.ln);
+    if (m.getLevel() > 4) m.setLevel(4);
+    m.setCenter(pos); m.panBy(0, Math.round(stage.clientHeight * .2)); realPaint();
+  }
+  function startReal() {
+    if (km || !ALL.length) return;
+    const box = $("[data-mp-km]"); box.hidden = false;
+    const map = new kakao.maps.Map(box, { center: new kakao.maps.LatLng(ALL[0].la, ALL[0].ln), level: 8 });
+    const clus = new kakao.maps.MarkerClusterer({ map, averageCenter: true, minLevel: 6, gridSize: 70, calculator: [10, 50, 150],
+      styles: [34, 42, 50, 58].map((n, i) => ({ width: n + "px", height: n + "px", lineHeight: n + "px", borderRadius: n / 2 + "px", background: ["rgba(85,152,231,.92)", "rgba(42,120,214,.92)", "rgba(28,92,171,.92)", "rgba(16,66,129,.92)"][i], color: "#fff", textAlign: "center", fontWeight: "700", border: "2px solid #fff" })) });
+    const ov = new Map();
+    ALL.forEach(c => {
+      const el = document.createElement("button"); el.type = "button"; el.className = "mp-kp" + (c.g === "S" ? " g-S" : ""); el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); el.textContent = c.pt || c.n;
+      el.addEventListener("click", e => { e.stopPropagation(); select(c.s); });
+      ov.set(c.s, { el, ov: new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.la, c.ln), content: el, xAnchor: .5, yAnchor: 1, clickable: true }) });
+    });
+    // 처음 범위: 바깥으로 튄 단지를 빼고(상하위 2%) 대부분이 보이게
+    const las = ALL.map(c => c.la).sort((a, b) => a - b), lns = ALL.map(c => c.ln).sort((a, b) => a - b), at = (a, p) => a[Math.round((a.length - 1) * p)];
+    const bounds = new kakao.maps.LatLngBounds(new kakao.maps.LatLng(at(las, .02), at(lns, .02)), new kakao.maps.LatLng(at(las, .98), at(lns, .98)));
+    map.setBounds(bounds);
+    kakao.maps.event.addListener(map, "click", () => { if (sel) closeSheet(); });
+    km = { map, clus, ov }; root.classList.add("mp-real"); realShow();
+    if (sel) { const c = ALL.find(x => x.s === sel); if (c) realFocus(c); }
+    if (note()) note().hidden = true;
+  }
+  function tryReal() {
+    if (!window.kakao || !kakao.maps || !kakao.maps.load) {   // SDK 없음: 점 지도 그대로
+      if (document.querySelector('script[src*="dapi.kakao.com"]') && note()) note().textContent = "바탕 지도를 불러오지 못해 점으로 보여요. 목록으로도 볼 수 있어요";   // 키는 있는데 실패(도메인·쿼터·네트워크)
+      return;
+    }
+    let done = false;
+    const giveUp = setTimeout(() => { if (!done && note()) note().textContent = "바탕 지도를 불러오지 못해 점으로 보여요. 목록으로도 볼 수 있어요"; }, 8000);
+    try { kakao.maps.load(() => { try { startReal(); done = true; clearTimeout(giveUp); } catch (e) { if (note()) note().textContent = "바탕 지도를 불러오지 못해 점으로 보여요. 목록으로도 볼 수 있어요"; } }); } catch (e) {}
   }
 
   // ----- 손가락 조작: 한 손가락 끌기=이동, 두 손가락=확대, 점을 톡 누르면 선택 -----
@@ -167,7 +214,7 @@
   root.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b || !root.contains(b)) return;
     if (b.dataset.mpView) setView(b.dataset.mpView);
-    else if (b.dataset.mpZoom) { const s = size(); zoomAt(s.l + s.w / 2, s.t + s.h / 2, b.dataset.mpZoom === "in" ? .6 : 1 / .6); }
+    else if (b.dataset.mpZoom) { if (km) km.map.setLevel(km.map.getLevel() + (b.dataset.mpZoom === "in" ? -1 : 1), { animate: !calm() }); else { const s = size(); zoomAt(s.l + s.w / 2, s.t + s.h / 2, b.dataset.mpZoom === "in" ? .6 : 1 / .6); } }
     else if (b.hasAttribute("data-mp-close")) closeSheet();
     else if (b.hasAttribute("data-sh-fav")) { if (sel) { DJ.toggleFav(sel); paintFav(sel); } }
     else if (b.dataset.band != null) { band = +b.dataset.band; $$("[data-band]").forEach(x => x.setAttribute("aria-pressed", +x.dataset.band === band)); build(); }
@@ -176,8 +223,8 @@
   $("[data-mp-q]").addEventListener("input", e => { q = e.target.value; build(); });
   $("[data-mp-q]").addEventListener("keydown", e => { if (e.key === "Enter" && shown.length) { e.preventDefault(); select(shown[0].s); e.target.blur(); } });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && sel) closeSheet(); });
-  addEventListener("popstate", () => { if (sel) { sel = null; sheet.classList.remove("open"); apply(); } });
-  addEventListener("resize", () => { if (vb) { fit(); apply(); } });
+  addEventListener("popstate", () => { if (sel) { sel = null; sheet.classList.remove("open"); apply(); realPaint(); } });
+  addEventListener("resize", () => { if (vb) { fit(); apply(); } if (km) km.map.relayout(); });
 
   const chips = $("[data-mp-chips]");
   BANDS.forEach((b, i) => { const x = document.createElement("button"); x.type = "button"; x.className = "chip"; x.dataset.band = i; x.setAttribute("aria-pressed", i === 0); x.textContent = b[0]; chips.append(x); });
@@ -185,7 +232,7 @@
   DJ.data().then(d => {
     ALL = d.complexes.filter(c => c.la != null && c.ln != null);
     if (!ALL.length) { root.querySelector(".mp-note").textContent = "표시할 단지 위치 자료가 아직 없어요"; return; }
-    project(); fit(); build();
+    project(); fit(); build(); tryReal();
     const p = new URLSearchParams(location.search), qs = p.get("q");
     if (qs) { q = qs; $("[data-mp-q]").value = qs; build(); }
     const want = p.get("s"); if (want && pinOf.has(want)) select(want);

@@ -2,7 +2,7 @@
 {% block title %}지도로 보기 · 집감{% endblock %}
 {% block description %}{{ region }} 아파트를 지도에서 점으로 보고, 단지를 누르면 84㎡ 기준 추정 시세와 지수를 바로 요약합니다.{% endblock %}
 {% block body %}
-{# 지도 화면: 핀을 누르면 아래 요약 시트. 목록 보기는 같은 선택을 공유하는 대체 화면(키보드·화면 읽기용). 바탕 지도는 쓰지 않고 단지 좌표만 점으로 그림 (static/map.js) #}
+{# 지도 화면: 핀을 누르면 아래 요약 시트. 목록 보기는 같은 선택을 공유하는 대체 화면(키보드·화면 읽기용). 카카오 지도 키가 있고 지도가 뜨면 실제 지도 위에 핀, 아니면(키 없음·장애) 단지 좌표만 점으로 그리는 기존 화면이 그대로 대체 (static/map.js) #}
 <section class="mp" id="mp" data-region="{{ region }}" aria-label="지도로 단지 보기">
   <div class="mp-top">
     <label class="mp-search"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input type="search" data-mp-q placeholder="단지 또는 동네 검색" aria-label="단지 또는 동네 검색" enterkeyhint="search" autocomplete="off"></label>
@@ -16,6 +16,7 @@
     <p class="mp-count" data-mp-count aria-live="polite"></p>
   </div>
   <div class="mp-stage" data-mp-stage>
+    <div class="mp-km" data-mp-km hidden></div>
     <svg class="mp-svg" data-mp-svg role="img" aria-label="{{ region }} 단지 위치 지도. 점을 누르면 요약이 열립니다. 키보드는 목록 보기를 쓰세요."></svg>
     <p class="mp-note">바탕 지도 없이 단지 위치만 점으로 보여요</p>
     <div class="mp-zoom"><button type="button" data-mp-zoom="in" aria-label="확대">+</button><button type="button" data-mp-zoom="out" aria-label="축소">−</button></div>
@@ -40,4 +41,4 @@
   <div class="mp-list" data-mp-list hidden></div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/map.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/map.js?v={{ v }}"></script>{% endblock %}
