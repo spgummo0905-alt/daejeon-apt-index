@@ -1760,3 +1760,19 @@ def test_my_screen_reserves_favorites_row_height_from_saved_favs_before_data_arr
     assert my.index('id="favs"') < my.index("fav-wait0") and "fav-wait" in my and "djdex-auth" in my
     assert "#favs.fav-wait { min-height: 305px; }" in css and "#favs.fav-wait0 { min-height: 158px; }" in css
 
+
+
+def test_map_screen_is_wired(tmp_path):
+    """새 지도 화면(map.html): 핀→요약 시트, 지도/목록 전환, 찾기·홈에서 들어가는 길. 기존 index.html#map 구역은 그대로"""
+    out = tmp_path / "site"
+    cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
+    page = (out / "map.html").read_text(encoding="utf-8")
+    for key in ('data-mp-svg', 'data-mp-sheet', 'data-mp-view="map"', 'data-mp-view="list"', 'data-sh-detail', 'data-sh-sun', 'data-sh-fav', 'data-mp-q'):
+        assert key in page, key
+    assert "추정 시세예요" in page and "static/map.js" in page and 'class="hd-title"' in page      # 추정 표시·머리 제목
+    js = (out / "static" / "map.js").read_text(encoding="utf-8")
+    assert "DJ.toggleFav" in js and "preview.html#c=" in js and "preview/list.json" in js         # 기존 저장·일조 연결 재사용
+    assert "kakao" not in js                                                                     # 외부 지도 SDK 없음
+    home = (out / "index.html").read_text(encoding="utf-8"); finder = (out / "finder.html").read_text(encoding="utf-8")
+    assert 'href="map.html"' in home and 'href="map.html"' in finder and 'id="map"' in home      # 입구 연결, 옛 지도 구역 보존
+    assert 'data-tab="map"' not in page and 'data-tab="finder"' in page
