@@ -206,10 +206,11 @@ body.pv-has .pv .foot{order:21}
 .pv .iso-b{cursor:default}.pv .iso-b[data-b]{cursor:pointer}
 .pv .iso-w{stroke-linejoin:round;stroke-width:.5;stroke:rgba(21,33,44,.35)}
 .pv .iso-oth .iso-wa{fill:#cfd6de}.pv .iso-oth .iso-wb{fill:#b9c2cc}.pv .iso-oth .iso-r{fill:#e4e9ee}
-.pv .iso-blk .iso-wa{fill:#f1b172}.pv .iso-blk .iso-wb{fill:#d98f4a}.pv .iso-blk .iso-r{fill:#fbdcb8}
+.pv .iso-blk .iso-wa{fill:#e4d3c1}.pv .iso-blk .iso-wb{fill:#d3bea8}.pv .iso-blk .iso-r{fill:#f1e6d9}   /* 하루 중 가리는 동: 흐린 주황 */
+.pv .iso-blk.iso-now .iso-wa{fill:#f1b172}.pv .iso-blk.iso-now .iso-wb{fill:#d98f4a}.pv .iso-blk.iso-now .iso-r{fill:#fbdcb8}   /* 지금 이 시각에 가리는 동: 진한 주황 */
 .pv .iso-own .iso-wa{fill:#2a6fb8}.pv .iso-own .iso-wb{fill:#17508f}.pv .iso-own .iso-r{fill:#5b97d6}
 .pv .iso-r{stroke:rgba(21,33,44,.4);stroke-width:.6;stroke-linejoin:round}
-.pv .iso-blk .iso-r,.pv .iso-blk .iso-w{stroke:#8a3d00}
+.pv .iso-blk .iso-r,.pv .iso-blk .iso-w{stroke:#b9a48c}.pv .iso-blk.iso-now .iso-r,.pv .iso-blk.iso-now .iso-w{stroke:#8a3d00}
 .pv .iso-band{fill:#f5b21a;stroke:#15212c;stroke-width:.9;opacity:.96}
 .pv .iso-bandback{opacity:.8;stroke-dasharray:3 2}
 .pv .iso-ray-halo{stroke:#fff;stroke-linecap:round;opacity:.9}

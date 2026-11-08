@@ -173,7 +173,7 @@
     if (nx) {
       const stops = DJ.courseStops(d).stops.length;
       let msg, label, act;
-      if (!favs.length) { msg = "아직 담은 단지가 없어요"; label = "조건으로 단지 찾기"; act = () => { location.href = (window.DJ_ROOT || "") + "finder.html"; }; }
+      if (!favs.length) { nx.hidden = true; return; }   // 빈 상태 카드가 같은 말을 하므로 윗줄은 숨김
       else if (!stops) { msg = `관심 단지 ${favs.length}곳`; label = "임장 코스 만들기"; act = () => { DJ.myShow && DJ.myShow("visit"); scrollTo(0, 0); }; }
       else { msg = `임장 코스 ${stops}곳이 있어요`; label = "코스 보기"; act = () => { DJ.myShow && DJ.myShow("visit"); scrollTo(0, 0); }; }
       const b = el("button", "btn primary", label); b.type = "button"; b.addEventListener("click", act);

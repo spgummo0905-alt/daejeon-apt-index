@@ -74,7 +74,7 @@
       const role = b.id === o.tid ? 'own' : (o.blockIds.has(b.id) ? 'blk' : 'oth');
       if (role === 'oth' && !vis(b)) continue;
       const poly = polyOf(b, o.tid), sg = area(poly) >= 0 ? 1 : -1, n = poly.length;
-      let g = '<g class="iso-b iso-' + role + '"' + (b.k === 'own' && o.calcable(b) ? ' data-b="' + b.id + '"' : '') + '>';
+      let g = '<g class="iso-b iso-' + role + (role === 'blk' && o.nowIds.has(b.id) ? ' iso-now' : '') + '"' + (b.k === 'own' && o.calcable(b) ? ' data-b="' + b.id + '"' : '') + '>';
       g += '<title>' + esc(o.label(b)) + ' ' + b.f + '층 · ' + (b.h ? b.h.toFixed(1) + ' m' : '') + ' · ' + esc(o.SRC(b)) + (role === 'blk' ? ' · 하루 중 가리는 동' : '') + (role === 'own' ? ' · 선택한 동' : '') + '</title>';
       const walls = [];
       for (let i = 0; i < n; i++) {

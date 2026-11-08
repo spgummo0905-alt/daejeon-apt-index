@@ -72,6 +72,7 @@ function drawControls() {
     box.scrollLeft = (box.dataset.ready ? Math.abs(want - keep) < 4 : false) ? keep : Math.max(0, want);
   }
   box.dataset.ready = '1';
+  if (on && !box.dataset.centered) { box.dataset.centered = '1'; requestAnimationFrame(() => requestAnimationFrame(() => { const w2 = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (box.clientWidth) box.scrollLeft = Math.max(0, w2); })); }   // 처음 그릴 때는 칸 너비가 0일 수 있어 한 번 더
   $('date').innerHTML = segHTML(DATES.map(d => ({ key: d.key, name: d.name })), st.dk, 'data-date');
   $('seg-view').innerHTML = segHTML(VIEWS.map(v => ({ key: v[0], name: v[1] })), st.view, 'data-view');
   drawFloor();
