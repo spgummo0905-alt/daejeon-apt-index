@@ -87,7 +87,7 @@
     find("[data-pj-favs]").replaceChildren(...favs.map(c => { const b = el("button", "chip", "+ " + c.n); b.type = "button"; b.addEventListener("click", () => add(c)); return b; }));
     const cards = find("[data-pj-candidates]"); cards.replaceChildren();
     if (!current.slugs.length) cards.append(el("p", "pj-empty muted", "아직 담은 후보가 없어요. 눈여겨본 아파트 두 곳부터 시작해 보세요."));
-    current.slugs.forEach(s => {
+    current.slugs.forEach((s, idx) => {
       const c = D.bySlug[s], wrap = el("div", "pj-candidate");
       if (c) {
         const logs = DJVisitLog.list({ region: REGION, slug: s, projectId: current.id });
@@ -98,7 +98,8 @@
         const main = el("button", "pj-cand-main"); main.type = "button";
         const info = el("span", "pj-cand-info");
         info.append(el("b", "", c.n), el("span", "muted", `${DJ.place(c)} · 84㎡ ${c.pt || "가격 정보 없음"}`));
-        main.append(el("span", "grade g-" + c.g, c.g), info);
+        main.append(el("span", "pj-no", String(idx + 1)), el("span", "grade g-" + c.g, c.g), info);
+        main.querySelector(".pj-no").setAttribute("aria-label", `방문 순서 ${idx + 1}번`);
         main.addEventListener("click", () => workspace.open("detail", s));
         const state = el("span", "pj-cand-state" + (logs.length ? " done" : ""), logs.length ? `다녀옴 · ${logs[0].date}` : "아직 안 가봄");
         wrap.append(select, main, state);
@@ -108,6 +109,16 @@
         field.addEventListener("click", () => workspace.open("field", s)); wrap.append(field);
         if (note.d || note.m) wrap.append(el("p", "pj-note", `${note.d ? note.d + " 방문 · " : ""}${note.m ? note.m.slice(0, 90) : "단지에 현장 기록이 있어요"}`));
       } else wrap.append(el("p", "muted", `현재 자료에 없는 후보 (${s}) · 기록은 유지됩니다.`));
+      if (!current.archived && current.slugs.length > 1) {   // 방문 순서 바꾸기: 후보 목록 순서만 바꿈(후보·기록은 그대로)
+        const mv = el("span", "pj-mv");
+        [["↑", -1, "위로"], ["↓", 1, "아래로"]].forEach(([ch, dir, word]) => {
+          const b = el("button", "pj-mvb", ch); b.type = "button"; b.disabled = idx + dir < 0 || idx + dir >= current.slugs.length;
+          b.setAttribute("aria-label", `${c?.n || s} 방문 순서 ${word}`);
+          b.addEventListener("click", () => { const a = current.slugs.slice(); [a[idx], a[idx + dir]] = [a[idx + dir], a[idx]]; mutate({ slugs: a }); });
+          mv.append(b);
+        });
+        wrap.append(mv);
+      }
       if (!current.archived) {
         const remove = el("button", "btn ghost sm pj-remove", "빼기"); remove.type = "button";
         remove.setAttribute("aria-label", (c?.n || s) + " 이 프로젝트 후보에서 빼기");
@@ -116,7 +127,7 @@
       }
       cards.append(wrap);
     });
-    dash(); plan(); summary();
+    dash(); plan(); summary(); startBar();
     journal = DJVisitLogUI({ region: REGION, projectId: current.id, candidates: current.slugs.map(s => D.bySlug[s]).filter(Boolean),
       names: Object.fromEntries(Object.values(D.bySlug).map(c => [c.s, c.n])), archived: current.archived, data: D });
     find("[data-pj-journal]").replaceChildren(journal.element);
@@ -264,6 +275,20 @@
     else { msg = "두 곳 이상 다녀왔어요. 기록을 보며 다시 비교해 보세요."; go("다시 비교하기", () => pickAndOpen("compare"), true); go("방문 기록 보기", () => workspace.open("history")); }
     box.append(el("p", "pj-next-t", "지금 할 일"), el("p", "pj-next-m", msg), ...btns);
   }
+  // 아래 고정 '현장 체크 시작': 아직 안 다녀온 첫 후보의 기존 현장 체크 화면을 연다(새 저장 없음). 다 다녀왔으면 첫 후보
+  function startBar() {
+    const bar = find("[data-pj-start-bar]"), usable = current.slugs.filter(s => D.bySlug[s]);
+    find("[data-pj-order-note]").hidden = current.slugs.length < 2 || current.archived;
+    bar.hidden = current.archived || !usable.length;
+    if (bar.hidden) return;
+    const next = usable.find(s => !DJVisitLog.list({ region: REGION, slug: s, projectId: current.id }).length) || usable[0];
+    bar.dataset.slug = next;
+    find("[data-pj-start-t]").textContent = `${usable.indexOf(next) + 1}번 ${D.bySlug[next].n} 현장 체크 시작`;
+  }
+  // 위쪽 '지금 할 일' 카드가 화면에 보이는 동안은 고정 버튼을 숨겨 그 카드를 가리지 않음(스크롤해서 지나가면 나타남)
+  const nextCard = find("[data-pj-next]");
+  if (nextCard && "IntersectionObserver" in window) new IntersectionObserver(es => editor.classList.toggle("pj-next-seen", es[es.length - 1].isIntersecting), { threshold: 0.2 }).observe(nextCard);
+  find("[data-pj-start]").addEventListener("click", () => { const s = find("[data-pj-start-bar]").dataset.slug; if (s) workspace.open("field", s); });
   function actions() {
     if (!current || !D) return;
     const slugs = current.slugs.filter(s => picked.has(s) && D.bySlug[s]);
@@ -272,7 +297,7 @@
     find("[data-pj-selection]").textContent = `후보 ${current.slugs.length}곳 중 ${n}곳 선택${!loc ? " · 위치 정보가 없는 후보는 코스에 넣을 수 없어요" : ""}`;
     find("[data-pj-compare]").disabled = !state.compare;
     find("[data-pj-course]").disabled = !state.course;
-    find("[data-pj-dock]").hidden = n < 2;
+    find("[data-pj-dock]").hidden = n < 2; editor.classList.toggle("pj-docked", n >= 2);
     find("[data-pj-dock-count]").textContent = `${n}곳 선택`;
     find("[data-pj-quick-compare]").disabled = !state.compare;
     find("[data-pj-quick-course]").disabled = !state.course;

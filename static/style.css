@@ -4280,10 +4280,10 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-actions { margin-top: 10px; padding: 10px 0 4px; }
 .pj-actions h3 { display: none; }
 .pj-candidates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
-.pj-candidate { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-areas: "chk main state btn rm" "chk note note note note"; column-gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.pj-candidate { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; grid-template-areas: "chk main state btn mv rm" "chk note note note note note"; column-gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .pj-candidate .pj-check { grid-area: chk; display: grid; place-items: center; width: 44px; height: 44px; margin: 0; }
 .pj-candidate .pj-check input { width: 24px; height: 24px; }
-.pj-cand-main { grid-area: main; display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 52px; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+.pj-cand-main { grid-area: main; justify-self: stretch; width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-width: 0; min-height: 52px; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
 .pj-cand-main:hover b { text-decoration: underline; }
 .pj-cand-info { display: grid; gap: 2px; min-width: 0; }
 .pj-cand-info b { font-size: 17px; overflow-wrap: anywhere; }
@@ -4295,6 +4295,18 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
 .pj-candidate > .pj-remove { grid-area: rm; border: 0; color: var(--muted); background: none; font-size: 13px; }
 .pj-candidate > .pj-note { grid-area: note; margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
 .pj-candidate .grade { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font-weight: 800; }
+.pj-no { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 800; }
+.pj-mv { grid-area: mv; display: inline-flex; gap: 4px; }
+.pj-mvb { width: 44px; height: 44px; border: 0; border-radius: var(--r-md); background: var(--chip); color: var(--text); font-size: 18px; font-weight: 800; cursor: pointer; }
+.pj-mvb:disabled { opacity: .35; cursor: default; }
+.pj-start { margin-top: 14px; }
+.pj-start .btn { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 56px; padding: 0 20px; border-radius: var(--r-md); font-size: 17px; font-weight: 800; }
+@media (max-width: 719px) {
+  .pj-start:not([hidden]) { position: fixed; z-index: 49; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); margin: 0; padding: 8px 16px; background: linear-gradient(to top, var(--bg) 70%, transparent); pointer-events: none; }
+  .pj-start .btn { pointer-events: auto; box-shadow: var(--shadow-float); }
+  body[data-page="projects"] { padding-bottom: 150px; }
+  .pj-docked .pj-start, .pj-next-seen .pj-start, .kb-open .pj-start { display: none !important; }
+}
 .pj-pj-empty, .pj-empty { padding: 28px 16px; text-align: center; border: 1px dashed var(--border); border-radius: 16px; }
 .pj-discover { margin-top: 22px; }
 .pj-discover > summary { display: flex; align-items: center; gap: 10px; min-height: 48px; font-size: 16px; }
@@ -4320,10 +4332,12 @@ body[data-page="rooftop"] .toast { background: rgba(20,30,62,.92); color: #f4f6f
   .pj-next { padding: 14px; }
   .pj-next .pj-next-m { font-size: 16px; }
   .pj-next .btn { flex: 1 1 calc(50% - 6px); justify-content: center; padding: 0 10px; }
-  .pj-candidate { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "chk main" "chk state" "btn btn" "rm rm" "note note"; padding: 12px; }
+  .pj-candidate { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "chk main" "chk state" "btn btn" "mv mv" "rm rm" "note note"; padding: 12px; }
   .pj-cand-state { justify-self: start; margin: 4px 0 0; }
   .pj-candidate > .btn:not(.pj-remove) { grid-area: btn; justify-self: stretch; margin-top: 8px; }
   .pj-candidate > .pj-remove { justify-self: end; }
+  .pj-candidate > .pj-mv { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+  .pj-candidate > .pj-remove { grid-column: 1 / -1; }
 }
 
 /* 첫 화면 아래 큰 구역은 화면에 가까워질 때까지 그리기를 미룹니다(휴대폰 첫 로딩 속도).
