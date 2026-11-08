@@ -20,12 +20,7 @@
   <script>if(/[#&]c=/.test(location.hash)){document.body.classList.add("pv-has");document.getElementById("pv-load").hidden=false;document.getElementById("pv-pick").removeAttribute("open")}</script>
   <div id="pv-tool" hidden>
   <section class="stage" aria-label="일조 작업 무대">
-    <div class="st-head">
-      <div id="cx" class="st-cx"></div>
-      <div id="dong" class="st-dong" role="group" aria-label="동 고르기"></div>
-    </div>
-    <div class="card result st-res" id="result-card" aria-labelledby="h-res"><div id="result" aria-live="polite"></div></div>
-    <div class="seg st-date" id="date" role="group" aria-label="날짜 고르기"></div>
+    <div class="st-head"><div id="cx" class="st-cx"></div></div>
     <div class="st-main">
       <div class="fl-rail" id="flRail">
         <button type="button" class="fl-val" id="floorBtn" aria-haspopup="dialog" aria-label="층 목록 열기"></button>
@@ -41,6 +36,11 @@
         <div id="vp-floor" class="vp vp-floor" hidden><div id="tower"></div></div>
         <button class="btn zoom" id="zoom" type="button" aria-pressed="false">전체 보기</button>
       </div>
+    </div>
+    <div class="card result st-res" id="result-card" aria-labelledby="h-res"><div id="result" aria-live="polite"></div></div>
+    <div class="st-pick">
+      <button type="button" class="dong-btn" id="dongBtn" aria-haspopup="dialog" aria-controls="dongSheet"></button>
+      <div class="seg st-date" id="date" role="group" aria-label="날짜 고르기"></div>
     </div>
     <div class="st-time" id="vtime">
       <div class="state" id="state"></div>
@@ -62,6 +62,12 @@
   <details class="card fold field" id="field"><summary id="h-field">현장에서 확인할 것</summary><div id="fieldBody"></div></details>
   <details class="card fold" id="evidence"><summary id="h-ev">계산 근거 · 한계 · 자료 출처</summary><div id="evBody"></div></details>
   <p class="foot" id="foot">건물 윤곽은 브이월드(국토교통부), 건물 높이·층수는 국토교통부 건축HUB 건축물대장을 바탕으로 한 <strong>추정한 참고용</strong> 계산이에요. 해 위치는 날짜와 단지 중심 좌표로 계산한 천문 값이에요.</p>
+  <dialog class="pv-sheet" id="dongSheet" aria-labelledby="ds-t">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <h2 id="ds-t">어느 동을 볼까요?</h2>
+    <div id="dong" class="fgrid dgrid" role="group" aria-label="동 고르기"></div>
+    <button type="button" class="btn" id="dongSheetX">닫기</button>
+  </dialog>
   <dialog class="pv-sheet" id="floorSheet" aria-labelledby="fs-t">
     <div class="sheet-grab" aria-hidden="true"></div>
     <h2 id="fs-t">몇 층 창으로 볼까요?</h2>
