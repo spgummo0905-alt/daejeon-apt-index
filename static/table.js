@@ -153,7 +153,7 @@
         const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); build(); } }, { rootMargin: "600px 0px" });
         io.observe(table);
       }
-      addEventListener("load", () => idle(build), { once: true });
+      // (예전에는 로드 뒤 한가할 때 미리 만들었지만, 1천 줄을 끼우는 데 0.9초 가까이 화면이 멈춰 첫 화면 성능을 깎았음. 표 근처로 내려오거나 구·검색으로 부를 때만 만듦)
       // 다른 곳(지역 카드, 지도)이 '이 지역 단지 보기'를 부르면 그때 만들고 이어서 실행
       DJ.showArea = function (area, dong) { build(); const t = setInterval(() => { if (DJ.showArea !== stub) { clearInterval(t); DJ.showArea(area, dong); } }, 50); };
       var stub = DJ.showArea;
