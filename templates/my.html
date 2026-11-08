@@ -14,6 +14,12 @@
     </div>
   </details>
 </section>
+{# 숫자 세 칸: 관심 단지·프로젝트·방문 기록. 저장된 자료에서 세기만 하고(my.js) 새로 저장하는 것은 없음 #}
+<dl class="my-stats" data-my-stats aria-label="내 기록 요약">
+  <div><dt>관심 단지</dt><dd data-ms="favs">-</dd></div>
+  <div><dt>프로젝트</dt><dd data-ms="proj">-</dd></div>
+  <div><dt>방문 기록</dt><dd data-ms="visits">-</dd></div>
+</dl>
 {# 세 칸 탭: 한 번에 한 칸만 보여 줌(저장 자료는 그대로, 보이기만 바꿈). 주소 #course·#notes 등으로 들어오면 그 칸이 열림 (my.js) #}
 <nav class="my-seg" aria-label="나의 집감 칸" data-my-seg>
   <button type="button" data-mg-btn="favs" aria-pressed="true">내 후보<b data-mj="favs"></b></button>
@@ -105,7 +111,7 @@
   <button type="button" class="btn primary" data-install-btn>홈 화면에 추가</button>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/visit-log.js?v={{ v }}"></script><script src="static/my.js?v={{ v }}"></script>
+{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/my.js?v={{ v }}"></script>
 <script src="static/prefs.js?v={{ v }}"></script>
 <script src="static/course.js?v={{ v }}"></script>
 <script src="static/sharekit.js?v={{ v }}" defer></script>{% endblock %}
