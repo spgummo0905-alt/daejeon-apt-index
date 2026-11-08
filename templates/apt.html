@@ -63,6 +63,12 @@
   </div>
   {% if lead and c.price_ref is not nan %}<p class="pb-note">{% if (lead.area - ref_area) | abs < 1 %}두 가격 모두 전용 {{ ref_area }}㎡ 기준이에요.{% else %}<b>면적 기준이 달라요.</b> 실거래는 실제 거래된 면적, 추정은 전용 {{ ref_area }}㎡로 환산한 값이라 두 숫자를 바로 견줄 수 없어요.{% endif %}</p>
   {% elif c.price_ref is not nan %}<p class="pb-note">추정은 전용 {{ ref_area }}㎡로 환산한 비교용 값이에요. 실제 거래 가격이 아니에요.</p>{% endif %}
+  <ul class="pb-quick" aria-label="이 단지 한눈에">
+    <li><a href="#index-calc"><small>집감 지수</small><b>{% if c.index is not nan %}{{ c.index | score }}점{% else %}-{% endif %}</b></a></li>
+    <li><a href="#index-calc"><small>등급</small><b>{% if c.grade != "-" %}{{ c.grade }}등급{% else %}-{% endif %}</b></a></li>
+    <li><a href="#info"><small>세대수</small><b>{% if c.ki and c.ki.hh %}{{ "{:,}".format(c.ki.hh) }}{% else %}-{% endif %}</b></a></li>
+    <li>{% if preview_ok %}<a href="{{ root }}preview.html#c={{ c.slug | urlencode }}"><small>일조</small><b>미리보기 ›</b></a>{% else %}<a href="#loc"><small>생활 입지</small><b>보기 ›</b></a>{% endif %}</li>
+  </ul>
   <p class="pb-fit" data-mc-fit hidden></p>
   <dl class="pb-cells">
     <div><dt>{{ years[0] }}년 평균 상승</dt><dd>{{ c10 | pct }}</dd></div>
