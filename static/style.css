@@ -432,13 +432,21 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
 .mp-stage { position: relative; height: calc(100svh - 280px); min-height: 360px; overflow: hidden; border-radius: var(--r-lg); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: var(--shadow); }
 .mp-svg { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .mp-svg:active { cursor: grabbing; }
+.mp-km { position: absolute; inset: 0; touch-action: none; }
+.mp-km[hidden] { display: none; }
+.mp-real .mp-svg { display: none; }
+.mp-zoom, .mp-sheet { z-index: 12; }
+.mp-kp { position: relative; min-height: 34px; padding: 0 11px; border: 2px solid var(--accent); border-radius: 999px; background: var(--surface); color: var(--accent); font: 800 14px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: var(--shadow-float); cursor: pointer; }
+.mp-kp::after { content: ""; position: absolute; inset: -6px; }
+.mp-kp.g-S { border-color: #a37b22; background: linear-gradient(135deg, #fff1bf, #d9b55a 55%, #b88a2b); color: #2a1d02; }
+.mp-kp.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); transform: scale(1.12); }
 .mp-pin { cursor: pointer; }
 .mp-pin .dot { fill: var(--accent); stroke: var(--surface); }
 .mp-pin .hit { fill: transparent; }
 .mp-pin:hover .dot { fill: color-mix(in srgb, var(--accent) 75%, #000); }
 .mp-lab { fill: var(--text); stroke: var(--surface); paint-order: stroke; stroke-width: 3px; stroke-linejoin: round; font-weight: 700; pointer-events: none; }
 .mp-lab.on { fill: var(--accent); }
-.mp-note { position: absolute; left: 12px; top: 10px; margin: 0; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 90%, transparent); font-size: 13px; color: var(--muted); pointer-events: none; }
+.mp-note { position: absolute; left: 12px; top: 10px; max-width: calc(100% - 78px); margin: 0; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 90%, transparent); font-size: 13px; color: var(--muted); pointer-events: none; }
 .mp-zoom { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .mp-zoom button { width: 44px; height: 44px; border: 0; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-float); color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; }
 .mp-sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 16px 16px; border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--surface); box-shadow: 0 -6px 24px rgba(15, 25, 45, .16); transform: translateY(105%); visibility: hidden; transition: transform 220ms var(--ease-out), visibility 0s linear 220ms; }
