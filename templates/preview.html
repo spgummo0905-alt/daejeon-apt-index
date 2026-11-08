@@ -22,26 +22,30 @@
   <section class="stage" aria-label="일조 작업 무대">
     <div class="st-head"><div id="cx" class="st-cx"></div></div>
     <div class="st-main">
-      <div class="fl-rail" id="flRail">
-        <button type="button" class="fl-val" id="floorBtn" aria-haspopup="dialog" aria-label="층 목록 열기"></button>
-        <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
-        <input id="floor" type="range" min="1" max="10" step="1" value="1" aria-label="층" aria-orientation="vertical">
-        <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
-      </div>
       <div class="st-scene" id="viewbox">
         <h2 id="h-view" class="sr-only">왜 가려지나요?</h2>
-        <div class="seg seg-over" id="seg-view" role="group" aria-label="보기 방식"></div>
-        <div id="vp-iso" class="vp"><svg class="iso" id="iso" role="group" aria-labelledby="isoTitle isoDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="sc-top">
+          <button type="button" class="dong-btn" id="dongBtn" aria-haspopup="dialog" aria-controls="dongSheet"></button>
+          <div class="seg st-date" id="date" role="group" aria-label="날짜 고르기"></div>
+        </div>
+        <div class="fl-rail" id="flRail">
+          <button type="button" class="fl-val" id="floorBtn" aria-haspopup="dialog" aria-label="층 목록 열기"></button>
+          <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
+          <input id="floor" type="range" min="1" max="10" step="1" value="1" aria-label="층" aria-orientation="vertical">
+          <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
+        </div>
+        <div id="vp-iso" class="vp">
+          <svg class="iso" id="iso" role="group" aria-labelledby="isoTitle isoDesc" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
         <div id="vp-plan" class="vp" hidden><svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
         <div id="vp-floor" class="vp vp-floor" hidden><div id="tower"></div></div>
-        <button class="btn zoom" id="zoom" type="button" aria-pressed="false">전체 보기</button>
+        <div class="sc-bot">
+          <div class="seg seg-over" id="seg-view" role="group" aria-label="보기 방식"></div>
+          <button class="btn zoom" id="zoom" type="button" aria-pressed="false">전체 보기</button>
+        </div>
       </div>
     </div>
     <div class="card result st-res" id="result-card" aria-labelledby="h-res"><div id="result" aria-live="polite"></div></div>
-    <div class="st-pick">
-      <button type="button" class="dong-btn" id="dongBtn" aria-haspopup="dialog" aria-controls="dongSheet"></button>
-      <div class="seg st-date" id="date" role="group" aria-label="날짜 고르기"></div>
-    </div>
     <div class="st-time" id="vtime">
       <div class="state" id="state"></div>
       <div class="row">

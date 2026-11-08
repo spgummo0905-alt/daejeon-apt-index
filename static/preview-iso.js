@@ -57,13 +57,15 @@
   function render(o, view, rw) {
     const k = view.w / (rw || 358), fs = 14 * k;
     const sun = o.sun, tb = o.items.find(b => b.id === o.tid), tp = polyOf(tb, o.tid);
-    let s = '<defs><pattern id="iShadow" patternUnits="userSpaceOnUse" width="' + 7 * k + '" height="' + 7 * k + '" patternTransform="rotate(45)"><rect width="' + 7 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.14)"/><rect width="' + 2.2 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.55)"/></pattern></defs>';
+    let s = '<defs><pattern id="iShadow" patternUnits="userSpaceOnUse" width="' + 7 * k + '" height="' + 7 * k + '" patternTransform="rotate(45)"><rect width="' + 7 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.14)"/><rect width="' + 2.2 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.55)"/></pattern>' +
+      ['own:#5aa0e6:#2a6fb8:#17508f', 'blk:#f6e6d3:#e4d3c1:#d3bea8', 'now:#f9c690:#f1b172:#d98f4a', 'oth:#eef1f5:#d7dde4:#bcc5cf'].map(x => { const a = x.split(':'); return '<linearGradient id="gA' + a[0] + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a[1] + '"/><stop offset="1" stop-color="' + a[2] + '"/></linearGradient><linearGradient id="gB' + a[0] + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a[2] + '"/><stop offset="1" stop-color="' + a[3] + '"/></linearGradient>'; }).join('') +
+      '<linearGradient id="gSh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3c4f66" stop-opacity=".34"/><stop offset="1" stop-color="#3c4f66" stop-opacity=".12"/></linearGradient></defs>';
     // 땅 위 그림자(가리는 동만, 선택한 시각)
     if (sun.up && sun.alt >= 1) {
       for (const b of o.items) {
         if (!o.blockIds.has(b.id)) continue;
         const sp = S.shadowPoly({ poly: b.poly, h: b.h, f: b.f }, sun);
-        if (sp) s += '<polygon points="' + pts(sp.map(q => P(q[0], q[1], 0))) + '" fill="url(#iShadow)" opacity="' + (o.nowIds.has(b.id) ? 1 : .5) + '"/>';
+        if (sp) s += '<polygon points="' + pts(sp.map(q => P(q[0], q[1], 0))) + '" fill="url(#gSh)" opacity="' + (o.nowIds.has(b.id) ? 1 : .55) + '"/>';
       }
     }
     // 건물: 먼 것부터(북쪽부터) 그려서 앞 건물이 위에 겹친다
@@ -74,6 +76,8 @@
       const role = b.id === o.tid ? 'own' : (o.blockIds.has(b.id) ? 'blk' : 'oth');
       if (role === 'oth' && !vis(b)) continue;
       const poly = polyOf(b, o.tid), sg = area(poly) >= 0 ? 1 : -1, n = poly.length;
+      { const cc = center(poly), grow = (pp, a) => pp.map(q => { const dx = q[0] - cc[0], dy = q[1] - cc[1], l = Math.hypot(dx, dy) || 1; return P(q[0] + dx / l * a, q[1] + dy / l * a, 0); });
+        s += '<polygon class="iso-ao" points="' + pts(grow(poly, 5)) + '"/><polygon class="iso-ao" points="' + pts(grow(poly, 2)) + '"/>'; }
       let g = '<g class="iso-b iso-' + role + (role === 'blk' && o.nowIds.has(b.id) ? ' iso-now' : '') + '"' + (b.k === 'own' && o.calcable(b) ? ' data-b="' + b.id + '"' : '') + '>';
       g += '<title>' + esc(o.label(b)) + ' ' + b.f + '층 · ' + (b.h ? b.h.toFixed(1) + ' m' : '') + ' · ' + esc(o.SRC(b)) + (role === 'blk' ? ' · 하루 중 가리는 동' : '') + (role === 'own' ? ' · 선택한 동' : '') + '</title>';
       const walls = [];

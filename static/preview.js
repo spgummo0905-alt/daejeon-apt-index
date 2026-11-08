@@ -180,9 +180,14 @@ function setVB(svg, v) {                      // 이전 시점에서 새 시점�
   const step = now => { const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3); svg.setAttribute('viewBox', fmt(from.map((f, i) => f + (to[i] - f) * e))); if (k < 1) vbRaf = requestAnimationFrame(step); };
   vbRaf = requestAnimationFrame(step);
 }
+const ISO_INSET_T = 60, ISO_INSET_B = 58;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
+const ISO_INSET_L = 58;                       // 왼쪽에 겹쳐 있는 층 조작부 폭(px): 건물 그림이 그 뒤로 들어가지 않게 비워 둔다
 function drawIso() {
-  const svg = $('iso'), o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358;
-  const v = ISO.bounds(o, rw / rh);
+  const svg = $('iso');
+  const o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, L = Math.min(ISO_INSET_L, rw * 0.2);
+  const T = Math.min(ISO_INSET_T, rh * 0.18), B = Math.min(ISO_INSET_B, rh * 0.18);
+  const v0 = ISO.bounds(o, (rw - L) / (rh - T - B)), s0 = v0.w / (rw - L);
+  const v = { x: v0.x - L * s0, y: v0.y - T * s0, w: v0.w + L * s0, h: v0.h + (T + B) * s0 };
   const nNA = ctx.excluded.length;
   setVB(svg, v);
   svg.innerHTML = '<title id="isoTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층에서 본 입체 그림</title>' +
