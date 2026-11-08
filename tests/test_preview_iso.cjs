@@ -54,3 +54,10 @@ test("그리기: 내 동·가리는 동·층 띠·해 쪽 선이 들어가고, �
   const excl = ctx.excluded.length; assert.equal(ctx.calc.length + excl, ctx.items.length);
   const wide = I.bounds(Object.assign({}, o, { wide: true }), 1); assert.ok(wide.w > v.w, "넓게 보기는 더 넓은 영역");
 });
+
+test("일조 0분인 실제 조합(청주 43111-1 가동 1층 동지)은 0분이고 가리는 동이 있다", () => {
+  const ctx = load("cheongju/43111-1"), b = ctx.items.find(x => x.k === "own" && x.dn === "가동");
+  const sm = C.summarize(ctx, C.run(ctx, b.id, 1, DATES[0]));
+  assert.equal(sm.sunMin, 0, "자료가 말하는 0분 그대로");
+  assert.ok(sm.blockers.length >= 1, "가리는 동이 있어야 설명이 나온다");
+});

@@ -117,10 +117,15 @@
     const free = (x, y, t) => { const w = t.length * 0.62 * fs + 6 * k, h = fs + 4 * k; for (const q of placed) if (Math.abs(q.x - x) < (q.w + w) / 2 && Math.abs(q.y - y) < (q.h + h) / 2) return false; placed.push({ x, y, w, h }); return true; };
     const inV = (x, y) => x > view.x + 6 * k && x < view.x + view.w - 6 * k && y > view.y + 6 * k && y < view.y + view.h - 4 * k;
     labels.sort((a, c) => (a.role === 'own' ? -1 : 0) - (c.role === 'own' ? -1 : 0));
+    // 장면 글자는 중요한 2개만: 내 동 + 지금(없으면 가장 크게) 가리는 동. 나머지 동은 모양과 색으로만 구분(그림 안 글자 폭주 방지)
+    const keep = new Set([o.tid].concat(o.nowIds.size ? [...o.nowIds].slice(0, 1) : o.fitIds.slice(0, 1)));
     for (const l of labels) {
-      const no = o.num(l.b), t = l.role === 'own' ? '내 동 ' + no : (no || '앞 동') + ' 앞 동';
-      const tt = t + ' · ' + l.b.f + '층';
-      if (inV(l.x, l.y) && free(l.x, l.y, tt)) s += '<text class="iso-t" x="' + f1(l.x) + '" y="' + f1(l.y) + '" font-size="' + fs * (l.role === 'own' ? 1.1 : 0.95) + '" font-weight="800" text-anchor="middle" fill="' + (l.role === 'own' ? '#0a2f57' : '#6b2c00') + '">' + esc(tt) + '</text>';
+      if (!keep.has(l.b.id)) continue;
+      const no = o.num(l.b) || o.label(l.b), t = l.role === 'own' ? '내 동 ' + no : no + ' 앞 동';   // 동 번호가 없는 단지(가동·나동)는 이름으로
+      const tt = t + ' · ' + l.b.f + '층', size = fs * (l.role === 'own' ? 1.1 : 0.95);
+      const half = tt.length * 0.62 * size / 2 + 4 * k;               // 글자 폭 어림: 장면 가장자리 밖으로 잘리지 않게 안쪽으로 밀어 넣음
+      const lx = Math.min(Math.max(l.x, view.x + half + 4 * k), view.x + view.w - half - 4 * k);
+      if (inV(lx, l.y) && free(lx, l.y, tt)) s += '<text class="iso-t" x="' + f1(lx) + '" y="' + f1(l.y) + '" font-size="' + size + '" font-weight="800" text-anchor="middle" fill="' + (l.role === 'own' ? '#0a2f57' : '#6b2c00') + '">' + esc(tt) + '</text>';
     }
     // 북쪽 표시: 화면에서 북쪽이 어느 쪽인지
     const nv = [P(0, 1, 0)[0] - P(0, 0, 0)[0], P(0, 1, 0)[1] - P(0, 0, 0)[1]], nl = Math.hypot(nv[0], nv[1]), nx0 = view.x + view.w - 26 * k, ny0 = view.y + 30 * k, L2 = 18 * k;

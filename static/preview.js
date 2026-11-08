@@ -117,6 +117,7 @@ function drawResult() {
   h += '<div class="st-row"><p class="big">약 ' + C.durText(sm.sunMin) + '</p><div class="st-id"><b>' + esc(C.label(b)) + ' ' + st.fl + '층</b><span>' + d.name + ' ' + d.date.month + '/' + d.date.day + ' · 직사광 · 추정</span></div></div>';
   h += '<div class="st-side"><p class="when">' + (sm.sunRanges.length ? sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') : (top ? '직사광이 닿는 시간이 없어요' : '닿는 시간대 없음')) + '</p>';
   h += '<p class="st-blk">' + (top ? (sm.sunMin === 0 ? '앞 동에 가려져요 · ' : '') + '가장 크게 가리는 동 <b>' + esc(top.label) + '</b>' + (sm.sunMin === 0 && sm.shadeMin ? ' · 가림 약 ' + C.durText(sm.shadeMin) : '') : '앞 동에 가리는 시간 없음') + '</p></div>';
+  h += '<button type="button" class="why-btn" data-why>원인과 계산 근거 보기 ›</button>';
   $('result').innerHTML = h;
   let m = '<dl class="facts">';
   m += '<div><dt>앞 동에 가려지는 시간</dt><dd>' + (sm.shadeMin ? '약 ' + C.durText(sm.shadeMin) + (sm.shadeRanges.length ? '<small>' + sm.shadeRanges.map(rangeTxt).join(', ') + '</small>' : '') : '계산되지 않았어요') + '</dd></div>';
@@ -491,6 +492,7 @@ document.addEventListener('click', ev => {
   const bt = ev.target.closest('button'); if (!bt || !ctx) return;
   if (bt.dataset.cx) { if (bt.dataset.cx !== st.cid) { st.tid = null; chooseComplex(bt.dataset.cx); } }
   else if (bt.dataset.dong) { select(bt.dataset.dong); closeDongSheet(); }
+  else if (bt.hasAttribute('data-why')) { const f = $('moreFold'); f.open = true; $('evidence').open = true; drawFold(); f.scrollIntoView({ block: 'start', behavior: DJ_calm() ? 'auto' : 'smooth' }); const s = f.querySelector('summary'); if (s) s.focus({ preventScroll: true }); }
   else if (bt.id === 'dongBtn') openDongSheet();
   else if (bt.id === 'dongSheetX') closeDongSheet();
   else if (bt.dataset.date) { st.dk = bt.dataset.date; fullRender(); writeHash(); }
