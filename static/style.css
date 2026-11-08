@@ -274,6 +274,16 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
   body[data-page="apt"] .rcd { bottom: calc(138px + env(safe-area-inset-bottom)); }
   .kb-open .apt-cta { display: none !important; }
 }
+.pb-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.pb-quick a { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 64px; padding: 8px 6px; border-radius: var(--r-md); background: var(--chip); color: var(--text); text-align: center; }
+.pb-quick a:hover { text-decoration: none; filter: brightness(.97); }
+.pb-quick small { font-size: 13px; color: var(--muted); }
+.pb-quick b { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (max-width: 719px) {
+  .apt-topbar .crumb { display: none; }   /* 머리에 '‹ 단지 상세'가 있어 겹침 */
+  .apt-topbar { grid-template-columns: auto; justify-content: end; margin-top: 4px; }
+  .pv-link { display: none; }              /* 같은 링크가 4칸 요약에 있음(일조) */
+}
 @keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-color-scheme: dark) { .icon-btn[data-fav].on { background: #3a3012; color: var(--gold); } }
 /* 한눈에 보기: 메인 카드에 없는 강점·비교를 숫자 타일로 */
