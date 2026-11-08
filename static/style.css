@@ -107,15 +107,14 @@ h3.sub { margin-top: 28px; }
 .hm-fold.hm-closed .panel-head p { display: none; }
 main .panel[id], main section[id] { scroll-margin-top: 62px; }
 /* 나의 집감 세 칸 탭 */
-.my-seg { display: flex; gap: 0; margin: 14px 0 12px; position: sticky; top: 0; z-index: 5; border: 2px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); }
-.my-seg button { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 6px 8px; border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
-.my-seg button:last-child { border-right: 0; }
+.my-seg { display: flex; gap: 4px; margin: 12px 0 12px; position: sticky; top: 0; z-index: 5; padding: 4px; border: 0; border-radius: var(--r-md); background: var(--chip); }
+.my-seg button { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 6px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .my-seg button b { margin-left: 6px; font-weight: 800; }
-.my-seg button[aria-pressed="true"] { background: var(--navy); color: var(--on-navy); }
-.my-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); }
+.my-seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 800; box-shadow: var(--shadow); }
+.my-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 12px 14px 12px 18px; border: 0; border-radius: var(--r-lg); background: var(--accent); color: var(--on-accent); }
 .my-next[hidden] { display: none; }
-.my-next-t { font-size: 16px; font-weight: 700; }
-.my-next .btn { margin: 0; min-height: 48px; }
+.my-next-t { font-size: 17px; font-weight: 800; }
+.my-next .btn, .my-next .btn.primary { margin: 0; min-height: 48px; background: #fff; border-color: #fff; color: #174f99; font-weight: 800; }
 .mg-off { display: none !important; }
 @media (max-width: 720px) {  /* 휴대폰: 바로가기는 한 줄로 밀어서 */
   .jump { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
@@ -4488,6 +4487,10 @@ body[data-page="intro"] .toast-act { color: #13294b; }
 .hero-note p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); }
 .hero-note p + p { margin-top: 6px; color: var(--muted); font-size: 13px; }
 @media (max-width: 720px) { .page-hero.lean h1 { font-size: 24px; } }
+@media (max-width: 719px) {
+  body[data-page="my"] .page-hero { padding-top: 4px; }
+  body[data-page="my"] .page-hero h1 { font-size: 22px; margin: 0 0 8px; }
+}
 @media (prefers-reduced-motion: reduce) { .hero-note summary .ic { transition: none; } }
 
 /* 현장 사진 지우기 버튼: 보이는 동그라미는 그대로, 누르는 영역만 44px */
