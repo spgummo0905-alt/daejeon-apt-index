@@ -178,7 +178,7 @@ function setVB(svg, v) {                      // 이전 시점에서 새 시점�
   const step = now => { const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3); svg.setAttribute('viewBox', fmt(from.map((f, i) => f + (to[i] - f) * e))); if (k < 1) vbRaf = requestAnimationFrame(step); };
   vbRaf = requestAnimationFrame(step);
 }
-const ISO_INSET_T = 60, ISO_INSET_B = 58, ISO_INSET_R = 62;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
+const ISO_INSET_T = 46, ISO_INSET_B = 36, ISO_INSET_R = 40;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
 function drawIso() {
   const svg = $('iso');
   const sm0 = getSum(st.dk), o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, R = Math.min(ISO_INSET_R, rw * 0.2);

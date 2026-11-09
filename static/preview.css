@@ -131,7 +131,7 @@ body.pv-has .pv .foot{order:21}
 .pv .btn{color:var(--pv-ink)}
 
 /* ===== 일조 화면 (토스풍 프로토타입 구조: 제목 → 큰 무대 → 결과 카드 → 동·날짜 → 시간 → 행동 버튼) ===== */
-.pv{--stage-h:clamp(270px,calc(100dvh - 546px),400px);--ink2:#162135;--blue:#2565e8;padding:0 18px 24px;max-width:560px}
+.pv{--stage-h:clamp(236px,calc(100dvh - 574px),400px);--ink2:#162135;--blue:#2565e8;padding:0 18px 24px;max-width:560px}
 .pv-eyebrow{margin:2px 0 0}
 .pv .st-cx{display:flex;align-items:center;gap:0 8px;min-height:44px}.pv-eyebrow .cxl{min-height:44px;margin:-6px 0}
 .pv .cxn{font-size:15px;font-weight:800;color:#426b9b;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pv .cxs{color:var(--pv-muted);font-size:14px;flex:1 1 auto;white-space:nowrap}
@@ -159,7 +159,9 @@ body.pv-has .pv .foot{order:21}
 .sg-bottom{position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px;z-index:5;pointer-events:none}
 .sg-bottom>*{pointer-events:auto}
 .stage-note{padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.88);backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(37,68,114,.08);font-size:13px;color:#60758b;font-weight:600;line-height:1.4;min-width:0}
-.stage-note b{color:#2350a0;font-weight:800;font-size:15px}.focus-tag{font-size:12px;color:#6e809a;font-weight:600}
+.stage-note b{color:#2350a0;font-weight:800;font-size:15px}
+.stage-note{max-width:calc(100% - 128px);overflow:hidden}.stage-note b{white-space:nowrap}
+@media (max-width:400px){.focus-tag{display:none}.stage-note{padding:8px 11px}}.focus-tag{font-size:12px;color:#6e809a;font-weight:600}
 .camera{flex:none;min-height:44px;padding:0 13px;font-size:13px;font-weight:700;color:#4a6784;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.84);border-radius:12px;backdrop-filter:blur(10px);box-shadow:0 2px 13px rgba(25,45,88,.08)}
 .res-card{margin-top:10px;padding:10px 16px 0;background:#fff;border-radius:22px;border:1px solid #eff1f6;box-shadow:0 8px 28px rgba(54,82,128,.05)}
 .result-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -185,6 +187,7 @@ body.pv-has .pv .foot{order:21}
 .pv .tslide input[type=range]{position:absolute;left:0;right:0;top:0;width:100%;height:44px;margin:0;background:transparent;accent-color:#286af1;touch-action:pan-y}
 .pv .tslide .ticks{position:absolute;left:0;right:0;top:32px;height:20px;font-size:12px;color:#4a5d75}
 .bottom-action{margin-top:8px;display:grid;grid-template-columns:1fr 56px;gap:9px}
+@media (max-width:720px){.bottom-action{position:sticky;bottom:calc(var(--tab-h,74px) + 6px + env(safe-area-inset-bottom));z-index:20;margin:8px -18px 0;padding:10px 18px 6px;background:linear-gradient(to top,#f7f9fc 70%,rgba(247,249,252,0))}.pv{padding-bottom:8px}}
 .primary{min-height:52px;border:0;background:#2667ea;border-radius:14px;color:#fff;font-weight:770;font-size:16px;box-shadow:0 7px 17px rgba(36,94,218,.23)}
 .icon-action{min-height:52px;border:1px solid #dfe8f6;background:#fff;border-radius:14px;color:#2566df;font-size:22px}.icon-action.on{background:#edf4ff;border-color:#2c71ec}
 .disclaimer{margin:10px 0 14px;text-align:center;font-size:12px;color:#5d6e82;line-height:1.5}
@@ -220,9 +223,10 @@ body.pv-has .pv .foot{order:21}
 .secondary{border:1px solid #e3eaf4;background:#fff;color:#3e5979;border-radius:13px;min-height:48px;font-size:15px;font-weight:740}.primary.small{min-height:48px;font-size:15px;box-shadow:none}
 @media (min-width:430px){.mode-label{display:block;top:auto;bottom:62px}}
 @media (min-width:700px){.pv{--stage-h:440px;margin:0 auto}}
-@media (max-width:370px){.pv{--stage-h:324px}}
-@media (max-height:760px) and (max-width:700px){.pv{--stage-h:314px}}
+@media (min-height:901px) and (max-width:700px){.pv{--stage-h:clamp(236px,calc(100dvh - 614px),400px)}}
 @media (max-width:370px){.pv{padding:0 14px 24px}.pv .hero-h{font-size:20px}.big-number{font-size:30px}.pv-sheet .fgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-height:780px) and (max-width:700px){.pv .hero-h{display:none}.pv{--stage-h:clamp(196px,calc(100dvh - 540px),400px)}.res-card{padding:8px 14px 0}.big-number{font-size:28px}.pv .why-btn{min-height:44px;padding:2px 0}.timeline{padding-top:8px}.controls{margin-top:8px}}
+@media (max-height:700px) and (max-width:720px){.bottom-action{position:static;margin:8px 0 0;padding:0;background:none}.pv{--stage-h:230px}}
 @media (max-height:900px) and (max-width:700px){.pv .hero-s{display:none}.pv-eyebrow{margin:0}.pv .hero-h{margin-bottom:6px}.pv .st-cx{min-height:34px}.pv .hero-h{margin-bottom:6px}.res-card{margin-top:10px;padding-top:12px}.big-number{font-size:30px}.timeline{margin-top:10px}.controls{margin-top:10px}}
 @media (prefers-reduced-motion:reduce){.pv-sheet[open]{animation:none}.collectible .face,.sun-glow,.sun-glow::after{transition:none}}
 .pv .seg{display:flex;gap:4px;border:0;border-radius:var(--pv-r);overflow:hidden;background:var(--chip);padding:4px}
@@ -274,7 +278,8 @@ body.pv-has .pv .foot{order:21}
 .result-pill{background:#3a3012;color:#f5d98a}.result-pill.shade{background:#2a323b;color:#c4d0de}.result-pill.back,.result-pill.night{background:#262c33;color:#b2bdca}
 .choose-dong{background:#1b2028;border-color:#2c3440;color:#cfe0f5}.pv .controls .seg{background:#242b35}.pv .controls .seg button{color:#a9b8cb}.pv .controls .seg button[aria-pressed="true"]{background:#37465a;color:#fff}
 .pv .hero-h{color:#f1f6fd}.pv .hero-h em{color:#8db8ff}.pv .hero-s{color:#a9b8cb}.pv .cxn{color:#8db8ff}
-.icon-action{background:#1b2028;border-color:#2c3440;color:#8db8ff}.icon-action.on{background:#22344f}.disclaimer{color:#98a8bc}
+.icon-action{background:#1b2028;border-color:#2c3440;color:#8db8ff}
+@media (max-width:720px){.bottom-action{background:linear-gradient(to top,#16191d 70%,rgba(22,25,29,0))}}.icon-action.on{background:#22344f}.disclaimer{color:#98a8bc}
 .pv-sheet{background:#1f242a;color:#eef1f4}.pv-sheet .close{background:#2a323b;color:#c4d0de}.sh-p,.pv-sheet ul.plain{color:#b9c8da}
 .pv-sheet .fcell,.pv-sheet .dgrid .chip,.pv-sheet .btn,.secondary{background:#262c33;border-color:#3a4552;color:#dbe6f3}
 .pv-sheet .fcell[aria-pressed="true"],.pv-sheet .dgrid .chip[aria-pressed="true"]{background:#22344f;border-color:#5a93e0;color:#9cc4ff}

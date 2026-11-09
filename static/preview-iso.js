@@ -46,7 +46,7 @@
       if (o.rayEnd) out.push(P(o.rayEnd[0], o.rayEnd[1], o.rayEnd[2]));
     }
     let x0 = Math.min(...out.map(p => p[0])), x1 = Math.max(...out.map(p => p[0])), y0 = Math.min(...out.map(p => p[1])), y1 = Math.max(...out.map(p => p[1]));
-    const pad = o.wide ? 14 : 12; x0 -= pad; x1 += pad; y0 -= pad * 1.3; y1 += pad * 1.5;
+    const pad = o.wide ? 14 : 5; x0 -= pad; x1 += pad; y0 -= pad * 1.3; y1 += pad * 1.2;
     let w = x1 - x0, h = y1 - y0; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     const minW = 120; if (w < minW) w = minW; if (h < minW / aspect) h = minW / aspect;
     if (w / h < aspect) w = h * aspect; else h = w / aspect;
