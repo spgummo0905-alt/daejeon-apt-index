@@ -225,6 +225,8 @@
 <script>window.DJ_ROOT = "{{ root }}";</script>
 <script src="{{ root }}static/records.js?v={{ v }}"></script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>
+<script src="{{ root }}static/ux-motion.js?v={{ v }}"></script>
+<script src="{{ root }}static/ux-overlays.js?v={{ v }}"></script>
 <script src="{{ root }}static/shell.js?v={{ v }}" defer></script>
 {% if account %}<script>window.DJ_SB = {{ {"url": account.url, "key": account.key, "provider": account.provider or "kakao"} | tojson }};</script>
 <script src="{{ root }}static/sync.js?v={{ v }}"></script>
