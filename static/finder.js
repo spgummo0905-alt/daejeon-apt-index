@@ -408,19 +408,21 @@
   box.querySelector("[data-sv-reset]").addEventListener("click", reset);
 
   // ---------- 고른 조건 꼬리표 ----------
-  function tags() {
-    const t = [];
-    const st = STATUS.find(x => x.id === S.status); if (st) t.push(st.label);
-    if (S.gus.length) t.push(S.gus.length > 2 ? `${S.gus[0]} 외 ${S.gus.length - 1}곳` : S.gus.join("·"));
-    works(S).forEach(w => t.push(`${shortName(w.name)} ${w.lim}km`));
-    if (S.budget) t.push(`${S.budget}억 이하`);
-    S.py.forEach(id => t.push(PY.find(p => p.id === id).label));
-    const age = AGE.find(a => a.id === S.age); if (age && age.years) t.push(age.label);
-    if (S.stn) t.push(`${box.dataset.stopShort || "역"} ${S.stn}m`);
-    if (S.sch) t.push(`초등학교 ${S.sch}m`);
-    S.must.forEach(id => t.push(MUST.find(m => m.id === id).label));
+  // 조건 칩: 글자와 '어느 질문에서 고른 것인지'를 함께 돌려줌 (칩을 누르면 그 질문으로 돌아가 고칠 수 있게)
+  function tagItems() {
+    const t = [], add = (text, step) => t.push({ t: text, step });
+    const st = STATUS.find(x => x.id === S.status); if (st) add(st.label, "status");
+    if (S.gus.length) add(S.gus.length > 2 ? `${S.gus[0]} 외 ${S.gus.length - 1}곳` : S.gus.join("·"), "gu");
+    works(S).forEach(w => add(`${shortName(w.name)} ${w.lim}km`, "work"));
+    if (S.budget) add(`${S.budget}억 이하`, "budget");
+    S.py.forEach(id => add(PY.find(p => p.id === id).label, "py"));
+    const age = AGE.find(a => a.id === S.age); if (age && age.years) add(age.label, "age");
+    if (S.stn) add(`${box.dataset.stopShort || "역"} ${S.stn}m`, "near");
+    if (S.sch) add(`초등학교 ${S.sch}m`, "near");
+    S.must.forEach(id => add(MUST.find(m => m.id === id).label, "must"));
     return t;
   }
+  const tags = () => tagItems().map(x => x.t);
 
   // ---------- 그림: 고른 조건이 올라가는 작은 동네 ----------
   const art = (() => {
@@ -540,7 +542,11 @@
     list.sort((a, b) => S.sort === "p" ? priceOf(a) - priceOf(b) : (b.c.i || 0) - (a.c.i || 0));
     document.querySelector("[data-sv-res-n]").textContent = list.length.toLocaleString() + "곳";
     const tg = document.querySelector("[data-sv-tags]");
-    tg.replaceChildren(...tags().map(t => el("span", "chip sm", t)));
+    tg.replaceChildren(...tagItems().map(({ t, step }) => {
+      const b = el("button", "chip sm sv-tag", t); b.type = "button"; b.setAttribute("aria-label", t + " 조건 고치기");
+      b.addEventListener("click", () => { S.step = Math.max(0, STEPS.findIndex(x => x.id === step)); render(); box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" }); });
+      return b;
+    }));
     gridBox.replaceChildren();
     shown = 0;
     page();
@@ -575,7 +581,7 @@
     }).filter(x => x && x.n > 0).sort((a, b) => b.n - a.n).slice(0, 4);
     const row = el("div", "sv-relax");
     opts.forEach(({ i, st, n }) => {
-      const b = el("button", "btn", `${st.name} 빼면 ${n.toLocaleString()}곳`);
+      const b = el("button", "btn", `${st.name} 빼면 0곳 → ${n.toLocaleString()}곳`);
       b.type = "button";
       b.addEventListener("click", () => { STEPS[i].clear(); changed(); });
       row.append(b);
@@ -597,13 +603,51 @@
       ws.forEach(w => bits.push(`${shortName(w.name)} ${km(w.lat, w.lng, c.la, c.ln).toFixed(1)}km`));
       if (S.stn && c.f.subway != null) bits.push(`${box.dataset.stopShort || "역"} ${Math.round(c.f.subway)}m`);
       // 결과를 훑으며 바로 관심 단지에 담기: 집감 카드(미니) + 별. 카드 한 장에 이름·지역·등급·84㎡ 추정가, 조건에 맞는 이유는 위 한 줄
-      gridBox.append(DJ.hc.fcard(c, { fav: true, match: bits.length ? bits.join(" · ") : "" }));
+      gridBox.append(DJ.hc.fcard(c, { fav: true, cmp: toggleCmp, cmpPaint: paintCmp, match: bits.length ? bits.join(" · ") : "" }));
     });
     shown = Math.min(list.length, shown + PAGE);
     more.hidden = shown >= list.length;
     more.textContent = Math.min(PAGE, list.length - shown) + "곳 더 보기";
   }
   more.addEventListener("click", page);
+
+  // ---------- 비교함 (이 화면 안에서만 기억: 새 저장 키 없음. '비교하기'는 기존 compare.html?s= 로 넘김) ----------
+  const CMP_MAX = 4;
+  let basket = [];
+  const bar = el("div", "fd-cmpbar"); bar.hidden = true; bar.setAttribute("role", "region"); bar.setAttribute("aria-label", "비교함");
+  const barTxt = el("span", "fd-cmp-txt"), barGo = el("a", "btn primary fd-cmp-go"), barClear = el("button", "btn ghost fd-cmp-clear", "비우기"); barClear.type = "button";
+  bar.append(barTxt, barClear, barGo); document.body.append(bar);
+  let resVisible = false;
+  function paintCmp(b) {
+    const on = basket.includes(b.dataset.slug), c = (DJ.data.cache || {}).bySlug;
+    b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on);
+    b.setAttribute("aria-label", (on ? "비교함에서 빼기" : "비교함에 담기") + (c && c[b.dataset.slug] ? " · " + c[b.dataset.slug].n : ""));
+    b.firstChild.textContent = on ? "✓ 비교" : "비교";
+  }
+  function paintBar() {
+    document.querySelectorAll(".hc-cmp").forEach(paintCmp);
+    bar.hidden = !basket.length || !resVisible;
+    barTxt.textContent = `비교함 ${basket.length}/${CMP_MAX}`;
+    barGo.textContent = basket.length >= 2 ? "나란히 비교하기" : "1곳 더 고르면 비교해요";
+    barGo.setAttribute("aria-disabled", String(basket.length < 2));
+    barGo.href = basket.length >= 2 ? (window.DJ_ROOT || "") + "compare.html?s=" + basket.join(",") : "#results";
+    document.documentElement.classList.toggle("fd-cmp-on", !bar.hidden);
+  }
+  function toggleCmp(c) {
+    if (basket.includes(c.s)) {
+      const was = basket.slice(); basket = basket.filter(x => x !== c.s); paintBar();
+      DJ.toastUndo(c.n + " 비교함에서 뺐어요", "", () => { basket = was; paintBar(); });
+      return;
+    }
+    if (basket.length >= CMP_MAX) { DJ.toast("비교는 " + CMP_MAX + "곳까지 담을 수 있어요", "비교함에서 하나를 빼고 담아 주세요."); return; }   // 담기 전에 알림 (자동으로 빼지 않음)
+    const was = basket.slice(); basket = [...basket, c.s]; paintBar();
+    DJ.toastUndo(c.n + " 비교함에 담았어요 (" + basket.length + "/" + CMP_MAX + ")", "", () => { basket = was; paintBar(); });
+  }
+  barClear.addEventListener("click", () => { const was = basket.slice(); basket = []; paintBar(); DJ.toastUndo("비교함을 비웠어요", "", () => { basket = was; paintBar(); }); });
+  barGo.addEventListener("click", e => { if (basket.length < 2) { e.preventDefault(); document.getElementById("results").scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth" }); } });
+  if ("IntersectionObserver" in window) new IntersectionObserver(es => { resVisible = es.some(x => x.isIntersecting); paintBar(); }, { rootMargin: "0px 0px -20% 0px" }).observe(document.getElementById("results"));
+  else { resVisible = true; }
+
   document.querySelectorAll("[data-sort]").forEach(b => b.addEventListener("click", () => {
     S.sort = b.dataset.sort;
     document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-pressed", x === b); });
@@ -612,6 +656,7 @@
 
   let STATS = [];
   DJ.data().then(d => {
+    DJ.data.cache = d;
     ALL = d.complexes;
     STATS = d.stats;
     const q70 = arr => { const v = arr.filter(x => x != null).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length * 0.7)] : Infinity; };
@@ -625,7 +670,16 @@
     const fromSearch = fromUrl();
     changed();
     if (fromSearch) document.getElementById("results").scrollIntoView();
+  }).catch(() => {   // 단지 목록을 못 받았을 때: 빈 화면 대신 안내와 다시 시도 (자동으로 조건을 지우지 않음)
+    box.querySelector("[data-sv-n]").textContent = "-";
+    q.replaceChildren(el("h3", "sv-qt", "단지 목록을 불러오지 못했어요"), el("p", "sv-qs", "인터넷 연결을 확인하고 다시 시도해 주세요. 골라 둔 조건은 그대로 남아 있어요."));
+    const retry = el("button", "btn primary", "다시 시도"); retry.type = "button"; retry.addEventListener("click", () => location.reload()); q.append(retry);
+    document.querySelector("[data-sv-wait]").hidden = true;
+    gridBox.replaceChildren(el("p", "sv-empty", "결과를 불러오지 못했어요. 위의 '다시 시도'를 눌러 주세요."));
   });
+  // 키보드가 올라오면 입력 중인 칸을 화면 가운데로 (가림 방지; 아래 버튼 줄은 CSS 로 키보드 위에 붙음)
+  box.addEventListener("focusin", e => { if (e.target.matches("input")) setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: DJ.calm ? "auto" : "smooth" }), 320); });
+
   // 검색창에서 '7억 이하 30평대'처럼 조건을 넣고 오면 (finder.html?budget=7&py=30#results) 그 조건으로 새로 시작합니다.
   // 상황·대출 계산 값과 정렬은 그대로 두고, 주소의 조건은 한 번 읽은 뒤 지웁니다 (새로고침해도 고친 조건 유지).
   function fromUrl() {

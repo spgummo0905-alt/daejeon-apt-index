@@ -54,12 +54,26 @@
   function fcard(c, o) {
     o = o || {};
     const w = el("article", "hc-fcard g-" + c.g);
-    if (o.match) w.append(el("div", "match full", o.match));
+    const top = el("div", "fc-top");
+    if (o.match) top.append(el("div", "match full", o.match));
+    if (o.cmp) {   // 비교 담기: 관심(별)과 따로, 카드 위 줄 오른쪽. 상태는 호출한 쪽(찾기)이 들고 있음
+      const b = el("button", "hc-cmp"); b.type = "button"; b.dataset.slug = c.s;
+      b.append(el("span", "", "비교"));
+      b.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); o.cmp(c); });
+      top.append(b); if (o.cmpPaint) o.cmpPaint(b);
+    }
+    if (top.childNodes.length) w.append(top);
     w.append(mini(c, o));
     if (o.fav) {
       const b = el("button", "gfav hc-fav"); b.type = "button"; b.append(DJ.icon("star"));
       const paint = () => { const on = DJ.isFav(c.s); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? `${c.n} 관심 단지에서 빼기` : `${c.n} 관심 단지에 담기`); b.title = on ? "관심 단지에서 빼기" : "관심 단지에 담기"; };
-      b.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); DJ.toggleFav(c.s); paint(); if (!DJ.calm) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); } });
+      b.addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        const was = DJ.isFav(c.s), now = DJ.toggleFav(c.s); paint();
+        if (!DJ.calm) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+        // 담은 직후 3.5초 동안 '취소' (UX v2). 로그인 안내 등으로 상태가 안 바뀌었으면 알리지 않음
+        if (now && !was && DJ.toastUndo) DJ.toastUndo(c.n + " 관심 단지에 담았어요", "", () => { if (DJ.isFav(c.s)) DJ.toggleFav(c.s); paint(); });
+      });
       paint(); w.append(b);
     }
     return w;

@@ -29,6 +29,7 @@
 
   // 취소할 수 있는 알림: 담기·저장 직후 3.5초 동안 '취소'. onUndo 는 원래 상태로 되돌리는 함수(호출하는 쪽이 책임)
   DJ.toastUndo = function (title, body, onUndo) {
+    document.querySelectorAll(".toast.has-act").forEach(t => t.remove());   // 취소 알림은 한 번에 하나만 (연달아 담아도 쌓여 화면을 가리지 않게)
     DJ.toast(title, body, DJ.motion.undo, { label: "취소", onClick: onUndo });
   };
 })();
