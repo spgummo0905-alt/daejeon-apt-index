@@ -4672,6 +4672,9 @@ p.muted { text-wrap: balance; }
 /* 신분증이 위로 올라가서 .apt-hero 는 아래 구역 묶음일 뿐: 넓은 화면에서도 한 칸 */
 .apt-hero { display: block; margin-top: 18px; }
 .apt-hero > * + * { margin-top: 18px; }
+/* 일조 링크 줄(.pv-link)은 카드 아래 행동 줄의 '일조' 버튼과 같은 곳으로 가므로 휴대폰에서는 숨김(카드를 아래로 밀어 행동 줄이 탭 바에 가려지던 것).
+   뒤쪽 .pv-link 규칙이 이기지 않도록 a.pv-link 로 한 단계 더 구체적으로 */
+@media (max-width: 719px) { a.pv-link { display: none; } }
 /* 디지털 집 신분증: 앞면(이름·등급·지수·순위·실거래·핵심 평가 3개) → 펼치기(전체 평가·근거) → 행동 줄 → 가격 구분 칸 */
 .pb > .mc { margin: 0; }
 .pb .mc-name { margin: 0; }
