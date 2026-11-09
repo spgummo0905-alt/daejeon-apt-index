@@ -798,37 +798,62 @@
   // 오른쪽 아래 버튼으로 뒤집으면 '임장 메모'. S·A 는 금박·백금박 카드
   DJ.miniCard = function (c) {
     const wrap = el("div", "mcw g-" + c.g);
-    const a = el("a", "mcard g-" + c.g);
-    a.href = DJ.href(c);
-    const top = el("span", "mcard-top");
-    top.append(el("span", "grade g-" + c.g, c.g), el("span", "mcard-score", c.i == null ? "-" : String(c.i)));
-    const foot = el("span", "mcard-foot", c.pt ? "84㎡ " + c.pt : "가격 정보 없음");
-    const facts = [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : ""].filter(Boolean).join(" · ");
-    a.append(top);
-    if (facts) a.append(el("span", "mcard-facts", facts));
-    a.append(el("strong", "mcard-name", c.n), el("span", "mcard-where", DJ.place(c)), foot);
-    if (c.h) a.append(el("span", "mcard-high", "신고가"));
+    // C5-W2: housecard.js(DJ.hc)가 있으면 MY·홈과 같은 수집 카드(금속 테두리·그림·지수·가격)를 앞면·뒷면(임장 메모)에 쓰고, 없으면 예전 모양.
+    // 뒤집기·임장 메모·다녀옴 도장·링크·공유 동작은 그대로 (저장 구조·계산 변경 없음)
+    const hc = DJ.hc && DJ.hc.collect;
     const been = DJ.been(c);   // 다녀온 카드: 현장 기록이 있으면 금박 도장
-    if (been) {
-      const when = been.d ? " " + been.d.slice(5).replace("-", ".") : "";
-      const st = el("span", "mcard-been", `다녀옴${when}`);   // 한 줄로 짧게. 확인한 수는 읽어 주는 글과 눌러 볼 때 제목에
-      st.title = `현장 확인 ${been.n}/${been.all}`;
-      a.append(st);
-      wrap.classList.add("been");
+    let a;
+    if (hc) {
+      a = hc(c);   // 도장(다녀옴)은 collect 가 같은 DJ.been 으로 붙임
+      a.classList.add("mcard-hc"); wrap.classList.add("mcw-hc");
+      if (c.h) a.querySelector(".hc-inner").append(el("span", "mcard-high", "신고가"));
+    } else {
+      a = el("a", "mcard g-" + c.g);
+      a.href = DJ.href(c);
+      const top = el("span", "mcard-top");
+      top.append(el("span", "grade g-" + c.g, c.g), el("span", "mcard-score", c.i == null ? "-" : String(c.i)));
+      const foot = el("span", "mcard-foot", c.pt ? "84㎡ " + c.pt : "가격 정보 없음");
+      const facts = [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : ""].filter(Boolean).join(" · ");
+      a.append(top);
+      if (facts) a.append(el("span", "mcard-facts", facts));
+      a.append(el("strong", "mcard-name", c.n), el("span", "mcard-where", DJ.place(c)), foot);
+      if (c.h) a.append(el("span", "mcard-high", "신고가"));
+      if (been) {
+        const when = been.d ? " " + been.d.slice(5).replace("-", ".") : "";
+        const st = el("span", "mcard-been", `다녀옴${when}`);   // 한 줄로 짧게. 확인한 수는 읽어 주는 글과 눌러 볼 때 제목에
+        st.title = `현장 확인 ${been.n}/${been.all}`;
+        a.append(st);
+      }
     }
+    if (been) wrap.classList.add("been");
     a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g}등급 ${c.i == null ? "" : c.i + "점"}${been ? ", 다녀온 곳, 현장 확인 " + been.n + "/" + been.all : ""}`);
     wrap.append(a);
     wrap.link = a;
     const lines = DJ.memo(c);
     if (!lines.length) return wrap;
-    const memo = el("div", "mcard mcard-memo g-" + c.g);
-    memo.hidden = true;
-    memo.append(el("b", "mm-title", "임장 메모"), el("span", "mm-name", c.n));
-    const dl = el("dl", "mm-list");
-    lines.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v)));
-    const go = el("a", "mm-go", "단지 자세히 →");
-    go.href = DJ.href(c);
-    memo.append(dl, go);
+    // 뒷면(임장 메모): 앞면과 같은 금속 테두리 틀. 예전 모양일 때는 예전 틀
+    let memo;
+    if (hc) {
+      memo = el("div", "hc hc-collect hc-back mcard-memo g-" + c.g);
+      const fr = el("span", "hc-frame"), inn = el("span", "hc-inner");
+      fr.append(inn); memo.append(fr);
+      memo.hidden = true;
+      inn.append(el("b", "mm-title", "임장 메모"), el("span", "mm-name", c.n));
+      const dl = el("dl", "mm-list");
+      lines.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v)));
+      const go = el("a", "mm-go", "단지 자세히 →");
+      go.href = DJ.href(c);
+      inn.append(dl, go);
+    } else {
+      memo = el("div", "mcard mcard-memo g-" + c.g);
+      memo.hidden = true;
+      memo.append(el("b", "mm-title", "임장 메모"), el("span", "mm-name", c.n));
+      const dl = el("dl", "mm-list");
+      lines.forEach(([k, v]) => dl.append(el("dt", "", k), el("dd", "", v)));
+      const go = el("a", "mm-go", "단지 자세히 →");
+      go.href = DJ.href(c);
+      memo.append(dl, go);
+    }
     const turn = el("button", "mcard-turn");
     turn.type = "button";
     turn.append(DJ.icon("book"));
