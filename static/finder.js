@@ -522,6 +522,7 @@
   const PAGE = 24;
   let list = [], shown = 0;
   const gridBox = document.getElementById("finder-results"), more = document.getElementById("finder-more");
+  gridBox.classList.add("hc-flist");
   function results() {
     const idle = !narrowed();
     document.querySelector("[data-sv-wait]").hidden = !idle;
@@ -591,13 +592,12 @@
   function page() {
     const ws = works(S);
     list.slice(shown, shown + PAGE).forEach(({ c, f }) => {
-      const card = DJ.card(c, STATS, { fav: true });   // 결과를 훑으며 바로 관심 단지에 담기
       const bits = [];
       if (f.length) bits.push(`${f[0][0]}평 ${eok(f[0][1])}` + (f.length > 1 ? ` 외 ${f.length - 1}개 평형` : ""));
       ws.forEach(w => bits.push(`${shortName(w.name)} ${km(w.lat, w.lng, c.la, c.ln).toFixed(1)}km`));
       if (S.stn && c.f.subway != null) bits.push(`${box.dataset.stopShort || "역"} ${Math.round(c.f.subway)}m`);
-      if (bits.length) card.prepend(el("div", "match full", bits.join(" · ")));
-      gridBox.append(card);
+      // 결과를 훑으며 바로 관심 단지에 담기: 집감 카드(미니) + 별. 카드 한 장에 이름·지역·등급·84㎡ 추정가, 조건에 맞는 이유는 위 한 줄
+      gridBox.append(DJ.hc.fcard(c, { fav: true, match: bits.length ? bits.join(" · ") : "" }));
     });
     shown = Math.min(list.length, shown + PAGE);
     more.hidden = shown >= list.length;

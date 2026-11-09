@@ -4710,6 +4710,21 @@ p.muted { text-wrap: balance; }
 
 @media (max-width: 720px) { .hc-empty { min-height: 0; } .hc-empty span { display: none; } .hc-empty a { min-height: 48px; margin-top: 6px; } .hc-home { margin-top: 10px; } .hc-sec-h { margin-bottom: 6px; } }
 
+/* --- C2 찾기·지도: 같은 미니 카드 --- */
+.card-grid.hc-flist { grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 720px) { .card-grid.hc-flist { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); } }
+.hc-fcard { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hc-fcard .match.full { align-self: flex-start; max-width: 100%; padding: 5px 12px; border-radius: 12px; font-size: 14px; line-height: 1.35; white-space: normal; background: var(--hc-soft); color: var(--hc-blue); font-weight: 700; }
+.hc-fcard .hc-go { display: none; }
+.hc-fcard .hc-mini { padding-right: 56px; }
+.hc-fcard .hc-fav { position: absolute; right: 6px; bottom: 6px; margin: 0; width: 44px; height: 44px; z-index: 2; }
+.hc-fcard:has(.match) .hc-fav { bottom: 6px; }
+.mp-sh-card { margin: 0 0 8px; } .mp-sh-card .hc-mini { box-shadow: none; padding-right: 8px; min-height: 100px; }
+.mp-sheet { padding-top: 10px; } .mp-sh-card .hc-go { display: none; }
+.kmap-card .hc-mini { flex: 1 1 auto; min-width: 0; box-shadow: none; border: 0; padding: 0; min-height: 84px; }
+.kmap-card .hc-go { display: none; }
+.mp-sh-card .hc-meta, .kmap-card .hc-meta { white-space: normal; overflow: visible; line-height: 1.35; }   /* '지역 · 연식 · 지수'가 한 줄에서 잘리지 않게 두 줄까지 */
+
 /* 터치 영역: 자주 누르는 것은 44px 이상으로 (보이는 모양은 그대로, 누를 수 있는 칸만 넓힘) */
 .top-nav > a, .tn-btn { min-height: 44px; }
 .rcd-fab { min-height: 44px; }

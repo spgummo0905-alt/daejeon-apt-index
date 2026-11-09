@@ -117,11 +117,8 @@
   }
 
   function fillSheet(c) {
-    $("[data-sh-place]").textContent = DJ.place(c);
-    $("[data-sh-name]").textContent = c.n;
-    $("[data-sh-price]").textContent = c.pt || "자료 없음";
-    $("[data-sh-idx]").textContent = c.i == null ? "-" : c.i + "점";
-    $("[data-sh-grade]").textContent = c.g && c.g !== "-" ? c.g + "등급" : "-";
+    // 핀을 누르면 단지 카드(미니) 한 장: 이름·지역·등급·84㎡ 추정가·지수. 값은 complexes.json 그대로
+    $("[data-sh-card]").replaceChildren(DJ.hc.mini(c, { idx: true }));
     $("[data-sh-detail]").href = DJ.href(c);
     const sun = $("[data-sh-sun]"); sun.hidden = !sunSet.has(c.s); sun.href = (window.DJ_ROOT || "") + "preview.html#c=" + encodeURIComponent(c.s);
     paintFav(c.s);

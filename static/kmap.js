@@ -96,16 +96,9 @@
 
     function show(p) {
       card.replaceChildren();
-      const left = document.createElement("div");
-      const title = text("a", "", p.n);
-      title.href = DJ.href(p);
-      title.style.fontWeight = "700";
-      left.append(title, document.createElement("br"),
-        text("span", "muted", DJ.place(p) + " · 지수 " + (p.i == null ? "-" : p.i) + " · " + p.g + "등급" +
-          (p.pt ? " · 84㎡ " + p.pt : "") + (p.h ? " · 최근 신고가" : "")));
       const go = text("a", "btn", "자세히 →");
-      go.href = title.href;
-      card.append(left, go);
+      go.href = DJ.href(p);
+      card.append(DJ.hc && DJ.hc.mini ? DJ.hc.mini(p, { idx: true }) : text("a", "", p.n), go);
     }
 
     const bounds = new kakao.maps.LatLngBounds();

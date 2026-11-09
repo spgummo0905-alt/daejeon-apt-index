@@ -34,7 +34,7 @@
   let context = { slugs: [], archived: false };
   function candidateActions() {
     if (document.body.dataset.page !== "finder") return;
-    document.querySelectorAll(".gcard").forEach(card => {
+    document.querySelectorAll(".gcard, .hc-fcard").forEach(card => {
       const a = card.querySelector("a[href]"), slug = a && slugFrom(new URL(a.href, location.href));
       if (!slug) return;
       let b = card.querySelector("[data-pw-candidate]");
