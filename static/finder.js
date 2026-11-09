@@ -128,6 +128,16 @@
       on: () => S.must.length > 0, clear: () => { S.must = []; }, draw: drawMust },
   ];
 
+  // UX v2: 화면은 4묶음(예산 / 생활권 / 집 / 생활)으로 이동한다. STEPS 8개의 순서·id 와 저장된 설문의 step 번호는 그대로라서
+  // 이전에 저장한 설문은 이주 없이 같은 질문을 가리킨다. '상황'은 따로 묻지 않고 예산의 '대출 한도 계산'을 고를 때만 묻는다.
+  const idx = id => STEPS.findIndex(x => x.id === id);
+  const GROUPS = [
+    { name: "예산", ids: ["budget"] },
+    { name: "생활권", ids: ["gu", "work"] },
+    { name: "집", ids: ["py", "age"] },
+    { name: "생활", ids: ["near", "must"] },
+  ];
+  const ORDER = GROUPS.flatMap(g => g.ids);
   const q = box.querySelector("[data-sv-q]");
   function option(label, sub, n, on, onClick, cls) {
     const b = el("button", "sv-opt" + (on ? " on" : "") + (cls ? " " + cls : ""));
@@ -274,6 +284,7 @@
       seg.append(b);
     });
     q.append(seg);
+    if (S.bmode === "calc") { q.append(label("지금 어떤 상황인가요? (대출 한도 계산에만 쓰여요)")); drawStatus(); }
     if (S.bmode === "price") {
       const top = Math.max(...ALL.map(c => Math.max(0, ...types(c).map(t => t[1])))) / 10000;
       const list = BUDGETS.filter((b, i) => i === 0 || BUDGETS[i - 1] < top);
@@ -347,24 +358,27 @@
   const stepsBox = box.querySelector("[data-sv-steps]");
   let lastN = null;
   function render() {
-    const st = STEPS[S.step];
-    stepsBox.replaceChildren(...STEPS.map((x, i) => {
+    if (!STEPS[S.step] || STEPS[S.step].id === "status") S.step = idx("budget");   // 옛 설문의 '상황' 단계(0번)는 예산으로
+    const st = STEPS[S.step], ord = ORDER.indexOf(st.id), gi = GROUPS.findIndex(g => g.ids.includes(st.id)), g = GROUPS[gi];
+    stepsBox.replaceChildren(...GROUPS.map((x, i) => {
       const li = el("li");
-      const b = el("button", "sv-step" + (i === S.step ? " cur" : "") + (x.on() ? " done" : ""));
+      const done = x.ids.some(id => STEPS[idx(id)].on());
+      const b = el("button", "sv-step" + (i === gi ? " cur" : "") + (done ? " done" : ""));
       b.type = "button";
-      b.append(el("i", "", x.on() && i !== S.step ? "✓" : String(i + 1)), el("span", "", x.name));
-      if (i === S.step) b.setAttribute("aria-current", "step");
-      b.addEventListener("click", () => { S.step = i; render(); });
+      b.append(el("i", "", done && i !== gi ? "✓" : String(i + 1)), el("span", "", x.name));
+      if (i === gi) b.setAttribute("aria-current", "step");
+      b.addEventListener("click", () => { S.step = idx(x.ids[0]); render(); });
       li.append(b);
       return li;
     }));
-    const cur = stepsBox.querySelector(".cur");   // 좁은 화면: 지금 단계가 보이게 가로로 밀기
+    const cur = stepsBox.querySelector(".cur");   // 좁은 화면: 지금 묶음이 보이게 가로로 밀기
     if (cur && stepsBox.scrollWidth > stepsBox.clientWidth) stepsBox.scrollLeft = cur.offsetLeft - stepsBox.clientWidth / 2 + cur.offsetWidth / 2;
-    q.replaceChildren(el("p", "sv-qn", `질문 ${S.step + 1} / ${STEPS.length} · ${st.pick === "many" ? "여러 개 고를 수 있어요" : st.id === "near" ? "각각 하나만 고르세요" : "하나만 고르세요"}`), el("h3", "sv-qt", st.q), el("p", "sv-qs", st.sub));
+    const pos = g.ids.length > 1 ? ` ${g.ids.indexOf(st.id) + 1}/${g.ids.length}` : "";
+    q.replaceChildren(el("p", "sv-qn", `질문 ${ord + 1} / ${ORDER.length} · ${g.name}${pos} · ${st.pick === "many" ? "여러 개 고를 수 있어요" : st.id === "near" ? "각각 하나만 고르세요" : "하나만 고르세요"}`), el("h3", "sv-qt", st.q), el("p", "sv-qs", st.id === "budget" ? "가격대를 고르거나, 연소득과 자기자본으로 대출 한도를 계산해 보세요. 대출 계산을 고르면 현재 보유 주택 상황을 한 번 물어요." : st.sub));
     st.draw();
-    box.querySelector("[data-sv-prev]").disabled = S.step === 0;
+    box.querySelector("[data-sv-prev]").disabled = ord <= 0;
     box.querySelector("[data-sv-skip]").hidden = !st.on();
-    box.querySelector("[data-sv-next]").textContent = S.step === STEPS.length - 1 ? "결과 보기" : "다음";
+    box.querySelector("[data-sv-next]").textContent = ord === ORDER.length - 1 ? "결과 보기" : "다음";
     art();
     save();
   }
@@ -392,9 +406,10 @@
     render();
     results();
   }
-  box.querySelector("[data-sv-prev]").addEventListener("click", () => { if (S.step > 0) { S.step--; render(); } });
+  box.querySelector("[data-sv-prev]").addEventListener("click", () => { const ord = ORDER.indexOf(STEPS[S.step].id); if (ord > 0) { S.step = idx(ORDER[ord - 1]); render(); } });
   box.querySelector("[data-sv-next]").addEventListener("click", () => {
-    if (S.step < STEPS.length - 1) { S.step++; render(); box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" }); }
+    const ord = ORDER.indexOf(STEPS[S.step].id);
+    if (ord < ORDER.length - 1) { S.step = idx(ORDER[ord + 1]); render(); box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" }); }
     else document.getElementById("results").scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth" });
   });
   box.querySelector("[data-sv-skip]").addEventListener("click", () => { STEPS[S.step].clear(); changed(); });
@@ -411,7 +426,7 @@
   // 조건 칩: 글자와 '어느 질문에서 고른 것인지'를 함께 돌려줌 (칩을 누르면 그 질문으로 돌아가 고칠 수 있게)
   function tagItems() {
     const t = [], add = (text, step) => t.push({ t: text, step });
-    const st = STATUS.find(x => x.id === S.status); if (st) add(st.label, "status");
+    const st = STATUS.find(x => x.id === S.status); if (st) add(st.label, "budget");
     if (S.gus.length) add(S.gus.length > 2 ? `${S.gus[0]} 외 ${S.gus.length - 1}곳` : S.gus.join("·"), "gu");
     works(S).forEach(w => add(`${shortName(w.name)} ${w.lim}km`, "work"));
     if (S.budget) add(`${S.budget}억 이하`, "budget");
@@ -696,7 +711,7 @@
     if (AGE.some(a => a.id && a.id === qs.get("age"))) { S.age = qs.get("age"); at.push("age"); }
     S.stn = Math.max(0, +qs.get("stn") || 0); S.sch = Math.max(0, +qs.get("sch") || 0); if (S.stn || S.sch) at.push("near");
     S.must = list("must").filter(id => MUST.some(m => m.id === id)); if (S.must.length) at.push("must");
-    S.step = Math.max(0, ...at.map(id => STEPS.findIndex(x => x.id === id)));
+    S.step = idx(at.length ? ORDER[Math.max(...at.map(id => ORDER.indexOf(id)))] : "budget");
     try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* 그대로 */ }
     return true;
   }
