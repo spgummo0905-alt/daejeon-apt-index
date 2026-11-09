@@ -4606,6 +4606,110 @@ p.muted { text-wrap: balance; }
 
 /* 휴대폰: 그림(150px+테두리)과 첫 질문(선택지 2열) 자리도 미리 잡아 둡니다 */
 @media (max-width: 560px) { .sv-art:empty { min-height: 152px; } .sv-q:empty { min-height: 276px; } }
+/* ===== 집감 카드 시스템 (C0·C1): 카드 3종 + 단지 상세 메인 카드 + 홈 첫 화면 =====
+   한 장의 아파트 카드가 화면마다 크기만 달라지는 구조. 값은 모두 기존 자료(새 계산 없음). 건물 그림은 실제 외관이 아닌 평면 추상 그래픽 */
+:root { --hc-blue: #2867ef; --hc-ink: #162642; --hc-soft: #eef4ff; --hc-line: #e4ebf5; --hc-r: 22px;
+  --hc-sky1: #dcecff; --hc-sky2: #f1f7ff; --hc-ground: #c4d9c2; --hc-wall: #dbe7f4; --hc-wall-d: #b4c8de; --hc-glass: #4f8ce7; --hc-glass2: #a6ceff; }
+@media (prefers-color-scheme: dark) { :root { --hc-blue: #6da7ec; --hc-ink: #f0efec; --hc-soft: #1f2a3b; --hc-line: rgba(255,255,255,.10);
+  --hc-sky1: #243247; --hc-sky2: #1c2635; --hc-ground: #35493a; --hc-wall: #4a5b72; --hc-wall-d: #3a495e; --hc-glass: #4f8fd8; --hc-glass2: #7fb2ee; } }
+/* 건물 그림 (추상) */
+.hc-art { position: relative; display: block; overflow: hidden; isolation: isolate; border-radius: 16px; background: linear-gradient(165deg, var(--hc-sky1), var(--hc-sky2)); }
+.hc-art::before { content: ""; position: absolute; left: -10%; right: -10%; bottom: -26%; height: 46%; border-radius: 50%; background: var(--hc-ground); z-index: -1; }
+.hc-sun { position: absolute; top: 14%; right: 14%; width: 22%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #fff6bb 0, #ffe6a2 40%, transparent 72%); }
+.hc-b { position: absolute; bottom: 12%; width: 20%; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, var(--hc-wall-d), var(--hc-wall) 18%, var(--hc-wall) 78%, var(--hc-wall-d)); box-shadow: 4px 5px 0 rgba(70,102,138,.10); }
+.hc-b::after { content: ""; position: absolute; inset: 9% 14% 6%; background: repeating-linear-gradient(to bottom, transparent 0 7px, rgba(120,150,185,.55) 7px 9px); }
+.hc-b.b1 { left: 14%; height: 42%; opacity: .85; } .hc-b.b3 { left: 66%; height: 46%; }
+.hc-b.b2 { left: 40%; width: 22%; height: 62%; z-index: 1; background: linear-gradient(90deg, var(--hc-glass), var(--hc-glass2) 17%, var(--hc-glass) 84%, #2a66c8); }
+.hc-b.b2::after { background: repeating-linear-gradient(to bottom, transparent 0 8px, rgba(212,232,255,.85) 8px 10px); }
+.hc-art.v1 .hc-b.b1 { height: 52%; left: 12%; } .hc-art.v1 .hc-b.b3 { height: 38%; left: 68%; }
+.hc-art.v2 .hc-b.b2 { height: 70%; left: 36%; } .hc-art.v2 .hc-b.b1 { height: 34%; } .hc-art.v2 .hc-b.b3 { height: 54%; }
+/* 등급 배지 */
+.hc-grade { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 28px; padding: 0 9px; border-radius: 10px; font-size: 15px; font-weight: 900; background: var(--g-D); color: var(--g-D-ink); flex: none; }
+.hc-grade.g-S { background: linear-gradient(145deg, #e9d2a0, #f9ecc3); color: #6b4a10; } .hc-grade.g-A { background: #f4e2b8; color: #8a5f12; }
+.hc-grade.g-B { background: #e3efff; color: #2a6fd6; } .hc-grade.g-C { background: #e8edf4; color: #4a5d75; }
+@media (prefers-color-scheme: dark) { .hc-grade.g-B { background: #243a5c; color: #9cc4ff; } .hc-grade.g-C { background: #2a3340; color: #b9cde6; } .hc-grade.g-A { background: #4a3d1c; color: #f0d58c; } }
+/* A. 미니 카드: 목록·지도 시트·홈 후보 (카드 전체가 하나의 링크) */
+.hc-mini { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 108px; padding: 12px 14px 12px 12px; border-radius: var(--hc-r); background: var(--surface); color: var(--text);
+  border: 1px solid var(--hc-line); box-shadow: 0 8px 22px rgba(34,63,111,.07); text-decoration: none; }
+.hc-mini:hover { text-decoration: none; border-color: var(--axis); }
+.hc-mini:focus-visible { outline: 3px solid var(--hc-blue); outline-offset: 2px; }
+.hc-mini .hc-art { width: 84px; height: 84px; }
+.hc-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hc-meta { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hc-name strong { font-size: 18px; line-height: 1.25; font-weight: 800; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-price { display: flex; align-items: baseline; gap: 6px; }
+.hc-price b { font-size: 24px; font-weight: 850; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--hc-ink); }
+.hc-price b.none { font-size: 15px; font-weight: 700; color: var(--muted); }
+.hc-price small { font-size: 14px; color: var(--muted); }
+.hc-go { font-size: 26px; color: var(--muted); padding-right: 2px; }
+/* C. 수집 카드: 카드첩·홈 '오늘 발견할 카드'. 금박·테두리는 여기에만 */
+.hc-collect { display: block; width: 100%; padding: 6px; border-radius: 22px; color: var(--text); text-decoration: none; background: linear-gradient(135deg, #dfe6ee, #aeb9c8 45%, #eef2f6 70%, #9aa6b8); box-shadow: 0 12px 24px rgba(40,60,90,.14); }
+.hc-collect.g-S, .hc-collect.g-A { background: linear-gradient(135deg, #f9eac6, #d9b777 35%, #fff2cd 65%, #bd8c3c); box-shadow: 0 13px 26px rgba(147,108,40,.20); }
+.hc-collect.g-B { background: linear-gradient(135deg, #c8e0ff, #5595e7 42%, #b8d8ff 70%, #3f7fd8); box-shadow: 0 12px 24px rgba(40,100,200,.16); }
+.hc-collect:hover { text-decoration: none; }
+.hc-collect:focus-visible { outline: 3px solid var(--hc-blue); outline-offset: 3px; }
+.hc-inner { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 17px; background: var(--surface); height: 100%; }
+.hc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hc-top b { font-size: 12px; font-weight: 900; letter-spacing: .04em; color: var(--muted); }
+.hc-collect .hc-art { height: 118px; border-radius: 12px; }
+.hc-cname { font-size: 18px; font-weight: 850; letter-spacing: -.02em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding-top: 8px; margin-top: auto; border-top: 1px solid var(--hc-line); font-size: 14px; color: var(--text-2); }
+.hc-foot b { font-size: 16px; color: var(--hc-ink); font-variant-numeric: tabular-nums; }
+/* 갤러리 */
+.hc-gal { margin: 22px 0; min-width: 0; max-width: 100%; }
+.hc, .hc-feature { position: relative; }   /* 카드 안 '등급' 읽기용 글자(sr-only, 절대 위치)가 가로 스크롤 줄 밖으로 튀어 문서 폭을 밀지 않게 카드를 위치 기준으로 */ .hc-gal h2 { font-size: 18px; margin: 0 0 12px; }
+.hc-gal-list { display: grid; gap: 12px; max-width: 520px; }
+.hc-gal-rail { max-width: 100%; display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x mandatory; }
+.hc-gal-rail .hc-collect { flex: 0 0 min(72%, 230px); scroll-snap-align: start; }
+
+/* --- C1 단지 상세: 맨 위 메인 카드(.pb)를 카드 한 장으로 --- */
+.pb { border-radius: 26px; border: 1px solid var(--hc-line); box-shadow: 0 14px 34px rgba(34,63,111,.10); padding: 14px 18px 14px; }
+.pb-hero { display: block; position: relative; grid-column: 1 / -1; margin: 0 0 14px; }
+.pb-hero .hc-art { height: 148px; border-radius: 18px; }
+.pb-hero .hc-art .hc-b { bottom: 11%; }
+.pb-chips { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pb-chips .hc-grade { height: 30px; font-size: 16px; box-shadow: 0 2px 8px rgba(34,63,111,.12); }
+.pb-chips .pb-idx { display: inline-flex; align-items: baseline; gap: 4px; padding: 5px 11px; border-radius: 12px; background: rgba(255,255,255,.86); color: #162642; font-size: 13px; font-weight: 700; backdrop-filter: blur(8px); }
+.pb-chips .pb-idx b { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+@media (prefers-color-scheme: dark) { .pb-chips .pb-idx { background: rgba(23,31,44,.82); color: #f0efec; } }
+.pb-note-art { margin: 6px 2px 0; font-size: 12px; color: var(--muted); text-align: right; }
+.pb-head h1 { font-size: 27px; letter-spacing: -.03em; }
+.pb-p strong { color: var(--hc-ink); }
+.pb-quick a { border-radius: 16px; background: var(--hc-soft); }
+@media (min-width: 900px) { .pb-hero { grid-row: 1; } .pb-head { grid-row: 2 / span 3; } }
+
+/* --- C1 홈: 이어서 볼 집 + 오늘 발견할 집 카드 --- */
+.hc-home { margin-top: 16px; }
+.hc-sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
+.hc-sec-h h2 { margin: 0; font-size: 18px; font-weight: 850; letter-spacing: -.02em; }
+.hc-sec-h a { font-size: 15px; font-weight: 700; color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }
+.hc-feature { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 14px; align-items: center; min-height: 140px; padding: 12px; border-radius: 24px; background: var(--surface); border: 1px solid var(--hc-line); box-shadow: 0 12px 28px rgba(34,63,111,.09); color: var(--text); text-decoration: none; }
+.hc-feature:hover { text-decoration: none; border-color: var(--axis); }
+.hc-feature:focus-visible { outline: 3px solid var(--hc-blue); outline-offset: 2px; }
+.hc-feature .hc-art { height: 116px; border-radius: 16px; }
+.hc-feature .hc-tag { display: inline-block; align-self: flex-start; padding: 3px 9px; border-radius: 9px; background: var(--hc-soft); color: var(--hc-blue); font-size: 13px; font-weight: 800; }
+.hc-feature .hc-body { gap: 4px; }
+.hc-feature .hc-name strong { font-size: 20px; }
+.hc-feature .hc-price b { font-size: 26px; }
+.hc-empty { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 140px; padding: 14px 16px; border-radius: 24px; background: var(--hc-soft); border: 1px dashed var(--axis); }
+.hc-empty b { font-size: 18px; font-weight: 850; } .hc-empty span { font-size: 15px; color: var(--text-2); line-height: 1.5; }
+.hc-empty a { align-self: flex-start; display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 14px; background: var(--hc-blue); color: #fff; font-weight: 800; font-size: 16px; text-decoration: none; }
+@media (prefers-color-scheme: dark) { .hc-empty a { color: #0d1b2e; } }
+.hero-deck[data-hc-deck] { height: auto !important; perspective: none !important; margin-top: 18px !important; min-width: 0; max-width: 100%; overflow-x: clip; overflow-y: visible; }
+.hero-deck[data-hc-deck] .deck-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 4px 16px 16px; scrollbar-width: none; }
+.hero-deck[data-hc-deck] .deck-rail::-webkit-scrollbar { display: none; }
+.hero-deck[data-hc-deck] .hc-collect { flex: 0 0 min(64%, 236px); scroll-snap-align: start; }
+.hero-deck[data-hc-deck] .hc-sec-h { margin-bottom: 6px; }
+.hc-album-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hc-line); color: var(--text); text-decoration: none; }
+.hc-album-link b { font-size: 17px; font-weight: 800; } .hc-album-link small { display: block; font-size: 14px; color: var(--muted); }
+.hc-album-link .ic { width: 28px; height: 28px; color: var(--hc-blue); flex: none; } .hc-album-link .chev { margin-left: auto; font-size: 24px; color: var(--muted); }
+.hc-album-link:hover { text-decoration: none; border-color: var(--axis); }
+@media (min-width: 901px) { .hero-deck[data-hc-deck] .hc-collect { flex-basis: 236px; } .hc-gal-list { max-width: 560px; } }
+@media (prefers-reduced-motion: reduce) { .hc-mini, .hc-feature, .hc-collect { transition: none; } }
+
+@media (max-width: 720px) { .hc-empty { min-height: 0; } .hc-empty span { display: none; } .hc-empty a { min-height: 48px; margin-top: 6px; } .hc-home { margin-top: 10px; } .hc-sec-h { margin-bottom: 6px; } }
+
 /* 터치 영역: 자주 누르는 것은 44px 이상으로 (보이는 모양은 그대로, 누를 수 있는 칸만 넓힘) */
 .top-nav > a, .tn-btn { min-height: 44px; }
 .rcd-fab { min-height: 44px; }

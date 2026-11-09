@@ -42,6 +42,12 @@
 {% if c.small %}{% set _ = todo.append(("소규모 단지라 일반 아파트와 가격 구조가 달라요", "#points", "주요 특징")) %}{% endif %}
 {% set c10 = c["cagr_%dy" % years[0]] %}
 <section class="pb" aria-labelledby="pb-t">
+  {# 카드 맨 위: 추상 건물 그림(실제 외관 아님) 위에 등급·종합 지수. 값은 아래 .mc·4칸 요약과 같은 기존 값 #}
+  <div class="pb-hero">
+    <span class="hc-art v{{ (c.rank or 0) % 3 }}" aria-hidden="true"><i class="hc-sun"></i><i class="hc-b b1"></i><i class="hc-b b2"></i><i class="hc-b b3"></i></span>
+    <span class="pb-chips"><span class="hc-grade g-{{ c.grade }}">{{ "?" if c.grade == "-" else c.grade }}<span class="sr-only">등급</span></span>{% if c.index is not nan %}<span class="pb-idx">집감 지수 <b>{{ c.index | score }}</b>점</span>{% endif %}</span>
+    <p class="pb-note-art">참고용 그림 · 실제 외관이 아니에요</p>
+  </div>
   <div class="pb-head">
     <h1 id="pb-t">{{ c.name }}</h1>
     <p>{{ region }} {{ c | place }}{% if c.build_year %} · {{ c.build_year }}년 준공{% endif %}{% if c.ki and c.ki.hh %} · {{ "{:,}".format(c.ki.hh) }}세대{% endif %}</p>

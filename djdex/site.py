@@ -550,6 +550,9 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 사이트 맨 앞 주소(www.jipgam.kr/)용 인트로: 같은 화면이지만 지역을 먼저 고르게 (landing.py 가 맨 앞에 옮겨 둠)
     (out_dir / "landing.html").write_text(env.get_template("intro.html").render(page_path="landing.html", landing=True,
                                                                                  **intro_ctx), encoding="utf-8")
+    # 카드 갤러리(검수용, 검색 노출 없음): 같은 실제 단지 자료로 카드 3종을 나란히
+    (out_dir / "card-gallery.html").write_text(env.get_template("card-gallery.html").render(
+        root="", page_path="card-gallery.html", samples=[r for r in sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])][:6], **common), encoding="utf-8")
     (out_dir / "map.html").write_text(env.get_template("map.html").render(root="", page_path="map.html", **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"],
