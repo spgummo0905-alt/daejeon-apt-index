@@ -298,8 +298,8 @@
   }
 
   // ---------- 메인 카드의 그림: 이미지로 저장하는 카드와 같은 그림 ----------
-  function drawArt(cv, c) {
-    const dpr = Math.min(2, window.devicePixelRatio || 1), w = 650, h = 330;
+  function drawArt(cv, c, scale) {
+    const dpr = scale || Math.min(2, window.devicePixelRatio || 1), w = 650, h = 330;   // scale: 작은 카드는 작게 그려 메모리를 아낌
     cv.width = w * dpr; cv.height = h * dpr;
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
@@ -532,6 +532,7 @@
 
   DJ.drawCard = draw; // 테스트·다른 페이지에서 쓰도록
   DJ.drawThumb = thumb;
+  DJ.drawArt = drawArt;   // MY·홈·카드첩의 수집 카드가 같은 야경 그림을 쓰도록 (housecard.js 가 불러 씀)
 
   document.addEventListener("DOMContentLoaded", () => {
     const card = document.querySelector(".mc[data-apt]");
