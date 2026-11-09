@@ -28,7 +28,7 @@
   const idle = f => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 300));
   new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
   idle(scan);
-  const grade = g => { const s = el("span", "hc-grade g-" + g, g === "-" ? "?" : g); const r = el("span", "sr-only", "등급"); s.append(r); return s; };
+  const grade = g => { const s = el("span", "hc-grade g-" + g, g === "-" ? "?" : g); const r = el("span", "sr-only", g === "-" ? "미산정" : "등급"); s.append(r); return s; };
   const price = c => { const w = el("span", "hc-price"); if (c.pt) { w.append(el("b", "", c.pt), el("small", "", "84㎡ 추정")); } else w.append(el("b", "none", "가격 계산 보류")); return w; };
   const facts = c => DJ.place(c) + (c.y ? " · " + c.y + "년" : "");
   function mini(c, o) {
@@ -69,16 +69,16 @@
     const a = el("a", "hc hc-col g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "col"; a.dataset.slug = c.s;
     const nm = el("span", "hc-name"); nm.append(el("strong", "", c.n), grade(c.g));
     a.append(art(c.rk), nm, el("span", "hc-meta", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")), price(c),
-      el("span", "hc-idx", c.i == null ? "지수 -" : "지수 " + c.i + "점"));
+      el("span", "hc-idx", c.i == null ? "지수 미산정" : "지수 " + c.i + "점"));
     return a;
   }
   // 수집 카드(JS): 서버 틀(_card.html collect)과 같은 모양. 등급별 틀, 다녀온 단지는 도장. 금박은 수집 카드에만
   function collect(c, opt) {
-    const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s; a.dataset.g = c.g; a.dataset.d = c.d || "";
+    const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s; a.dataset.g = c.g; a.dataset.d = c.d || ""; if (c.g === "S" || c.g === "A") a.setAttribute("data-holo", "");
     a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g === "-" ? "미산정" : c.g + "등급"}${c.i == null ? "" : " " + c.i + "점"}`);
     const fr = el("span", "hc-frame"), inn = el("span", "hc-inner"), top = el("span", "hc-top");
     const tl = el("b", "", ""); tl.append(el("span", "hc-brand", "JIPGAM · "), document.createTextNode(c.g === "-" ? "미산정" : c.g + " TIER")); top.append(tl, grade(c.g));
-    const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "-" : c.i + "점"));
+    const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "미산정" : c.i + "점"));
     foot.append(l, el("b", "", c.pt || "-"));
     inn.append(top, nightArt(), el("strong", "hc-cname", c.n), el("span", "hc-meta", facts(c)), foot);
     const b = !(opt && opt.stamp === false) && DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }

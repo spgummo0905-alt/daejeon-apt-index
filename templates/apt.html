@@ -43,7 +43,7 @@
       <h1 id="pb-t" class="mc-name">{{ c.name }}</h1>
       <p>{{ region }} {{ c | place }} {{ c.jibun }}</p>
     </div>
-    <div class="mc-score"><small>종합 지수</small><strong>{{ c.index | score }}</strong></div>
+    <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}</div>
   </div>
   <div class="mc-art" data-mc-art>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>

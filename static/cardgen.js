@@ -16,7 +16,7 @@
     D: { name: "아쉬움", frame: ["#f4f5f7", "#b9c0ca", "#8a929e", "#e3e6ea", "#b9c0ca"], inner: ["#f4f5f7", "#e6e9ee", "#f7f8fa"],
          ink: "#1d232c", sub: "rgba(29,35,44,.65)", bar: ["#8a929e", "#b9c0ca", "#dfe3e8"], sky: ["#c9d3df", "#e6ecf3", "#fbfcfd"], stars: 1, holo: 0.08 },
   };
-  TIER["-"] = TIER.D;
+  TIER["-"] = Object.assign({}, TIER.D, { name: "미산정" });   // 색은 D 틀을 쓰되 이름은 D(아쉬움)로 읽히지 않게
   const FONT = '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
 
   // 단지 ID로 정해지는 난수: 같은 단지는 늘 같은 그림
@@ -180,7 +180,7 @@
     ctx.fillStyle = "rgba(255,255,255,.10)"; ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = t.ink; ctx.textAlign = "center"; ctx.font = `600 20px ${FONT}`;
-    const info = [t.name + " 등급", c.y ? c.y + "년 준공" : null, c.stn ? c.stn + (c.f.subway != null ? " " + c.f.subway + "m" : "") : null]
+    const info = [c.g === "-" ? "산정 전" : t.name + " 등급", c.y ? c.y + "년 준공" : null, c.stn ? c.stn + (c.f.subway != null ? " " + c.f.subway + "m" : "") : null]
       .filter(Boolean).join("  ·  ");
     ctx.fillText(info, W / 2, by + 29);
 
