@@ -12,7 +12,7 @@
   const BANDS = [["전체", 0], ["3억 이하", 30000], ["5억 이하", 50000], ["7억 이하", 70000]];   // p 는 만원 단위
   const svg = $("[data-mp-svg]"), stage = $("[data-mp-stage]"), listBox = $("[data-mp-list]"), sheet = $("[data-mp-sheet]");
   const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let km = null, ALL = [], NOXY = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
+  let fromList = false, km = null, ALL = [], NOXY = [], full = null, vb = null, band = 0, q = "", sel = null, view = "map", sunSet = new Set(), pinOf = new Map(), shown = [];
   const norm = s => String(s || "").replace(/\s+/g, "").toLowerCase();
   const gLayer = mk("g", {}), lLayer = mk("g", {});
   svg.append(gLayer, lLayer);
@@ -91,6 +91,8 @@
     gLayer.append(frag);
     if (sel && !pinOf.has(sel)) closeSheet();
     $("[data-mp-count]").textContent = `${shown.length.toLocaleString()}곳`;
+    const nq2 = norm(q), lim2 = BANDS[band][1], nu = NOXY.filter(c => (!lim2 || (c.p != null && c.p <= lim2)) && (!nq2 || norm(c.n + c.gu + c.d).includes(nq2))).length;
+    const ub = $("[data-mp-unk]"); ub.hidden = !nu; ub.textContent = `위치 미확인 ${nu.toLocaleString()}곳 ›`;
     apply(); if (km) realShow(); if (view === "list") buildList();
   }
   function buildList() {
@@ -105,8 +107,8 @@
     });
     listBox.append(ul);
     // 좌표가 없는 단지: 지도에는 점을 만들지 않고(임의 위치 금지) 목록 끝에 '위치 미확인'으로만 알림
-    const nq = norm(q), unk = NOXY.filter(c => !nq || norm(c.n + c.gu + c.d).includes(nq));
-    if (unk.length && !band) {
+    const nq = norm(q), lim = BANDS[band][1], unk = NOXY.filter(c => (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq)));
+    if (unk.length) {
       const h = document.createElement("p"); h.className = "mp-unk-h"; h.textContent = `위치 미확인 ${unk.length}곳 · 지도에는 표시하지 못했어요`;
       const ul2 = document.createElement("ul"); ul2.className = "mp-ul mp-unk";
       unk.slice(0, 30).forEach(c => { const li = document.createElement("li"), a = document.createElement("a"); a.href = DJ.href(c); const l = document.createElement("span"); l.className = "mp-ul-l"; const n = document.createElement("b"), p = document.createElement("span"); n.textContent = c.n; p.className = "mp-ul-p"; p.textContent = DJ.place(c) + " · 위치 미확인"; l.append(n, p); const v = document.createElement("span"); v.className = "mp-ul-v"; v.textContent = c.pt || "-"; a.append(l, v); li.append(a); ul2.append(li); });
@@ -121,22 +123,33 @@
     $("[data-sh-card]").replaceChildren(DJ.hc.mini(c, { idx: true }));
     $("[data-sh-detail]").href = DJ.href(c);
     const sun = $("[data-sh-sun]"); sun.hidden = !sunSet.has(c.s); sun.href = (window.DJ_ROOT || "") + "preview.html#c=" + encodeURIComponent(c.s);
+    // 펼치면 보이는 추가 정보: 이미 있는 값만 (준공·세대수·가까운 역). 없는 값은 줄 자체를 만들지 않음
+    const more = $("[data-sh-more]"); more.replaceChildren();
+    const rows = [["준공", c.y ? c.y + "년" : null], ["세대수", c.hh ? c.hh.toLocaleString() + "세대" : null], ["가까운 역", c.stn && c.f && c.f.subway != null ? `${c.stn} ${Math.round(c.f.subway)}m` : null]];
+    rows.forEach(([k, v]) => { if (!v) return; const d = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; d.append(dt, dd); more.append(d); });
+    more.dataset.empty = more.childNodes.length ? "" : "1";
     paintFav(c.s);
+  }
+  function setExpanded(on) {   // 기본 높이(지도를 반 이상 남김) ↔ 확장 높이
+    sheet.classList.toggle("expanded", on);
+    const g = $("[data-mp-expand]"); g.setAttribute("aria-expanded", String(on)); g.setAttribute("aria-label", on ? "요약 접기" : "요약 펼치기");
+    const m = $("[data-sh-more]"); m.hidden = !on || !!m.dataset.empty;
   }
   function paintFav(s) { const on = DJ.isFav(s), b = $("[data-sh-fav]"); b.setAttribute("aria-pressed", on); b.textContent = on ? "후보에 담았어요 ✓" : "후보에 담기"; }
   function select(s, opts) {
     const c = ALL.find(x => x.s === s); if (!c) return;
-    const first = !sel; sel = s; fillSheet(c);
+    const first = !sel; sel = s; fillSheet(c); if (opts && opts.focus) fromList = true;
+    if (sheet.classList.contains("expanded")) setExpanded(true);   // 펼친 채로 다른 핀을 눌러도 유지
     sheet.classList.add("open");
     if (first) try { history.pushState({ mp: 1 }, ""); } catch (e) {}
     if (view === "list") setView("map");
-    if (km) { realFocus(c); if (opts && opts.focus) sheet.querySelector("a,button").focus({ preventScroll: true }); return; }
+    if (km) { realFocus(c); if (opts && opts.focus) sheet.querySelector("[data-mp-close]").focus({ preventScroll: true }); return; }
     // 고른 점을 요약 시트에 가리지 않는 위쪽 40% 자리로
     const w = Math.min(vb.w, Math.max(full.w / 12, Math.min(vb.w, full.w / 6))), h = w * vb.h / vb.w;
     setVb({ x: c._x - w / 2, y: c._y - h * .38, w, h }, true);
-    if (opts && opts.focus) sheet.querySelector("a,button").focus({ preventScroll: true });
+    if (opts && opts.focus) sheet.querySelector("[data-mp-close]").focus({ preventScroll: true });
   }
-  function closeSheet() { sel = null; sheet.classList.remove("open"); apply(); realPaint(); if (history.state && history.state.mp) try { history.back(); } catch (e) {} }
+  function closeSheet() { sel = null; setExpanded(false); sheet.classList.remove("open"); if (fromList) { fromList = false; $('[data-mp-view="list"]').focus({ preventScroll: true }); } apply(); realPaint(); if (history.state && history.state.mp) try { history.back(); } catch (e) {} }
   function setView(v) {
     view = v; stage.hidden = v !== "map"; listBox.hidden = v !== "list";
     $$("[data-mp-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mpView === v));
@@ -221,7 +234,12 @@
     if (b.dataset.mpView) setView(b.dataset.mpView);
     else if (b.dataset.mpZoom) { if (km) km.map.setLevel(km.map.getLevel() + (b.dataset.mpZoom === "in" ? -1 : 1), { animate: !calm() }); else { const s = size(); zoomAt(s.l + s.w / 2, s.t + s.h / 2, b.dataset.mpZoom === "in" ? .6 : 1 / .6); } }
     else if (b.hasAttribute("data-mp-close")) closeSheet();
-    else if (b.hasAttribute("data-sh-fav")) { if (sel) { DJ.toggleFav(sel); paintFav(sel); } }
+    else if (b.hasAttribute("data-mp-expand")) setExpanded(!sheet.classList.contains("expanded"));
+    else if (b.hasAttribute("data-mp-unk")) { setView("list"); const h = listBox.querySelector(".mp-unk-h"); if (h) { h.setAttribute("tabindex", "-1"); h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); } }
+    else if (b.hasAttribute("data-sh-fav")) {
+      if (sel) { const s = sel, was = DJ.isFav(s), now = DJ.toggleFav(s); paintFav(s); const c = ALL.find(x => x.s === s);
+        if (now && !was && DJ.toastUndo) DJ.toastUndo((c ? c.n : "단지") + " 후보에 담았어요", "", () => { if (DJ.isFav(s)) DJ.toggleFav(s); if (sel === s) paintFav(s); }); }
+    }
     else if (b.dataset.band != null) { band = +b.dataset.band; $$("[data-band]").forEach(x => x.setAttribute("aria-pressed", +x.dataset.band === band)); build(); }
     else if (b.dataset.s && listBox.contains(b)) select(b.dataset.s, { focus: true });
   });

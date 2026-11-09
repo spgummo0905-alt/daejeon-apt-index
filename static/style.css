@@ -5013,3 +5013,21 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .kb-open .fd-cmpbar { display: none; }
 @media (min-width: 721px) { .fd-cmpbar { bottom: 16px; } }
 @media (prefers-reduced-motion: reduce) { .hc-fcard .hc-cmp { transition: none; } }
+
+/* ===== UX v2 · 05 지도: 시트 기본/확장 높이 · 위치 미확인 입구 ===== */
+.mp-grab { display: block; width: 100%; height: 44px; margin: -8px 0 -8px; padding: 0; border: 0; background: none; cursor: pointer; }
+.mp-grab .sheet-grab { margin: 0 auto; }
+.mp-grab:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 12px; }
+.mp-sheet { max-height: 94%; overflow-y: auto; overscroll-behavior: contain; transition: transform var(--ux-sheet, 300ms) var(--ux-ease, ease-out), max-height var(--ux-change, 220ms) var(--ux-ease, ease-out), visibility 0s linear var(--ux-sheet, 300ms); }
+.mp-sheet.open { transition: transform var(--ux-sheet, 300ms) var(--ux-ease, ease-out), max-height var(--ux-change, 220ms) var(--ux-ease, ease-out); }
+/* 기본 높이 = 내용만큼(버튼까지 다 보임). 작은 화면에서 넘치면 시트 안에서만 스크롤. 펼치면 추가 정보 줄이 더해짐 */
+.mp-sheet.expanded { max-height: 94%; }
+.mp-sh-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 0 0 10px; }
+.mp-sh-more[hidden] { display: none; }
+.mp-sh-more div { padding: 8px 12px; border-radius: var(--r-md); background: var(--chip); }
+.mp-sh-more dt { font-size: 13px; color: var(--text-2); }
+.mp-sh-more dd { margin: 2px 0 0; font-size: 17px; font-weight: 800; }
+.mp-unk-btn { margin-left: auto; min-height: 44px; padding: 0 14px; border: 1.5px dashed var(--axis); border-radius: 22px; background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.mp-unk-btn[hidden] { display: none; }
+.mp-unk-h:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .mp-sheet, .mp-sheet.open { transition: none; } }
