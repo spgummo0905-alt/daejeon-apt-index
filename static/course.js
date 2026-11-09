@@ -168,15 +168,18 @@
       const li = el("li", "cs-stop");
       const head = el("div", "cs-head");
       const no = el("span", "cs-no", String(k + 1));
+      // 번호 + 집감 카드(미니) 한 장. 다녀온 단지는 도장, 카드 아래에 현장 체크 바로 시작 버튼 (기존 현장 모드 #field 를 그대로 엶)
       const t = el("div", "cs-t");
-      const a = el("a", "", c.n); a.href = DJ.href(c);
-      t.append(a, el("span", "muted", [DJ.place(c), c.pt ? "84㎡ " + c.pt : "", c.g && c.g !== "-" ? c.g + "등급" : ""].filter(Boolean).join(" · ")));
+      const card = DJ.hc.mini(c); t.append(card);
+      const been = DJ.been(c);
+      if (been) card.append(el("span", "cs-stamp", "다녀옴" + (been.d ? " " + been.d.slice(5).replace("-", ".") : "")));
       const del = el("button", "cs-del", "×");
       del.type = "button";
       del.setAttribute("aria-label", c.n + " 코스에서 빼기");
       del.addEventListener("click", () => { const st = cur(); st.list = st.list.filter(s => s !== c.s); st.auto = false; draw(); });
       head.append(no, t, del);
-      li.append(head, checklist(c));
+      const go = el("a", "btn primary cs-field", been ? "현장 체크 이어서 하기" : "현장 체크 시작"); go.href = DJ.href(c) + "#field";
+      li.append(head, go, checklist(c));
       if (k === 0) li.append(link("이 단지까지 길찾기", `https://map.kakao.com/link/to/${encodeURIComponent(c.n)},${c.la},${c.ln}`, "cs-first"));
       if (k < stops.length - 1) {
         const nx = stops[k + 1], d = legs[k];

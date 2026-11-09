@@ -131,6 +131,35 @@
     return box;
   }
 
+  // 결과 맨 위: 고른 단지 카드를 나란히(2곳은 두 칸, 3~4곳은 옆으로 넘김). 값은 모두 complexes.json 그대로
+  function deckOf(cs) {
+    const row = el("div", "cmp-deck n" + cs.length);
+    row.setAttribute("aria-label", "비교하는 단지 카드");
+    cs.forEach(c => row.append(DJ.hc.col(c)));
+    return row;
+  }
+  // 먼저 볼 차이 1~3개: 두 값이 실제로 다른 항목을 뽑아 사실만 적음(우열·추천 문구 없음). 가격은 추정(84㎡ 환산)임을 적고, 값이 없는 단지는 건너뜀
+  function diffsOf(cs) {
+    const sp = (g, f) => { const v = cs.map(c => ({ c, v: g(c) })).filter(x => x.v != null); return v.length >= 2 ? v.map(x => x.c.n + " " + f(x.v)).join(" · ") : null; };
+    const spread = g => { const v = cs.map(g).filter(x => x != null); return v.length >= 2 ? Math.max(...v) - Math.min(...v) : 0; };
+    const cand = [];
+    const pr = sp(c => c.p, v => cs.find(c => c.p === v).pt || "-");
+    if (pr && spread(c => c.p) > 0) cand.push([1e9, "84㎡ 기준 가격(추정)", pr]);
+    const ix = sp(c => c.i, v => v + "점"); if (ix && spread(c => c.i) > 0) cand.push([spread(c => c.i), "종합 지수", ix]);
+    const sb = sp(c => c.f.subway, v => v + "m"); if (sb && spread(c => c.f.subway) > 0) cand.push([spread(c => c.f.subway) / 40, "지하철역까지 거리", sb]);
+    const ed = sp(c => c.ed, v => v + "점"); if (ed && spread(c => c.ed) > 0) cand.push([spread(c => c.ed), "학군 점수", ed]);
+    const lc = sp(c => c.st[0], v => v + "점"); if (lc && spread(c => c.st[0]) > 0) cand.push([spread(c => c.st[0]), "입지 점수", lc]);
+    cand.sort((a, b) => b[0] - a[0]);
+    const box = el("section", "cmp-diff");
+    box.setAttribute("aria-label", "먼저 볼 차이");
+    box.append(el("h3", "", "먼저 볼 차이"));
+    if (!cand.length) { box.append(el("p", "muted", "고른 단지들의 값이 거의 같아요. 아래 표에서 항목별로 살펴보세요.")); return box; }
+    const ul = el("ul", "");
+    cand.slice(0, 3).forEach(([, k, v]) => { const li = el("li", ""); li.append(el("b", "", k), el("span", "", v)); ul.append(li); });
+    box.append(ul, el("p", "muted small", "어느 집이 낫다는 판단은 하지 않아요. 같은 기준의 값만 나란히 보여 드려요."));
+    return box;
+  }
+
   function render(d) {
     if (picked.length >= 2 && DJ.act) DJ.act("cmp");   // 임장 배지 '나란히 비교'
     const box = document.getElementById("picked");
@@ -223,7 +252,7 @@
     if (!nMore) moreBtn.hidden = true;
     const cards = el("div", "card-grid");
     cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(verdict, myFit(cs), wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
+    out.append(deckOf(cs), diffsOf(cs), verdict, myFit(cs), wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {
