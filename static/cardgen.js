@@ -581,6 +581,13 @@
     });
     document.addEventListener("click", () => { if (tipFor) closeTip(); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") closeTip(); });
+    // 전체 평가 펼치기: 눌러서 전체 평가 항목·실거래 근거를 보임 (aria-expanded, 키보드는 버튼 기본 동작)
+    const more = card.querySelector("[data-mc-more]"), moreBox = card.querySelector(".mc-more");
+    if (more && moreBox) {
+      const set = on => { more.setAttribute("aria-expanded", on ? "true" : "false"); moreBox.hidden = !on; more.querySelector("span").textContent = on ? "전체 평가 접기" : "전체 평가 펼치기"; };
+      more.addEventListener("click", () => set(more.getAttribute("aria-expanded") !== "true"));
+      // 해시(#index-calc 등)로 들어오거나 항목 설명을 누르면 자동으로 펼침이 필요 없도록 기본은 접힘
+    }
     // 항목 설명: 줄을 누르면 펼침
     card.querySelectorAll("[data-stat]").forEach(li => {
       const flip = () => li.setAttribute("aria-expanded", li.getAttribute("aria-expanded") === "true" ? "false" : "true");

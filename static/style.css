@@ -4663,21 +4663,46 @@ p.muted { text-wrap: balance; }
 .hc-gal-rail { max-width: 100%; display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x mandatory; }
 .hc-gal-rail .hc-collect { flex: 0 0 min(72%, 230px); scroll-snap-align: start; }
 
-/* --- C1 단지 상세: 맨 위 메인 카드(.pb)를 카드 한 장으로 --- */
-.pb { border-radius: 26px; border: 1px solid var(--hc-line); box-shadow: 0 14px 34px rgba(34,63,111,.10); padding: 14px 18px 14px; }
-.pb-hero { display: block; position: relative; grid-column: 1 / -1; margin: 0 0 14px; }
-.pb-hero .hc-art { height: 148px; border-radius: 18px; }
-.pb-hero .hc-art .hc-b { bottom: 11%; }
-.pb-chips { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pb-chips .hc-grade { height: 30px; font-size: 16px; box-shadow: 0 2px 8px rgba(34,63,111,.12); }
-.pb-chips .pb-idx { display: inline-flex; align-items: baseline; gap: 4px; padding: 5px 11px; border-radius: 12px; background: rgba(255,255,255,.86); color: #162642; font-size: 13px; font-weight: 700; backdrop-filter: blur(8px); }
-.pb-chips .pb-idx b { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
-@media (prefers-color-scheme: dark) { .pb-chips .pb-idx { background: rgba(23,31,44,.82); color: #f0efec; } }
-.pb-note-art { margin: 6px 2px 0; font-size: 12px; color: var(--muted); text-align: right; }
-.pb-head h1 { font-size: 27px; letter-spacing: -.03em; }
+/* --- C5 단지 상세: 원본 야경 카드(.mc)와 요약 카드(.pb)를 디지털 집 신분증 한 장으로 --- */
+.pb { margin-top: 12px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; display: block; }
 .pb-p strong { color: var(--hc-ink); }
-.pb-quick a { border-radius: 16px; background: var(--hc-soft); }
-@media (min-width: 900px) { .pb-hero { grid-row: 1; } .pb-head { grid-row: 2 / span 3; } }
+
+/* 신분증이 위로 올라가서 .apt-hero 는 아래 구역 묶음일 뿐: 넓은 화면에서도 한 칸 */
+.apt-hero { display: block; margin-top: 18px; }
+.apt-hero > * + * { margin-top: 18px; }
+/* 디지털 집 신분증: 앞면(이름·등급·지수·순위·실거래·핵심 평가 3개) → 펼치기(전체 평가·근거) → 행동 줄 → 가격 구분 칸 */
+.pb > .mc { margin: 0; }
+.pb .mc-name { margin: 0; }
+.mc-key { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.mc-key > div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: 8px 4px; border-radius: 14px; border: 1px solid var(--line); background: var(--glass); text-align: center; }
+.mc-key small { font-size: 13px; font-weight: 700; color: var(--sub); }
+.mc-key b { font-size: 26px; line-height: 1; font-weight: 900; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--b3); }
+.mc.g-S .mc-key b { color: #ffe9a8; }
+.mc.g-D .mc-key b { color: var(--ink); } .mc.g-D .mc-key > div { background: rgba(255,255,255,.6); }
+.mc.g-D .mc-more-btn { background: rgba(255,255,255,.7); border-color: #9aa3b0; }
+.mc-more-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; margin-top: 12px; padding: 0 16px; border-radius: 16px;
+  border: 1px solid var(--b2); background: var(--glass); color: var(--ink); font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mc-more-btn:hover { background: rgba(255,255,255,.14); }
+.mc-more-btn:focus-visible { outline: 3px solid var(--b3); outline-offset: 2px; }
+.mc-more-btn .mc-caret { width: 9px; height: 9px; margin: -3px 0 0; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 200ms var(--ease-out); }
+.mc-more-btn[aria-expanded="true"] .mc-caret { transform: translateY(3px) rotate(-135deg); }
+.mc-more { position: relative; }
+.mc-more[hidden] { display: none; }
+.mc-more .mc-stats { margin-top: 14px; }
+.mc-ev { margin-top: 16px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--line); background: var(--glass); font-size: 15px; line-height: 1.5; }
+.mc-ev strong { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 800; color: var(--b3); }
+.mc.g-D .mc-ev strong { color: var(--ink); }
+.mc-ev p { margin: 0; color: var(--ink); } .mc-ev b { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.mc-ev .mc-ev-s { margin-top: 6px; font-size: 13px; color: var(--sub); }
+.mc-ev .mc-ev-l { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
+.mc-ev .mc-ev-l a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 800; color: var(--b3); }
+.mc.g-D .mc-ev .mc-ev-l a { color: var(--accent); }
+.pb > .apt-actions { margin: 12px 0 0; }
+.pb-board { margin-top: 14px; padding: 18px 18px 14px; border-radius: 22px; background: var(--surface); border: 1px solid var(--hc-line); box-shadow: 0 8px 22px rgba(34,63,111,.07); }
+.pb-board > :first-child { margin-top: 0; }
+@media (max-width: 400px) { .pb-board { padding: 14px 12px 10px; } .mc-key b { font-size: 24px; } .mc-in { padding: 14px 12px 10px; } }
+@media (prefers-reduced-motion: reduce) { .mc-more-btn .mc-caret, .mc-stats .bar i, .mc.g-S .mc-in::before, .mc.g-A .mc-in::before { transition: none; animation: none; } }
+@media (min-width: 900px) { .pb { display: grid; grid-template-columns: minmax(0, 540px) minmax(0, 1fr); gap: 4px 28px; align-items: start; } .pb > .mc { grid-column: 1; grid-row: 1 / span 3; } .pb > .apt-actions { grid-column: 2; grid-row: 1; margin: 0; } .pb > .pb-board { grid-column: 2; grid-row: 2; margin-top: 0; } }
 
 /* --- C1 홈: 이어서 볼 집 + 오늘 발견할 집 카드 --- */
 .hc-home { margin-top: 16px; }

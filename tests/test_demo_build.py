@@ -1511,7 +1511,11 @@ def test_detail_price_board_separates_real_and_estimated_and_shows_thin_notice()
     assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | price }}" in board
     assert '<p class="pb-fit" data-mc-fit hidden></p>' in board
     assert "{% if thin_n is not none %}" in board and "가격 근거 {{ thin_n }}건" in board
-    assert apt.count("<h1") == 1 and apt.index("<h1") < apt.index('class="mc g-')
+    # C5: 요약 카드(.pb)와 금박 원본 카드(.mc)는 한 장의 '디지털 집 신분증'. h1 은 문서에 하나뿐이고 그 카드 안(이름 칸)에 있으며, 카드는 5개 범주 줄보다 앞
+    assert apt.count("<h1") == 1 and apt.count('class="mc g-') == 1 and apt.index('<section class="pb"') < apt.index('class="mc g-') < apt.index("<h1") < apt.index('id="catalog"')
+    assert 'aria-labelledby="pb-t"' in apt and 'id="pb-t" class="mc-name"' in apt and "mc-in" in apt and "data-mc-art" in apt      # 원본 야경 그림 칸·금속 테두리 안쪽을 그대로 재사용
+    assert apt.index('class="mc g-') < apt.index("data-mc-more") < apt.index("mc-stats") < apt.index("mc-ev") < apt.index('class="icon-actions apt-actions"') < apt.index('class="pb-board"')   # 앞면 → 전체 평가 펼치기(지표·근거) → 행동 줄 → 가격판
+    assert 'class="hc-art' not in apt and "pb-note-art" not in apt and "pb-quick" not in apt                      # 임시 추상 건물 그림·요약 칸 중복 제거
     assert apt.index('id="catalog"') < apt.index('class="apt-hero"') < apt.index('class="jump apt-jump"')
     assert 'class="mc-cells"' not in apt and "thin-chip" not in apt and 'class="mc-fit"' not in apt
 
