@@ -4982,3 +4982,13 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 }
 .mc.g-- { outline: 2px dashed #aab3c0; outline-offset: -2px; box-shadow: none; }
 .mc-score .mc-na { font-size: 18px; letter-spacing: -.02em; -webkit-text-fill-color: currentColor; background: none; color: var(--ink, #1a2230); }
+
+/* ===== UX v2 · 03 홈 PC: 오른쪽 카드는 넘기지 않고 두 장을 다 보여 줌 (마우스에는 '옆으로 넘기기'가 없음). 휴대폰·태블릿(900px 이하)은 기존 넘겨 보기 그대로 ===== */
+@media (min-width: 901px) {
+  .hero-grid { grid-template-columns: minmax(0, 1fr) 408px; gap: 32px; }
+  .hero-deck[data-hc-deck] .deck-rail { overflow: visible; scroll-snap-type: none; margin: 0; padding: 6px 0 16px; gap: 12px; }
+  .hero-deck[data-hc-deck] .hc-collect { flex: 1 1 0; min-width: 0; }
+  .hero-deck[data-hc-deck] .hc-collect:nth-child(n+3) { display: none; }
+  .hero-deck[data-hc-deck] .hc-album-link, .hero-deck[data-hc-deck] .deck-more { margin-top: 0; }
+  .hero-deck[data-hc-deck] .deck-more { margin: 6px 0 0 2px; bottom: auto; }
+}
