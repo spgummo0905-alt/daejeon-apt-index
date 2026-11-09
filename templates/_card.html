@@ -1,0 +1,29 @@
+{# 집감 카드 3종 (C0). 같은 단지 자료(rows)로 서버에서 그리는 틀. 휴대폰 쪽 같은 모양은 static/housecard.js (DJ.hc)
+   · mini    : 목록·지도 시트·홈 후보 (이름, 지역, 등급, 84㎡ 추정가, 다음 행동 ›)
+   · collect : 카드첩·홈 '오늘 발견할 카드' (등급별 틀. S·A는 금, B는 파랑. 금박은 수집용에만)
+   · 단지 상세 맨 위 메인 카드는 apt.html 의 .pb (실거래·추정을 따로 적는 칸이라 자료 줄이 많아 그 자리에서 같은 카드 모양을 씀)
+   그림은 실제 외관이 아닌 평면 추상 건물 그림입니다(aria-hidden). 새로 계산하는 값 없음: 가격은 c.price_ref(84㎡ 환산 추정), 지수·등급은 기존 값 #}
+{% macro art(seed=0) %}<span class="hc-art v{{ seed % 3 }}" aria-hidden="true"><i class="hc-sun"></i><i class="hc-b b1"></i><i class="hc-b b2"></i><i class="hc-b b3"></i></span>{% endmacro %}
+{% macro grade(g) %}<span class="hc-grade g-{{ g }}">{{ "?" if g == "-" else g }}<span class="sr-only">등급</span></span>{% endmacro %}
+{% macro mini(c, href) %}
+<a class="hc hc-mini g-{{ c.grade }}" href="{{ href }}" data-hc="mini" data-slug="{{ c.slug }}">
+  {{ art(c.rank or 0) }}
+  <span class="hc-body">
+    <span class="hc-meta">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span>
+    <span class="hc-name"><strong>{{ c.name }}</strong>{{ grade(c.grade) }}</span>
+    <span class="hc-price">{% if c.price_ref is nan %}<b class="none">가격 계산 보류</b>{% else %}<b>{{ c.price_ref | price }}</b><small>{{ ref_area }}㎡ 추정</small>{% endif %}</span>
+  </span>
+  <span class="hc-go" aria-hidden="true">›</span>
+</a>
+{% endmacro %}
+{% macro collect(c, href, k=0) %}
+<a class="hc hc-collect g-{{ c.grade }}" href="{{ href }}" data-hc="collect" data-slug="{{ c.slug }}" aria-label="{{ c.name }}, {{ c | place }}, {{ c.grade }}등급 {{ c.index | score }}점{% if c.rank %}, {{ c.rank }}위{% endif %}">
+  <span class="hc-frame"><span class="hc-inner">
+    <span class="hc-top"><b>JIPGAM · {{ "미산정" if c.grade == "-" else c.grade ~ " TIER" }}</b>{{ grade(c.grade) }}</span>
+    {{ art(c.rank or k) }}
+    <strong class="hc-cname">{{ c.name }}</strong>
+    <span class="hc-meta">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span>
+    <span class="hc-foot"><span>집감 지수 <b>{{ c.index | score }}점</b></span><b>{% if c.price_ref is nan %}-{% else %}{{ c.price_ref | price }}{% endif %}</b></span>
+  </span></span>
+</a>
+{% endmacro %}
