@@ -20,6 +20,13 @@
   <div><dt>프로젝트</dt><dd data-ms="proj">-</dd></div>
   <div><dt>방문 기록</dt><dd data-ms="visits">-</dd></div>
 </dl>
+{# 내 카드첩(C4): 카드첩을 MY의 으뜸 입구로. 숫자·카드는 housecard.js 가 기존 저장(앨범·관심·최근·배지)에서 채움 #}
+<section class="hc-my" data-hc-my aria-labelledby="hc-my-h">
+  <div class="hc-sec-h"><h2 id="hc-my-h">내 카드첩</h2><a href="cards.html">카드첩 열기 ›</a></div>
+  <p class="hc-my-n" data-hc-my-n>카드를 모으는 중이에요</p>
+  <div class="hc-my-rail" data-hc-my-rail hidden></div>
+  <p class="hc-my-empty" data-hc-my-empty>아파트를 열어 보면 카드가 한 장씩 모여요. <a href="finder.html">조건으로 찾아보기</a></p>
+</section>
 {# 세 칸 탭: 한 번에 한 칸만 보여 줌(저장 자료는 그대로, 보이기만 바꿈). 주소 #course·#notes 등으로 들어오면 그 칸이 열림 (my.js) #}
 <nav class="my-seg" aria-label="나의 집감 칸" data-my-seg>
   <button type="button" data-mg-btn="favs" aria-pressed="true">내 후보<b data-mj="favs"></b></button>
@@ -111,7 +118,7 @@
   <button type="button" class="btn primary" data-install-btn>홈 화면에 추가</button>
 </section>
 {% endblock %}
-{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/my.js?v={{ v }}"></script>
+{% block scripts %}<script src="static/project-store.js?v={{ v }}"></script><script src="static/visit-log.js?v={{ v }}"></script><script src="static/housecard.js?v={{ v }}"></script><script src="static/my.js?v={{ v }}"></script>
 <script src="static/prefs.js?v={{ v }}"></script>
-<script src="static/housecard.js?v={{ v }}"></script><script src="static/course.js?v={{ v }}"></script>
+<script src="static/course.js?v={{ v }}"></script>
 <script src="static/sharekit.js?v={{ v }}" defer></script>{% endblock %}

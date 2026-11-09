@@ -4651,7 +4651,7 @@ p.muted { text-wrap: balance; }
 .hc-collect:focus-visible { outline: 3px solid var(--hc-blue); outline-offset: 3px; }
 .hc-inner { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 17px; background: var(--surface); height: 100%; }
 .hc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.hc-top b { font-size: 12px; font-weight: 900; letter-spacing: .04em; color: var(--muted); }
+.hc-top b { font-size: 12px; font-weight: 900; letter-spacing: .02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .hc-collect .hc-art { height: 118px; border-radius: 12px; }
 .hc-cname { font-size: 18px; font-weight: 850; letter-spacing: -.02em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hc-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding-top: 8px; margin-top: auto; border-top: 1px solid var(--hc-line); font-size: 14px; color: var(--text-2); }
@@ -4771,6 +4771,24 @@ p.muted { text-wrap: balance; }
 .cs-t .hc-price { flex-wrap: wrap; gap: 0 6px; } .cs-t .hc-price b { font-size: 20px; } .cs-t .hc-price small { white-space: nowrap; font-size: 12px; }
 .cs-stamp { position: static; align-self: flex-start; transform: none; margin-top: 2px; }
 .cs-stop .cs-field { display: flex; width: 100%; min-height: 52px; margin: 10px 0 0; justify-content: center; font-size: 16px; font-weight: 800; }
+
+/* --- C4 MY: 내 카드첩 + 관심 미니 카드 --- */
+.hc-my { margin: 14px 0 8px; padding: 14px 14px 12px; border-radius: 24px; background: var(--surface); border: 1px solid var(--hc-line); box-shadow: 0 12px 28px rgba(34,63,111,.09); }
+.hc-my .hc-sec-h { margin-bottom: 2px; } .hc-my .hc-sec-h a { min-height: 44px; }
+.hc-my-n { margin: 0 0 10px; font-size: 15px; color: var(--text-2); }
+.hc-my-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -14px; padding: 4px 14px 10px; scrollbar-width: none; }
+.hc-my-rail::-webkit-scrollbar { display: none; }
+.hc-my-rail .hc-collect { flex: 0 0 min(58%, 210px); scroll-snap-align: start; }
+.hc-my-empty { margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--hc-soft); font-size: 15px; line-height: 1.5; }
+.hc-my-empty a { font-weight: 800; color: var(--hc-blue-ink); }
+#favs.hc-flist { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 720px) { #favs.hc-flist { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); } }
+@media (max-width: 719px) { #favs.fav-rail.hc-flist { display: grid; overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; } #favs.fav-rail.hc-flist > * { flex: none; } }
+.hc-mini .cs-stamp { top: 6px; right: 8px; }
+.hc-mini.been { border-color: var(--gold); }
+.hc-collect .cs-stamp { position: absolute; left: 16px; top: 52px; right: auto; z-index: 2; }
+.hc-collect { position: relative; }
+@media (prefers-reduced-motion: reduce) { .hc-my-rail { scroll-behavior: auto; } }
 
 /* 터치 영역: 자주 누르는 것은 44px 이상으로 (보이는 모양은 그대로, 누를 수 있는 칸만 넓힘) */
 .top-nav > a, .tn-btn { min-height: 44px; }
