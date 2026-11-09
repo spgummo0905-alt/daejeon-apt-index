@@ -5,6 +5,29 @@
   const DJ = window.DJ; if (!DJ) return;
   const el = DJ.el || ((t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; });
   const art = seed => { const a = el("span", "hc-art v" + ((seed || 0) % 3)); a.setAttribute("aria-hidden", "true"); ["hc-sun", "hc-b b1", "hc-b b2", "hc-b b3"].forEach(c => a.append(el("i", c))); return a; };
+  // 수집 카드 그림 = 단지 상세 카드와 같은 야경(cardgen.js drawArt). 처음엔 같은 남색 바탕, 그림은 한가할 때 불러와 덧그림(실패해도 남색 바탕+얇은 건물 모양으로 보임)
+  const nightArt = () => { const a = el("span", "hc-art hc-night"); a.setAttribute("aria-hidden", "true"); ["hc-sun", "hc-b b1", "hc-b b2", "hc-b b3"].forEach(c => a.append(el("i", c))); return a; };
+  const me = document.currentScript && document.currentScript.src;
+  let artLoad = null;
+  const ensureArt = () => {
+    if (DJ.drawArt) return Promise.resolve(true);
+    if (!artLoad) artLoad = new Promise(res => { if (!me) return res(false); const s = document.createElement("script"); s.src = me.replace(/housecard\.js/, "cardgen.js"); s.onload = () => res(!!DJ.drawArt); s.onerror = () => res(false); document.head.append(s); });
+    return artLoad;
+  };
+  const PENDING = ".hc-collect[data-slug] .hc-art.hc-night:not([data-drawn])";
+  const paintArt = () => {
+    if (!DJ.drawArt) return;
+    document.querySelectorAll(PENDING).forEach(span => {
+      const a = span.closest(".hc-collect"); span.dataset.drawn = "1";
+      const cv = document.createElement("canvas"); cv.setAttribute("aria-hidden", "true");
+      try { DJ.drawArt(cv, { s: a.dataset.slug, g: a.dataset.g, d: a.dataset.d || "" }, 0.6); span.append(cv); span.classList.add("drawn"); } catch (e) { /* 그림 실패: 남색 바탕 그대로 */ }
+    });
+  };
+  let tm = 0;
+  const scan = () => { clearTimeout(tm); tm = setTimeout(() => { if (document.querySelector(PENDING)) ensureArt().then(ok => ok && paintArt()); }, 60); };
+  const idle = f => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 300));
+  new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+  idle(scan);
   const grade = g => { const s = el("span", "hc-grade g-" + g, g === "-" ? "?" : g); const r = el("span", "sr-only", "등급"); s.append(r); return s; };
   const price = c => { const w = el("span", "hc-price"); if (c.pt) { w.append(el("b", "", c.pt), el("small", "", "84㎡ 추정")); } else w.append(el("b", "none", "가격 계산 보류")); return w; };
   const facts = c => DJ.place(c) + (c.y ? " · " + c.y + "년" : "");
@@ -50,15 +73,15 @@
     return a;
   }
   // 수집 카드(JS): 서버 틀(_card.html collect)과 같은 모양. 등급별 틀, 다녀온 단지는 도장. 금박은 수집 카드에만
-  function collect(c) {
-    const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s;
+  function collect(c, opt) {
+    const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s; a.dataset.g = c.g; a.dataset.d = c.d || "";
     a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g === "-" ? "미산정" : c.g + "등급"}${c.i == null ? "" : " " + c.i + "점"}`);
     const fr = el("span", "hc-frame"), inn = el("span", "hc-inner"), top = el("span", "hc-top");
-    top.append(el("b", "", "JIPGAM · " + (c.g === "-" ? "미산정" : c.g + " TIER")), grade(c.g));
+    const tl = el("b", "", ""); tl.append(el("span", "hc-brand", "JIPGAM · "), document.createTextNode(c.g === "-" ? "미산정" : c.g + " TIER")); top.append(tl, grade(c.g));
     const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "-" : c.i + "점"));
     foot.append(l, el("b", "", c.pt || "-"));
-    inn.append(top, art(c.rk), el("strong", "hc-cname", c.n), el("span", "hc-meta", facts(c)), foot);
-    const b = DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
+    inn.append(top, nightArt(), el("strong", "hc-cname", c.n), el("span", "hc-meta", facts(c)), foot);
+    const b = !(opt && opt.stamp === false) && DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
     fr.append(inn); a.append(fr); return a;
   }
   DJ.hc = { mini, feature, fcard, col, collect, art, grade };

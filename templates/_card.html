@@ -3,7 +3,7 @@
    · collect : 카드첩·홈 '오늘 발견할 카드' (등급별 틀. S·A는 금, B는 파랑. 금박은 수집용에만)
    · 단지 상세 맨 위 메인 카드는 apt.html 의 .pb (실거래·추정을 따로 적는 칸이라 자료 줄이 많아 그 자리에서 같은 카드 모양을 씀)
    그림은 실제 외관이 아닌 평면 추상 건물 그림입니다(aria-hidden). 새로 계산하는 값 없음: 가격은 c.price_ref(84㎡ 환산 추정), 지수·등급은 기존 값 #}
-{% macro art(seed=0) %}<span class="hc-art v{{ seed % 3 }}" aria-hidden="true"><i class="hc-sun"></i><i class="hc-b b1"></i><i class="hc-b b2"></i><i class="hc-b b3"></i></span>{% endmacro %}
+{% macro art(seed=0, night=false) %}<span class="hc-art{{ " hc-night" if night }} v{{ seed % 3 }}" aria-hidden="true"><i class="hc-sun"></i><i class="hc-b b1"></i><i class="hc-b b2"></i><i class="hc-b b3"></i></span>{% endmacro %}
 {% macro grade(g) %}<span class="hc-grade g-{{ g }}">{{ "?" if g == "-" else g }}<span class="sr-only">등급</span></span>{% endmacro %}
 {% macro mini(c, href) %}
 <a class="hc hc-mini g-{{ c.grade }}" href="{{ href }}" data-hc="mini" data-slug="{{ c.slug }}">
@@ -17,10 +17,10 @@
 </a>
 {% endmacro %}
 {% macro collect(c, href, k=0) %}
-<a class="hc hc-collect g-{{ c.grade }}" href="{{ href }}" data-hc="collect" data-slug="{{ c.slug }}" aria-label="{{ c.name }}, {{ c | place }}, {{ c.grade }}등급 {{ c.index | score }}점{% if c.rank %}, {{ c.rank }}위{% endif %}">
+<a class="hc hc-collect g-{{ c.grade }}" href="{{ href }}" data-hc="collect" data-slug="{{ c.slug }}" data-g="{{ c.grade }}" data-d="{{ c.dong }}" aria-label="{{ c.name }}, {{ c | place }}, {{ c.grade }}등급 {{ c.index | score }}점{% if c.rank %}, {{ c.rank }}위{% endif %}">
   <span class="hc-frame"><span class="hc-inner">
     <span class="hc-top"><b>JIPGAM · {{ "미산정" if c.grade == "-" else c.grade ~ " TIER" }}</b>{{ grade(c.grade) }}</span>
-    {{ art(c.rank or k) }}
+    {{ art(c.rank or k, true) }}
     <strong class="hc-cname">{{ c.name }}</strong>
     <span class="hc-meta">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span>
     <span class="hc-foot"><span>집감 지수 <b>{{ c.index | score }}점</b></span><b>{% if c.price_ref is nan %}-{% else %}{{ c.price_ref | eok }}{% endif %}</b></span>
