@@ -1286,7 +1286,10 @@ def test_apt_detail_has_compare_in_the_action_row(tmp_path):
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     row = page[page.index('class="icon-actions apt-actions"'):page.index("</div>", page.index('class="icon-actions apt-actions"'))]
     assert "data-compare-here" in row and 'compare.html?a=DEMO-0001' in row
-    assert row.index("data-course-add") < row.index("data-compare-here") < row.index("data-field")      # 관심 · 코스 · 비교 · 현장 체크 · 공유 순서
+    third = "data-sun-here" if "data-sun-here" in row else "data-loc-here"          # 일조 자료가 없는 단지는 '일조' 대신 '입지'(생활 입지로 이동)
+    assert "data-sun-here" in row or "data-loc-here" in row and not ("data-sun-here" in row and "data-loc-here" in row)
+    assert row.index("data-fav") < row.index("data-compare-here") < row.index(third) < row.index("data-field") < row.index("data-share-sheet")   # C5: 관심 · 비교 · 일조(없으면 입지) · 현장 체크 · 공유 순서
+    assert "data-course-add" not in row and 'data-course-add="DEMO-0001"' in page and "hidden data-course-add" in page          # 코스 버튼은 행에서 빠지고, 아래 고정 '임장 코스에 넣기'가 대신 누르는 숨은 원본으로 남음
     assert 'aria-label="다른 단지와 비교하기"' in row and "<span>비교</span>" in row
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "[data-compare-here]" in app and "DJ.favs().filter(s => s !== c.s" in app and ".slice(0, 3)" in app    # 관심 단지 최대 3곳 + 이 단지 = 최대 4곳
@@ -1511,7 +1514,11 @@ def test_detail_price_board_separates_real_and_estimated_and_shows_thin_notice()
     assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | price }}" in board
     assert '<p class="pb-fit" data-mc-fit hidden></p>' in board
     assert "{% if thin_n is not none %}" in board and "가격 근거 {{ thin_n }}건" in board
-    assert apt.count("<h1") == 1 and apt.index("<h1") < apt.index('class="mc g-')
+    # C5: 요약 카드(.pb)와 금박 원본 카드(.mc)는 한 장의 '디지털 집 신분증'. h1 은 문서에 하나뿐이고 그 카드 안(이름 칸)에 있으며, 카드는 5개 범주 줄보다 앞
+    assert apt.count("<h1") == 1 and apt.count('class="mc g-') == 1 and apt.index('<section class="pb"') < apt.index('class="mc g-') < apt.index("<h1") < apt.index('id="catalog"')
+    assert 'aria-labelledby="pb-t"' in apt and 'id="pb-t" class="mc-name"' in apt and "mc-in" in apt and "data-mc-art" in apt      # 원본 야경 그림 칸·금속 테두리 안쪽을 그대로 재사용
+    assert apt.index('class="mc g-') < apt.index("data-mc-more") < apt.index("mc-stats") < apt.index("mc-ev") < apt.index('class="icon-actions apt-actions"') < apt.index('class="pb-board"')   # 앞면 → 전체 평가 펼치기(지표·근거) → 행동 줄 → 가격판
+    assert 'class="hc-art' not in apt and "pb-note-art" not in apt and "pb-quick" not in apt                      # 임시 추상 건물 그림·요약 칸 중복 제거
     assert apt.index('id="catalog"') < apt.index('class="apt-hero"') < apt.index('class="jump apt-jump"')
     assert 'class="mc-cells"' not in apt and "thin-chip" not in apt and 'class="mc-fit"' not in apt
 
