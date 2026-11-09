@@ -284,7 +284,8 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
 .pb-quick b { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
 @media (max-width: 719px) {
   .apt-topbar .crumb { display: none; }   /* 머리에 '‹ 단지 상세'가 있어 겹침 */
-  .apt-topbar { grid-template-columns: auto; justify-content: end; margin-top: 4px; }
+  .apt-topbar { grid-template-columns: minmax(0, 1fr); margin-top: 4px; }   /* 버튼 줄은 화면 폭 전체, ㎡/평 토글만 오른쪽 */
+  .apt-topbar .unit-seg { justify-self: end; }
   .pv-link { display: none; }              /* 같은 링크가 4칸 요약에 있음(일조) */
 }
 @keyframes fav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
