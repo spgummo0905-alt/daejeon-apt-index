@@ -135,7 +135,9 @@
       const start = el("a", "btn primary", "아파트 찾아보기"); start.href = "index.html?stay=1";
       empty.append(start); favBox.append(empty);
     }
-    favs.forEach(c => favBox.append(DJ.card(c, d.stats)));
+    // 관심 단지: 집감 카드(미니) 한 장씩 + 다녀온 단지는 도장. 값은 같은 complexes.json (예전 게임 카드는 housecard.js 가 없을 때만)
+    favs.forEach(c => favBox.append(DJ.hc && DJ.hc.mini ? DJ.hc.mini(c, { been: true, idx: true }) : DJ.card(c, d.stats)));
+    if (DJ.hc && favs.length) favBox.classList.add("hc-flist");
     if (favs.length >= 2) {  // 비교는 네 곳까지
       const b = document.getElementById("fav-battle");
       b.hidden = false;

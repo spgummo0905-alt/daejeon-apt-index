@@ -11,7 +11,7 @@
   <span class="hc-body">
     <span class="hc-meta">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span>
     <span class="hc-name"><strong>{{ c.name }}</strong>{{ grade(c.grade) }}</span>
-    <span class="hc-price">{% if c.price_ref is nan %}<b class="none">가격 계산 보류</b>{% else %}<b>{{ c.price_ref | price }}</b><small>{{ ref_area }}㎡ 추정</small>{% endif %}</span>
+    <span class="hc-price">{% if c.price_ref is nan %}<b class="none">가격 계산 보류</b>{% else %}<b>{{ c.price_ref | eok }}</b><small>{{ ref_area }}㎡ 추정</small>{% endif %}</span>
   </span>
   <span class="hc-go" aria-hidden="true">›</span>
 </a>
@@ -23,7 +23,7 @@
     {{ art(c.rank or k) }}
     <strong class="hc-cname">{{ c.name }}</strong>
     <span class="hc-meta">{{ c | place }}{% if c.build_year %} · {{ c.build_year }}년{% endif %}</span>
-    <span class="hc-foot"><span>집감 지수 <b>{{ c.index | score }}점</b></span><b>{% if c.price_ref is nan %}-{% else %}{{ c.price_ref | price }}{% endif %}</b></span>
+    <span class="hc-foot"><span>집감 지수 <b>{{ c.index | score }}점</b></span><b>{% if c.price_ref is nan %}-{% else %}{{ c.price_ref | eok }}{% endif %}</b></span>
   </span></span>
 </a>
 {% endmacro %}

@@ -15,6 +15,7 @@
     name.append(el("strong", "", c.n), grade(c.g));
     body.append(el("span", "hc-meta", facts(c) + (o.idx && c.i != null ? " · 지수 " + c.i + "점" : "")), name, price(c));
     a.append(art(c.rk), body, el("span", "hc-go", "›")); a.lastChild.setAttribute("aria-hidden", "true");
+    if (o.been && DJ.been) { const b = DJ.been(c); if (b) { a.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); } }
     return a;
   }
   function feature(c, tag) {
@@ -48,7 +49,19 @@
       el("span", "hc-idx", c.i == null ? "지수 -" : "지수 " + c.i + "점"));
     return a;
   }
-  DJ.hc = { mini, feature, fcard, col, art, grade };
+  // 수집 카드(JS): 서버 틀(_card.html collect)과 같은 모양. 등급별 틀, 다녀온 단지는 도장. 금박은 수집 카드에만
+  function collect(c) {
+    const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s;
+    a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g === "-" ? "미산정" : c.g + "등급"}${c.i == null ? "" : " " + c.i + "점"}`);
+    const fr = el("span", "hc-frame"), inn = el("span", "hc-inner"), top = el("span", "hc-top");
+    top.append(el("b", "", "JIPGAM · " + (c.g === "-" ? "미산정" : c.g + " TIER")), grade(c.g));
+    const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "-" : c.i + "점"));
+    foot.append(l, el("b", "", c.pt || "-"));
+    inn.append(top, art(c.rk), el("strong", "hc-cname", c.n), el("span", "hc-meta", facts(c)), foot);
+    const b = DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
+    fr.append(inn); a.append(fr); return a;
+  }
+  DJ.hc = { mini, feature, fcard, col, collect, art, grade };
 
   // 홈: 이어서 볼 집 (가장 최근에 본 단지 → 없으면 관심 단지 첫 번째 → 없으면 빈 상태 그대로)
   const box = document.querySelector("[data-hc-feature]");
@@ -64,4 +77,15 @@
       const more = box.querySelector("[data-hc-feat-more]"); if (more) more.hidden = false;
     }).catch(() => {});
   }
+  // MY 맨 위 '내 카드첩': 모은 카드 수 + 관심 카드(없으면 최근 본 단지) 2~3장을 바로. 숫자는 기존 앨범·방문 기록에서 세기만 함
+  const my = document.querySelector("[data-hc-my]");
+  if (my) DJ.data().then(d => {
+    const all = d.complexes.filter(c => c.g && c.g !== "-"), n = DJ.albumCount ? DJ.albumCount(all) : 0;
+    const cnt = my.querySelector("[data-hc-my-n]"); if (cnt) cnt.textContent = `${n.toLocaleString()}장 모음 · 임장 배지 ${Object.keys(DJ.earned ? DJ.earned() : {}).length}/${DJ.BADGES ? DJ.BADGES.length : 0}개`;
+    const seen = new Set(), pick = [];
+    [...DJ.favs(), ...DJ.recent().map(r => r && r.s)].forEach(s => { if (s && !seen.has(s) && d.bySlug[s] && pick.length < 3) { seen.add(s); pick.push(d.bySlug[s]); } });
+    const rail = my.querySelector("[data-hc-my-rail]"), empty = my.querySelector("[data-hc-my-empty]");
+    if (!pick.length) return;
+    rail.replaceChildren(...pick.map(collect)); rail.hidden = false; if (empty) empty.hidden = true;
+  }).catch(() => {});
 })();
