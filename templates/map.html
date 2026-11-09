@@ -23,13 +23,7 @@
     <div class="mp-sheet" data-mp-sheet role="dialog" aria-label="단지 요약">
       <div class="sheet-grab" aria-hidden="true"></div>
       <button type="button" class="mp-x" data-mp-close aria-label="요약 닫기">✕</button>
-      <p class="mp-sh-k" data-sh-place></p>
-      <h2 class="mp-sh-n" data-sh-name></h2>
-      <dl class="mp-sh-st">
-        <div><dt>84㎡ 기준</dt><dd data-sh-price></dd></div>
-        <div><dt>지수</dt><dd data-sh-idx></dd></div>
-        <div><dt>등급</dt><dd data-sh-grade></dd></div>
-      </dl>
+      <div class="mp-sh-card" data-sh-card></div>
       <p class="mp-sh-note">추정 시세예요. 거래 근거와 날짜는 단지 상세에서 확인하세요.</p>
       <div class="mp-sh-act">
         <a class="btn primary" data-sh-detail href="#">단지 상세 ›</a>
@@ -41,4 +35,4 @@
   <div class="mp-list" data-mp-list hidden></div>
 </section>
 {% endblock %}
-{% block scripts %}{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/map.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/housecard.js?v={{ v }}"></script><script src="static/map.js?v={{ v }}"></script>{% endblock %}

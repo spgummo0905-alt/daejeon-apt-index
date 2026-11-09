@@ -8,11 +8,12 @@
   const grade = g => { const s = el("span", "hc-grade g-" + g, g === "-" ? "?" : g); const r = el("span", "sr-only", "등급"); s.append(r); return s; };
   const price = c => { const w = el("span", "hc-price"); if (c.pt) { w.append(el("b", "", c.pt), el("small", "", "84㎡ 추정")); } else w.append(el("b", "none", "가격 계산 보류")); return w; };
   const facts = c => DJ.place(c) + (c.y ? " · " + c.y + "년" : "");
-  function mini(c) {
+  function mini(c, o) {
+    o = o || {};
     const a = el("a", "hc hc-mini g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "mini"; a.dataset.slug = c.s;
     const body = el("span", "hc-body"), name = el("span", "hc-name");
     name.append(el("strong", "", c.n), grade(c.g));
-    body.append(el("span", "hc-meta", facts(c)), name, price(c));
+    body.append(el("span", "hc-meta", facts(c) + (o.idx && c.i != null ? " · 지수 " + c.i + "점" : "")), name, price(c));
     a.append(art(c.rk), body, el("span", "hc-go", "›")); a.lastChild.setAttribute("aria-hidden", "true");
     return a;
   }
@@ -25,7 +26,21 @@
     a.append(art(c.rk), body);
     return a;
   }
-  DJ.hc = { mini, feature, art, grade };
+  // 찾기 결과 한 장: 미니 카드 + 관심 별(카드 오른쪽, 44px). 카드 전체는 단지 상세 링크, 별은 기존 관심 저장(DJ.toggleFav) 그대로
+  function fcard(c, o) {
+    o = o || {};
+    const w = el("article", "hc-fcard g-" + c.g);
+    if (o.match) w.append(el("div", "match full", o.match));
+    w.append(mini(c, o));
+    if (o.fav) {
+      const b = el("button", "gfav hc-fav"); b.type = "button"; b.append(DJ.icon("star"));
+      const paint = () => { const on = DJ.isFav(c.s); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? `${c.n} 관심 단지에서 빼기` : `${c.n} 관심 단지에 담기`); b.title = on ? "관심 단지에서 빼기" : "관심 단지에 담기"; };
+      b.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); DJ.toggleFav(c.s); paint(); if (!DJ.calm) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); } });
+      paint(); w.append(b);
+    }
+    return w;
+  }
+  DJ.hc = { mini, feature, fcard, art, grade };
 
   // 홈: 이어서 볼 집 (가장 최근에 본 단지 → 없으면 관심 단지 첫 번째 → 없으면 빈 상태 그대로)
   const box = document.querySelector("[data-hc-feature]");

@@ -620,7 +620,9 @@ def test_compare_fill_finder_fav_and_card_flip_target(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     assert "qa-fill" in (out / "static" / "compare.js").read_text(encoding="utf-8")
-    assert "DJ.card(c, STATS, { fav: true })" in (out / "static" / "finder.js").read_text(encoding="utf-8")
+    fj = (out / "static" / "finder.js").read_text(encoding="utf-8")
+    assert "DJ.hc.fcard(c, { fav: true" in fj          # C2: 결과도 집감 카드(미니) 한 장 + 관심 별. 같은 관심 저장(DJ.toggleFav)을 호출
+    assert "DJ.toggleFav(c.s)" in (out / "static" / "housecard.js").read_text(encoding="utf-8")
     finder_html = (out / "finder.html").read_text(encoding="utf-8")
     assert finder_html.index("static/app.js") < finder_html.index("static/workplaces.js") < finder_html.index("static/finder.js")
     assert (out / "static" / "workplaces.js").exists()
