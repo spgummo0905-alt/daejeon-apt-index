@@ -151,13 +151,14 @@ body.pv-has .pv .foot{order:21}
 .sg-tr{position:absolute;top:8px;right:6px;z-index:6;min-width:44px;min-height:44px;padding:4px 6px;border:0;background:none;display:grid;place-items:center}
 .sg-tr .hit{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 13px rgba(25,45,88,.08);border-radius:12px;padding:0 12px;min-height:36px;display:flex;align-items:center;font-size:13px;font-weight:760;color:#49617d}
 .mode-label{display:none;position:absolute;top:54px;left:14px;z-index:2;font-size:11px;color:#8fa9c2;font-weight:750;letter-spacing:.4px;pointer-events:none}
-.floor-control{position:absolute;right:10px;top:96px;z-index:6;background:rgba(255,255,255,.94);border:1px solid #ecf0f6;box-shadow:0 5px 22px rgba(29,57,110,.14);width:52px;border-radius:18px;display:flex;flex-direction:column;align-items:center;padding:3px;gap:2px}
+.floor-control{position:absolute;right:10px;top:54px;z-index:6;background:rgba(255,255,255,.94);border:1px solid #ecf0f6;box-shadow:0 5px 22px rgba(29,57,110,.14);width:52px;border-radius:18px;display:flex;flex-direction:column;align-items:center;padding:3px;gap:2px}
 .floor-control .stepbtn{flex:none;width:44px;height:44px;border:0;border-radius:12px;background:#f4f7fc;color:#597391;font-size:24px;font-weight:550;display:grid;place-items:center;line-height:1;padding:0}
 .floor-control .stepbtn:disabled{opacity:.35;cursor:default}
 .floor-control .fl-val{width:44px;min-height:44px;padding:0;border:0;border-radius:12px;background:none;color:#223b5c;line-height:1;display:grid;place-items:center}
 .floor-control .fl-val b{font-size:19px;font-weight:800;display:block}.floor-control .fl-val small{font-size:11px;color:#8a9aaf;font-weight:650;display:block;margin-top:-1px}
 .sg-bottom{position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px;z-index:5;pointer-events:none}
 .sg-bottom>*{pointer-events:auto}
+@media (max-height:780px) and (max-width:700px){.sg-bottom{right:68px}}   /* 낮은 폰: 층 조절 알약 왼쪽에 아래 줄을 맞춰 서로 겹치지 않게 */
 .stage-note{padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.88);backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(37,68,114,.08);font-size:13px;color:#60758b;font-weight:600;line-height:1.4;min-width:0}
 .stage-note b{color:#2350a0;font-weight:800;font-size:15px}
 .stage-note{max-width:calc(100% - 128px);overflow:hidden}.stage-note b{white-space:nowrap}
