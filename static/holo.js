@@ -2,8 +2,8 @@
 // 마우스나 손가락 위치를 따라 카드가 살짝 기울고, 금박·은박 위로 빛이 지나갑니다.
 // '동작 줄이기' 설정을 켠 기기에서는 움직이지 않습니다.
 (function () {
-  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const MAX = 7; // 최대 기울기(도)
+  if (window.matchMedia && (matchMedia("(prefers-reduced-motion: reduce)").matches || !matchMedia("(hover: hover) and (pointer: fine)").matches)) return;   // 모션 줄이기·터치 기기에서는 정지 (UX v2: 정밀 포인터에서만)
+  const MAX = 4; // 최대 기울기(도) — UX v2 제안값 ±4
   let active = null;
 
   function premium(card) { return card && /\bg-(S|A)\b/.test(card.className); }
@@ -26,6 +26,7 @@
   }
 
   document.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return;
     const card = e.target.closest && e.target.closest("[data-holo]");
     if (card !== active) { reset(active); active = premium(card) ? card : null; }
     if (active) move(active, e.clientX, e.clientY);
