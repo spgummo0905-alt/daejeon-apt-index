@@ -4921,3 +4921,47 @@ p.muted { text-wrap: balance; }
 .to-check li span { flex: 1 1 200px; font-size: 15px; line-height: 1.5; color: var(--text); text-wrap: balance; }
 .to-check li a { flex: none; display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 700; }
 .to-check .to-check-go { width: 100%; justify-content: center; min-height: 48px; margin-top: 10px; font-weight: 700; }
+
+/* ===== UX v2 · 01 공통 부품: 수치(집감 제안값) · 눌림 · 시트 · 메뉴 · 알림 단추 ===== */
+:root { --ux-press: 120ms; --ux-change: 220ms; --ux-sheet: 300ms; --ux-flip: 440ms; --ux-stamp: 380ms; --ux-ease: cubic-bezier(.2, .8, .2, 1);
+  --tabbar-height: 0px; --actionbar-height: 0px; --safe-bottom: env(safe-area-inset-bottom, 0px); --ux-gap-1: 4px; --ux-gap-2: 8px; --ux-gap-3: 12px; --ux-gap-4: 16px; --ux-gap-5: 20px; --ux-gap-6: 24px; --ux-gap-8: 32px; }
+/* 누름: 120ms, 0.98배. 손을 떼면 원래 크기 */
+.btn, .icon-btn, .tabbar a, button.chip, .hc-mini, .hc-collect, .hc-feature, .hc-album-link, .ux-menu-item, .ux-sheet-x, .mc-more-btn, .toast-act { transition: transform var(--ux-press) var(--ux-ease), box-shadow var(--ux-press) var(--ux-ease), background-color var(--ux-press) var(--ux-ease); -webkit-tap-highlight-color: transparent; }
+.btn:active, .icon-btn:active, .tabbar a:active, button.chip:active, .hc-mini:active, .hc-feature:active, .hc-album-link:active, .ux-menu-item:active, .ux-sheet-x:active, .mc-more-btn:active { transform: scale(.98); }
+/* 알림 안 '취소' 단추 (글자 단추와 같은 모양) */
+button.toast-act { background: none; border: 0; font-family: inherit; cursor: pointer; align-self: flex-start; }
+button.toast-act:disabled { opacity: .5; }
+/* 공통 시트: <dialog>. 300ms, 아래에서 올라옴. 넓은 화면은 가운데 */
+html.ux-lock { overflow: hidden; }
+.ux-sheet { position: fixed; inset: auto 0 0 0; margin: 0 auto; width: 100%; max-width: 520px; max-height: min(86dvh, 720px); padding: 8px 20px calc(20px + var(--safe-bottom)); border: 0; border-radius: 24px 24px 0 0; background: var(--surface); color: var(--text);
+  box-shadow: 0 -12px 40px rgba(10,20,40,.28); transform: translateY(100%); transition: transform var(--ux-sheet) var(--ux-ease); overflow: auto; overscroll-behavior: contain; }
+.ux-sheet.on { transform: none; }
+.ux-sheet::backdrop { background: rgba(8,12,20,.5); opacity: 0; transition: opacity var(--ux-sheet) var(--ux-ease); }
+.ux-sheet.on::backdrop { opacity: 1; }
+.ux-sheet-grab { display: block; width: 40px; height: 4px; margin: 4px auto 8px; border-radius: 4px; background: var(--axis); }
+.ux-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ux-sheet-head h2 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 850; letter-spacing: -.02em; }
+.ux-sheet-x { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--chip); color: var(--text); font-size: 16px; cursor: pointer; }
+.ux-sheet-x:focus-visible, .ux-menu-item:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ux-sheet-body { font-size: 16px; line-height: 1.5; }
+@media (min-width: 720px) { .ux-sheet { inset: 0; margin: auto; border-radius: 24px; max-height: min(80dvh, 640px); transform: translateY(24px); opacity: 0; transition: transform var(--ux-sheet) var(--ux-ease), opacity var(--ux-sheet) var(--ux-ease); } .ux-sheet.on { transform: none; opacity: 1; } }
+/* 맥락 메뉴: 누른 자리 아래에 작게 (선택지가 적을 때) */
+.ux-menu { position: fixed; z-index: 70; padding: 6px; border-radius: 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(10,20,40,.22); opacity: 0; transform: translateY(-4px) scale(.98); transform-origin: top left; transition: opacity var(--ux-press) var(--ux-ease), transform var(--ux-press) var(--ux-ease); }
+.ux-menu.on { opacity: 1; transform: none; }
+.ux-menu-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; font-size: 16px; font-weight: 650; text-align: left; cursor: pointer; }
+.ux-menu-item:hover { background: var(--chip); }
+.ux-menu-item[aria-checked="true"] { color: var(--accent); font-weight: 800; }
+.ux-menu-check { font-style: normal; min-width: 1em; }
+/* 모션 줄이기: 이동·눌림 크기 변화 없이 즉시 교체 (색 변화만 남김) */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active, .icon-btn:active, .tabbar a:active, button.chip:active, .hc-mini:active, .hc-feature:active, .hc-album-link:active, .ux-menu-item:active, .ux-sheet-x:active, .mc-more-btn:active { transform: none; }
+  .ux-sheet, .ux-sheet.on, .ux-sheet::backdrop, .ux-menu, .ux-menu.on { transition: none; transform: none; }
+  .ux-menu { opacity: 1; }
+}
+/* UX v2 · 44px 누르는 영역: 보이는 크기·줄 간격은 그대로, 누르는 자리만 넓힘 (본문 안 링크·작은 칩·바닥글 링크) */
+footer a, .pb-asof a, .mc-ev-l a { position: relative; }
+footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 44px; transform: translateY(-50%); }
+.mc-strip .mc-chip { position: relative; } .mc-strip .mc-chip::after { content: ""; position: absolute; inset: -8px -4px; }
+.ticker-more { min-width: 44px; justify-content: flex-end; }
+.cl-pair dt a, .q-note a, .hc-my-empty a { position: relative; }
+.cl-pair dt a::after, .q-note a::after, .hc-my-empty a::after { content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 44px; transform: translateY(-50%); }

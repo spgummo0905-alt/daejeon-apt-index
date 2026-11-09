@@ -98,6 +98,12 @@
       t.append(a);
       ms = ms || 7000;
     }
+    else if (action && action.onClick && action.label) {   // UX v2: 눌러서 되돌리는 단추 (ux-motion.js DJ.toastUndo)
+      const b = el("button", "toast-act", action.label); b.type = "button";
+      b.addEventListener("click", () => { b.disabled = true; t.classList.add("out"); setTimeout(() => t.remove(), 300); try { action.onClick(); } catch (e) { /* 되돌리기 실패는 호출한 쪽이 처리 */ } });
+      t.classList.add("has-act"); t.append(b);
+      ms = ms || 3500;
+    }
     zone.append(t);
     setTimeout(() => t.classList.add("out"), ms || 3200);
     setTimeout(() => t.remove(), (ms || 3200) + 600);
