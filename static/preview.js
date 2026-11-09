@@ -72,6 +72,9 @@ function drawControls() {
     box.scrollLeft = (box.dataset.ready ? Math.abs(want - keep) < 4 : false) ? keep : Math.max(0, want);
   }
   box.dataset.ready = '1';
+  const db = $('dongBtn'), dn = C.dongNo(tgt().dn);
+  db.innerHTML = '<b>' + esc(dn ? dn + '동' : C.label(tgt())) + '</b><span aria-hidden="true">▾</span>';
+  db.setAttribute('aria-label', (dn ? dn + '동' : C.label(tgt())) + ' 선택됨, 이 단지 동 ' + ownDongs().length + '개. 눌러서 동 목록 열기');
   if (on && !box.dataset.centered) { box.dataset.centered = '1'; requestAnimationFrame(() => requestAnimationFrame(() => { const w2 = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (box.clientWidth) box.scrollLeft = Math.max(0, w2); })); }   // 처음 그릴 때는 칸 너비가 0일 수 있어 한 번 더
   $('date').innerHTML = segHTML(DATES.map(d => ({ key: d.key, name: d.name })), st.dk, 'data-date');
   $('seg-view').innerHTML = segHTML(VIEWS.map(v => ({ key: v[0], name: v[1] })), st.view, 'data-view');
@@ -90,6 +93,11 @@ function drawFloor() {
 function onFloor() {                           // 층만 바뀔 때: 동·날짜 칩은 다시 그리지 않음
   drawFloor(); drawResult(); drawBar(); drawView(); drawFold(); scheduleCompare(); drawSave();
 }
+function openDongSheet() {
+  const d = $('dongSheet'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  const on = $('dong').querySelector('[aria-pressed="true"]'); if (on) { on.scrollIntoView({ block: 'center' }); on.focus({ preventScroll: true }); }
+}
+function closeDongSheet() { const d = $('dongSheet'); if (d.close) d.close(); else d.removeAttribute('open'); }
 function openFloorSheet() {
   const d = $('floorSheet'), b = tgt(); let g = '';
   for (let f = b.f; f >= 1; f--) g += '<button type="button" class="fcell" data-fl="' + f + '" aria-pressed="' + (f === st.fl) + '">' + f + '</button>';
@@ -107,8 +115,9 @@ function drawResult() {
   const top = sm.blockers[0];
   let h = '<h2 id="h-res" class="sr-only">' + esc(head) + '</h2>';
   h += '<div class="st-row"><p class="big">약 ' + C.durText(sm.sunMin) + '</p><div class="st-id"><b>' + esc(C.label(b)) + ' ' + st.fl + '층</b><span>' + d.name + ' ' + d.date.month + '/' + d.date.day + ' · 직사광 · 추정</span></div></div>';
-  h += '<div class="st-side"><p class="when">' + (sm.sunRanges.length ? sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') : '닿는 시간대 없음') + '</p>';
-  h += '<p class="st-blk">' + (top ? '가장 크게 가리는 동 <b>' + esc(top.label) + '</b>' : '앞 동에 가리는 시간 없음') + '</p></div>';
+  h += '<div class="st-side"><p class="when">' + (sm.sunRanges.length ? sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') : (top ? '직사광이 닿는 시간이 없어요' : '닿는 시간대 없음')) + '</p>';
+  h += '<p class="st-blk">' + (top ? (sm.sunMin === 0 ? '앞 동에 가려져요 · ' : '') + '가장 크게 가리는 동 <b>' + esc(top.label) + '</b>' + (sm.sunMin === 0 && sm.shadeMin ? ' · 가림 약 ' + C.durText(sm.shadeMin) : '') : '앞 동에 가리는 시간 없음') + '</p></div>';
+  h += '<button type="button" class="why-btn" data-why>원인과 계산 근거 보기 ›</button>';
   $('result').innerHTML = h;
   let m = '<dl class="facts">';
   m += '<div><dt>앞 동에 가려지는 시간</dt><dd>' + (sm.shadeMin ? '약 ' + C.durText(sm.shadeMin) + (sm.shadeRanges.length ? '<small>' + sm.shadeRanges.map(rangeTxt).join(', ') + '</small>' : '') : '계산되지 않았어요') + '</dd></div>';
@@ -171,9 +180,14 @@ function setVB(svg, v) {                      // 이전 시점에서 새 시점�
   const step = now => { const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3); svg.setAttribute('viewBox', fmt(from.map((f, i) => f + (to[i] - f) * e))); if (k < 1) vbRaf = requestAnimationFrame(step); };
   vbRaf = requestAnimationFrame(step);
 }
+const ISO_INSET_T = 60, ISO_INSET_B = 58;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
+const ISO_INSET_L = 58;                       // 왼쪽에 겹쳐 있는 층 조작부 폭(px): 건물 그림이 그 뒤로 들어가지 않게 비워 둔다
 function drawIso() {
-  const svg = $('iso'), o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358;
-  const v = ISO.bounds(o, rw / rh);
+  const svg = $('iso');
+  const o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, L = Math.min(ISO_INSET_L, rw * 0.2);
+  const T = Math.min(ISO_INSET_T, rh * 0.18), B = Math.min(ISO_INSET_B, rh * 0.18);
+  const v0 = ISO.bounds(o, (rw - L) / (rh - T - B)), s0 = v0.w / (rw - L);
+  const v = { x: v0.x - L * s0, y: v0.y - T * s0, w: v0.w + L * s0, h: v0.h + (T + B) * s0 };
   const nNA = ctx.excluded.length;
   setVB(svg, v);
   svg.innerHTML = '<title id="isoTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층에서 본 입체 그림</title>' +
@@ -428,11 +442,11 @@ function fitStage() {
   const stage = document.querySelector('.stage'); if (!stage || !ctx) return;
   if (innerWidth >= 980) { stage.style.removeProperty('--stage-h'); return; }
   const kids = [...stage.children].filter(e => e.offsetParent !== null && !e.classList.contains('st-main'));
-  const gap = 6, others = kids.reduce((a, e) => a + e.getBoundingClientRect().height, 0) + gap * kids.length;
+  const gap = 8, others = kids.reduce((a, e) => a + e.getBoundingClientRect().height, 0) + gap * kids.length;
   const note = document.querySelector('.pvnote'), noteH = note ? note.getBoundingClientRect().height + 6 : 0;
   const tab = document.querySelector('.tabbar'), tabH = tab && getComputedStyle(tab).display !== 'none' ? tab.getBoundingClientRect().height : 0;
   const vh = (window.visualViewport && visualViewport.height) || innerHeight;
-  const avail = vh - tabH - noteH - others - 10;
+  const avail = vh - tabH - noteH - others - 14;   // 장면 둘레 여백(패딩 12) 포함
   stage.style.setProperty('--stage-h', Math.max(160, Math.min(520, Math.round(avail))) + 'px');
   stage.classList.toggle('st-short', avail < 250);   // 아주 짧은 화면: 층 슬라이더 대신 + / - 와 층 목록만
 }
@@ -482,7 +496,10 @@ function readHash() {
 document.addEventListener('click', ev => {
   const bt = ev.target.closest('button'); if (!bt || !ctx) return;
   if (bt.dataset.cx) { if (bt.dataset.cx !== st.cid) { st.tid = null; chooseComplex(bt.dataset.cx); } }
-  else if (bt.dataset.dong) select(bt.dataset.dong);
+  else if (bt.dataset.dong) { select(bt.dataset.dong); closeDongSheet(); }
+  else if (bt.hasAttribute('data-why')) { const f = $('moreFold'); f.open = true; $('evidence').open = true; drawFold(); f.scrollIntoView({ block: 'start', behavior: DJ_calm() ? 'auto' : 'smooth' }); const s = f.querySelector('summary'); if (s) s.focus({ preventScroll: true }); }
+  else if (bt.id === 'dongBtn') openDongSheet();
+  else if (bt.id === 'dongSheetX') closeDongSheet();
   else if (bt.dataset.date) { st.dk = bt.dataset.date; fullRender(); writeHash(); }
   else if (bt.dataset.view) { st.view = bt.dataset.view; drawView(); writeHash(); }
   else if (bt.id === 'fdn' || bt.id === 'fup') { st.fl = Math.min(tgt().f, Math.max(1, st.fl + (bt.id === 'fup' ? 1 : -1))); onFloor(); writeHash(); }
@@ -495,6 +512,7 @@ document.addEventListener('click', ev => {
   else if (bt.hasAttribute('data-pick-x')) $('pv-pick').open = false;
 });
 function closeFloorSheet() { const d = $('floorSheet'); if (d.close) d.close(); else d.removeAttribute('open'); }
+$('dongSheet').addEventListener('click', e => { if (e.target === $('dongSheet')) closeDongSheet(); });
 $('floorSheet').addEventListener('click', e => { if (e.target === $('floorSheet')) closeFloorSheet(); });   // 바깥(어두운 곳)을 누르면 닫힘
 $('floor').addEventListener('input', e => { st.fl = +e.target.value; onFloor(); writeHash(); });
 $('time').addEventListener('input', e => { st.t = +e.target.value; tick(); });
