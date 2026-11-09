@@ -4738,6 +4738,8 @@ p.muted { text-wrap: balance; }
 .hc-album-link b { font-size: 17px; font-weight: 800; } .hc-album-link small { display: block; font-size: 14px; color: var(--muted); }
 .hc-album-link .ic { width: 28px; height: 28px; color: var(--hc-blue); flex: none; } .hc-album-link .chev { margin-left: auto; font-size: 24px; color: var(--muted); }
 .hc-album-link:hover { text-decoration: none; border-color: var(--axis); }
+/* 새 카드 덱의 '전체 랭킹 보기': 옛 덱의 position:absolute(맨 아래에 띄움)가 남아 카드첩 박스 위에 겹치던 것 → 제자리(카드첩 박스 아래)에 놓음 */
+.hero-deck[data-hc-deck] .deck-more { position: static; bottom: auto; left: auto; margin: 4px 0 0 2px; }
 @media (min-width: 901px) { .hero-deck[data-hc-deck] .hc-collect { flex-basis: 236px; } .hc-gal-list { max-width: 560px; } }
 @media (prefers-reduced-motion: reduce) { .hc-mini, .hc-feature, .hc-collect { transition: none; } }
 
