@@ -63,7 +63,7 @@ function segHTML(items, cur, attr) {
 function drawControls() {
   const m = ctx.m;
   $('cx').innerHTML = '<b class="cxn">' + esc(m.name || '이 단지') + '</b><span class="cxs">동 ' + m.n_own + '개</span>' +
-    '<button type="button" class="cxl cxsave" id="saveFav" aria-pressed="false"></button><button type="button" class="cxl" data-pick>바꾸기</button>';
+    '<button type="button" class="cxl" data-pick>바꾸기</button>';
   const box = $('dong'), keep = box.scrollLeft;
   box.innerHTML = ownDongs().map(b => chipHTML(C.dongNo(b.dn) + '동', b.id === st.tid, '', 'data-dong="' + b.id + '" aria-label="' + C.dongNo(b.dn) + '동, ' + b.f + '층 건물"')).join('');
   const on = box.querySelector('[aria-pressed="true"]');
@@ -74,6 +74,7 @@ function drawControls() {
   box.dataset.ready = '1';
   const db = $('dongBtn'), dn = C.dongNo(tgt().dn);
   db.innerHTML = '<b>' + esc(dn ? dn + '동' : C.label(tgt())) + '</b><span aria-hidden="true">▾</span>';
+  { const d = DATES.find(x => x.key === st.dk); $('dateLabel').textContent = d.name + ' · ' + dtxt(d.date); }
   db.setAttribute('aria-label', (dn ? dn + '동' : C.label(tgt())) + ' 선택됨, 이 단지 동 ' + ownDongs().length + '개. 눌러서 동 목록 열기');
   if (on && !box.dataset.centered) { box.dataset.centered = '1'; requestAnimationFrame(() => requestAnimationFrame(() => { const w2 = on.offsetLeft - (box.clientWidth - on.offsetWidth) / 2; if (box.clientWidth) box.scrollLeft = Math.max(0, w2); })); }   // 처음 그릴 때는 칸 너비가 0일 수 있어 한 번 더
   $('date').innerHTML = segHTML(DATES.map(d => ({ key: d.key, name: d.name })), st.dk, 'data-date');
@@ -82,12 +83,10 @@ function drawControls() {
   drawSave();
 }
 function drawFloor() {
-  const b = tgt(), el = $('floor');
-  el.max = b.f; el.min = 1; el.value = st.fl;
-  const fh = C.baseFh(ctx, b), z = (st.fl - 0.5) * fh;
-  $('floorBtn').innerHTML = '<b>' + st.fl + '층</b><small>/ ' + b.f + '층</small>';
-  $('floorBtn').setAttribute('aria-label', st.fl + '층, 전체 ' + b.f + '층. 눌러서 층 목록 열기');
-  el.setAttribute('aria-valuetext', st.fl + '층, 지상 약 ' + z.toFixed(0) + '미터');
+  const b = tgt(), fh = C.baseFh(ctx, b), z = (st.fl - 0.5) * fh;
+  $('floorBtn').innerHTML = '<b>' + st.fl + '</b><small>층</small>';
+  $('floorBtn').setAttribute('aria-label', st.fl + '층, 전체 ' + b.f + '층, 지상 약 ' + z.toFixed(0) + '미터. 눌러서 층 목록 열기');
+  $('selectedName').textContent = C.label(b) + ' · ' + st.fl + '층';
   $('fup').disabled = st.fl >= b.f; $('fdn').disabled = st.fl <= 1;
 }
 function onFloor() {                           // 층만 바뀔 때: 동·날짜 칩은 다시 그리지 않음
@@ -114,10 +113,9 @@ function drawResult() {
   const head = C.label(b) + ' ' + st.fl + '층 · ' + d.name + ' (' + dtxt(d.date) + ')';
   const top = sm.blockers[0];
   let h = '<h2 id="h-res" class="sr-only">' + esc(head) + '</h2>';
-  h += '<div class="st-row"><p class="big">약 ' + C.durText(sm.sunMin) + '</p><div class="st-id"><b>' + esc(C.label(b)) + ' ' + st.fl + '층</b><span>' + d.name + ' ' + d.date.month + '/' + d.date.day + ' · 직사광 · 추정</span></div></div>';
-  h += '<div class="st-side"><p class="when">' + (sm.sunRanges.length ? sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') : (top ? '직사광이 닿는 시간이 없어요' : '닿는 시간대 없음')) + '</p>';
-  h += '<p class="st-blk">' + (top ? (sm.sunMin === 0 ? '앞 동에 가려져요 · ' : '') + '가장 크게 가리는 동 <b>' + esc(top.label) + '</b>' + (sm.sunMin === 0 && sm.shadeMin ? ' · 가림 약 ' + C.durText(sm.shadeMin) : '') : '앞 동에 가리는 시간 없음') + '</p></div>';
-  h += '<button type="button" class="why-btn" data-why>원인과 계산 근거 보기 ›</button>';
+  h += '<div class="big-row"><strong class="big-number"><span class="sr-only">' + esc(C.label(b)) + ' ' + st.fl + '층 직사광 예상 시간 </span>약 ' + C.durText(sm.sunMin) + '</strong><span class="result-pill" id="resultState"></span></div>';
+  h += '<p class="reason"><b>' + (sm.sunRanges.length ? sm.sunRanges.map(r => '<span class="nowrap">' + rangeTxt(r) + '</span>').join(', ') : (top ? '직사광이 닿는 시간이 없어요' : '닿는 시간대 없음')) + '</b> · ' + d.name + ' · 추정</p>';
+  h += '<button type="button" class="reason sub why-btn" data-why>' + (top ? (sm.sunMin === 0 ? '앞 동에 가려져요 · ' : '') + '가장 크게 가리는 동 <b>' + esc(top.label) + '</b>' + (sm.sunMin === 0 && sm.shadeMin ? ' · 가림 약 ' + C.durText(sm.shadeMin) : '') : '앞 동에 가리는 시간 없음') + ' · 원인 보기 ›</button>';
   $('result').innerHTML = h;
   let m = '<dl class="facts">';
   m += '<div><dt>앞 동에 가려지는 시간</dt><dd>' + (sm.shadeMin ? '약 ' + C.durText(sm.shadeMin) + (sm.shadeRanges.length ? '<small>' + sm.shadeRanges.map(rangeTxt).join(', ') + '</small>' : '') : '계산되지 않았어요') + '</dd></div>';
@@ -167,7 +165,7 @@ function isoOpts() {
   const fi = C.faceInfo(ctx, st.tid);
   const nowIds = new Set(slot.state === 'shade' ? slot.by : []), blockIds = new Set(sm.blockers.map(x => x.id));
   const ray = ISO.ray(fi, z, slot, blds, st.tid);
-  return { items: ctx.calc, tid: st.tid, fl: st.fl, fh, sun, state: slot.state, blockIds, nowIds, fitIds: sm.blockers.slice(0, 3).map(x => x.id), fi, ray, wide: st.wide,
+  return { items: ctx.calc, tid: st.tid, fl: st.fl, fh, sun, state: slot.state, blockIds, nowIds, fitIds: sm.blockers.slice(0, 1).map(x => x.id), fi, ray, wide: st.wide,
            label: C.label, num: bb => (C.dongNo(bb.dn) ? C.dongNo(bb.dn) + '동' : ''), SRC: bb => C.SRC_LABEL[bb.src], calcable: C.calcable };
 }
 let vbNow = null, vbRaf = 0;
@@ -180,14 +178,21 @@ function setVB(svg, v) {                      // 이전 시점에서 새 시점�
   const step = now => { const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3); svg.setAttribute('viewBox', fmt(from.map((f, i) => f + (to[i] - f) * e))); if (k < 1) vbRaf = requestAnimationFrame(step); };
   vbRaf = requestAnimationFrame(step);
 }
-const ISO_INSET_T = 60, ISO_INSET_B = 58;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
-const ISO_INSET_L = 58;                       // 왼쪽에 겹쳐 있는 층 조작부 폭(px): 건물 그림이 그 뒤로 들어가지 않게 비워 둔다
+const ISO_INSET_T = 60, ISO_INSET_B = 58, ISO_INSET_R = 62;     // 위(동·날짜)·아래(보기·전체 보기) 겹침 조작부 높이(px)
 function drawIso() {
   const svg = $('iso');
-  const o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, L = Math.min(ISO_INSET_L, rw * 0.2);
-  const T = Math.min(ISO_INSET_T, rh * 0.18), B = Math.min(ISO_INSET_B, rh * 0.18);
-  const v0 = ISO.bounds(o, (rw - L) / (rh - T - B)), s0 = v0.w / (rw - L);
-  const v = { x: v0.x - L * s0, y: v0.y - T * s0, w: v0.w + L * s0, h: v0.h + (T + B) * s0 };
+  const sm0 = getSum(st.dk), o = isoOpts(), rw = svg.clientWidth || 358, rh = svg.clientHeight || 358, R = Math.min(ISO_INSET_R, rw * 0.2);
+  const T = Math.min(ISO_INSET_T, rh * 0.2), B = Math.min(ISO_INSET_B, rh * 0.2);
+  if (!st.wide && o.fitIds.length) {
+    const tb0 = ctx.byId[st.tid], bk = ctx.byId[o.fitIds[0]], mid = bb => { const p = ISO.polyOf(bb, st.tid), n = p.length; let x = 0, y = 0; for (const q of p) { x += q[0]; y += q[1]; } return [x / n, y / n]; };
+    const a = mid(tb0), c = mid(bk), tt = 0.5; o.rayEnd = [a[0] + (c[0] - a[0]) * tt, a[1] + (c[1] - a[1]) * tt, tb0.h * 0.35]; o.fitIds = [];
+  }
+  { const tb = ctx.byId[st.tid], cc = ISO.polyOf(tb, st.tid).reduce((a, q) => [a[0] + q[0] / ISO.polyOf(tb, st.tid).length, a[1] + q[1] / ISO.polyOf(tb, st.tid).length], [0, 0]);
+    o.keepIds = new Set(sm0.blockers.slice(0, 1).map(x => x.id));
+    o.near = bb => { if (o.keepIds.has(bb.id)) return true; const p = ISO.polyOf(bb, st.tid), n = p.length; let x = 0, y = 0; for (const q of p) { x += q[0]; y += q[1]; } return Math.hypot(x / n - cc[0], y / n - cc[1]) < 70; }; }
+  o.padT = T; o.padR = R;                     // 북쪽 표시·이름표가 위 칩·오른쪽 층 조작부 아래로 들어가지 않게 알려 준다
+  const v0 = ISO.bounds(o, (rw - R) / (rh - T - B)), s0 = v0.w / (rw - R);
+  const v = { x: v0.x, y: v0.y - T * s0, w: v0.w + R * s0, h: v0.h + (T + B) * s0 };
   const nNA = ctx.excluded.length;
   setVB(svg, v);
   svg.innerHTML = '<title id="isoTitle">' + esc(C.label(tgt())) + ' ' + st.fl + '층에서 본 입체 그림</title>' +
@@ -215,13 +220,24 @@ function wireBuildings(svg) {
   });
 }
 
+const PILL = { sun: ['☀ 햇빛 닿음', 'sun'], shade: ['◐ 앞 동에 가림', 'shade'], back: ['해가 벽 반대쪽', 'back'], night: ['해가 없음', 'night'] };
 function drawState() {
   const slot = slotNow(), d = curDate();
   const names = slot.state === 'shade' ? slot.by.map(id => ctx.byId[id].label) : [];
-  const el = $('state'); el.className = 'state ' + slot.state;
-  el.textContent = C.minToHM(st.t) + ' · ' + (slot.state === 'shade' ? names.join(', ') + '에 가려짐' : NO_LABEL[slot.state]) + (slot.alt > 0 ? ' · ' + C.dirName(slot.az) + '쪽 해 ' + Math.round(slot.alt) + '°' : '');
+  const el = $('state'); el.className = 'tl-state ' + slot.state;
+  el.textContent = (slot.state === 'shade' ? names.join(', ') + '에 가려짐' : NO_LABEL[slot.state]) + (slot.alt > 0 ? ' · ' + C.dirName(slot.az) + '쪽 해 ' + Math.round(slot.alt) + '°' : '');
+  $('clock').textContent = C.minToHM(st.t);
+  const p = PILL[slot.state], pill = $('resultState'); pill.textContent = p[0]; pill.className = 'result-pill ' + p[1];
   $('timeVal').textContent = ': ' + C.minToHM(st.t) + ' (' + dtxt(d) + ')';
   $('time').setAttribute('aria-valuetext', C.minToHM(st.t) + ', ' + (slot.state === 'shade' ? '앞 동에 가려짐' : NO_LABEL[slot.state]));
+  drawSun(slot);
+}
+// 장면 배경의 해 표시: 해가 떠 있는지(고도)와 하루 중 위치(시각)만 따라 움직이는 장식. 건물 위치·그림자 판정에는 쓰지 않는다.
+function drawSun(slot) {
+  const g = $('sunGlow'); if (!g) return;
+  const f = Math.min(1, Math.max(0, (st.t - 300) / (1185 - 300))), up = slot.alt > 1;
+  g.style.setProperty('--sx', (78 - f * 32).toFixed(1) + '%'); g.style.setProperty('--sy', (22 + Math.pow(f - 0.5, 2) * 60).toFixed(1) + '%');
+  g.style.opacity = up ? (0.45 + 0.55 * Math.min(1, slot.alt / 40)).toFixed(2) : '0.12';
 }
 const CAP = {
   iso: '남쪽 위에서 본 고정 시점의 입체 그림이에요. 고른 층의 창에서 해 쪽으로 그은 선이 앞 동에 닿아 ✕ 가 되면 그 시각엔 가려진 거예요. 높이가 있는 건물 모양만 단순하게 그렸고 실제 건물 모양은 아니에요.',
@@ -235,8 +251,8 @@ function drawView() {
   $('zoom').hidden = v === 'floor';
   $('vcap').textContent = CAP[v];
   $('seg-view').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
-  if (v === 'floor') { drawTower(); return; }
   drawState();
+  if (v === 'floor') { drawTower(); return; }
   if (v === 'iso') drawIso(); else drawPlan();
   $('legend2').innerHTML = v === 'iso'
     ? '<li><span class="sw me"></span>내 동</li><li><span class="sw band"></span>고른 층</li><li><span class="sw front"></span>하루 중 가리는 앞 동</li><li><span class="sw oth"></span>다른 건물</li><li><span class="sw cross"></span>가려지는 지점</li>'
@@ -426,7 +442,7 @@ function drawSave() {
   const b = $('saveFav'); if (!b) return;
   const on = !!(window.DJ && DJ.isFav && DJ.isFav(st.cid));
   b.setAttribute('aria-pressed', String(on));
-  b.textContent = on ? '♥ 담음' : '♡ 담기';
+  b.textContent = on ? '♥' : '♡'; b.classList.toggle('on', on);
   b.setAttribute('aria-label', on ? '관심 단지에 담았어요. 누르면 뺍니다' : '이 단지를 관심 단지에 담기');
 }
 function toggleSave() {
@@ -438,38 +454,22 @@ function toggleSave() {
 
 // ---------- 한 화면 맞추기 (휴대폰) ----------
 // 장면 높이 = 하단 탭 위까지 남는 높이에서 장면 말고 다른 칸들의 높이를 뺀 값. 계산은 화면 크기가 바뀔 때만 한다(그리는 값은 그대로).
-function fitStage() {
-  const stage = document.querySelector('.stage'); if (!stage || !ctx) return;
-  if (innerWidth >= 980) { stage.style.removeProperty('--stage-h'); return; }
-  const kids = [...stage.children].filter(e => e.offsetParent !== null && !e.classList.contains('st-main'));
-  const gap = 8, others = kids.reduce((a, e) => a + e.getBoundingClientRect().height, 0) + gap * kids.length;
-  const note = document.querySelector('.pvnote'), noteH = note ? note.getBoundingClientRect().height + 6 : 0;
-  const tab = document.querySelector('.tabbar'), tabH = tab && getComputedStyle(tab).display !== 'none' ? tab.getBoundingClientRect().height : 0;
-  const vh = (window.visualViewport && visualViewport.height) || innerHeight;
-  const avail = vh - tabH - noteH - others - 14;   // 장면 둘레 여백(패딩 12) 포함
-  stage.style.setProperty('--stage-h', Math.max(160, Math.min(520, Math.round(avail))) + 'px');
-  stage.classList.toggle('st-short', avail < 250);   // 아주 짧은 화면: 층 슬라이더 대신 + / - 와 층 목록만
-}
-function settleScroll() {                     // 단지를 처음 열었을 때만: 사이트 머리글이 위로 넘어가 작업 무대가 화면 맨 위에 오도록
-  if (innerWidth >= 700 || scrollY > 4 || st._settled) return;
-  st._settled = true;
-  const note = document.querySelector('.pvnote'); if (!note) return;
-  const y = Math.round(note.getBoundingClientRect().top + scrollY - 4);
-  if (y > 40) scrollTo(0, y);
-}
+function fitStage() { /* 무대 높이는 CSS가 정한다 */ }
+function settleScroll() { /* 머리글은 그대로 두고 위에서부터 보여 준다 */ }
 
 // ---------- 갱신 ----------
 function fullRender() {
   drawControls(); drawResult(); drawBar(); fitStage(); drawView(); drawFold(); scheduleCompare();
 }
 function drawFold() { if ($('evidence').open || $('field').open) drawEvidence(); }
+st.flip = false;
 function select(tid) {
   st.tid = tid; const b = tgt(); st.fl = Math.min(Math.max(1, st.fl), b.f); st.cam = true; fullRender(); writeHash();
   if (st.fl !== st._askFl) st._askFl = st.fl;
 }
 async function chooseComplex(id) {
   try { ctx = await loadComplex(id); } catch (e) { ctx = null; $('pv-load').textContent = '이 단지는 일조 미리보기가 열려 있지 않거나 자료를 불러오지 못했어요. 아래 단지 고르기에서 다른 단지를 골라 보세요.'; $('pv-load').style.minHeight = '0'; return; }
-  st.cid = id;
+  st.cid = id; loadCardRec();
   const own = ownDongs();
   if (st._dong) {                                   // 주소에 동·층이 있으면 기본값보다 먼저 적용한다(그래야 주소가 기본값으로 덮어써지지 않음)
     const hb = own.find(x => C.dongNo(x.dn) === st._dong);
@@ -501,20 +501,51 @@ document.addEventListener('click', ev => {
   else if (bt.id === 'dongBtn') openDongSheet();
   else if (bt.id === 'dongSheetX') closeDongSheet();
   else if (bt.dataset.date) { st.dk = bt.dataset.date; fullRender(); writeHash(); }
-  else if (bt.dataset.view) { st.view = bt.dataset.view; drawView(); writeHash(); }
+  else if (bt.dataset.view) { st.view = bt.dataset.view; drawView(); writeHash(); closeDlg('viewSheet'); }
   else if (bt.id === 'fdn' || bt.id === 'fup') { st.fl = Math.min(tgt().f, Math.max(1, st.fl + (bt.id === 'fup' ? 1 : -1))); onFloor(); writeHash(); }
   else if (bt.id === 'floorBtn') openFloorSheet();
   else if (bt.dataset.fl) { st.fl = +bt.dataset.fl; closeFloorSheet(); onFloor(); writeHash(); }
   else if (bt.id === 'floorSheetX') closeFloorSheet();
-  else if (bt.id === 'tdn' || bt.id === 'tup') { st.t = Math.min(1185, Math.max(300, st.t + (bt.id === 'tup' ? 15 : -15))); $('time').value = st.t; tick(); }
-  else if (bt.id === 'zoom') { st.wide = !st.wide; bt.setAttribute('aria-pressed', st.wide); bt.textContent = st.wide ? '가까이 보기' : '전체 보기'; st.cam = true; drawView(); writeHash(); }
+  else if (bt.id === 'zoom') { st.wide = !st.wide; bt.setAttribute('aria-pressed', st.wide); bt.textContent = st.wide ? '가까이 보기' : '전체 보기'; st.cam = true; drawView(); writeHash(); closeDlg('viewSheet'); }
+  else if (bt.id === 'viewBtn') openDlg('viewSheet');
+  else if (bt.id === 'aboutBtn') { drawAbout(); openDlg('aboutSheet'); }
+  else if (bt.id === 'cardBtn') { st.flip = false; drawCard(); openDlg('cardSheet'); }
+  else if (bt.id === 'flipCard') { st.flip = !st.flip; syncFlip(); }
+  else if (bt.hasAttribute('data-dlg-close')) { const d = bt.closest('dialog'); if (d) closeDlg(d.id); }
   else if (bt.id === 'saveFav') toggleSave();
   else if (bt.hasAttribute('data-pick-x')) $('pv-pick').open = false;
 });
+function openDlg(id) { const d = $(id); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+function closeDlg(id) { const d = $(id); if (d.close) d.close(); else d.removeAttribute('open'); }
+document.querySelectorAll('dialog.pv-sheet').forEach(d => d.addEventListener('click', e => { if (e.target === d) closeDlg(d.id); }));
+let cardRec = null;
+function loadCardRec() { cardRec = null; if (window.DJ && DJ.data) DJ.data().then(d => { cardRec = d.bySlug && d.bySlug[st.cid] || null; }).catch(() => {}); }
+const BUILD_SVG = '<svg viewBox="0 0 120 80" aria-hidden="true" focusable="false"><defs><linearGradient id="cb1" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#75b8ff"/><stop offset=".55" stop-color="#3383f3"/><stop offset="1" stop-color="#1e58bb"/></linearGradient></defs><path d="M20 72h86" stroke="#9cbbe3" stroke-width="2" stroke-linecap="round"/><path d="M44 72V20l24-10v62z" fill="url(#cb1)"/><path d="M68 10l16 8v54H68z" fill="#163c8b"/><path d="M44 20l24-10 16 8-24 10z" fill="#bad8ff"/><path d="M92 72V38l12 6v28z" fill="#cfd9e6"/><path d="M26 72V46l12-4v30z" fill="#dfe7f1"/></svg>';
+function drawCard() {
+  const b = tgt(), sm = getSum(st.dk), d = DATES.find(x => x.key === st.dk), c = cardRec, nm = (c && c.n) || (ctx.m && ctx.m.name) || '이 단지';
+  const place = c && window.DJ && DJ.place ? DJ.place(c) : '', sun = '직사광 약 ' + C.durText(sm.sunMin) + ' · ' + d.name + ' · 추정';
+  const front = '<div class="face front"><h3>' + esc(nm) + '</h3>' + (c && c.g ? '<span class="grade g-' + esc(c.g) + '">' + esc(c.g) + '</span>' : '') +
+    '<span class="mini">집감 카드' + (place ? ' · ' + esc(place) : '') + '</span><div class="house">' + BUILD_SVG + '</div>' +
+    '<div class="facts2"><span>' + esc(place || '') + '</span><span>선택 ' + esc(C.label(b)) + '</span></div>' +
+    (c && c.pt ? '<strong>' + esc(c.pt) + ' <small>84㎡ 추정 시세</small></strong>' : '') +
+    '<span class="mini">' + (c && c.i != null ? '집감 지수 ' + esc(c.i) + '점 · ' : '') + st.fl + '층 선택</span><span class="mini">' + esc(sun) + '</span></div>';
+  const back = '<div class="face back"><h3>현장 체크 카드</h3><span class="mini">' + esc(C.label(b)) + ' · ' + st.fl + '층</span><p>☑ 일조 미리보기 확인<br><span class="mini on">' + esc(sun) + '</span><br>□ 현장 소음 확인<br>□ 주변 동선 점검<br>□ 관리 상태 확인<br>□ 실제 채광 현장 확인</p><span class="mini">직접 방문한 기록으로 완성하세요.</span></div>';
+  $('cardBody').innerHTML = '<div class="collectible" id="flipper">' + front + back + '</div>';
+  syncFlip();
+}
+function syncFlip() {
+  const f = $('flipper'); if (!f) return; f.classList.toggle('flipped', !!st.flip);
+  f.querySelector('.front').setAttribute('aria-hidden', String(!!st.flip)); f.querySelector('.back').setAttribute('aria-hidden', String(!st.flip));
+  f.querySelector('.front').inert = !!st.flip; f.querySelector('.back').inert = !st.flip;
+  $('flipCard').setAttribute('aria-pressed', String(!!st.flip));
+}
+function drawAbout() {
+  const nNA = ctx.excluded.length, m = ctx.m || {};
+  $('aboutBody').innerHTML = '<ul class="plain"><li><b>추정한 참고용</b>이에요. 실내 채광이나 법적 일조권과 달라요.</li><li>건물 윤곽은 브이월드, 높이·층수는 건축물대장을 바탕으로 해요. 해 위치는 날짜와 단지 중심 좌표로 계산한 천문 값이에요.</li><li>그림 속 건물은 위치와 높이만 단순하게 그린 모양이에요. 실제 외관이 아니에요.</li>' + (nNA ? '<li>높이 자료가 없는 건물 ' + nNA + '개는 계산하지 않고 그리지도 않았어요.</li>' : '') + '</ul><button type="button" class="btn" data-why data-dlg-close>계산 근거 자세히 보기</button>';
+}
 function closeFloorSheet() { const d = $('floorSheet'); if (d.close) d.close(); else d.removeAttribute('open'); }
 $('dongSheet').addEventListener('click', e => { if (e.target === $('dongSheet')) closeDongSheet(); });
 $('floorSheet').addEventListener('click', e => { if (e.target === $('floorSheet')) closeFloorSheet(); });   // 바깥(어두운 곳)을 누르면 닫힘
-$('floor').addEventListener('input', e => { st.fl = +e.target.value; onFloor(); writeHash(); });
 $('time').addEventListener('input', e => { st.t = +e.target.value; tick(); });
 let tickRaf = 0;
 function tick() {   // 시간 바를 끄는 동안 입력이 프레임보다 자주 와도 그림은 프레임마다 한 번만 다시 그림 (계산·값은 그대로)
