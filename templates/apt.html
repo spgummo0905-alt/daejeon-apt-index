@@ -96,11 +96,12 @@
 </div></div>
   <div class="icon-actions apt-actions">
     <button class="icon-btn action-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-action-label>관심</span></button>
-    {% if latlng %}<button class="icon-btn action-btn" data-course-add="{{ c.slug }}" type="button" aria-pressed="false" aria-label="임장 코스에 넣기" title="임장 코스에 넣기"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg><span data-action-label>코스</span></button>{% endif %}
     <a class="icon-btn action-btn" data-compare-here href="{{ root }}compare.html?a={{ c.slug | urlencode }}" aria-label="다른 단지와 비교하기" title="다른 단지와 비교하기"><svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span>비교</span></a>
+    {% if preview_ok %}<a class="icon-btn action-btn" data-sun-here href="{{ root }}preview.html#c={{ c.slug | urlencode }}" aria-label="일조 미리보기 (추정한 참고용)" title="일조 미리보기"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조</span></a>{% else %}<a class="icon-btn action-btn" data-loc-here href="#loc" aria-label="생활 입지 보기 (역·학교·마트까지 거리)" title="생활 입지 보기"><svg class="ic" aria-hidden="true"><use href="#i-train"/></svg><span>입지</span></a>{% endif %}
     <button class="icon-btn action-btn" data-field type="button" aria-haspopup="dialog" aria-controls="field-sheet"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg><span>현장 체크</span></button>
     <button class="icon-btn action-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span>공유</span></button>
   </div>
+  {% if latlng %}<button hidden data-course-add="{{ c.slug }}" type="button" aria-pressed="false" aria-label="임장 코스에 넣기" title="임장 코스에 넣기"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg><span data-action-label>코스</span></button>{% endif %}  {# 위 줄에서 뺀 코스 버튼: 화면 아래 고정 '임장 코스에 넣기' 가 대신 눌러 주는 원본(보이지 않음, 저장·상태는 그대로) #}
   <div class="pb-board">
   <div class="pb-prices">
     <div class="pb-p pb-real">

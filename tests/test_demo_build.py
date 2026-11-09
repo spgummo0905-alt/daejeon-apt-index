@@ -1286,7 +1286,10 @@ def test_apt_detail_has_compare_in_the_action_row(tmp_path):
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     row = page[page.index('class="icon-actions apt-actions"'):page.index("</div>", page.index('class="icon-actions apt-actions"'))]
     assert "data-compare-here" in row and 'compare.html?a=DEMO-0001' in row
-    assert row.index("data-course-add") < row.index("data-compare-here") < row.index("data-field")      # 관심 · 코스 · 비교 · 현장 체크 · 공유 순서
+    third = "data-sun-here" if "data-sun-here" in row else "data-loc-here"          # 일조 자료가 없는 단지는 '일조' 대신 '입지'(생활 입지로 이동)
+    assert "data-sun-here" in row or "data-loc-here" in row and not ("data-sun-here" in row and "data-loc-here" in row)
+    assert row.index("data-fav") < row.index("data-compare-here") < row.index(third) < row.index("data-field") < row.index("data-share-sheet")   # C5: 관심 · 비교 · 일조(없으면 입지) · 현장 체크 · 공유 순서
+    assert "data-course-add" not in row and 'data-course-add="DEMO-0001"' in page and "hidden data-course-add" in page          # 코스 버튼은 행에서 빠지고, 아래 고정 '임장 코스에 넣기'가 대신 누르는 숨은 원본으로 남음
     assert 'aria-label="다른 단지와 비교하기"' in row and "<span>비교</span>" in row
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "[data-compare-here]" in app and "DJ.favs().filter(s => s !== c.s" in app and ".slice(0, 3)" in app    # 관심 단지 최대 3곳 + 이 단지 = 최대 4곳
