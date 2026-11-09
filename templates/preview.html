@@ -5,7 +5,6 @@
 {% block body %}
 <div class="pv">
   <h1>일조 미리보기</h1>
-  <p class="pvnote" role="note"><strong>추정한 참고용</strong> · 실내 채광·법적 일조권 아님</p>
 
   <details class="pick" id="pv-pick" open>
     <summary>단지 고르기 <span class="count" id="pickCount" style="margin:0 0 0 10px"></span></summary>
@@ -19,47 +18,41 @@
   <p class="pvload" id="pv-load" role="status" hidden>건물 자료를 불러오는 중이에요.</p>
   <script>if(/[#&]c=/.test(location.hash)){document.body.classList.add("pv-has");document.getElementById("pv-load").hidden=false;document.getElementById("pv-pick").removeAttribute("open")}</script>
   <div id="pv-tool" hidden>
-  <section class="stage" aria-label="일조 작업 무대">
-    <div class="st-head"><div id="cx" class="st-cx"></div></div>
-    <div class="st-main">
-      <div class="st-scene" id="viewbox">
-        <h2 id="h-view" class="sr-only">왜 가려지나요?</h2>
-        <div class="sc-top">
-          <button type="button" class="dong-btn" id="dongBtn" aria-haspopup="dialog" aria-controls="dongSheet"></button>
-          <div class="seg st-date" id="date" role="group" aria-label="날짜 고르기"></div>
-        </div>
-        <div class="fl-rail" id="flRail">
-          <button type="button" class="fl-val" id="floorBtn" aria-haspopup="dialog" aria-label="층 목록 열기"></button>
-          <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
-          <input id="floor" type="range" min="1" max="10" step="1" value="1" aria-label="층" aria-orientation="vertical">
-          <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">-</button>
-        </div>
-        <div id="vp-iso" class="vp">
-          <svg class="iso" id="iso" role="group" aria-labelledby="isoTitle isoDesc" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <div id="vp-plan" class="vp" hidden><svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
-        <div id="vp-floor" class="vp vp-floor" hidden><div id="tower"></div></div>
-        <div class="sc-bot">
-          <div class="seg seg-over" id="seg-view" role="group" aria-label="보기 방식"></div>
-          <button class="btn zoom" id="zoom" type="button" aria-pressed="false">전체 보기</button>
-        </div>
-      </div>
+  <div class="pv-eyebrow"><div id="cx" class="st-cx"></div></div>
+  <p class="hero-h" aria-hidden="true">우리 집 햇살, <em>눈으로 확인하세요.</em></p>
+  <p class="hero-s">동과 층을 바꾸며 햇빛과 그림자를 살펴보세요</p>
+  <section class="pv-stage" id="viewbox" aria-label="아파트 입체 장면. 건물은 실제 외관이 아니라 위치와 높이만 단순하게 그린 그림입니다">
+    <h2 id="h-view" class="sr-only">왜 가려지나요?</h2>
+    <div class="sun-glow" id="sunGlow" aria-hidden="true"></div>
+    <div class="sg-tl"><div class="micro"><span class="sun-dot"></span><span id="dateLabel"></span></div></div>
+    <button type="button" class="sg-tr" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutSheet"><span class="hit">i 추정 안내</span></button>
+    <span class="mode-label" aria-hidden="true">ILLUSTRATIVE 2.5D VIEW</span>
+    <div id="vp-iso" class="vp"><svg class="iso" id="iso" role="group" aria-labelledby="isoTitle isoDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="vp-plan" class="vp" hidden><svg class="plan" id="plan" role="img" aria-labelledby="planTitle planDesc" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="vp-floor" class="vp vp-floor" hidden><div id="tower"></div></div>
+    <div class="floor-control" id="flRail" role="group" aria-label="층 조작">
+      <button class="stepbtn" id="fup" type="button" aria-label="한 층 위로">+</button>
+      <button type="button" class="fl-val" id="floorBtn" aria-haspopup="dialog" aria-label="층 목록 열기"></button>
+      <button class="stepbtn" id="fdn" type="button" aria-label="한 층 아래로">−</button>
     </div>
-    <div class="card result st-res" id="result-card" aria-labelledby="h-res"><div id="result" aria-live="polite"></div></div>
-    <div class="st-time" id="vtime">
-      <div class="state" id="state"></div>
-      <div class="row">
-        <button class="stepbtn" id="tdn" type="button" aria-label="15분 전으로">&lt;</button>
-        <div class="tslide" id="timebar">
-          <div class="cells" id="cells"></div>
-          <input id="time" type="range" min="300" max="1185" step="15" value="750" aria-label="시각">
-          <div class="ticks" id="ticks" aria-hidden="true"></div>
-        </div>
-        <button class="stepbtn" id="tup" type="button" aria-label="15분 뒤로">&gt;</button>
-      </div>
-      <span class="sr-only" id="timeVal"></span>
+    <div class="sg-bottom">
+      <div class="stage-note"><b id="selectedName"></b><br><span class="focus-tag">건물을 눌러 동을 바꿔보세요</span></div>
+      <button type="button" class="camera" id="viewBtn" aria-haspopup="dialog" aria-controls="viewSheet">↗ 보기 설정</button>
     </div>
   </section>
+  <section class="res-card" id="result-card" aria-labelledby="h-res"><div id="result" aria-live="polite"></div></section>
+  <div class="controls"><button class="choose-dong" id="dongBtn" type="button" aria-haspopup="dialog" aria-controls="dongSheet"></button><div class="seg" id="date" role="group" aria-label="날짜 고르기"></div></div>
+  <section class="timeline" id="vtime" aria-label="시간 조절">
+    <div class="timehead"><span id="state" class="tl-state"></span><b id="clock"></b></div>
+    <div class="tslide" id="timebar">
+      <div class="cells" id="cells"></div>
+      <input id="time" type="range" min="300" max="1185" step="15" value="750" aria-label="시각">
+      <div class="ticks" id="ticks" aria-hidden="true"></div>
+    </div>
+    <span class="sr-only" id="timeVal"></span>
+  </section>
+  <div class="bottom-action"><button class="primary" id="cardBtn" type="button" aria-haspopup="dialog" aria-controls="cardSheet">이 단지를 카드로 살펴보기</button><button class="icon-action" id="saveFav" type="button" aria-pressed="false" aria-label="이 단지를 관심 단지에 담기">♡</button></div>
+  <p class="disclaimer">추정한 참고용입니다. 실내 채광이나 법적 일조권과 다르고, 건물 모양은 실제 외관이 아닙니다.</p>
 
   <details class="card fold" id="moreFold"><summary>가림 자세히 · 그림 보는 법 · 범례</summary><div><div id="resultMore"></div><p class="vcap" id="vcap"></p><ul class="legend" id="legend1"></ul><ul class="legend" id="legend2" style="margin-top:8px"></ul></div></details>
   <section class="card cmpbox" id="cmp" aria-labelledby="h-cmp"></section>
@@ -68,18 +61,34 @@
   <p class="foot" id="foot">건물 윤곽은 브이월드(국토교통부), 건물 높이·층수는 국토교통부 건축HUB 건축물대장을 바탕으로 한 <strong>추정한 참고용</strong> 계산이에요. 해 위치는 날짜와 단지 중심 좌표로 계산한 천문 값이에요.</p>
   <dialog class="pv-sheet" id="dongSheet" aria-labelledby="ds-t">
     <div class="sheet-grab" aria-hidden="true"></div>
-    <h2 id="ds-t">어느 동을 볼까요?</h2>
-    <div id="dong" class="fgrid dgrid" role="group" aria-label="동 고르기"></div>
-    <button type="button" class="btn" id="dongSheetX">닫기</button>
+    <div class="sheet-header"><h2 id="ds-t">확인할 동 선택</h2><button type="button" class="close" data-dlg-close aria-label="닫기">×</button></div>
+    <p class="sh-p">건물 그림을 누르거나 여기서 동을 고를 수 있어요.</p>
+    <div id="dong" class="dgrid" role="group" aria-label="동 고르기"></div>
   </dialog>
   <dialog class="pv-sheet" id="floorSheet" aria-labelledby="fs-t">
     <div class="sheet-grab" aria-hidden="true"></div>
-    <h2 id="fs-t">몇 층 창으로 볼까요?</h2>
+    <div class="sheet-header"><h2 id="fs-t">몇 층 창으로 볼까요?</h2><button type="button" class="close" data-dlg-close aria-label="닫기">×</button></div>
     <div id="floorGrid" class="fgrid" role="group" aria-label="층 고르기"></div>
-    <button type="button" class="btn" id="floorSheetX">닫기</button>
+  </dialog>
+  <dialog class="pv-sheet" id="viewSheet" aria-labelledby="vs-t">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <div class="sheet-header"><h2 id="vs-t">보기 설정</h2><button type="button" class="close" data-dlg-close aria-label="닫기">×</button></div>
+    <p class="sh-p">같은 계산을 세 가지 그림으로 볼 수 있어요.</p>
+    <div class="seg seg-big" id="seg-view" role="group" aria-label="보기 방식"></div>
+    <button class="btn zoom" id="zoom" type="button" aria-pressed="false">전체 보기</button>
+  </dialog>
+  <dialog class="pv-sheet" id="aboutSheet" aria-labelledby="ab-t">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <div class="sheet-header"><h2 id="ab-t">이 화면은 이렇게 계산했어요</h2><button type="button" class="close" data-dlg-close aria-label="닫기">×</button></div>
+    <div id="aboutBody" class="sh-p"></div>
+  </dialog>
+  <dialog class="pv-sheet" id="cardSheet" aria-labelledby="cs-t">
+    <div class="sheet-grab" aria-hidden="true"></div>
+    <div class="sheet-header"><h2 id="cs-t">한 장으로 살펴보는 아파트</h2><button type="button" class="close" data-dlg-close aria-label="닫기">×</button></div>
+    <div id="cardBody"></div>
+    <div class="sheet-bottom"><button class="secondary" id="flipCard" type="button">카드 뒤집기 ↻</button><button class="primary small" id="doneCard" type="button" data-dlg-close>확인 완료</button></div>
   </dialog>
   </div>
-</div>
 {% endblock %}
 {% block scripts %}<script src="static/shadow.js?v={{ v }}"></script>
 <script src="static/preview-calc.js?v={{ v }}"></script>

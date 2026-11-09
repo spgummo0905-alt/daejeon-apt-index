@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
   const S = (typeof module !== 'undefined' && module.exports) ? require('./shadow.js') : root.DJShadow;
-  const RAD = Math.PI / 180, CAM = { rot: 28, tilt: 52 };
+  const RAD = Math.PI / 180, CAM = { rot: 22, tilt: 34 };   // 낮은 시점: 건물이 위에서 내려다본 판이 아니라 우뚝 선 동으로 보이게
   const SR = Math.sin(CAM.rot * RAD), CR = Math.cos(CAM.rot * RAD), ST = Math.sin(CAM.tilt * RAD), CT = Math.cos(CAM.tilt * RAD);
   const f1 = n => n.toFixed(1);
   const pts = a => a.map(q => f1(q[0]) + ',' + f1(q[1])).join(' ');
@@ -46,7 +46,7 @@
       if (o.rayEnd) out.push(P(o.rayEnd[0], o.rayEnd[1], o.rayEnd[2]));
     }
     let x0 = Math.min(...out.map(p => p[0])), x1 = Math.max(...out.map(p => p[0])), y0 = Math.min(...out.map(p => p[1])), y1 = Math.max(...out.map(p => p[1]));
-    const pad = o.wide ? 14 : 22; x0 -= pad; x1 += pad; y0 -= pad * 1.6; y1 += pad;
+    const pad = o.wide ? 14 : 5; x0 -= pad; x1 += pad; y0 -= pad * 1.3; y1 += pad * 1.2;
     let w = x1 - x0, h = y1 - y0; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     const minW = 120; if (w < minW) w = minW; if (h < minW / aspect) h = minW / aspect;
     if (w / h < aspect) w = h * aspect; else h = w / aspect;
@@ -58,7 +58,7 @@
     const k = view.w / (rw || 358), fs = 14 * k;
     const sun = o.sun, tb = o.items.find(b => b.id === o.tid), tp = polyOf(tb, o.tid);
     let s = '<defs><pattern id="iShadow" patternUnits="userSpaceOnUse" width="' + 7 * k + '" height="' + 7 * k + '" patternTransform="rotate(45)"><rect width="' + 7 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.14)"/><rect width="' + 2.2 * k + '" height="' + 7 * k + '" fill="rgba(68,86,106,.55)"/></pattern>' +
-      ['own:#5aa0e6:#2a6fb8:#17508f', 'blk:#f6e6d3:#e4d3c1:#d3bea8', 'now:#f9c690:#f1b172:#d98f4a', 'oth:#eef1f5:#d7dde4:#bcc5cf'].map(x => { const a = x.split(':'); return '<linearGradient id="gA' + a[0] + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a[1] + '"/><stop offset="1" stop-color="' + a[2] + '"/></linearGradient><linearGradient id="gB' + a[0] + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a[2] + '"/><stop offset="1" stop-color="' + a[3] + '"/></linearGradient>'; }).join('') +
+      [['own', '#79bbff', '#3a88f4', '#2b65c0', '#163c8b'], ['blk', '#fff0dc', '#f0cfa6', '#e2bf94', '#d2a979'], ['now', '#ffe0b9', '#f6bd80', '#e5a96b', '#c98f55'], ['oth', '#f4f7fb', '#cdd9e6', '#b6c6d8', '#8ea5bd']].map(a => '<linearGradient id="gA' + a[0] + '" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="' + a[1] + '"/><stop offset="1" stop-color="' + a[2] + '"/></linearGradient><linearGradient id="gB' + a[0] + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + a[3] + '"/><stop offset="1" stop-color="' + a[4] + '"/></linearGradient>').join('') +
       '<linearGradient id="gSh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3c4f66" stop-opacity=".34"/><stop offset="1" stop-color="#3c4f66" stop-opacity=".12"/></linearGradient></defs>';
     // 땅 위 그림자(가리는 동만, 선택한 시각)
     if (sun.up && sun.alt >= 1) {
@@ -75,6 +75,7 @@
     for (const b of order) {
       const role = b.id === o.tid ? 'own' : (o.blockIds.has(b.id) ? 'blk' : 'oth');
       if (role === 'oth' && !vis(b)) continue;
+      if (role === 'oth' && !o.wide && o.near && !o.near(b)) continue;   // 가까이 보기: 선택 동에서 먼 주변 건물은 그리지 않아 장면을 단순하게(계산에는 그대로 쓰임)
       const poly = polyOf(b, o.tid), sg = area(poly) >= 0 ? 1 : -1, n = poly.length;
       { const cc = center(poly), grow = (pp, a) => pp.map(q => { const dx = q[0] - cc[0], dy = q[1] - cc[1], l = Math.hypot(dx, dy) || 1; return P(q[0] + dx / l * a, q[1] + dy / l * a, 0); });
         s += '<polygon class="iso-ao" points="' + pts(grow(poly, 5)) + '"/><polygon class="iso-ao" points="' + pts(grow(poly, 2)) + '"/>'; }
@@ -88,7 +89,13 @@
         walls.push({ a, c, vis, d: depth((a[0] + c[0]) / 2, (a[1] + c[1]) / 2) });
       }
       walls.sort((x, y) => y.d - x.d);
-      for (const w of walls) g += '<polygon class="iso-w ' + (w.vis > 0.55 ? 'iso-wa' : 'iso-wb') + '" points="' + pts([P(w.a[0], w.a[1], 0), P(w.c[0], w.c[1], 0), P(w.c[0], w.c[1], b.h), P(w.a[0], w.a[1], b.h)]) + '"/>';
+      for (const w of walls) {
+        g += '<polygon class="iso-w ' + (w.vis > 0.55 ? 'iso-wa' : 'iso-wb') + '" points="' + pts([P(w.a[0], w.a[1], 0), P(w.c[0], w.c[1], 0), P(w.c[0], w.c[1], b.h), P(w.a[0], w.a[1], b.h)]) + '"/>';
+        if (b.f > 2 && b.f <= 60 && b.h > 0 && (role !== 'oth' || w.vis > 0.55)) {    // 층 구분선: 층수 자료대로 같은 간격으로만(창문·외벽 모양은 그리지 않음)
+          let d = ''; for (let f = 1; f < b.f; f++) { const z = b.h * f / b.f, p0 = P(w.a[0], w.a[1], z), p1 = P(w.c[0], w.c[1], z); d += 'M' + f1(p0[0]) + ',' + f1(p0[1]) + 'L' + f1(p1[0]) + ',' + f1(p1[1]); }
+          g += '<path class="iso-fl" d="' + d + '"/>';
+        }
+      }
       g += '<polygon class="iso-r" points="' + pts(poly.map(q => P(q[0], q[1], b.h))) + '"/>';
       g += '</g>';
       s += g;
@@ -117,7 +124,8 @@
       }
     }
     // 이름표(겹치면 건너뜀)
-    const placed = [{ x: view.x + view.w - 26 * k, y: view.y + 28 * k, w: 44 * k, h: 60 * k }];
+    const padT = (o.padT || 0) * k, nx0 = view.x + 26 * k, ny0 = view.y + padT + 22 * k;
+    const placed = [{ x: nx0, y: ny0, w: 44 * k, h: 60 * k }];
     const free = (x, y, t) => { const w = t.length * 0.62 * fs + 6 * k, h = fs + 4 * k; for (const q of placed) if (Math.abs(q.x - x) < (q.w + w) / 2 && Math.abs(q.y - y) < (q.h + h) / 2) return false; placed.push({ x, y, w, h }); return true; };
     const inV = (x, y) => x > view.x + 6 * k && x < view.x + view.w - 6 * k && y > view.y + 6 * k && y < view.y + view.h - 4 * k;
     labels.sort((a, c) => (a.role === 'own' ? -1 : 0) - (c.role === 'own' ? -1 : 0));
@@ -128,11 +136,11 @@
       const no = o.num(l.b) || o.label(l.b), t = l.role === 'own' ? '내 동 ' + no : no + ' 앞 동';   // 동 번호가 없는 단지(가동·나동)는 이름으로
       const tt = t + ' · ' + l.b.f + '층', size = fs * (l.role === 'own' ? 1.1 : 0.95);
       const half = tt.length * 0.62 * size / 2 + 4 * k;               // 글자 폭 어림: 장면 가장자리 밖으로 잘리지 않게 안쪽으로 밀어 넣음
-      const lx = Math.min(Math.max(l.x, view.x + half + 4 * k), view.x + view.w - half - 4 * k);
+      const lx = Math.min(Math.max(l.x, view.x + half + 4 * k), view.x + view.w - (o.padR || 0) * k - half - 4 * k);
       if (inV(lx, l.y) && free(lx, l.y, tt)) s += '<text class="iso-t" x="' + f1(lx) + '" y="' + f1(l.y) + '" font-size="' + size + '" font-weight="800" text-anchor="middle" fill="' + (l.role === 'own' ? '#0a2f57' : '#6b2c00') + '">' + esc(tt) + '</text>';
     }
     // 북쪽 표시: 화면에서 북쪽이 어느 쪽인지
-    const nv = [P(0, 1, 0)[0] - P(0, 0, 0)[0], P(0, 1, 0)[1] - P(0, 0, 0)[1]], nl = Math.hypot(nv[0], nv[1]), nx0 = view.x + view.w - 26 * k, ny0 = view.y + 30 * k, L2 = 18 * k;
+    const nv = [P(0, 1, 0)[0] - P(0, 0, 0)[0], P(0, 1, 0)[1] - P(0, 0, 0)[1]], nl = Math.hypot(nv[0], nv[1]), L2 = 18 * k;
     s += '<rect x="' + f1(nx0 - 20 * k) + '" y="' + f1(ny0 - 24 * k) + '" width="' + 40 * k + '" height="' + 54 * k + '" rx="' + 6 * k + '" fill="#fff" fill-opacity=".92" stroke="#c9d2db" stroke-width="' + k + '"/>';
     const tx = nx0 + nv[0] / nl * L2 * 0.9, ty = ny0 + nv[1] / nl * L2 * 0.9;
     s += '<line x1="' + f1(nx0) + '" y1="' + f1(ny0 + 6 * k) + '" x2="' + f1(tx) + '" y2="' + f1(ty + 6 * k) + '" stroke="#15212c" stroke-width="' + 3 * k + '" stroke-linecap="round"/><circle cx="' + f1(tx) + '" cy="' + f1(ty + 6 * k) + '" r="' + 3.4 * k + '" fill="#15212c"/>';

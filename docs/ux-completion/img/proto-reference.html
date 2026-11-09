@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#F7F9FC"/>
+<title>집감 | 프리미엄 일조 시뮬레이터 · UI 가능성 검증</title>
+<style>
+:root{--ink:#162135;--muted:#8391a4;--blue:#2565e8;--bg:#f7f9fc;--line:#e9eef5;--panel:#fff;font-family:Pretendard,'Apple SD Gothic Neo','Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}html{background:#e9eef5}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e9eef5}button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible,input:focus-visible{outline:3px solid #94beff;outline-offset:3px}
+.app{position:relative;width:min(100%,420px);min-height:865px;background:var(--bg);box-shadow:0 30px 90px rgba(24,44,80,.19);border:1px solid #e1e6ee;border-radius:36px;overflow:hidden}
+.status{height:30px;padding:9px 25px 0;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;letter-spacing:.1px}
+.nav{height:53px;display:flex;align-items:center;justify-content:space-between;padding:0 21px}
+.nav .navbutton{border:0;background:transparent;color:#233957;height:40px;width:38px;display:grid;place-items:center;border-radius:13px}
+.nav .center{font-size:15px;font-weight:760;letter-spacing:-.4px}
+.nav button svg{width:21px;height:21px}
+.content{padding:4px 20px 115px}
+.eyebrow{font-size:12px;color:#426b9b;font-weight:760;letter-spacing:.3px;margin:5px 0 7px}
+h1{margin:0;font-size:27px;font-weight:790;line-height:1.24;letter-spacing:-1.4px}h1 em{font-style:normal;color:var(--blue)}
+.subtitle{font-size:12px;line-height:1.5;color:#8692a1;margin:8px 0 15px}
+.stage{height:389px;position:relative;border-radius:26px;overflow:hidden;background:radial-gradient(ellipse at 54% 23%,#fefeff 0%,#e6f1fd 44%,#dceaf8 100%);box-shadow:inset 0 0 0 1px rgba(206,221,238,.75),0 12px 26px rgba(46,95,156,.09)}
+.stage::after{content:'';position:absolute;left:12px;right:12px;bottom:11px;height:1px;background:linear-gradient(90deg,transparent,#a4c3e5,transparent);opacity:.4}
+.stage svg{width:100%;height:100%;display:block}
+.stage .top-left{position:absolute;top:14px;left:13px;z-index:5;display:flex;align-items:center;gap:7px}
+.micro{display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.92);background:rgba(255,255,255,.79);backdrop-filter:blur(16px);box-shadow:0 2px 14px rgba(35,65,110,.07);padding:8px 11px;border-radius:12px;font-size:11px;font-weight:760;color:#34465e}
+.micro .sun-dot{width:7px;height:7px;background:#f7b84f;border-radius:100%}
+.stage .top-right{position:absolute;top:14px;right:12px;z-index:6}
+.stage .top-right button{background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.9);box-shadow:0 2px 13px rgba(25,45,88,.08);border-radius:12px;padding:8px 11px;font-size:11px;font-weight:760;color:#49617d}
+.floor-control{position:absolute;right:13px;top:94px;z-index:6;background:rgba(255,255,255,.94);border:1px solid #ecf0f6;box-shadow:0 5px 22px rgba(29,57,110,.14);width:46px;border-radius:17px;display:flex;flex-direction:column;align-items:center;padding:4px 3px;gap:6px}
+.floor-control button{height:31px;width:37px;border:0;border-radius:11px;background:#f4f7fc;color:#597391;font-size:22px;font-weight:550;display:grid;place-items:center;line-height:1}
+.floor-control .num{font-size:18px;font-weight:800;color:#223b5c;line-height:1}.floor-control small{font-size:10px;color:#8a9aaf;font-weight:650}
+.stage-bottom{position:absolute;bottom:15px;left:13px;right:13px;display:flex;justify-content:space-between;align-items:end;gap:8px;z-index:5}
+.stage-note{padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.86);backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(37,68,114,.08);font-size:10px;color:#60758b;font-weight:600}
+.stage-note b{color:#2350a0;font-weight:760;font-size:11px}
+.focus-tag{font-size:10px;color:#6e809a;font-weight:600}
+.camera{font-size:10px;color:#617a95;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);border-radius:11px;padding:10px 11px;backdrop-filter:blur(10px)}
+#buildings .building{cursor:pointer;transition:opacity .35s ease,filter .35s ease;outline:none}#buildings .building:not(.active){opacity:.72}#buildings .building.active{opacity:1;filter:drop-shadow(0 12px 12px rgba(33,93,186,.22))}#buildings .building:hover{opacity:1}#buildings .building:focus-visible .facade{stroke:#1257c8;stroke-width:4}
+#buildings .building .facade{transition:fill .35s ease}#buildings .building .side{transition:fill .35s ease}#buildings .building .roof{transition:fill .35s ease}
+#buildings .building.active .facade{fill:url(#blueFront)}#buildings .building.active .side{fill:url(#blueSide)}#buildings .building.active .roof{fill:#bad8ff}
+#buildings .building.occluder:not(.active) .facade{fill:url(#amberFront)}#buildings .building.occluder:not(.active) .side{fill:#d5ac80}#buildings .building.occluder:not(.active) .roof{fill:#fce9d0}
+.floor-line{pointer-events:none;opacity:.5}.building.active .floor-line{stroke:#dbeafa;opacity:.42}.building .window{pointer-events:none;fill:#fff;opacity:.24}.building.active .window{opacity:.32}
+#sunbeam{transition:opacity .4s ease}#sun-disc{transition:transform .5s ease}#shadow{transition:transform .3s ease,opacity .3s ease}
+.result{margin-top:14px;padding:18px 17px 15px;background:#fff;border-radius:22px;border:1px solid #eff1f6;box-shadow:0 8px 28px rgba(54,82,128,.045)}
+.result-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.result-label{font-size:12px;color:#8594a4;font-weight:660}.result-pill{font-size:10px;font-weight:760;color:#846228;background:#fff4da;padding:7px 9px;border-radius:9px;white-space:nowrap}
+.big-row{display:flex;align-items:baseline;gap:11px;margin-top:5px}.big-number{font-size:36px;font-weight:830;letter-spacing:-1.8px;line-height:1.24;color:#152944}.big-row .note{font-size:11px;color:#7b8ca2;letter-spacing:-.2px}
+.reason{margin:6px 0 0;font-size:12px;font-weight:590;color:#647a96;line-height:1.5}
+.controls{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:9px}.seg{display:flex;gap:3px;flex:1;background:#edf2f8;border-radius:14px;padding:4px}.seg button{min-width:0;flex:1;border:0;background:transparent;border-radius:10px;color:#8a9bab;padding:9px 0;font-size:12px;font-weight:730}.seg button[aria-pressed=true]{background:white;color:#1b3b70;box-shadow:0 3px 8px rgba(26,57,96,.08)}.choose-dong{border:1px solid #e7edf6;background:#fff;border-radius:14px;padding:11px 12px;font-size:12px;font-weight:760;white-space:nowrap;color:#234771;min-width:85px}
+.timeline{margin-top:12px;background:#fff;border:1px solid #eef2f7;border-radius:18px;padding:14px 15px 12px}.timehead{display:flex;align-items:center;justify-content:space-between}.timehead span{font-size:12px;color:#6b7e94;font-weight:690}.timehead b{font-size:14px;font-weight:820;color:#1b365a;font-variant-numeric:tabular-nums}.timeslider{width:100%;margin-top:12px;margin-bottom:5px;accent-color:#286af1;cursor:pointer}.marks{display:flex;justify-content:space-between;color:#abb6c4;font-size:10px;font-weight:600}
+.bottom-action{position:absolute;bottom:62px;left:20px;right:20px;display:grid;grid-template-columns:1fr 55px;gap:9px}.primary{height:47px;border:0;background:#2667ea;border-radius:14px;color:white;font-weight:770;font-size:13px;box-shadow:0 7px 17px rgba(36,94,218,.23)}.icon-action{height:47px;border:1px solid #dfe8f6;background:white;border-radius:14px;color:#2566df;font-size:19px}.tabbar{position:absolute;bottom:0;left:0;right:0;height:56px;background:rgba(255,255,255,.97);border-top:1px solid #edf0f6;display:flex;justify-content:space-around;align-items:center;z-index:9}.tabbar .tab{min-width:49px;display:grid;justify-items:center;gap:1px;font-size:10px;color:#a0aabc;font-weight:640}.tabbar .tab svg{width:17px;height:17px}.tabbar .tab.active{color:var(--blue);font-weight:770}
+.mode-label{position:absolute;top:53px;left:14px;z-index:2;font-size:10px;color:#9eb5ca;font-weight:750;letter-spacing:.4px}
+.sheet-backdrop{display:none;position:absolute;inset:0;background:rgba(14,28,48,.37);z-index:20;align-items:flex-end}.sheet-backdrop.open{display:flex}.sheet{width:100%;background:white;padding:18px 20px 32px;border-radius:27px 27px 0 0;box-shadow:0 -14px 40px rgba(10,25,50,.13);max-height:79%;overflow:auto;animation:rise .22s ease}@keyframes rise{from{transform:translateY(28px);opacity:.4}to{transform:translateY(0);opacity:1}}.sheet-grab{width:36px;height:4px;border-radius:20px;background:#dfe5ee;margin:0 auto 18px}.sheet-header{display:flex;justify-content:space-between;align-items:center}.sheet h2{font-size:20px;letter-spacing:-.7px;margin:0}.close{border:0;background:#f1f4f8;border-radius:12px;width:32px;height:32px;color:#59728b;font-size:20px}.sheet p{font-size:12px;line-height:1.8;color:#6d7f94}.dong-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:19px 0 10px}.dong-grid button{border:1px solid #e7edf5;background:#f7f9fc;border-radius:13px;height:49px;color:#49627d;font-weight:740}.dong-grid button[aria-pressed=true]{border:1.5px solid #2c71ec;background:#edf4ff;color:#2467e2}
+.collectible{margin:17px auto 10px;width:215px;height:305px;border-radius:19px;border:5px solid #cedffb;background:linear-gradient(145deg,#f3f9ff,#e5f0ff 60%,#fff);padding:15px;box-shadow:0 11px 30px rgba(27,66,129,.17);position:relative;display:flex;flex-direction:column;gap:8px;overflow:hidden}.collectible h3{font-size:21px;margin:0;letter-spacing:-.6px}.collectible .rating{position:absolute;top:14px;right:13px;font-size:22px;color:#3173e8;font-weight:850}.collectible .house{height:97px;border-radius:12px;background:radial-gradient(ellipse at top,#d9ebff,#accff5);display:grid;place-items:center;font-size:59px}.collectible .facts{display:flex;justify-content:space-between;font-size:11px;color:#466082}.collectible strong{font-size:19px;color:#1b3b70}.collectible .mini{font-size:11px;color:#6781a4}.collectible.back{background:linear-gradient(145deg,#152b51,#294a80);color:white;border-color:#8bb9f1}.collectible.back .mini{color:#deecff}.collectible.back p{font-size:13px;line-height:1.9;color:#e4efff}.collectible.back .rating{color:#e4eaff}.collectible.back h3{color:white}
+.sheet-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.secondary{border:1px solid #e3eaf4;background:white;color:#3e5979;border-radius:13px;height:44px;font-size:12px;font-weight:740}.primary.small{height:44px;font-size:12px}
+.disclaimer{margin:11px 0 0;text-align:center;font-size:10px;color:#9cabbc;line-height:1.5}
+@media (max-width:440px){html,body{background:var(--bg);display:block}.app{width:100%;min-height:100dvh;border:0;border-radius:0;box-shadow:none}.status{height:29px}.content{padding-left:20px;padding-right:20px;padding-bottom:130px}.bottom-action{position:relative;bottom:auto;left:auto;right:auto;margin-top:12px}.tabbar{position:fixed}}
+@media (max-width:370px){.content{padding-left:15px;padding-right:15px}.stage{height:365px}.big-number{font-size:32px}h1{font-size:24px}.subtitle{margin-bottom:12px}.result{padding:15px}.controls{margin-top:10px}}
+@media (max-height:760px) and (max-width:440px){.stage{height:346px}.subtitle{margin-bottom:9px}.result{margin-top:10px;padding-top:14px;padding-bottom:12px}.timeline{margin-top:10px;padding-top:11px;padding-bottom:9px}.big-number{font-size:32px}.content{padding-bottom:115px}.disclaimer{font-size:9px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* 모바일 한 화면 중심: 실제 설치형 앱의 첫 화면을 기준으로 조작부 우선 배치 */
+@media(max-width:440px){.sheet-backdrop{position:fixed;inset:0}.sheet{max-height:min(78dvh,690px)}#toast{position:fixed!important}}
+@media(max-width:440px){
+  .nav{height:47px}
+  .content{padding-top:0}
+  .eyebrow{margin:0 0 4px;font-size:11px}
+  h1{font-size:22px;line-height:1.32;letter-spacing:-1.2px;white-space:nowrap}
+  .subtitle{font-size:11px;margin:4px 0 11px}
+  .stage{height:355px}
+  .result{margin-top:11px;padding:13px 15px 12px}
+  .big-number{font-size:32px}
+  .result .reason{margin-top:3px}
+  .controls{margin-top:10px}
+  .choose-dong{padding:9px 12px}
+  .seg button{padding:7px 0}
+  .timeline{margin-top:9px;padding:10px 13px 8px}
+  .timeslider{margin-top:7px;margin-bottom:2px}
+}
+@media(max-width:370px){h1{font-size:20px}.stage{height:324px}}
+@media(max-height:760px) and (max-width:440px){.eyebrow,.subtitle{display:none}.stage{height:314px}.result{padding:11px 14px 10px}.result-label{font-size:11px}.big-number{font-size:29px}.subtitle{margin-bottom:8px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="status"><span>9:41</span><span>●●●  ▰▰  ▣</span></div>
+  <header class="nav"><button class="navbutton" aria-label="뒤로가기" type="button" onclick="toast('이 화면은 독립 프로토타입입니다')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="center">집감 · 일조 미리보기</div><button class="navbutton" type="button" aria-label="더보기" onclick="openSheet('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="5" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="12" cy="19" r="1.1"/></svg></button></header>
+  <main class="content">
+    <p class="eyebrow">내 집을 보는 새로운 방법</p>
+    <h1>우리 집 햇살, <em>눈으로 확인하세요.</em></h1>
+    <p class="subtitle">동과 층을 바꾸며 햇빛과 그림자를 살펴보세요</p>
+    <section class="stage" aria-label="아파트 입체 장면 디자인 예시. 건물은 실제 단지 외관이 아닙니다.">
+      <div class="top-left"><div class="micro"><span class="sun-dot"></span><span id="dateLabel">동지 · 12월 21일</span></div></div>
+      <div class="top-right"><button type="button" onclick="openSheet('about')">i 예시 화면</button></div>
+      <span class="mode-label">ILLUSTRATIVE 2.5D VIEW</span>
+      <svg id="scene" viewBox="0 0 360 410" role="img" aria-label="선택한 건물의 예상 일조를 설명하기 위한 2.5D 그래픽 예시">
+        <defs>
+          <linearGradient id="ground" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#d7e7f4"/><stop offset="1" stop-color="#f2f6fc"/></linearGradient>
+          <linearGradient id="neutralFront" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef3f9"/><stop offset="1" stop-color="#aebfd2"/></linearGradient>
+          <linearGradient id="neutralSide" x1="0" y1="0" x2="1" y2=".6"><stop stop-color="#a8bed4"/><stop offset="1" stop-color="#829ab4"/></linearGradient>
+          <linearGradient id="blueFront" x1="0" x2=".8" y1="0" y2="1"><stop stop-color="#75b8ff"/><stop offset=".5" stop-color="#3383f3"/><stop offset="1" stop-color="#1e58bb"/></linearGradient>
+          <linearGradient id="blueSide" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#2b65c0"/><stop offset="1" stop-color="#163c8b"/></linearGradient>
+          <linearGradient id="amberFront" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ffe0b9"/><stop offset="1" stop-color="#ddaa76"/></linearGradient>
+          <radialGradient id="warmGlow"><stop stop-color="#ffe29c" stop-opacity=".75"/><stop offset="1" stop-color="#ffe29c" stop-opacity="0"/></radialGradient>
+          <filter id="shadowblur"><feGaussianBlur stdDeviation="7"/></filter>
+          <filter id="sunblur"><feGaussianBlur stdDeviation="5"/></filter>
+          <linearGradient id="road"><stop stop-color="#edf3fa"/><stop offset="1" stop-color="#d7e5f3"/></linearGradient>
+        </defs>
+        <circle cx="264" cy="104" r="114" fill="url(#warmGlow)" id="warm-disc" opacity=".9"/>
+        <g id="sun-disc" transform="translate(0,0)"><circle cx="264" cy="104" r="29" fill="#FFE6A3" opacity=".65" filter="url(#sunblur)"/><circle cx="264" cy="104" r="14" fill="#FFCE65"/><circle cx="264" cy="104" r="8" fill="#FFEBBD"/></g>
+        <path d="M0 320L170 245L366 329L195 415Z" fill="url(#ground)" opacity=".82"/>
+        <path d="M-10 357L162 271L372 344" stroke="#fff" stroke-width="3" opacity=".68" fill="none"/>
+        <path d="M-10 371L170 285L372 357" stroke="#bfd2e5" stroke-width="2" opacity=".48" fill="none"/>
+        <g id="shadow" opacity=".6"><path d="M161 321L232 362L112 409L45 374Z" fill="#7e9fbd" opacity=".5" filter="url(#shadowblur)"/><path d="M254 310L321 339L233 377L169 350Z" fill="#7897bb" opacity=".42" filter="url(#shadowblur)"/></g>
+        <g id="buildings"></g>
+        <path id="sunbeam" d="M260 129L224 207" stroke="#ffd475" stroke-width="3" stroke-dasharray="4 8" opacity=".55" stroke-linecap="round"/>
+      </svg>
+      <div class="floor-control" aria-label="층 조작"><button type="button" id="fplus" aria-label="층 올리기">+</button><strong class="num" id="floorNum">8</strong><small>층</small><button type="button" id="fminus" aria-label="층 내리기">−</button></div>
+      <div class="stage-bottom"><div class="stage-note"><b id="selectedName">102동 · 8층</b><br><span class="focus-tag">건물을 눌러 동을 바꿔보세요</span></div><div class="camera">↗  직접 선택</div></div>
+    </section>
+    <section class="result" aria-label="일조 결과 예시">
+      <div class="result-top"><span class="result-label">선택한 조건의 직사광 예상 시간</span><span class="result-pill" id="resultState">☀ 햇빛 좋음</span></div>
+      <div class="big-row"><strong class="big-number" id="duration">약 3시간 40분</strong><span class="note">디자인 예시 수치</span></div>
+      <p class="reason" id="reason">오후에는 앞 동 그림자가 닿을 수 있어요.</p>
+    </section>
+    <div class="controls"><button class="choose-dong" id="dongBtn" type="button">102동 ▾</button><div class="seg" role="group" aria-label="날짜 선택"><button data-date="dec" type="button" aria-pressed="true">동지</button><button data-date="today" type="button" aria-pressed="false">오늘</button><button data-date="jun" type="button" aria-pressed="false">하지</button></div></div>
+    <div class="timeline"><div class="timehead"><span>해가 움직이는 시간</span><b id="clock">12:30</b></div><input type="range" id="time" class="timeslider" min="8" max="18" step=".25" value="12.5" aria-label="시간 조절"/><div class="marks"><span>08:00</span><span>12:00</span><span>15:00</span><span>18:00</span></div></div>
+    <div class="bottom-action"><button class="primary" id="cardBtn" type="button">이 단지를 카드로 살펴보기</button><button class="icon-action" aria-label="관심 저장" id="heartBtn" type="button">♡</button></div>
+    <p class="disclaimer">디자인·인터랙션 검증용 시제품입니다. 단지·가격·일조 수치는 가상 예시이며<br>실제 서비스에서는 기존 검증된 일조 계산 엔진을 연결해야 합니다.</p>
+  </main>
+  <nav class="tabbar" aria-label="예시 하단 메뉴">
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11L12 4l9 7v9H3z"/></svg>홈</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg>찾기</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="17" height="16" rx="3"/><path d="M7 9h10M7 14h10"/></svg>비교</div>
+    <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V7l8-4 8 4v13H4zM9 20v-8h6v8"/></svg>임장</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-5 3-8 8-8s8 3 8 8"/></svg>MY</div>
+  </nav>
+  <div class="sheet-backdrop" id="backdrop" aria-hidden="true"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-grab"></div><div class="sheet-header"><h2 id="sheetTitle">동 선택</h2><button class="close" aria-label="닫기" type="button" id="closeSheet">×</button></div><div id="sheetContent"></div></div></div>
+  <div id="toast" aria-live="polite" style="display:none;position:absolute;bottom:122px;left:50%;transform:translateX(-50%);background:#1b2d4d;color:white;font-size:11px;border-radius:12px;padding:11px 15px;z-index:50;white-space:nowrap"></div>
+</div>
+<script>
+'use strict';
+const el = id=>document.getElementById(id);
+const state={dong:102,floor:8,date:'dec',time:12.5,liked:false,cardFlip:false};
+const B=[{id:104,x:93,y:258,w:68,h:136,dx:27,dy:13},{id:101,x:25,y:320,w:77,h:156,dx:28,dy:15},{id:102,x:134,y:351,w:89,h:218,dx:36,dy:21},{id:103,x:251,y:330,w:66,h:174,dx:28,dy:16}];
+const ns='http://www.w3.org/2000/svg';
+function node(tag,attrs={},parent){const n=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));if(parent)parent.append(n);return n}
+function polygon(points){return points.map(v=>v.join(',')).join(' ')}
+function renderBuildings(){const layer=el('buildings');layer.replaceChildren();
+  B.forEach((b)=>{const x=b.x,y=b.y,w=b.w,h=b.h,dx=b.dx,dy=b.dy;const g=node('g',{class:'building'+(state.dong===b.id?' active':'')+(b.id===103?' occluder':''),role:'button',tabindex:0,'aria-label':b.id+'동 선택','data-id':b.id},layer);
+    node('ellipse',{cx:x+w/2+14,cy:y+4,rx:w*.87,ry:13,fill:'#7195b7',opacity:'.18',filter:'url(#shadowblur)'},g);
+    node('polygon',{class:'facade',points:polygon([[x,y-h],[x+w,y-h],[x+w,y],[x,y]]),fill:'url(#neutralFront)'},g);
+    node('polygon',{class:'side',points:polygon([[x+w,y-h],[x+w+dx,y-h-dy],[x+w+dx,y-dy],[x+w,y]]),fill:'url(#neutralSide)'},g);
+    node('polygon',{class:'roof',points:polygon([[x,y-h],[x+dx,y-h-dy],[x+w+dx,y-h-dy],[x+w,y-h]]),fill:'#e8f1f9',stroke:'#fff', 'stroke-width':'1.5'},g);
+    for(let f=1;f<Math.floor(h/17);f++){const yy=y-f*17;node('line',{class:'floor-line',x1:x+5,y1:yy,x2:x+w-4,y2:yy,stroke:'#fff','stroke-width':1},g);node('line',{class:'floor-line',x1:x+w+3,y1:yy-2,x2:x+w+dx-3,y2:yy-dy+2,stroke:'#eaf2f9','stroke-width':.8},g)}
+    for(let j=0;j<3;j++){let xx=x+12+j*(w-25)/2;for(let k=0;k<Math.max(5,Math.floor(h/22));k++){let yy=y-14-k*20;node('rect',{class:'window',x:xx,y:yy,width:4,height:8,rx:1},g)}}
+    if(b.id===state.dong){const yy=y-(state.floor/20)*h;node('rect',{x:x+2,y:yy-3,width:w-4,height:8,rx:3,fill:'#ffde79',stroke:'#fff6c7','stroke-width':1,opacity:.96},g);node('path',{d:`M${x+w} ${yy+1}l${dx} -${dy}`,stroke:'#ffe7a3','stroke-width':6,'stroke-linecap':'round'},g)}
+    const label=node('g',{style:'pointer-events:none'},g);node('rect',{x:x+w/2-25,y:y+8,width:54,height:22,rx:11,fill:b.id===state.dong?'#fff':'#eef4fa',opacity:'.96'},label);const txt=node('text',{x:x+w/2+2,y:y+23,'font-size':10,'font-weight':750,'text-anchor':'middle',fill:b.id===state.dong?'#245dd2':'#69829d'},label);txt.textContent=b.id+'동';
+    g.addEventListener('click',()=>selectDong(b.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectDong(b.id)}})
+  })
+}
+function render(){renderBuildings();el('floorNum').textContent=state.floor;el('selectedName').textContent=`${state.dong}동 · ${state.floor}층`;el('dongBtn').textContent=state.dong+'동 ▾';const dates={dec:'동지 · 12월 21일',today:'오늘 · 11월 9일',jun:'하지 · 6월 21일'};el('dateLabel').textContent=dates[state.date];document.querySelectorAll('[data-date]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.date===state.date)));
+ const hour=Math.floor(state.time),min=Math.round((state.time-hour)*60);el('clock').textContent=String(hour).padStart(2,'0')+':'+String(min).padStart(2,'0');
+ let base=state.date==='jun'?7.4:state.date==='today'?5.3:3.7;let effect=Math.max(-2.1,Math.min(1.2,(state.floor-8)*.18));let v=Math.max(0,base+effect-(state.dong===103?1.7:state.dong===101?0.9:state.dong===104?0.6:0));if(state.time>=16){v=Math.max(0,v-1.5)}
+ const durationH=Math.floor(v),durationM=Math.round((v-durationH)*6)*10;el('duration').textContent=v<.2?'약 0분':`약 ${durationH}시간 ${durationM}분`;
+ const shaded=state.time<10||state.time>15.5||state.dong===103;el('reason').textContent=shaded?'이 시간에는 주변 동의 그림자가 닿을 수 있어요.':'선택한 층에 햇빛이 들어오는 장면을 보여드려요.';el('resultState').textContent=shaded?'◐ 그림자 확인':'☀ 햇빛 좋음';el('resultState').style.background=shaded?'#edf2f7':'#fff4da';el('resultState').style.color=shaded?'#6f8194':'#846228';
+ const pos=(state.time-8)/10;el('sun-disc').setAttribute('transform',`translate(${(pos-.45)*55} ${Math.pow(pos-.45,2)*105})`);el('shadow').setAttribute('transform',`translate(${(pos-.5)*-26} ${(pos-.5)*22})`);el('warm-disc').setAttribute('opacity',String(.35+.5*(1-Math.abs(pos-.5))));el('sunbeam').setAttribute('opacity',shaded?'.25':'.72');
+}
+function selectDong(id){state.dong=id;render();toast(id+'동 선택됨')}
+function toast(t){const n=el('toast');n.textContent=t;n.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>n.style.display='none',1450)}
+function openSheet(type){const bd=el('backdrop'),title=el('sheetTitle'),c=el('sheetContent');bd.classList.add('open');bd.setAttribute('aria-hidden','false');bd.dataset.type=type;
+ if(type==='dong'){title.textContent='확인할 동 선택';c.innerHTML='<p>건물 그림을 누르거나 여기서 동을 고를 수 있습니다.</p><div class="dong-grid">'+B.map(b=>`<button data-choose="${b.id}" aria-pressed="${b.id===state.dong}">${b.id}동</button>`).join('')+'</div>';c.querySelectorAll('[data-choose]').forEach(b=>b.addEventListener('click',()=>{selectDong(Number(b.dataset.choose));closeSheet()}));}
+ if(type==='about'){title.textContent='이 시제품에서 확인할 수 있는 것';c.innerHTML='<p>이것은 “집감에서도 토스처럼 매끄러운 정보 위계와 상호작용을 구현할 수 있는가”를 검증하는 <b>독립 디자인 프로토타입</b>입니다.</p><p>① 건물 선택, 층 올리기, 날짜 변경, 시간 이동, 카드 전환이 실제로 작동합니다.<br>② 건물 형태·실거래 가격·일조 시간은 모두 예시입니다.<br>③ 실제 앱에 연결할 때는 기존 <b>preview-calc.js</b>·<b>shadow.js</b>의 검증된 값을 사용해야 합니다.<br>④ 토스의 고유 브랜드 디자인을 복제한 화면이 아니라, 간결한 위계·움직임·질감을 참고한 독자적 집감 콘셉트입니다.</p>';}
+ if(type==='card'){title.textContent='한 장으로 살펴보는 아파트';state.cardFlip=false;renderCard();}
+ el('closeSheet').focus();
+}
+function renderCard(){const c=el('sheetContent');c.innerHTML=state.cardFlip?`<div class="collectible back"><h3>현장 체크 카드</h3><span class="rating">✦</span><span class="mini">${state.dong}동 · ${state.floor}층</span><p>☑️ 일조 시뮬레이션 확인<br>□ 현장 소음 확인<br>□ 주변 동선 점검<br>□ 관리 상태 확인<br>□ 실제 채광 현장 확인</p><span class="mini">직접 방문한 기록으로 완성하세요.</span></div>`:`<div class="collectible"><h3>한가람 (예시)</h3><span class="rating">A</span><span class="mini">집감 홈 카드 · SAMPLE</span><div class="house">🏢</div><div class="facts"><span>대전 서구</span><span>선택 ${state.dong}동</span></div><strong>5.1억 원 <small style="font-size:10px;font-weight:500">가상 가격</small></strong><span class="mini">예시 지수 78점 · ${state.floor}층 선택</span><span class="mini">임장 전 확인한 정보를 카드 한 장에 모읍니다.</span></div>`;c.innerHTML+='<div class="sheet-bottom"><button class="secondary" id="flipCard">카드 뒤집기 ↻</button><button class="primary small" id="doneCard">확인 완료</button></div>';el('flipCard').addEventListener('click',()=>{state.cardFlip=!state.cardFlip;renderCard()});el('doneCard').addEventListener('click',closeSheet)}
+function closeSheet(){const b=el('backdrop');b.classList.remove('open');b.setAttribute('aria-hidden','true')}
+el('closeSheet').addEventListener('click',closeSheet);el('backdrop').addEventListener('click',e=>{if(e.target===el('backdrop'))closeSheet()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});el('dongBtn').addEventListener('click',()=>openSheet('dong'));el('cardBtn').addEventListener('click',()=>openSheet('card'));el('fplus').addEventListener('click',()=>{state.floor=Math.min(20,state.floor+1);render()});el('fminus').addEventListener('click',()=>{state.floor=Math.max(1,state.floor-1);render()});el('heartBtn').addEventListener('click',()=>{state.liked=!state.liked;el('heartBtn').textContent=state.liked?'♥':'♡';toast(state.liked?'관심 카드로 담았어요':'관심에서 제외했어요')});el('time').addEventListener('input',e=>{state.time=Number(e.target.value);render()});document.querySelectorAll('[data-date]').forEach(b=>b.addEventListener('click',()=>{state.date=b.dataset.date;render()}));render();
+</script>
+</body>
+</html>
