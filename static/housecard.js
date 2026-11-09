@@ -40,7 +40,15 @@
     }
     return w;
   }
-  DJ.hc = { mini, feature, fcard, art, grade };
+  // 비교용 세로 카드: 단지 둘 이상을 나란히 놓을 때 (그림 · 이름+등급 · 지역 · 84㎡ 추정가 · 지수). 같은 값, 새 계산 없음
+  function col(c) {
+    const a = el("a", "hc hc-col g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "col"; a.dataset.slug = c.s;
+    const nm = el("span", "hc-name"); nm.append(el("strong", "", c.n), grade(c.g));
+    a.append(art(c.rk), nm, el("span", "hc-meta", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")), price(c),
+      el("span", "hc-idx", c.i == null ? "지수 -" : "지수 " + c.i + "점"));
+    return a;
+  }
+  DJ.hc = { mini, feature, fcard, col, art, grade };
 
   // 홈: 이어서 볼 집 (가장 최근에 본 단지 → 없으면 관심 단지 첫 번째 → 없으면 빈 상태 그대로)
   const box = document.querySelector("[data-hc-feature]");
