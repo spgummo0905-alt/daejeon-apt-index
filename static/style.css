@@ -5095,32 +5095,29 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .m-sum li b { font-size: 15px; }
 .m-sum a { min-height: 44px; display: inline-flex; align-items: center; }
 
-/* ===== UX v2 · 카드 표지: 그림 대신 등급 색 글자 표지 (동 이름 크게 · 그 단지만의 숫자) ===== */
-.hc-collect { --plate: #d6dbe3; --plate-ink: #161b22; --plate-sub: #3d4651; }
-.hc-collect.g-S { --plate: #e3c576; --plate-ink: #221904; --plate-sub: #4b3a0c; }
-.hc-collect.g-A { --plate: #ccd3dc; --plate-ink: #161b22; --plate-sub: #3d4651; }
-.hc-collect.g-B { --plate: #244c94; --plate-ink: #ffffff; --plate-sub: #dde7f8; }
-.hc-collect.g-C { --plate: #4e5e6e; --plate-ink: #ffffff; --plate-sub: #e3e8ed; }
-.hc-collect.g-D { --plate: #eceef0; --plate-ink: #2a2f36; --plate-sub: #4d5560; }
-.hc-collect.g-- { --plate: transparent; --plate-ink: var(--ink); --plate-sub: var(--sub); }
-.hc-collect .hc-plate { display: flex; align-items: center; min-height: 84px; padding: 10px 14px; border-radius: 12px; background: var(--plate); color: var(--plate-ink); }
-.hc-collect.g-- .hc-plate { border: 1.5px dashed var(--sub); }
-.hc-collect .hc-dong { font-size: 30px; font-weight: 850; letter-spacing: -.03em; line-height: 1.15; overflow-wrap: anywhere; word-break: keep-all; }
-.hc-collect .hc-top b { font-size: 14px; letter-spacing: 0; color: var(--plate-sub); }
-.hc-collect .hc-top b { color: var(--sub); }
-.hc-collect .hc-meta { font-size: 15px; white-space: normal; line-height: 1.4; }
-.hc-collect .hc-cname { font-size: 20px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-/* 작은 칸(카드첩 2열·오늘의 카드): 동 이름을 조금 줄이되 14px 아래로 내려가지 않게 */
-@media (max-width: 480px) { .album-cards .mcw-hc .hc-plate { min-height: 56px; padding: 8px 10px; } .album-cards .mcw-hc .hc-dong { font-size: 22px; } .album-cards .mcw-hc .hc-cname { font-size: 16px; } .album-cards .mcw-hc .hc-meta { font-size: 13px; } .tc .mcw-hc .hc-plate { min-height: 40px; padding: 6px 8px; } .tc .mcw-hc .hc-dong { font-size: 16px; } }
-.tc .mcw-hc .hc-top b { display: block; font-size: 12px; }
-.hc-collect .hc-meta { display: flex; flex-wrap: wrap; gap: 0 10px; }
+/* ===== UX v2 · 카드 표지 v2: 그 단지의 실제 항공 사진 한 장 (카드마다 다름) · 못 받으면 칸 없음 ===== */
+.hc-collect .hc-top b { font-size: 14px; letter-spacing: 0; color: var(--sub); }
+.hc-collect .hc-photo { position: relative; display: block; aspect-ratio: 2 / 1; border-radius: 12px; overflow: hidden; background: linear-gradient(160deg, var(--in2), var(--in3)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.hc-collect .hc-strip { position: absolute; left: 0; top: 0; display: grid; will-change: transform; }
+.hc-collect .hc-strip img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.hc-collect .hc-photo[hidden] { display: none; }
+.hc-collect .hc-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(8,16,32,.38)); pointer-events: none; }
+.hc-collect .hc-pin { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2.5px solid #fff; background: #2f6fe4; box-shadow: 0 0 0 2px rgba(0,0,0,.4); z-index: 1; opacity: 0; }
+.hc-collect .hc-photo.on .hc-pin { opacity: 1; transition: opacity .2s; }
+.hc-collect .hc-meta { font-size: 15px; white-space: normal; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 0 10px; }
 .hc-collect .hc-f { white-space: nowrap; }
+.hc-collect .hc-cname { font-size: 22px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; }
+.hc-collect.g-- .hc-photo { background: var(--chip); }
+/* 작은 칸(카드첩 2열·오늘의 카드)에서는 사진을 낮게, 글자는 14px 아래로 내려가지 않게 */
+@media (max-width: 480px) { .album-cards .mcw-hc .hc-cname { font-size: 17px; } .album-cards .mcw-hc .hc-meta { font-size: 13px; } .album-cards .mcw-hc .hc-photo { aspect-ratio: 5 / 3; } }
+.tc .mcw-hc .hc-top b { display: block; font-size: 12px; }
 .tc .mcw-hc .hc-f { font-size: 13px; }
-/* 오늘의 카드(128px 폭)는 칸이 작아 숫자 줄 대신 동 이름·단지 이름·지수·가격만 (숫자 줄은 카드첩·상세의 큰 카드에 있음) */
+/* 오늘의 카드(128px 폭)는 숫자 줄을 빼고 사진·단지 이름·지수·가격만 */
 .tc .mcw-hc .hc-meta { display: none; }
-.tc .mcw-hc .hc-plate { min-height: 38px; padding: 6px 8px; border-radius: 9px; }
-.tc .mcw-hc .hc-dong { font-size: 17px; }
+.tc .mcw-hc .hc-photo { aspect-ratio: 5 / 3; border-radius: 9px; }
 .tc .mcw-hc .hc-cname { font-size: 15px; -webkit-line-clamp: 2; }
+.hc-srcnote { margin: 12px 20px 0; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .hc-collect .hc-photo.on .hc-pin { transition: none; } }
 @media (max-width: 720px) { .hm-fold .hm-toggle { min-height: 56px; } }   /* 홈 '펼쳐 보기' 버튼: 더 구체적인 기존 규칙(48px)을 덮어 56px */
 
 /* ===== UX v2 · 다듬기: 겹침 제거 · 하단 메뉴 불투명 · 작은 글자와 중요한 버튼 키우기 ===== */

@@ -223,6 +223,7 @@
 </div>
 <div class="toast-zone" id="toast-zone" aria-live="polite"></div>
 <script>window.DJ_ROOT = "{{ root }}";</script>
+{% if satellite_url %}<script>window.DJ_SAT = {{ satellite_url | tojson }};</script>{% endif %}
 <script src="{{ root }}static/records.js?v={{ v }}"></script>
 <script src="{{ root }}static/app.js?v={{ v }}"></script>
 <script src="{{ root }}static/ux-motion.js?v={{ v }}"></script>
@@ -234,6 +235,7 @@
 <script src="{{ root }}static/charts.js?v={{ v }}"></script>
 <script src="{{ root }}static/holo.js?v={{ v }}"></script>
 {% block scripts %}{% endblock %}
+{% if satellite_url %}<script src="{{ root }}static/cover.js?v={{ v }}" defer></script>{% endif %}
 {% if site.cf_beacon_token %}<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.cf_beacon_token }}"}'></script>{% endif %}
 </body>
 </html>
