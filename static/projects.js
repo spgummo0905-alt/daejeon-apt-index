@@ -111,6 +111,9 @@
       } else wrap.append(el("p", "muted", `현재 자료에 없는 후보 (${s}) · 기록은 유지됩니다.`));
       if (!current.archived && current.slugs.length > 1) {   // 방문 순서 바꾸기: 후보 목록 순서만 바꿈(후보·기록은 그대로)
         const mv = el("span", "pj-mv");
+        const grab = el("button", "pj-mvb pj-grab", "≡"); grab.type = "button";
+        grab.setAttribute("aria-label", `${c?.n || s} 끌어서 순서 바꾸기. 키보드는 위·아래 버튼을 쓰세요`);
+        grab.addEventListener("pointerdown", e => dragReorder(e, wrap, idx, cards)); mv.append(grab);
         [["↑", -1, "위로"], ["↓", 1, "아래로"]].forEach(([ch, dir, word]) => {
           const b = el("button", "pj-mvb", ch); b.type = "button"; b.disabled = idx + dir < 0 || idx + dir >= current.slugs.length;
           b.setAttribute("aria-label", `${c?.n || s} 방문 순서 ${word}`);
@@ -246,10 +249,56 @@
   }
   find("[data-pj-plan-form]").addEventListener("submit", e => { e.preventDefault(); mutate({ planned: e.target.elements.planned.value }); });
   find("[data-pj-plan-clear]").addEventListener("click", () => { if (current && confirm("방문 예정일을 취소할까요? 후보와 방문 기록은 그대로예요.")) mutate({ planned: "" }); });
+  // 진행 중 프로젝트의 맨 위 한 줄: 다음에 갈 단지 · 예정일 · 진행 · 방문 순서 (모두 이 프로젝트의 실제 기록에서만)
+  function nextVisit(n, logs, went) {
+    const box = find("[data-pj-nv]"); box.replaceChildren();
+    box.hidden = current.archived || !n;
+    if (box.hidden) return;
+    const usable = current.slugs.filter(s => D.bySlug[s]);
+    const visited = s => DJVisitLog.list({ region: REGION, slug: s, projectId: current.id }).length > 0;
+    const next = usable.find(s => !visited(s));
+    const head = el("div", "pj-nv-head");
+    if (next) {
+      head.append(el("small", "", "다음 방문"), el("b", "", `${usable.indexOf(next) + 1}번 ${D.bySlug[next].n}`));
+      const d = current.planned ? dayDiff(current.planned, DJ.today()) : null;
+      head.append(el("span", "muted", [current.planned ? (d > 0 ? `예정 ${niceDate(current.planned)} (${d}일 남음)` : d === 0 ? "예정 오늘" : `예정일 ${-d}일 지남`) : "방문 예정일 없음", `다녀온 단지 ${went}/${usable.length}곳`].join(" · ")));
+      const go = el("button", "btn primary sm", "현장 체크 시작"); go.type = "button";
+      go.addEventListener("click", () => workspace.open("field", next)); head.append(go);
+    } else {
+      head.append(el("small", "", "진행 상태"), el("b", "", "후보를 모두 다녀왔어요"));
+      const a = el("a", "btn primary sm", "기록으로 다시 비교하기"); a.href = "compare.html?s=" + usable.slice(0, 4).map(encodeURIComponent).join(","); head.append(a);
+    }
+    const ol = el("ol", "pj-nv-order"); ol.setAttribute("aria-label", "방문 순서");
+    usable.forEach((s, i) => { const li = el("li", visited(s) ? "done" : s === next ? "now" : ""); li.append(el("span", "pj-nv-n", visited(s) ? "✓" : String(i + 1)), el("span", "", D.bySlug[s].n)); if (s === next) li.setAttribute("aria-current", "step"); ol.append(li); });
+    box.append(head, ol);
+  }
+  // 방문 순서를 끌어서 바꾸기 (손잡이를 잡고 위아래로). 위·아래 버튼은 그대로 있어 키보드로도 같은 일을 할 수 있음. 끌어 놓은 순서는 후보 목록 순서로만 저장됨
+  function dragReorder(e, wrap, from, cards) {
+    if (e.button > 0) return;
+    e.preventDefault();
+    const items = [...cards.children], y0 = e.clientY, h = wrap.getBoundingClientRect().height, handle = e.currentTarget;
+    let to = from;
+    wrap.classList.add("pj-dragging"); try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    const live = find("[data-pj-selection]");
+    const move = ev => {
+      const dy = ev.clientY - y0; wrap.style.transform = `translateY(${dy}px)`;
+      const mid = wrap.getBoundingClientRect().top + h / 2;
+      to = items.filter(n => n !== wrap && n.getBoundingClientRect().top + n.getBoundingClientRect().height / 2 < mid).length;
+      items.forEach((n, i) => n.classList.toggle("pj-drop", n !== wrap && i === (to >= from ? to + 0 : to) && to !== from));
+    };
+    const end = ev => {
+      handle.removeEventListener("pointermove", move); handle.removeEventListener("pointerup", end); handle.removeEventListener("pointercancel", cancel);
+      wrap.classList.remove("pj-dragging"); wrap.style.transform = ""; items.forEach(n => n.classList.remove("pj-drop"));
+      if (to !== from) { const a = current.slugs.slice(); const [m] = a.splice(from, 1); a.splice(to, 0, m); mutate({ slugs: a }); }
+    };
+    const cancel = () => { to = from; end(); };
+    handle.addEventListener("pointermove", move); handle.addEventListener("pointerup", end); handle.addEventListener("pointercancel", cancel);
+  }
   function dash() {
     const n = current.slugs.length, logs = DJVisitLog.list({ region: REGION, projectId: current.id }), went = new Set(logs.map(v => v.slug)).size;
     find("[data-pj-count]").textContent = n ? `${n}곳` : "";
     find("[data-pj-report]").disabled = !n;
+    nextVisit(n, logs, went);
     const stats = find("[data-pj-stats]"); stats.replaceChildren();
     [["후보", n + "곳"], ["다녀온 단지", went + "곳"], ["방문 기록", logs.length + "건"]].forEach(([k, v]) => {
       const box = el("div", "pj-stat"); box.append(el("dd", "", v), el("dt", "", k)); stats.append(box);

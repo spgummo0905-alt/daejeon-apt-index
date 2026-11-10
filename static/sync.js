@@ -437,7 +437,7 @@
     if (S.state === "error") return "지금은 저장하지 못했어요. 이 기기에는 남아 있고, 연결되면 다시 저장해요.";
     return S.at ? `카카오 계정에 저장돼요 · 마지막 저장 ${when(S.at)}` : "카카오 계정에 저장돼요";
   }
-  function setState(s) { S.state = s; paint(); }
+  function setState(s) { S.state = s; paint(); document.dispatchEvent(new CustomEvent("dj:sync-state", { detail: s })); }   // 현장 모드 등이 저장 상태를 실제 결과로 보여 주도록
   let lastUid;
   function paint() {
     const u = S.user;
@@ -586,6 +586,7 @@
 
   // ---------- 자동 저장 ----------
   let timer = null;
+  DJ.syncRetry = () => sync(false);   // 계정에 못 보낸 기록을 다시 보냄(받아오기는 하지 않음)
   DJ.onSave = function () {
     if (!S.user) return;
     clearTimeout(timer);
@@ -593,7 +594,7 @@
   };
   async function sync(withPull) {
     if (!S.user || S.linking) return [];
-    S.state = "busy";
+    S.state = "busy"; document.dispatchEvent(new CustomEvent("dj:sync-state", { detail: "busy" }));
     try {
       if (R.get("_importGuest", false) && !S.linking) {
         S.linking = true;
