@@ -1629,8 +1629,12 @@
     document.addEventListener("dj:course", paint);
     paint(); bar.hidden = false;
     // 카드 아래 행동 줄(관심·비교·일조·현장 체크·공유)이 화면에 보이는 동안은 고정 버튼이 비켜 줌 (가리지 않게). 줄이 지나가면 다시 나타남
+    // (하단 메뉴 높이를 실제로 재서 그만큼 뺌: 짧은 폰에서 줄이 메뉴 뒤에 가려졌는데도 '보인다'고 판단해 고정 버튼까지 숨던 문제 수정. 줄이 60% 이상 보일 때만 비켜 줌)
     const row = document.querySelector(".apt-actions");
-    if (row && "IntersectionObserver" in window) new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.isIntersecting)), { rootMargin: "0px 0px -64px 0px" }).observe(row);
+    if (row && "IntersectionObserver" in window) {
+      const tabH = Math.ceil((document.querySelector(".tabbar") || { getBoundingClientRect: () => ({ height: 64 }) }).getBoundingClientRect().height) || 64;
+      new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.intersectionRatio >= 0.6)), { rootMargin: `0px 0px -${tabH}px 0px`, threshold: [0, 0.6, 1] }).observe(row);
+    }
   }
 
   // 단지 페이지 위쪽 '임장 코스에 넣기' (누르면 넣고, 다시 누르면 빼기). 현장 모드에서 넣거나 빼도 같이 바뀜
