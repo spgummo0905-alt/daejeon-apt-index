@@ -27,6 +27,9 @@
       if ([...project.options].some(o => o.value === defaultProjectId)) project.value = defaultProjectId;
     }
     const memo = el("textarea"); memo.rows = 3; memo.maxLength = 2000;
+    const DK = "djdex-vl-draft:" + (projectId || "") + ":" + (slug || "*");   // 다른 단지로 이동했다 돌아와도 쓰던 초안이 남게 이 탭에만 임시 보관
+    try { memo.value = sessionStorage.getItem(DK) || ""; } catch (_) {}
+    memo.addEventListener("input", () => { try { memo.value ? sessionStorage.setItem(DK, memo.value) : sessionStorage.removeItem(DK); } catch (_) {} });
     memo.placeholder = "예: 저녁 7시 주차 여유가 적었음. 다음에는 출근 시간 소음 확인하기.";
     form.append(label("이번 방문에서 확인한 점", memo));
     const copy = el("button", "btn ghost sm", "단지 공통 메모 가져오기"); copy.type = "button";
@@ -97,7 +100,8 @@
         if (c) DJ.visitItems(c, region).forEach(([key, label]) => labels.push({ label, on: !!v.x[key] }));
         DJVisitLog.create({ region, slug: slug || apt.value, projectId: projectId || project.value, date: date.value,
           period: period.value, memo: memo.value, snapshot: snapshot.checked ? { ...v, labels } : null });
-        submitted = true; memo.value = ""; snapshot.checked = false; period.value = ""; date.value = DJ.today();
+        submitted = true; memo.value = ""; try { sessionStorage.removeItem(DK); } catch (_) {}
+        submitted = true; snapshot.checked = false; period.value = ""; date.value = DJ.today();
         status.textContent = "이번 방문을 별도 기록으로 남겼어요. 기존 기록은 그대로예요."; draw();
       } catch (e) {
         status.textContent = e.message === "empty" ? "이번 방문 메모를 적거나 체크 상태 보관을 선택해 주세요."

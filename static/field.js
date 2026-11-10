@@ -20,7 +20,7 @@
     const r = x => x * Math.PI / 180, h = Math.sin(r(a2 - a1) / 2) ** 2 + Math.cos(r(a1)) * Math.cos(r(a2)) * Math.sin(r(o2 - o1) / 2) ** 2;
     return 2 * 6371000 * Math.asin(Math.sqrt(h));
   };
-  const keep = () => DJ.saveVisit(slug, v);
+  const keep = () => { const ok = DJ.saveVisit(slug, v); if (ok) saveMark(); return ok; };
   // 저장이 실제로 됐을 때만 true. 실패하면 부르는 쪽이 화면과 기록을 원래대로 돌립니다 (실패 알림은 DJ.save 가 띄움).
   // 계정을 연결하는 중에는 DJ.save 가 조용히 false 만 주므로 그때만 여기서 알려요.
   function persist() {
@@ -34,6 +34,21 @@
     : (e instanceof TypeError || navigator.onLine === false) ? "인터넷 연결을 확인하고 다시 해 주세요."
     : "잠시 뒤 다시 해 주세요.";
 
+  // 저장 상태 한 줄: 이 기기에 저장 / 계정에 보내는 중 / 계정에도 저장 / 계정 저장 실패(기기에는 있음)를 실제 결과로만 구분 (저장 확인 전에는 '저장'이라고 쓰지 않음)
+  let pending = false, saveEl = null, retryBtn = null;
+  function saveMark() { pending = !!(DJ.sync && DJ.sync.user); paintSave(); }
+  function paintSave() {
+    if (!saveEl) return;
+    const u = DJ.sync && DJ.sync.user, s = u && DJ.sync.state;
+    let t, bad = false;
+    if (!u) t = "이 기기에 저장돼요 · 로그인하면 계정에도 보관할 수 있어요.";
+    else if (s === "error") { t = "계정에는 보내지 못했어요. 이 기기에는 저장돼 있어요."; bad = true; }
+    else if (pending || s === "busy") t = "이 기기에 저장됨 · 계정에 보내는 중…";
+    else t = "이 기기와 내 계정에 저장됐어요.";
+    saveEl.firstChild.textContent = t; saveEl.classList.toggle("bad", bad);
+    retryBtn.hidden = !bad;
+  }
+  document.addEventListener("dj:sync-state", e => { if (e.detail === "saved") pending = false; paintSave(); });
   function open() {
     if (!built) { built = true; DJ.data().then(d => build(d.bySlug[slug], d)).catch(() => build(null)); }
     if (!back) {
@@ -358,7 +373,12 @@
     t.addEventListener("input", () => { v.m = t.value; keep(); });   // 못 남기면 DJ.save 가 알려요. 입력한 글은 칸에 그대로 남아 있어요
     const been = el("button", "btn fm-been", "");
     been.type = "button";
-    const paint = () => {
+    const stamp = el("span", "fm-stamp"), again = el("a", "btn ghost fm-again", "다녀온 기록으로 다시 비교하기 ›");
+    stamp.hidden = again.hidden = true;
+    again.href = (window.DJ_ROOT || "") + "compare.html?a=" + encodeURIComponent(slug);
+    const paint = (fresh) => {
+      stamp.hidden = again.hidden = !v.d;   // 저장이 확인된 '다녀옴'일 때만 도장·다시 비교를 보임
+      if (v.d) { stamp.textContent = "다녀옴 " + v.d.slice(5).replace("-", "."); stamp.classList.remove("pop"); if (fresh) { void stamp.offsetWidth; stamp.classList.add("pop"); } }
       been.textContent = v.d ? `${v.d.slice(5).replace("-", ".")} 다녀왔어요 ✓` : "오늘 다녀왔어요";
       been.classList.toggle("on", !!v.d);
       been.setAttribute("aria-pressed", v.d ? "true" : "false");
@@ -367,7 +387,7 @@
       const was = !!v.d, prev = v.d;
       if (v.d) delete v.d; else v.d = DJ.today();
       if (!persist()) { if (prev) v.d = prev; else delete v.d; paint(); return; }   // 저장하지 못했으면 '다녀왔어요'도 켜지 않고 안내도 하지 않음
-      paint();
+      paint(!was);
       if (!was) nextAfterVisit();   // '다녀왔어요'를 켠 순간에만. 끌 때는 아무 안내도 하지 않음
     });
     paint();
@@ -375,7 +395,12 @@
     note.dataset.syncNote = "";   // 카카오로 로그인했으면 sync.js 가 '계정에 저장돼요'로 바꿈
     const dated = el("button", "btn ghost", "이번 방문 따로 남기기"); dated.type = "button";
     dated.addEventListener("click", () => journal?.element.querySelector("textarea")?.focus());
-    s.append(t, been, dated, note);
+    saveEl = el("p", "fm-save"); saveEl.setAttribute("role", "status");
+    saveEl.append(document.createTextNode(""));
+    retryBtn = el("button", "btn sm fm-retry", "다시 보내기"); retryBtn.type = "button"; retryBtn.hidden = true;
+    retryBtn.addEventListener("click", () => { retryBtn.disabled = true; pending = true; paintSave(); Promise.resolve(DJ.syncRetry && DJ.syncRetry()).finally(() => { retryBtn.disabled = false; paintSave(); }); });
+    saveEl.append(retryBtn); paintSave();
+    s.append(t, saveEl, been, stamp, again, dated, note);
     return s;
   }
 
