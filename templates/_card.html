@@ -19,8 +19,8 @@
 {% macro collect(c, href, k=0) %}
 <a class="hc hc-collect g-{{ c.grade }}" href="{{ href }}" data-hc="collect" data-slug="{{ c.slug }}" data-g="{{ c.grade }}" data-d="{{ c.dong }}"{% if c.grade in ("S", "A") %} data-holo{% endif %} aria-label="{{ c.name }}, {{ c | place }}, {{ c.grade }}등급 {{ c.index | score }}점{% if c.rank %}, {{ c.rank }}위{% endif %}">
   <span class="hc-frame"><span class="hc-inner">
-    <span class="hc-top"><b>{{ c.gu }}</b>{{ grade(c.grade) }}</span>
-    <span class="hc-plate"><span class="hc-dong">{{ c.dong }}</span></span>
+    <span class="hc-top"><b>{{ c.gu }} · {{ c.dong }}</b>{{ grade(c.grade) }}</span>
+    {% if satellite_url and c.lat and c.lng %}<span class="hc-photo" data-la="{{ c.lat }}" data-ln="{{ c.lng }}" aria-hidden="true"><i class="hc-pin"></i></span>{% endif %}
     <strong class="hc-cname">{{ c.name }}</strong>
     <span class="hc-meta">{% if c.build_year %}<span class="hc-f">{{ c.build_year }}년</span>{% endif %}{% if c.hh %}<span class="hc-f">{{ "{:,}".format(c.hh | int) }}세대</span>{% endif %}{% if c.subway_raw is defined and c.subway_raw == c.subway_raw %}<span class="hc-f">역 {{ c.subway_raw | int }}m</span>{% endif %}</span>
     <span class="hc-foot"><span>집감 지수 <b>{% if c.index is nan %}미산정{% else %}{{ c.index | score }}점{% endif %}</b></span><b>{% if c.price_ref is nan %}-{% else %}{{ c.price_ref | eok }}{% endif %}</b></span>

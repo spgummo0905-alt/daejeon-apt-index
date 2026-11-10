@@ -68,13 +68,14 @@
     const a = el("a", "hc hc-collect g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "collect"; a.dataset.slug = c.s; a.dataset.g = c.g; a.dataset.d = c.d || ""; if (c.g === "S" || c.g === "A") a.setAttribute("data-holo", "");
     a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g === "-" ? "미산정" : c.g + "등급"}${c.i == null ? "" : " " + c.i + "점"}`);
     const fr = el("span", "hc-frame"), inn = el("span", "hc-inner"), top = el("span", "hc-top");
-    top.append(el("b", "", c.gu || ""), grade(c.g));   // 영어 라벨 대신 구 이름
+    top.append(el("b", "", (c.gu || "") + (c.d ? " · " + c.d : "")), grade(c.g));   // 영어 라벨 대신 구·동 이름
     const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "미산정" : c.i + "점"));
     foot.append(l, el("b", "", c.pt || "-"));
-    const plate = el("span", "hc-plate"); plate.append(el("span", "hc-dong", c.d || ""));   // 그림 대신 동 이름 글자 표지 (그 단지만의 숫자는 아래 한 줄)
+    let photo = null;   // 실제 항공 사진 표지: 좌표가 있고 사진 서버가 설정돼 있을 때만 (불러오기는 static/cover.js)
+    if (window.DJ_SAT && c.la && c.ln) { photo = el("span", "hc-photo"); photo.dataset.la = c.la; photo.dataset.ln = c.ln; photo.setAttribute("aria-hidden", "true"); photo.append(el("i", "hc-pin")); }
     const nums = el("span", "hc-meta");   // 숫자 묶음마다 줄이 끊기지 않게 각각 한 덩어리
     [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : "", c.f && c.f.subway != null ? "역 " + Math.round(c.f.subway) + "m" : ""].filter(Boolean).forEach(x => nums.append(el("span", "hc-f", x)));
-    inn.append(top, plate, el("strong", "hc-cname", c.n), nums, foot);
+    inn.append(top); if (photo) inn.append(photo); inn.append(el("strong", "hc-cname", c.n), nums, foot);
     const b = !(opt && opt.stamp === false) && DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
     fr.append(inn); a.append(fr); return a;
   }
