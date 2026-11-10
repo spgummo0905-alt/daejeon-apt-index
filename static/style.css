@@ -5121,3 +5121,4 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .tc .mcw-hc .hc-plate { min-height: 38px; padding: 6px 8px; border-radius: 9px; }
 .tc .mcw-hc .hc-dong { font-size: 17px; }
 .tc .mcw-hc .hc-cname { font-size: 15px; -webkit-line-clamp: 2; }
+@media (max-width: 720px) { .hm-fold .hm-toggle { min-height: 56px; } }   /* 홈 '펼쳐 보기' 버튼: 더 구체적인 기존 규칙(48px)을 덮어 56px */
