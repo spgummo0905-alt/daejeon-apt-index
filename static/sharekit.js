@@ -262,7 +262,7 @@
     acts.append(act("kakao", "카카오톡", "i-chat"), act("link", "링크 복사", "i-link"), act("save", "그림 저장", "i-download"), act("more", "다른 앱", "i-more"));
     const hint = el("p", "sheet-hint"); hint.hidden = true;
     const close = el("button", "btn sheet-close", "닫기"); close.type = "button";
-    sheet.append(el("div", "sheet-grab"), h, el("p", "muted ss-sub", "받는 사람에게는 이렇게 보여요"), msg, acts, hint, close);
+    sheet.append(el("div", "sheet-grab"), h, el("p", "muted ss-sub", "받는 사람에게는 이렇게 보여요"), msg, el("p", "ss-scope"), acts, hint, close);
     document.body.append(back, sheet);
     back.addEventListener("click", hide);
     close.addEventListener("click", hide);
@@ -289,6 +289,8 @@
     $("#ss-title").textContent = o.head;
     $(".ss-t").textContent = o.title;
     $(".ss-d").textContent = o.desc;
+    $(".ss-scope").textContent = o.scope ? "보내는 내용: " + o.scope : "";   // 링크로 무엇이 나가고 무엇이 안 나가는지 보내기 전에 알림
+    $(".ss-scope").hidden = !o.scope;
     $(".ss-b1").textContent = o.button;
     const img = $(".ss-pic img");
     img.hidden = true; $(".ss-ph").hidden = false;

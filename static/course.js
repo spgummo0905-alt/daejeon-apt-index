@@ -83,6 +83,7 @@
     const url = `${base}course.html?c=${stops.map(c => encodeURIComponent(c.s)).join(",")}&m=${cur().mode}`;
     const list = stops.map((c, k) => `${k + 1}. ${c.n} (${DJ.place(c)})${k < legs.length ? ` → ${dist(legs[k])}` : ""}`).join("\n");
     const o = {
+      scope: "코스 순서·지도·길찾기·기본 체크리스트 · 내 메모·사진·방문 기록은 보내지 않아요",
       head: "임장 코스 공유", button: "코스 보기", url, file: "imjang-course.png", og: base + "static/og/course.jpg",
       title: `임장 코스 ${stops.length}곳 · ${mode} 약 ${hm(move)}`,
       desc: stops.slice(0, 3).map(c => c.n).join(" → ") + (stops.length > 3 ? ` 외 ${stops.length - 3}곳` : "") + " · 지도·길찾기·현장 체크리스트까지",
