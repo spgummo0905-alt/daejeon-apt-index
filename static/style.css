@@ -4656,7 +4656,6 @@ p.muted { text-wrap: balance; }
 .hc-inner { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 17px; background: var(--surface); height: 100%; }
 .hc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .hc-top b { font-size: 12px; font-weight: 900; letter-spacing: .02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.hc-collect .hc-art { height: 118px; border-radius: 12px; }
 .hc-cname { font-size: 18px; font-weight: 850; letter-spacing: -.02em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hc-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding-top: 8px; margin-top: auto; border-top: 1px solid var(--hc-line); font-size: 14px; color: var(--text-2); }
 .hc-foot b { font-size: 16px; color: var(--hc-ink); font-variant-numeric: tabular-nums; }
@@ -4734,7 +4733,7 @@ p.muted { text-wrap: balance; }
 .mcw-hc.been .hc-collect { outline: none; }
 .mcw-hc.been .hc-inner { box-shadow: inset 0 0 0 2px #e3b955; }
 .album-cards:has(.mcw-hc) { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-@media (max-width: 480px) { .album-cards:has(.mcw-hc) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .album-cards .mcw-hc .hc-inner { padding: 8px; gap: 4px; } .album-cards .mcw-hc .hc-art { height: 78px; } .album-cards .mcw-hc .hc-cname { font-size: 15px; } .album-cards .mcw-hc .hc-meta { font-size: 12px; } .album-cards .mcw-hc .hc-foot { font-size: 12px; padding-right: 30px; flex-wrap: wrap; } .album-cards .mcw-hc .hc-foot b { font-size: 14px; } .album-cards .mcw-hc .hc-top b { font-size: 10px; } .album-cards .mcw-hc .hc-grade { min-width: 26px; height: 24px; font-size: 13px; padding: 0 6px; } .album-cards .mcw-hc .cs-stamp { top: 40px; left: 10px; font-size: 11px; } .album-cards .hc-back .mm-list { font-size: 12px; } .album-cards .hc-back .mm-name { font-size: 14px; } }
+@media (max-width: 480px) { .album-cards:has(.mcw-hc) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .album-cards .mcw-hc .hc-inner { padding: 8px; gap: 4px; } .album-cards .mcw-hc .hc-art { height: 78px; } .album-cards .mcw-hc .hc-cname { font-size: 15px; } .album-cards .mcw-hc .hc-meta { font-size: 12px; } .album-cards .mcw-hc .hc-foot { font-size: 12px; padding-right: 30px; flex-wrap: wrap; } .album-cards .mcw-hc .hc-foot b { font-size: 14px; } .album-cards .mcw-hc .hc-top b { font-size: 12px; } .album-cards .mcw-hc .hc-grade { min-width: 26px; height: 24px; font-size: 13px; padding: 0 6px; } .album-cards .mcw-hc .cs-stamp { top: 40px; left: 10px; font-size: 11px; } .album-cards .hc-back .mm-list { font-size: 12px; } .album-cards .hc-back .mm-name { font-size: 14px; } }
 /* 오늘의 비교 후보(작은 칸): 그림은 얇게, 이름은 두 줄까지, 아래 숫자는 세로로 쌓아 좁은 폭(128px)에서도 안 잘리게 */
 .tc .mcw-hc .hc-collect { padding: 4px; border-radius: 16px; }
 .tc .mcw-hc .hc-inner { padding: 7px 7px 8px; gap: 3px; border-radius: 12px; }
@@ -4742,13 +4741,13 @@ p.muted { text-wrap: balance; }
 .tc .mcw-hc .hc-top { justify-content: flex-end; }
 .tc .mcw-hc .hc-art { height: 38px; border-radius: 8px; }
 .tc .mcw-hc .hc-cname { font-size: 14px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.22; }
-.tc .mcw-hc .hc-meta { font-size: 11px; }
+.tc .mcw-hc .hc-meta { font-size: 13px; }
 .tc .mcw-hc .hc-foot { flex-direction: column; align-items: flex-start; gap: 0; padding: 4px 0 0; font-size: 11px; }
 .tc .mcw-hc .hc-foot > span { white-space: nowrap; } .tc .mcw-hc .hc-foot > span b { font-size: 13px; }
 .tc .mcw-hc .hc-foot > b { font-size: 15px; }
 .tc .mcw-hc .mcard-turn { right: 8px; bottom: 8px; }
 .tc .mcw-hc .cs-stamp { display: none; }
-@media (min-width: 761px) { .tc .mcw-hc .hc-art { height: 56px; } .tc .mcw-hc .hc-top b { display: block; font-size: 10px; } .tc .mcw-hc .hc-cname { font-size: 15px; } .tc .mcw-hc .hc-foot { font-size: 12px; } }
+@media (min-width: 761px) { .tc .mcw-hc .hc-art { height: 56px; } .tc .mcw-hc .hc-top b { display: block; font-size: 12px; } .tc .mcw-hc .hc-cname { font-size: 15px; } .tc .mcw-hc .hc-foot { font-size: 12px; } }
 @media (prefers-reduced-motion: reduce) { .mcw-hc > .hc-collect { transition: none; } .mcw-hc.turned > .hc-collect { animation: none; } }
 
 /* 옆으로 넘기는 카드 줄: 첫 카드가 화면 왼쪽 끝에 붙지 않게(스크롤 맞춤이 안쪽 여백을 무시하던 것) */
@@ -4767,14 +4766,6 @@ p.muted { text-wrap: balance; }
 .hc-collect .hc-foot b { color: var(--ink); }
 .hc-collect.g-S .hc-foot b { color: #ffe9a8; } .hc-collect.g-A .hc-foot b { color: #f2f4f7; }
 .hc-collect .cs-stamp { color: #2a1d02; background: linear-gradient(180deg, #fff3c4, #e3b955 70%, #c99a2e); border-color: #a37b22; }
-.hc-art.hc-night { background: linear-gradient(180deg, var(--in2), var(--in3)); }
-.hc-art.hc-night::before { display: none; }
-.hc-art.hc-night .hc-sun { background: radial-gradient(circle, #fff4d6 0, rgba(255,226,150,.5) 45%, transparent 72%); }
-.hc-art.hc-night .hc-b { background: #0a1220; box-shadow: none; }
-.hc-art.hc-night .hc-b.b2 { background: #0d1a2e; }
-.hc-art.hc-night .hc-b::after { background: repeating-linear-gradient(to bottom, transparent 0 7px, rgba(255,226,150,.6) 7px 9px); }
-.hc-art.hc-night canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
-.hc-art.hc-night.drawn > i { display: none; }
 
 /* --- C1 홈: 이어서 볼 집 + 오늘 발견할 집 카드 --- */
 .hc-home { margin-top: 16px; }
@@ -5103,3 +5094,30 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .m-sum li { display: grid; gap: 2px; font-size: 16px; line-height: 1.5; }
 .m-sum li b { font-size: 15px; }
 .m-sum a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* ===== UX v2 · 카드 표지: 그림 대신 등급 색 글자 표지 (동 이름 크게 · 그 단지만의 숫자) ===== */
+.hc-collect { --plate: #d6dbe3; --plate-ink: #161b22; --plate-sub: #3d4651; }
+.hc-collect.g-S { --plate: #e3c576; --plate-ink: #221904; --plate-sub: #4b3a0c; }
+.hc-collect.g-A { --plate: #ccd3dc; --plate-ink: #161b22; --plate-sub: #3d4651; }
+.hc-collect.g-B { --plate: #244c94; --plate-ink: #ffffff; --plate-sub: #dde7f8; }
+.hc-collect.g-C { --plate: #4e5e6e; --plate-ink: #ffffff; --plate-sub: #e3e8ed; }
+.hc-collect.g-D { --plate: #eceef0; --plate-ink: #2a2f36; --plate-sub: #4d5560; }
+.hc-collect.g-- { --plate: transparent; --plate-ink: var(--ink); --plate-sub: var(--sub); }
+.hc-collect .hc-plate { display: flex; align-items: center; min-height: 84px; padding: 10px 14px; border-radius: 12px; background: var(--plate); color: var(--plate-ink); }
+.hc-collect.g-- .hc-plate { border: 1.5px dashed var(--sub); }
+.hc-collect .hc-dong { font-size: 30px; font-weight: 850; letter-spacing: -.03em; line-height: 1.15; overflow-wrap: anywhere; word-break: keep-all; }
+.hc-collect .hc-top b { font-size: 14px; letter-spacing: 0; color: var(--plate-sub); }
+.hc-collect .hc-top b { color: var(--sub); }
+.hc-collect .hc-meta { font-size: 15px; white-space: normal; line-height: 1.4; }
+.hc-collect .hc-cname { font-size: 20px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* 작은 칸(카드첩 2열·오늘의 카드): 동 이름을 조금 줄이되 14px 아래로 내려가지 않게 */
+@media (max-width: 480px) { .album-cards .mcw-hc .hc-plate { min-height: 56px; padding: 8px 10px; } .album-cards .mcw-hc .hc-dong { font-size: 22px; } .album-cards .mcw-hc .hc-cname { font-size: 16px; } .album-cards .mcw-hc .hc-meta { font-size: 13px; } .tc .mcw-hc .hc-plate { min-height: 40px; padding: 6px 8px; } .tc .mcw-hc .hc-dong { font-size: 16px; } }
+.tc .mcw-hc .hc-top b { display: block; font-size: 12px; }
+.hc-collect .hc-meta { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.hc-collect .hc-f { white-space: nowrap; }
+.tc .mcw-hc .hc-f { font-size: 13px; }
+/* 오늘의 카드(128px 폭)는 칸이 작아 숫자 줄 대신 동 이름·단지 이름·지수·가격만 (숫자 줄은 카드첩·상세의 큰 카드에 있음) */
+.tc .mcw-hc .hc-meta { display: none; }
+.tc .mcw-hc .hc-plate { min-height: 38px; padding: 6px 8px; border-radius: 9px; }
+.tc .mcw-hc .hc-dong { font-size: 17px; }
+.tc .mcw-hc .hc-cname { font-size: 15px; -webkit-line-clamp: 2; }
