@@ -2,7 +2,10 @@
   const { el } = DJ;
   const MAX = 4;
   const params = new URLSearchParams(location.search);
-  let picked = (params.get("s") || [params.get("a"), params.get("b")].filter(Boolean).join(",")).split(",").filter(Boolean).slice(0, MAX);
+  let dropped = 0;   // 주소에 같은 단지가 두 번 있거나 없는 단지가 있어 뺀 수
+  const rawPicked = (params.get("s") || [params.get("a"), params.get("b")].filter(Boolean).join(",")).split(",").filter(Boolean);
+  let picked = rawPicked.filter((s, i) => rawPicked.indexOf(s) === i).slice(0, MAX);
+  dropped += rawPicked.length - picked.length;
   const out = document.getElementById("vs-result");
   const shareBtn = document.getElementById("vs-share");
 
@@ -93,7 +96,7 @@
   }
 
   DJ.data().then(d => {
-    picked = picked.filter(s => d.bySlug[s]);
+    const before = picked.length; picked = picked.filter(s => d.bySlug[s]); dropped += before - picked.length;
     const input = document.getElementById("pick");
     DJ.search(input, c => {
       if (!picked.includes(c.s)) picked = [...picked, c.s].slice(-MAX);
@@ -210,7 +213,7 @@
     const table = el("table", "cmp-table");
     const thead = el("thead"), hr = el("tr");
     hr.append(el("th", "", ""));
-    cs.forEach(c => { const th = el("th"); const a = el("a", "", c.n); a.href = DJ.href(c);
+    cs.forEach(c => { const th = el("th"); th.scope = "col"; const a = el("a", "", c.n); a.href = DJ.href(c);
       th.append(el("span", "grade g-" + c.g, c.g), document.createTextNode(" "), a); hr.append(th); });
     thead.append(hr); table.append(thead);
     const tb = el("tbody");
@@ -222,7 +225,7 @@
     rows.forEach(([name, get, show, better]) => {
       const tr = el("tr");
       if (!KEY.has(name)) tr.className = "more-row";
-      tr.append(el("th", name.startsWith("· ") ? "sub" : "", name.replace(/^· /, "")));
+      { const rh = el("th", name.startsWith("· ") ? "sub" : "", name.replace(/^· /, "")); rh.scope = "row"; tr.append(rh); }
       const vals = cs.map(get);
       const valid = vals.filter(v => v != null);
       const best = better && valid.length > 1 ? (better === "high" ? Math.max(...valid) : Math.min(...valid)) : null;
@@ -241,6 +244,18 @@
          : DJ.josa(cs[top].n, "이/가") + " 비교 항목 " + nCounted + "개 중 " + wins[top] + "개에서 앞섭니다")
       : "항목별 우위: " + cs.map((c, k) => c.n + " " + wins[k] + "개").join(", "));
     const wrap = el("div", "table-wrap cmp-wrap collapsed"); wrap.append(table);
+    wrap.tabIndex = 0; wrap.setAttribute("role", "region"); wrap.setAttribute("aria-label", "단지 비교 표. 옆으로 밀어 모든 단지를 볼 수 있어요");   // 키보드로도 옆으로 밀 수 있게
+    const scrollHint = el("div", "cmp-scroll");
+    if (cs.length >= 3) {
+      scrollHint.append(el("p", "cmp-scroll-t", `← 옆으로 밀어 ${cs.length}곳 모두 보기`));
+      const jumps = el("div", "cmp-jumps");
+      cs.forEach((c, k) => {
+        const b = el("button", "chip cmp-jump", c.n); b.type = "button"; b.setAttribute("aria-label", c.n + " 열로 이동");
+        b.addEventListener("click", () => { const th = table.querySelectorAll("thead th")[k + 1]; if (th) wrap.scrollTo({ left: Math.max(0, th.offsetLeft - table.querySelector("tbody th").offsetWidth), behavior: DJ.calm ? "auto" : "smooth" }); });
+        jumps.append(b);
+      });
+      scrollHint.append(jumps);
+    }
     const nMore = rows.filter(([n]) => !KEY.has(n)).length;
     const moreBtn = el("button", "btn cmp-more", `나머지 ${nMore}개 항목 더 보기`);
     moreBtn.type = "button"; moreBtn.setAttribute("aria-expanded", "false");
@@ -250,9 +265,13 @@
       moreBtn.textContent = open ? "핵심 항목만 보기" : `나머지 ${nMore}개 항목 더 보기`;
     });
     if (!nMore) moreBtn.hidden = true;
-    const cards = el("div", "card-grid");
-    cs.forEach(c => cards.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
-    out.append(deckOf(cs), diffsOf(cs), verdict, myFit(cs), wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
+    const cardGrid = el("div", "card-grid");
+    cs.forEach(c => cardGrid.append(DJ.card(c, d.stats, { others: cs.filter(o => o !== c) })));
+    const cards = el("details", "cmp-cards");   // 표와 같은 정보라서 처음엔 접어 둠 (화면이 1,700px 길어지는 것을 막음). 열면 기존 카드 그대로
+    cards.append(el("summary", "", `단지별 점수 카드 ${cs.length}장 보기`), cardGrid);
+    if (dropped) out.append(el("p", "muted small cmp-dropped", `주소의 단지 중 ${dropped}곳은 겹치거나 없거나 4곳을 넘어서 뺐어요.`));
+    verdict.hidden = true;   // 화면에는 우열 문장을 보이지 않음(우열·추천 표현 금지). 공유 문구 계산에만 그대로 사용
+    out.append(deckOf(cs), diffsOf(cs), verdict, myFit(cs), scrollHint, wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {
