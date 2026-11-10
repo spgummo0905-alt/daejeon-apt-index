@@ -223,7 +223,7 @@
   }
 
   // ---------- 내 카드첩: 모은 수, 등급별, 모은 카드, 구(동)별 진행, 아직 못 모은 귀한 카드 하나 ----------
-  let more = null;
+  let more = null, flt = "all";   // 걸러 보기: all · S~D · been(다녀옴)
   function album(d) {
     const sec = document.getElementById("album");
     if (!sec) return;
@@ -249,7 +249,22 @@
     const bn = sec.querySelector("[data-album-been]");
     if (bn) { bn.hidden = !beenN; bn.textContent = beenN ? `그중 직접 다녀온 곳 ${beenN}곳 · 카드에 도장이 찍혀 있어요` : ""; }
     // 모은 카드: 등급 높은 순, 같은 등급은 지수 순. 처음엔 12장, 더 보기로 24장씩
-    const sorted = got.slice().sort((x, y) => GRADES.indexOf(x.g) - GRADES.indexOf(y.g) || (y.i ?? -1) - (x.i ?? -1));
+    // 걸러 보기 칩: 등급별·다녀옴 개수는 모은 카드에서 바로 셈(수집 수와 항상 같음)
+    const counts = { all: got.length, been: beenN };
+    GRADES.forEach(g => { counts[g] = got.filter(c => c.g === g).length; });
+    if (flt !== "all" && !counts[flt]) flt = "all";
+    const fbox = sec.querySelector("[data-album-filter]");
+    fbox.replaceChildren();
+    fbox.hidden = !got.length;
+    [["all", "전체"], ...GRADES.filter(g => counts[g]).map(g => [g, g + "등급"]), ...(beenN ? [["been", "다녀옴"]] : [])].forEach(([k, label]) => {
+      const b = el("button", "chip" + (flt === k ? " on" : ""), `${label} ${counts[k]}`);
+      b.type = "button"; b.setAttribute("aria-pressed", flt === k ? "true" : "false");
+      b.addEventListener("click", () => { flt = k; album(d); });
+      fbox.append(b);
+    });
+    const shownSet = got.filter(c => flt === "all" || (flt === "been" ? DJ.been(c) : c.g === flt));
+    sec.querySelector("[data-album-shown]").textContent = got.length ? (flt === "all" ? "" : `${got.length.toLocaleString()}장 중 ${shownSet.length.toLocaleString()}장 보는 중`) : "";
+    const sorted = shownSet.slice().sort((x, y) => GRADES.indexOf(x.g) - GRADES.indexOf(y.g) || (y.i ?? -1) - (x.i ?? -1));
     const box = sec.querySelector("[data-album-cards]"), btn = sec.querySelector("[data-album-more]");
     box.replaceChildren();
     let shown = 0;
