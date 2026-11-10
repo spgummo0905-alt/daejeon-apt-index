@@ -172,7 +172,9 @@ def build(cfg, out_dir: Path) -> int:
         schema = json.dumps(website, ensure_ascii=False).replace("<", "\\u003c")
         # 브랜드 검색(집감)에서 사이트와 로고를 알아보게: 조직 정보와 로고 (96px 아이콘이 아닌 512px)
         org = {"@context": "https://schema.org", "@type": "Organization", "@id": base + "#organization",
-               "name": "집감", "alternateName": "Jipgam", "url": base, "logo": base + "static/icons/icon-512.png"}
+               "name": "집감", "alternateName": "Jipgam", "url": base, "logo": base + "static/icons/icon-512.png",
+               # 공식 채널: 검색엔진이 같은 브랜드의 사이트 밖 채널로 묶어 알아보게
+               "sameAs": ["https://blog.naver.com/happydalma1"]}
         org_s = json.dumps(org, ensure_ascii=False).replace("<", "\\u003c")
         html = html.replace("</head>", f'<script type="application/ld+json">{schema}</script>\n'
                                        f'<script type="application/ld+json">{org_s}</script>\n</head>', 1)
