@@ -59,7 +59,8 @@
   function col(c) {
     const a = el("a", "hc hc-col g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "col"; a.dataset.slug = c.s;
     const nm = el("span", "hc-name"); nm.append(el("strong", "", c.n), grade(c.g));
-    a.append(art(c.rk), nm, el("span", "hc-meta", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")), price(c),
+    // 모든 카드에 똑같은 건물 그림을 넣지 않음: 비교에서는 이름·등급·지역·가격·지수 글자가 먼저 보이게 (첫 화면에 먼저 볼 차이 3개가 다 들어오도록)
+    a.append(nm, el("span", "hc-meta", DJ.place(c) + (c.y ? " · " + c.y + "년" : "")), price(c),
       el("span", "hc-idx", c.i == null ? "지수 미산정" : "지수 " + c.i + "점"));
     return a;
   }
