@@ -5103,3 +5103,18 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .m-sum li { display: grid; gap: 2px; font-size: 16px; line-height: 1.5; }
 .m-sum li b { font-size: 15px; }
 .m-sum a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* ===== UX v2 · 다듬기: 겹침 제거 · 하단 메뉴 불투명 · 작은 글자와 중요한 버튼 키우기 ===== */
+@media (max-width: 720px) {
+  /* 일조(휴대폰): '최근 본' 떠 있는 버튼이 하단 버튼 줄이나 시간 슬라이더 끝을 가려서 이 화면에서만 숨김 (단지 바꾸기는 위쪽 '바꾸기'로 가능) */
+  body[data-page="preview"] .rcd { display: none; }
+  /* 하단 메뉴: 뒤 글자가 비치지 않게 완전 불투명 (흐림 효과도 없애 가볍게) */
+  .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* 카드첩·오늘의 카드·배지: 읽기 어려운 12~13px 를 14px 로 */
+  .tc-kind, .tc-hint, .badge-n { font-size: 14px; }
+  .badge-name { font-size: 14px; }
+  .tc .mcw-hc .hc-meta { font-size: 13px; }
+  .gstat-val, .gstat-name { font-size: 14px; }
+  /* 눌러야 하는 주요 버튼은 56px */
+  .hm-toggle, .album-next .btn, #vs-share, .cmp-fit .btn { min-height: 56px; }
+}
