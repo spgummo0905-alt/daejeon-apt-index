@@ -1,0 +1,5 @@
+name = "jipgam-satellite"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# 키는 여기에 적지 않습니다. 배포 뒤 `wrangler secret put VWORLD_KEY` 로 넣습니다.
