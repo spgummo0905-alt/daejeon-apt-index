@@ -280,6 +280,7 @@
       const vs = cs.map(c => c.n).join(" vs ");
       const short = verdict.textContent.replace(/앞섭니다$/, "앞서요").replace(/비슷합니다$/, "비슷해요");
       const o = {
+        scope: "고른 단지 이름과 값 · 내 메모·사진·방문 기록은 보내지 않아요",
         head: "단지 비교 공유", button: "비교 보기", url, file: "apt-compare.png", og: base + "static/og/compare.jpg",
         title: vs, desc: short + " · 입지·수익률·전세가율·학군까지 나란히",
         copy: `${vs}\n${short}`, glyphs: vs + short + cs.map(c => (c.pt || "") + DJ.place(c)).join(""),

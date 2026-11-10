@@ -278,6 +278,7 @@
       const list = favs.map(s => d.bySlug[s]).filter(Boolean);
       const counts = [["관심 단지", favs.length, "곳"], ["임장 노트", notes, "곳"], ["현장 사진", photos, "장"]].filter(([, n]) => n).map(([k, n, u]) => [k, n + u]);
       const o = {
+        scope: "관심 단지와 임장 노트(체크·들은 호가·메모, 보기 전용) · 현장 사진과 날짜별 방문 기록은 보내지 않아요",
         head: "가족과 함께 보기", button: "기록 보기", url: link(), file: "imjang-family.png",
         og: location.origin + location.pathname.replace(/[^/]*$/, "") + "static/og/family.jpg",
         title: name ? `${name}님의 임장 기록` : "우리 집 임장 기록",

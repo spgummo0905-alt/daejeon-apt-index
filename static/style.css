@@ -391,7 +391,7 @@ html:not(.u-py) .unit-seg [data-area-unit="m2"], html.u-py .unit-seg [data-area-
   #complex-table thead .col-name { z-index: 2; }
   #complex-table th:first-child, #complex-table td:first-child { padding-left: 10px; padding-right: 0; font-size: 13px; color: var(--muted); }
   /* 둘째 줄: [신고가] 위치 · 준공 */
-  #complex-table .badge-high, #complex-table .badge-small { margin: 2px 4px 0 0; padding: 0 6px; font-size: 11px; vertical-align: 1px; }
+  #complex-table .badge-high, #complex-table .badge-small { margin: 2px 4px 0 0; padding: 0 6px; font-size: 12px; vertical-align: 1px; }
   .t-place { display: inline; font-size: 12px; color: var(--muted); }
   .c-desk { display: none; }
   .c-mob { display: block; }
@@ -5086,3 +5086,12 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 @keyframes fm-pop { from { transform: scale(1.6) rotate(-8deg); opacity: 0; } to { transform: scale(1) rotate(-3deg); opacity: 1; } }
 .fm-again { width: 100%; margin: 10px 0 0; justify-content: center; min-height: 48px; }
 @media (prefers-reduced-motion: reduce) { .fm-stamp.pop { animation: none; } .pj-candidate.pj-dragging { transition: none; } }
+
+/* ===== UX v2 · 보조 페이지: 공유 범위 한 줄 · 산출 방법 요약 ===== */
+.ss-scope { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--chip); font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.m-sum { margin: 16px 0; padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+.m-sum h2 { margin: 0 0 8px; font-size: 18px; }
+.m-sum ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.m-sum li { display: grid; gap: 2px; font-size: 16px; line-height: 1.5; }
+.m-sum li b { font-size: 15px; }
+.m-sum a { min-height: 44px; display: inline-flex; align-items: center; }
