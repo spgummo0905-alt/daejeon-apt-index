@@ -102,11 +102,15 @@
       document.body.append(m);
       anchor.setAttribute("aria-haspopup", "menu"); anchor.setAttribute("aria-expanded", "true");
       // 누른 자리 바로 아래(공간이 모자라면 위)에, 화면 가장자리 8px 안쪽으로
-      const r = anchor.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = innerHeight;
-      m.style.minWidth = Math.max(160, Math.round(r.width)) + "px";
-      const w = m.offsetWidth, h = m.offsetHeight;
-      m.style.left = Math.max(8, Math.min(vw - w - 8, r.left)) + "px";
-      m.style.top = (r.bottom + 6 + h > vh - 8 && r.top - 6 - h > 8 ? r.top - 6 - h : r.bottom + 6) + "px";
+      m.style.minWidth = Math.max(160, Math.round(anchor.getBoundingClientRect().width)) + "px";
+      const place = () => {
+        const r = anchor.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = innerHeight, w = m.offsetWidth, h = m.offsetHeight;
+        if (r.bottom < 0 || r.top > vh) return false;                       // 누른 버튼이 화면 밖으로 나가면 닫음
+        m.style.left = Math.max(8, Math.min(vw - w - 8, r.left)) + "px";
+        m.style.top = (r.bottom + 6 + h > vh - 8 && r.top - 6 - h > 8 ? r.top - 6 - h : r.bottom + 6) + "px";
+        return true;
+      };
+      place();
       requestAnimationFrame(() => m.classList.add("on"));
       const off = e => { if (!m.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) menu.close(); };
       const key = e => {
@@ -120,7 +124,7 @@
       };
       document.addEventListener("pointerdown", off, true);
       m.addEventListener("keydown", key);
-      mcur = { anchor, el: m, off };
+      mcur = { anchor, el: m, off, place };
       (btns.find(b => b.getAttribute("aria-checked") === "true") || btns[0]).focus({ preventScroll: true });
       return m;
     },
@@ -132,9 +136,10 @@
     },
     get isOpen() { return !!mcur; },
   };
-  // 스크롤·크기 변경 때는 자리가 어긋나므로 메뉴를 닫음
-  addEventListener("resize", () => menu.close());
-  addEventListener("scroll", () => menu.close(), { passive: true });
+  // 스크롤·크기 변경: 메뉴는 누른 버튼을 따라가고, 버튼이 화면 밖으로 나가면 닫음 (부드러운 스크롤 도중 열려도 바로 닫히지 않게)
+  const follow = () => { if (mcur && !mcur.place()) menu.close(); };
+  addEventListener("resize", follow);
+  addEventListener("scroll", follow, { passive: true });
 
   DJ.sheet = sheet; DJ.menu = menu;
 })();

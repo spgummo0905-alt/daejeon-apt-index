@@ -312,3 +312,5 @@ body.pv-has .pv .foot{order:21}
 .pv .iso-t,.pv .plan text{stroke:#1b2026}
 .pv .iso-t:not(.on){fill:#f2f1ec}   /* 어두운 바탕 위 동 이름: 밝은 글자 + 어두운 바깥선 */
 }
+/* UX v2 · 07: 결과 안 작은 링크도 누르는 자리 44px (글자 크기·줄 간격은 그대로) */
+#result a{position:relative}#result a::after{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:44px;transform:translateY(-50%)}
