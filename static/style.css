@@ -5060,6 +5060,14 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .cmp-table thead th a { position: relative; display: inline-block; }
 .cmp-table thead th a::after { content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 44px; transform: translateY(-50%); }   /* 열 머리 링크도 누르는 자리 44px (글자 크기는 그대로) */
 
+/* ===== UX v2 · 10 카드첩: 등급·다녀옴 걸러 보기, 등급과 도장의 뜻 구분 ===== */
+.album-legend { margin: 10px 0 8px; font-size: 14px; }
+.album-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.album-filter .chip { min-height: 44px; padding: 0 14px; font-size: 15px; }
+.album-filter .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 800; }
+.album-shown { margin: 0 0 8px; min-height: 0; font-size: 14px; color: var(--text-2); }
+.album-shown:empty { display: none; }
+
 /* ===== UX v2 · 09 임장: 다음 방문 띠 · 끌어서 순서 · 현장 저장 상태 · 도장 ===== */
 .pj-nv { margin: 14px 0; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
 .pj-nv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
