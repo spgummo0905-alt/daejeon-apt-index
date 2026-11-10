@@ -425,6 +425,13 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
     <p class="note">단지 중심에서 잰 직선거리입니다. 방음벽·동 배치·층에 따라 실제 소음은 크게 다르니, 큰길 쪽 동은 낮과 밤에 직접 들어 보세요.</p>
   </div>
   {% endif %}
+  {% if latlng and satellite_url %}
+  <figure class="sat" data-sat data-api="{{ satellite_url }}" data-lat="{{ latlng[0] }}" data-lng="{{ latlng[1] }}" hidden>
+    <figcaption class="sat-h"><b>위에서 본 단지</b><span>실제 항공 사진 · 단지 둘레 약 300m</span></figcaption>
+    <div class="sat-grid" data-sat-grid role="img" aria-label="{{ c.name }} 주변을 위에서 찍은 항공 사진"></div>
+    <p class="sat-src">항공 사진 출처: 브이월드(국토교통부) · 촬영 시점이 달라 지금 모습과 다를 수 있어요 · 위치는 단지 중심 기준이에요</p>
+  </figure>
+  {% endif %}
   {% if latlng %}
     {% if kakao_js_key %}
     <div class="lm" data-lm data-lat="{{ latlng[0] }}" data-lng="{{ latlng[1] }}" data-name="{{ c.name }}" data-stop="{{ transit.stop }}"
@@ -609,6 +616,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
 </div>
 {% endblock %}
 {% block scripts %}
+{% if satellite_url %}<script src="{{ root }}static/satellite.js?v={{ v }}" defer></script>{% endif %}
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 <script src="{{ root }}static/fit.js?v={{ v }}"></script>
 <script src="{{ root }}static/project-store.js?v={{ v }}"></script>

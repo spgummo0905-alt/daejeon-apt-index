@@ -513,6 +513,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         "hist": charts.responsive(charts.histogram, list(main_t["index"]), mob={"width": 360}),
     }
     common = dict(meta=meta, region=cfg.region_name, demo=demo, ref_area=int(ref),
+                  satellite_url=str(cfg.site.get("satellite_url", "") or "").rstrip("/"),   # 위성 사진 대리 서버 주소(없으면 위성 사진 칸을 만들지 않음)
                   transit=_transit(cfg), regions=_regions(cfg), region_groups=region_groups(_regions(cfg)),
                   unit="동" if cfg.raw["region"].get("group_by") == "dong" else "구",
                   # 단지 화면 '한 달에 얼마' 계산 (pay.js): 조건으로 찾기와 같은 기준
