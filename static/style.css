@@ -5039,3 +5039,8 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .sv-step { min-height: 44px; padding: 5px 6px; gap: 5px; }
 .sv-reset { min-height: 44px; padding: 0 8px; }
 @media (max-width: 374px) { .sv-step { padding: 5px 3px; gap: 3px; font-size: 13px; } .sv-step i { width: 20px; height: 20px; font-size: 11px; } .sv-steps-row { gap: 2px; } .sv-reset { padding: 0 4px; font-size: 13px; } }
+
+/* UX v2 · 06 상세: 알림 안 링크 단추와 취소 단추가 나란히 */
+.toast.has-act { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 16px; }
+.toast.has-act > strong, .toast.has-act > span { flex: 1 1 100%; }
+.toast .toast-undo { background: none; border: 0; font-family: inherit; cursor: pointer; color: #fff; }

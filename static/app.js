@@ -96,6 +96,11 @@
       a.href = action.href;
       t.classList.add("has-act");
       t.append(a);
+      if (action.undo) {   // UX v2: 링크 단추 옆에 '취소'도 함께 (담은 직후 되돌리기)
+        const u = el("button", "toast-act toast-undo", "취소"); u.type = "button";
+        u.addEventListener("click", () => { u.disabled = true; t.classList.add("out"); setTimeout(() => t.remove(), 300); try { action.undo(); } catch (e) { /* 되돌리기 실패는 호출한 쪽이 처리 */ } });
+        t.append(u);
+      }
       ms = ms || 7000;
     }
     else if (action && action.onClick && action.label) {   // UX v2: 눌러서 되돌리는 단추 (ux-motion.js DJ.toastUndo)
@@ -1082,8 +1087,9 @@
             // 둘 이상 모이면 바로 비교로 (이 지역에 있는 단지만 셈. 누르기 전에는 이동하지 않음)
             DJ.data().then(d => {
               const mine = DJ.favs().filter(s => d.bySlug[s]);
-              if (mine.length >= 2) DJ.toast("관심 단지에 저장했습니다", `관심 단지 ${mine.length}곳이에요. 나란히 견줘 볼까요?`, 7000, { label: "관심 단지 비교하기 →", href: ROOT + "compare.html?s=" + mine.slice(0, 4).map(encodeURIComponent).join(",") });
-              else DJ.toast("관심 단지에 저장했습니다", "한 곳만 더 담으면 바로 비교할 수 있어요");
+              const undo = () => { if (DJ.isFav(c.s)) DJ.toggleFav(c.s); paint(DJ.isFav(c.s)); };   // 취소하면 저장한 것만 되돌림
+              if (mine.length >= 2) DJ.toast("관심 단지에 저장했습니다", `관심 단지 ${mine.length}곳이에요. 나란히 견줘 볼까요?`, 7000, { label: "관심 단지 비교하기 →", href: ROOT + "compare.html?s=" + mine.slice(0, 4).map(encodeURIComponent).join(","), undo });
+              else DJ.toast("관심 단지에 저장했습니다", "한 곳만 더 담으면 바로 비교할 수 있어요", 5000, { label: "취소", onClick: undo });
             }).catch(() => DJ.toast("관심 단지에 저장했습니다", "'관심' 메뉴에서 다시 볼 수 있습니다"));
           }
         });
