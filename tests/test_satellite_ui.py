@@ -20,7 +20,9 @@ def test_satellite_box_only_when_proxy_url_is_configured_and_has_source_note():
     assert "{% if latlng and satellite_url %}" in t and "data-api=\"{{ satellite_url }}\"" in t
     assert "항공 사진 출처: 브이월드(국토교통부)" in t and "촬영 시점이 달라" in t
     assert '{% if satellite_url %}<script src="{{ root }}static/satellite.js' in t
-    assert 'satellite_url = ""' in _r("config.toml")                           # 기본은 꺼짐
+    import re
+    m = re.search(r'^satellite_url = "([^"]*)"', _r("config.toml"), re.M)
+    assert m and (m.group(1) == "" or m.group(1).startswith("https://") and "/functions/v1/satellite" in m.group(1))   # 꺼짐이거나 우리 함수 주소
 
 
 def test_satellite_script_hides_everything_when_tiles_fail_and_never_stores():
