@@ -15,8 +15,8 @@ og_image = "static/og/daejeon.jpg"
 # 검색 등록 확인 코드: 네이버 서치어드바이저 / 구글 서치 콘솔에서 'HTML 태그' 방식으로 받은
 # content="..." 안의 값만 넣으세요. 비워 두면 태그를 넣지 않습니다.
 naver_site_verification = "ffb371c396da76d1bb43d727523fbb50b1079361"
-# 위성 사진 대리 서버(Cloudflare Workers, workers/satellite). 배포한 주소를 넣으면 단지 상세에 '위에서 본 단지'가 나옵니다. 비우면 나오지 않습니다.
-satellite_url = ""
+# 위성 사진 대리 서버(Supabase 함수 satellite; Cloudflare는 브이월드가 거절해 쓰지 않음). 배포한 주소를 넣으면 단지 상세에 '위에서 본 단지'가 나옵니다. 비우면 나오지 않습니다.
+satellite_url = "https://bgfhduwmmqudlcobbodr.supabase.co/functions/v1/satellite"
 google_site_verification = "ih0mjE1xK4FiqFC_zBSPhggbr7LM-IztpDvm3yzQGyU"
 # 방문 통계(Cloudflare Web Analytics) 토큰. 비워 두면 통계 코드와 처리방침 안내를 넣지 않습니다.
 cf_beacon_token = "c317ca59ed1c4a5e995aadd0b450215a"
