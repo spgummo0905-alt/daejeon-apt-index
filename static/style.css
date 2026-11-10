@@ -4512,6 +4512,11 @@ body[data-page="intro"] .toast-act { color: #13294b; }
   body.cmp-ready .next-step .btn.primary { pointer-events: auto; width: 100%; min-height: 56px; font-size: 17px; font-weight: 800; border-radius: var(--r-md); box-shadow: var(--shadow-float); }
   body.cmp-ready .next-step .btn.primary::after { content: "›"; margin-left: auto; font-size: 24px; }
   body.cmp-ready { padding-bottom: 150px; }
+  /* 2곳 이상 고른 뒤에는 입력 칸을 한 줄로 줄여, 작은 폰(375×667)에서도 비교 카드와 '먼저 볼 차이'가 고정 버튼 위에 먼저 보이게 */
+  body.cmp-ready .panel:has(#pick) { padding: 10px 14px; margin-bottom: 8px; }
+  body.cmp-ready .panel:has(#pick) .chips.picked { margin: 0; }
+  body.cmp-ready .panel:has(#pick) .row-actions { margin-top: 8px; }
+  body.cmp-ready .panel:has(#pick) #vs-share { min-height: 44px; }
   .kb-open .next-step { display: none !important; }
 }
 
@@ -4818,7 +4823,6 @@ p.muted { text-wrap: balance; }
 /* --- C3 비교·임장: 같은 카드 --- */
 .hc-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 10px; border-radius: 20px; background: var(--surface); border: 1px solid var(--hc-line); box-shadow: 0 8px 22px rgba(34,63,111,.07); color: var(--text); text-decoration: none; }
 .hc-col:hover { text-decoration: none; border-color: var(--axis); }
-.hc-col .hc-art { height: 92px; border-radius: 14px; }
 .hc-col .hc-name strong { font-size: 17px; white-space: normal; line-height: 1.25; }
 .hc-col .hc-price b { font-size: 22px; }
 .hc-idx { font-size: 14px; font-weight: 700; color: var(--hc-blue-ink); }
@@ -4835,7 +4839,6 @@ p.muted { text-wrap: balance; }
 .cmp-diff .muted { margin: 8px 0 0; }
 @media (max-width: 719px) {
   .hc-col { padding: 8px; gap: 3px; border-radius: 16px; }
-  .hc-col .hc-art { height: 52px; border-radius: 10px; }
   .hc-col .hc-name strong { font-size: 16px; }
   .hc-col .hc-meta { font-size: 13px; }
   .hc-col .hc-price { flex-wrap: wrap; gap: 0 5px; } .hc-col .hc-price b { font-size: 20px; } .hc-col .hc-price small { font-size: 12px; }
