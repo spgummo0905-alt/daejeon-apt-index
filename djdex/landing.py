@@ -185,6 +185,18 @@ def build(cfg, out_dir: Path) -> int:
     (out_dir / "static" / "og").mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / "static" / "og" / "jipgam.jpg", out_dir / "static" / "og" / "jipgam.jpg")
 
+    # 맨 앞 주소의 '집감이란?'(/about)과 검색 결과 로고는 이 주소의 /static 을 씁니다. 빠지면 로고가 깨지고 검색 로고도 못 찾아요.
+    for sub in ("brand", "icons"):
+        dst = out_dir / "static" / sub
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in (ROOT / "static" / sub).iterdir():
+            if f.is_file():
+                shutil.copy2(f, dst / f.name)
+    # 브라우저와 검색 로봇은 주소 뒤에 /favicon.ico 를 찾아요. 크기별 그림을 한 파일에 담아 둡니다.
+    from PIL import Image
+    Image.open(ROOT / "static" / "brand" / "favicon-96.png").convert("RGBA").save(
+        out_dir / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+
     (out_dir / "sw.js").write_text(SW, encoding="utf-8")
     n_stub = write_redirects(out_dir, legacy["folder"], legacy["name"], base, {r["folder"] for r in rows}) if legacy else 0
 
