@@ -24,7 +24,7 @@ let ctx = null, view = null;
 // ---------- 자료 읽기 ----------
 function loadComplex(id) {
   if (cache[id]) return Promise.resolve(cache[id]);
-  return fetch('preview/' + encodeURIComponent(id) + '.json').then(r => { if (!r.ok) throw new Error('자료 파일'); return r.json(); })
+  return fetch('preview/' + encodeURIComponent(id) + '.json').then(r => { if (!r.ok) { const e = new Error('자료 파일'); e.status = r.status; throw e; } return r.json(); })
     .then(doc => { const c = C.prepare(C.fromDoc(doc)); c.m = doc.m; return (cache[id] = c); });
 }
 function loadList() {
@@ -95,6 +95,15 @@ function onFloor() {                           // 층만 바뀔 때: 동·날짜
 function openDongSheet() {
   const d = $('dongSheet'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
   const on = $('dong').querySelector('[aria-pressed="true"]'); if (on) { on.scrollIntoView({ block: 'center' }); on.focus({ preventScroll: true }); }
+}
+// 동이 적으면(2~5개) 누른 자리 바로 아래 작은 메뉴, 많으면 기존 시트 (UX v2: 적은 선택지=메뉴, 많은 선택지=시트). 고르는 동작은 같은 select()
+function openDongPick(anchor) {
+  const dongs = ownDongs();
+  if (window.DJ && DJ.menu && dongs.length >= 2 && dongs.length <= 5) {
+    DJ.menu.open(anchor, dongs.map(b => ({ label: C.dongNo(b.dn) + '동 · ' + b.f + '층 건물', value: b.id, selected: b.id === st.tid })), { label: '동 고르기', onPick: id => { if (id !== st.tid) select(id); } });
+    return;
+  }
+  openDongSheet();
 }
 function closeDongSheet() { const d = $('dongSheet'); if (d.close) d.close(); else d.removeAttribute('open'); }
 function openFloorSheet() {
@@ -449,7 +458,8 @@ function toggleSave() {
   if (!(window.DJ && DJ.toggleFav)) return;
   const on = DJ.toggleFav(st.cid);
   drawSave();
-  if (DJ.toast) DJ.toast(on ? '관심 단지에 담았어요' : '관심 단지에서 뺐어요', on ? '나의 집감에서 볼 수 있어요.' : '', 2500);
+  if (on && DJ.toastUndo) { const cid = st.cid; DJ.toastUndo('관심 단지에 담았어요', '', () => { if (DJ.isFav(cid)) DJ.toggleFav(cid); drawSave(); }); }   // 담은 직후 3.5초 취소
+  else if (DJ.toast) DJ.toast(on ? '관심 단지에 담았어요' : '관심 단지에서 뺐어요', on ? '나의 집감에서 볼 수 있어요.' : '', 2500);
 }
 
 // ---------- 한 화면 맞추기 (휴대폰) ----------
@@ -468,7 +478,7 @@ function select(tid) {
   if (st.fl !== st._askFl) st._askFl = st.fl;
 }
 async function chooseComplex(id) {
-  try { ctx = await loadComplex(id); } catch (e) { ctx = null; $('pv-load').textContent = '이 단지는 일조 미리보기가 열려 있지 않거나 자료를 불러오지 못했어요. 아래 단지 고르기에서 다른 단지를 골라 보세요.'; $('pv-load').style.minHeight = '0'; return; }
+  try { ctx = await loadComplex(id); } catch (e) { ctx = null; $('pv-load').textContent = e && e.status === 404 ? '이 단지는 아직 일조 미리보기가 열려 있지 않아요. 아래 단지 고르기에서 다른 단지를 골라 보세요.' : '건물 자료를 불러오지 못했어요. 인터넷 연결을 확인하고 잠시 뒤 다시 열어 보세요. 아래에서 다른 단지를 골라도 돼요.'; $('pv-load').style.minHeight = '0'; return; }
   st.cid = id; loadCardRec();
   const own = ownDongs();
   if (st._dong) {                                   // 주소에 동·층이 있으면 기본값보다 먼저 적용한다(그래야 주소가 기본값으로 덮어써지지 않음)
@@ -498,7 +508,7 @@ document.addEventListener('click', ev => {
   if (bt.dataset.cx) { if (bt.dataset.cx !== st.cid) { st.tid = null; chooseComplex(bt.dataset.cx); } }
   else if (bt.dataset.dong) { select(bt.dataset.dong); closeDongSheet(); }
   else if (bt.hasAttribute('data-why')) { const f = $('moreFold'); f.open = true; $('evidence').open = true; drawFold(); f.scrollIntoView({ block: 'start', behavior: DJ_calm() ? 'auto' : 'smooth' }); const s = f.querySelector('summary'); if (s) s.focus({ preventScroll: true }); }
-  else if (bt.id === 'dongBtn') openDongSheet();
+  else if (bt.id === 'dongBtn') openDongPick(bt);
   else if (bt.id === 'dongSheetX') closeDongSheet();
   else if (bt.dataset.date) { st.dk = bt.dataset.date; fullRender(); writeHash(); }
   else if (bt.dataset.view) { st.view = bt.dataset.view; drawView(); writeHash(); closeDlg('viewSheet'); }
