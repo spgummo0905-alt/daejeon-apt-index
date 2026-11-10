@@ -356,6 +356,7 @@
 
   // ---------- 그리기: 단계, 질문, 개수, 그림 ----------
   const stepsBox = box.querySelector("[data-sv-steps]");
+  const adv = box.querySelector("[data-sv-adv]"), quickBox = box.querySelector("[data-sv-fast]"), ADV = ["work", "age", "near", "must"];   // 빠른 모드 밖의 자세한 질문
   let lastN = null;
   function render() {
     if (!STEPS[S.step] || STEPS[S.step].id === "status") S.step = idx("budget");   // 옛 설문의 '상황' 단계(0번)는 예산으로
@@ -380,6 +381,7 @@
     box.querySelector("[data-sv-skip]").hidden = !st.on();
     box.querySelector("[data-sv-next]").textContent = ord === ORDER.length - 1 ? "결과 보기" : "다음";
     art();
+    drawQuick();
     save();
   }
   // 아직 아무것도 안 골랐으면 (상황은 남는 단지 수를 안 바꿈) '결과'라고 하지 않고 전체 단지 수만 보여 줘요
@@ -421,6 +423,33 @@
     box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" });
   }
   box.querySelector("[data-sv-reset]").addEventListener("click", reset);
+
+  // ---------- 빠른 찾기: 예산 · 평형 · 지역 세 가지만 고르면 바로 결과 (같은 설문 값 S 를 쓰므로 저장·주소 조건·계산은 그대로) ----------
+  function budgetList() {
+    const top = Math.max(0, ...ALL.map(c => Math.max(0, ...types(c).map(t => t[1])))) / 10000;
+    return BUDGETS.filter((b, i) => i === 0 || BUDGETS[i - 1] < top);
+  }
+  function drawQuick() {
+    if (!quickBox || !ALL.length) return;
+    const grp = (title, node) => { const g = el("section", "sv-qg"); g.append(el("h3", "", title), node); return g; };
+    const bud = grid("c3", ...budgetList().map(b => option(b + "억 이하", null, countWith({ budget: b }), S.budget === b && S.bmode !== "calc",
+      () => { S.bmode = "price"; S.budget = S.budget === b ? 0 : b; }, "sm")));
+    const py = grid("c3", ...PY.map(p => option(p.label, null, countWith({ py: [p.id] }), S.py.includes(p.id),
+      () => { S.py = S.py.includes(p.id) ? S.py.filter(x => x !== p.id) : [...S.py, p.id]; }, "sm")));
+    const cnt = {}; ALL.forEach(c => { cnt[c.gu] = (cnt[c.gu] || 0) + 1; });
+    const gus = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+    const shown = gus.slice(0, 8).concat(gus.slice(8).filter(g => S.gus.includes(g)));
+    const gu = grid("c3", ...shown.map(g => option(g, null, countWith({ gus: [g] }), S.gus.includes(g),
+      () => { S.gus = S.gus.includes(g) ? S.gus.filter(x => x !== g) : [...S.gus, g]; }, "sm")));
+    const n = count(S), idle = !narrowed();
+    const go = el("a", "btn primary sv-quick-go", idle ? "하나만 골라도 맞는 단지가 보여요" : n ? `맞는 단지 ${n.toLocaleString()}곳 보기` : "맞는 단지가 없어요 · 조건을 하나 풀어 보세요");
+    go.dataset.svQgo = ""; go.setAttribute("aria-disabled", String(idle || !n));
+    if (!idle && n) go.href = "#results";
+    const hint = el("p", "sv-qhint", "예산은 가격 구간, 평형과 지역은 여러 개를 고를 수 있어요. 직장·연식·역·학교는 아래 ‘더 자세한 조건’에서 고르세요.");
+    const clear = el("button", "sv-quick-clear", "조건 모두 지우기"); clear.type = "button"; clear.hidden = idle; clear.addEventListener("click", reset);
+    const dock = el("div", "sv-quick-dock"); dock.append(go);   // 대표 버튼은 화면 아래에 붙어 항상 보임
+    quickBox.replaceChildren(grp("예산", bud), grp("평형", py), grp(UNIT === "구" ? "지역(구)" : "지역", gu), clear, hint, dock);
+  }
 
   // ---------- 고른 조건 꼬리표 ----------
   // 조건 칩: 글자와 '어느 질문에서 고른 것인지'를 함께 돌려줌 (칩을 누르면 그 질문으로 돌아가 고칠 수 있게)
@@ -559,7 +588,7 @@
     const tg = document.querySelector("[data-sv-tags]");
     tg.replaceChildren(...tagItems().map(({ t, step }) => {
       const b = el("button", "chip sm sv-tag", t); b.type = "button"; b.setAttribute("aria-label", t + " 조건 고치기");
-      b.addEventListener("click", () => { S.step = Math.max(0, STEPS.findIndex(x => x.id === step)); render(); box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" }); });
+      b.addEventListener("click", () => { S.step = Math.max(0, STEPS.findIndex(x => x.id === step)); if (adv && ADV.includes(step)) adv.open = true; render(); box.scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth", block: "start" }); });
       return b;
     }));
     gridBox.replaceChildren();
@@ -683,6 +712,7 @@
     if (!ALL.some(c => c.hl)) MUST.splice(MUST.findIndex(m => m.id === "flat"), 1);   // 언덕 자료가 없는 지역
     document.querySelectorAll("[data-sort]").forEach(x => { x.classList.toggle("active", x.dataset.sort === S.sort); x.setAttribute("aria-pressed", x.dataset.sort === S.sort); });
     const fromSearch = fromUrl();
+    if (adv && ADV.some(id => STEPS[idx(id)].on())) adv.open = true;   // 자세한 조건을 이미 골라 둔 사람에게는 펼쳐서 보여 줌
     changed();
     if (fromSearch) document.getElementById("results").scrollIntoView();
   }).catch(() => {   // 단지 목록을 못 받았을 때: 빈 화면 대신 안내와 다시 시도 (자동으로 조건을 지우지 않음)

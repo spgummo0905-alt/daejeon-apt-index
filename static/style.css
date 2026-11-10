@@ -5144,3 +5144,24 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .sat-grid img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .sat-grid::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: var(--accent); box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
 .sat-src { margin: 8px 0 0; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+/* ===== UX v3 · 찾기 빠른 모드: 예산·평형·지역만으로 바로 결과 · 나머지는 '더 자세한 조건' ===== */
+.sv-quick { display: grid; gap: 18px; margin: 18px 0 8px; }
+.sv-qg h3 { margin: 0 0 8px; font-size: 18px; }
+.sv-qg .sv-opts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sv-qg .sv-opt { min-height: 64px; }
+.sv-quick-go { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 56px; padding: 8px 16px; border-radius: var(--r-md); font-size: 18px; font-weight: 800; text-decoration: none; }
+.sv-quick-dock { position: sticky; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 5; margin: 0 -16px -16px; padding: 10px 16px; background: color-mix(in srgb, var(--surface) 96%, transparent); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-md) var(--r-md); }
+@media (min-width: 720px) { .sv-quick-dock { position: static; margin: 0; padding: 0; background: none; border: 0; } }
+.sv-quick-go[aria-disabled="true"] { background: var(--chip); color: var(--text-2); border: 1px dashed var(--axis); pointer-events: none; font-size: 16px; }
+.sv-quick-clear { min-height: 44px; justify-self: center; background: none; border: 0; color: var(--text-2); text-decoration: underline; font-size: 15px; cursor: pointer; }
+.sv-qhint { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.sv-adv { margin: 14px 0 0; padding: 0 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.sv-adv > summary { display: flex; align-items: center; gap: 8px; min-height: 56px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 800; }
+.sv-adv > summary::-webkit-details-marker { display: none; }
+.sv-adv > summary small { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.sv-adv > summary .ic { flex: none; width: 18px; height: 18px; transition: transform var(--t-fast, .15s); }
+.sv-adv[open] > summary .ic { transform: rotate(180deg); }
+.sv-adv[open] { padding-bottom: 14px; }
+@media (max-width: 719px) { .sv-adv .sv-nav { margin: 14px -14px -14px; } }
+@media (prefers-reduced-motion: reduce) { .sv-adv > summary .ic { transition: none; } }
