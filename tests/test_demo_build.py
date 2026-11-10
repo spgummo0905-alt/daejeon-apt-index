@@ -965,6 +965,9 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert '<link rel="canonical" href="https://www.jipgam.kr/">' in page and 'content="https://www.jipgam.kr/static/og/jipgam.jpg"' in page
     assert 'name="naver-site-verification"' in page and not (out / "daejeon" / "landing.html").exists()
     assert (out / "static" / "og" / "jipgam.jpg").exists()
+    # 맨 앞 /about 로고, 검색 로고, 기본 favicon 이 있어야 함 (빠지면 로고가 깨짐)
+    assert (out / "static" / "brand" / "symbol-96.png").exists() and (out / "static" / "icons" / "icon-512.png").exists()
+    assert (out / "favicon.ico").read_bytes()[:4] == b"\x00\x00\x01\x00"
     assert "지역 선택" not in (out / "daejeon" / "intro.html").read_text(encoding="utf-8")   # 지역 인트로는 그대로
     stub = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     assert 'location.replace("/daejeon/apt/DEMO-0001.html"+location.search+location.hash)' in stub
