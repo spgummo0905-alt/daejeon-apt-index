@@ -20,12 +20,12 @@ def test_card_photo_slot_carries_slug_and_cover_js_falls_back_to_photo():
     j = R("static/cover.js")
     assert 'plans.json' in j and "drawPlan" in j and "else photo(box)" in j          # 자료 없으면 항공 사진
     assert "실제 외관은 아니에요" in j and "배치도 · 일부 추정" in j                  # 오해 막는 문구
-    assert "tone(" in j and "(f - 5) / 45" in j                                       # 층수→색 농도, 모든 단지 같은 기준
+    assert "tone(" in j and "(f - 5) / 45" in j and "밝을수록 높은 동" in j and "N↑" in j                                       # 층수→색 농도, 모든 단지 같은 기준
 
 
 def test_plan_css_keeps_label_and_hides_label_on_tiny_cards():
     c = R("static/style.css")
-    assert ".hc-collect .hc-photo.plan" in c and ".tc .mcw-hc .hc-plantag { display: none; }" in c
+    assert ".hc-collect .hc-photo.plan" in c and ".tc .mcw-hc .hc-plantag, .tc .mcw-hc .hc-plannorth { display: none; }" in c
     assert ".hc-collect .hc-photo.plan .hc-pin { display: none; }" in c
 
 

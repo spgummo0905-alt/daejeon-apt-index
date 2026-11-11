@@ -36,7 +36,7 @@
   const NS = "http://www.w3.org/2000/svg";
   const mk = (n, a) => { const e = document.createElementNS(NS, n); Object.keys(a || {}).forEach(k => e.setAttribute(k, a[k])); return e; };
   function tone(f) {   // 층수 → 초록 농도 (모든 단지 같은 기준: 5층 이하 옅게, 50층 이상 진하게)
-    const t = clamp((f - 5) / 45, 0, 1), a = [155, 232, 204], b = [34, 125, 98];
+    const t = clamp((f - 5) / 45, 0, 1), a = [46, 107, 88], b = [155, 232, 204];   // 낮은 동은 어둡게, 높은 동은 밝게 (어두운 바탕에서 높은 동이 먼저 보이게)
     return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",") + ")";
   }
   function drawPlan(box, doc) {
@@ -51,14 +51,15 @@
     });
     box.classList.add("plan", "on");
     const tag = document.createElement("span"); tag.className = "hc-plantag"; tag.textContent = est ? "배치도 · 일부 추정" : "배치도";
-    box.prepend(svg); box.append(tag);
+    const nn = document.createElement("span"); nn.className = "hc-plannorth"; nn.textContent = "N↑"; nn.setAttribute("aria-hidden", "true");
+    box.prepend(svg); box.append(tag, nn);
     notePlan();
   }
   let notedPlan = false;
   function notePlan() {
     if (notedPlan) return; notedPlan = true;
     const p = document.createElement("p"); p.className = "hc-srcnote";
-    p.textContent = "카드 속 배치도: 건축물 자료로 그린 동 위치와 높이예요(북쪽이 위, 진할수록 높은 동). 실제 외관은 아니에요";
+    p.textContent = "카드 속 배치도: 건축물 자료로 그린 동 위치와 높이예요(북쪽이 위, 밝을수록 높은 동). 실제 외관은 아니에요";
     (document.querySelector("main") || document.body).append(p);
   }
 
