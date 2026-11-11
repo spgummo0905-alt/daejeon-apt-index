@@ -569,7 +569,9 @@
   let list = [], shown = 0;
   const gridBox = document.getElementById("finder-results"), more = document.getElementById("finder-more");
   gridBox.classList.add("hc-flist");
+  if (location.search.length > 1) { gridBox.setAttribute("aria-busy", "true"); for (let i = 0; i < 3; i++) gridBox.append(el("span", "skel skel-card")); }   // 조건을 들고 들어오면 단지 목록이 올 때까지 빈 칸 대신 자리표시(목록이 오면 바로 지워짐)
   function results() {
+    gridBox.removeAttribute("aria-busy");   // 스켈레톤 자리표시는 아래 replaceChildren 에서 지워짐
     const idle = !narrowed();
     document.querySelector("[data-sv-wait]").hidden = !idle;
     document.querySelector("#results .seg").hidden = idle;

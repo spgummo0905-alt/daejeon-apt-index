@@ -149,7 +149,7 @@
     const rec = document.getElementById("recent"), clear = document.getElementById("recent-clear");
     const draw = list => {
       rec.replaceChildren();
-      if (!list.length) { rec.append(el("li", "muted", "아직 살펴본 단지가 없습니다. 검색이나 지도에서 아파트를 열어 보세요.")); clear.hidden = true; return; }
+      if (!list.length) { const emp = el("li", "empty-next"), go = el("a", "btn", "지도에서 찾아보기"); go.href = "map.html"; emp.append(el("p", "muted", "아직 살펴본 단지가 없습니다. 검색이나 지도에서 아파트를 열어 보세요."), go); rec.append(emp); clear.hidden = true; return; }
       clear.hidden = false;
       list.forEach(c => {
         const a = el("a", "recent-item"); a.href = DJ.href(c);
