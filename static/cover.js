@@ -35,8 +35,8 @@
   }
   const NS = "http://www.w3.org/2000/svg";
   const mk = (n, a) => { const e = document.createElementNS(NS, n); Object.keys(a || {}).forEach(k => e.setAttribute(k, a[k])); return e; };
-  function tone(f) {   // 층수 → 초록 농도 (모든 단지 같은 기준: 5층 이하 옅게, 50층 이상 진하게)
-    const t = clamp((f - 5) / 45, 0, 1), a = [46, 107, 88], b = [155, 232, 204];   // 낮은 동은 어둡게, 높은 동은 밝게 (어두운 바탕에서 높은 동이 먼저 보이게)
+  function tone(f) {   // 층수 → 남색 위 청회→밝은 청백 농도 (모든 단지 같은 기준: 5층 이하 옅게, 50층 이상 진하게)
+    const t = clamp((f - 5) / 45, 0, 1), a = [95, 118, 160], b = [225, 235, 250];   // 낮은 동은 어둡게, 높은 동은 밝게 (어두운 바탕에서 높은 동이 먼저 보이게)
     return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",") + ")";
   }
   function drawPlan(box, doc) {

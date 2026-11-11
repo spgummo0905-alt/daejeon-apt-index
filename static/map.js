@@ -175,7 +175,7 @@
     const box = $("[data-mp-km]"); box.hidden = false;
     const map = new kakao.maps.Map(box, { center: new kakao.maps.LatLng(ALL[0].la, ALL[0].ln), level: 8 });
     const clus = new kakao.maps.MarkerClusterer({ map, averageCenter: true, minLevel: 6, gridSize: 70, calculator: [10, 50, 150],
-      styles: [34, 42, 50, 58].map((n, i) => ({ width: n + "px", height: n + "px", lineHeight: n + "px", borderRadius: n / 2 + "px", background: ["rgba(85,152,231,.92)", "rgba(42,120,214,.92)", "rgba(28,92,171,.92)", "rgba(16,66,129,.92)"][i], color: "#fff", textAlign: "center", fontWeight: "700", border: "2px solid #fff" })) });
+      styles: [34, 42, 50, 58].map((n, i) => ({ width: n + "px", height: n + "px", lineHeight: n + "px", borderRadius: n / 2 + "px", background: ["rgba(46,125,98,.94)", "rgba(19,121,91,.94)", "rgba(15,84,64,.94)", "rgba(15,61,51,.96)"][i], color: "#fff", textAlign: "center", fontWeight: "700", border: "2px solid #fff" })) });
     const ov = new Map();
     ALL.forEach(c => {
       const el = document.createElement("button"); el.type = "button"; el.className = "mp-kp" + (c.g === "S" ? " g-S" : ""); el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); el.textContent = c.pt || c.n;

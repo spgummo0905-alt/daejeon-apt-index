@@ -121,8 +121,8 @@
     const clusterer = new kakao.maps.MarkerClusterer({
       map: map, averageCenter: true, minLevel: 6, gridSize: 70,
       calculator: [10, 50, 150],
-      styles: [circle(34, "rgba(85,152,231,.92)"), circle(42, "rgba(42,120,214,.92)"),
-               circle(50, "rgba(28,92,171,.92)"), circle(58, "rgba(16,66,129,.92)")],
+      styles: [circle(34, "rgba(46,125,98,.94)"), circle(42, "rgba(19,121,91,.94)"),
+               circle(50, "rgba(15,84,64,.94)"), circle(58, "rgba(15,61,51,.96)")],
     });
     clusterer.addMarkers(items.map(function (x) { return x.ov; }));
     filters(items, clusterer);
