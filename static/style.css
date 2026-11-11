@@ -5372,6 +5372,16 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 /* P1 로고 네모가 딥그린에 묻히지 않게 얇은 테 (로고 이미지는 그대로) */
 body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.18); border-radius: 7px; }
 
+/* ===== UX v4.6 · 비교 → 현장 확인: 단지별 '현장에서 확인할 것' 제안 (읽기만, 저장 구조 불변) ===== */
+.cmp-field { margin: 14px 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.cmp-field h3 { margin: 0 0 8px; font-size: 17px; font-weight: 800; }
+.cmp-field-c { padding: 10px 0; border-top: 1px solid var(--border); }
+.cmp-field-c:first-of-type { border-top: 0; }
+.cmp-field-c > b { display: block; margin-bottom: 4px; font-size: 16px; }
+.cmp-field-c ul { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 6px; }
+.cmp-field-c li { display: grid; gap: 1px; font-size: 15px; line-height: 1.45; }
+.cmp-field-c li small { font-size: 13px; color: var(--text-2); }
+.cmp-field-c .btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
 /* ===== UX v4.7 · 상세 큰 카드 배지: 좁은 화면에서 가격+메달이 넘치면 메달을 위 줄로 (잘림 방지) ===== */
 .mc-badges.wrap { flex-wrap: wrap-reverse; justify-content: flex-start; row-gap: 6px; }
 .mc-badges.wrap .mc-medals { margin-left: 0; }

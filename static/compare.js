@@ -167,6 +167,31 @@
     return box;
   }
 
+  // 현장에서 확인할 것: 단지마다 자료로 짚은 현장 체크 항목(DJ.visitItems, 현장 모드와 같은 계산)을 앞의 3개까지 '제안'으로 보여 줌.
+  // 읽기만 합니다 — 체크 표시·방문·사진은 만들지 않고, 저장 구조도 바꾸지 않음. 사용자가 직접 현장 모드(#field)에서 확인하고 기록해야 남습니다.
+  function fieldOf(cs) {
+    const box = el("section", "cmp-field");
+    box.setAttribute("aria-label", "현장에서 확인할 것");
+    box.append(el("h3", "", "현장에서 확인할 것"));
+    const region = document.body.dataset.region || "";
+    let any = false;
+    cs.forEach(c => {
+      const items = DJ.visitItems ? DJ.visitItems(c, region).filter(x => !String(x[0]).startsWith("my:")).slice(0, 3) : [];
+      if (!items.length) return;
+      any = true;
+      const card = el("div", "cmp-field-c");
+      card.append(el("b", "", c.n));
+      const ul = el("ul", "");
+      items.forEach(x => { const li = el("li", ""); li.append(el("span", "", x[1]), el("small", "", x[2])); ul.append(li); });
+      card.append(ul);
+      if (Number.isFinite(c.la) && Number.isFinite(c.ln)) { const a = el("a", "btn", c.n + " 현장 모드 열기"); a.href = DJ.href(c) + "#field"; card.append(a); }
+      box.append(card);
+    });
+    if (!any) { box.append(el("p", "muted", "이 단지들은 숫자로 짚이는 약점이 크지 않아요. 단지 화면의 현장 모드에서 기본 항목을 확인해 보세요.")); }
+    box.append(el("p", "muted small", "자료로 짚은 제안이에요. 확인한 결과는 현장 모드에서 직접 체크해야 기록으로 남아요."));
+    return box;
+  }
+
   function render(d) {
     if (picked.length >= 2 && DJ.act) DJ.act("cmp");   // 임장 배지 '나란히 비교'
     const box = document.getElementById("picked");
@@ -275,7 +300,7 @@
     cards.append(el("summary", "", `단지별 점수 카드 ${cs.length}장 보기`), cardGrid);
     if (dropped) out.append(el("p", "muted small cmp-dropped", `주소의 단지 중 ${dropped}곳은 겹치거나 없거나 4곳을 넘어서 뺐어요.`));
     verdict.hidden = true;   // 화면에는 우열 문장을 보이지 않음(우열·추천 표현 금지). 공유 문구 계산에만 그대로 사용
-    out.append(deckOf(cs), diffsOf(cs), verdict, myFit(cs), scrollHint, wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
+    out.append(deckOf(cs), diffsOf(cs), fieldOf(cs), verdict, myFit(cs), scrollHint, wrap, moreBtn, el("p", "muted center small", "강조한 칸은 해당 항목에서 상대적으로 유리한 값입니다. 점수·세대수는 높을수록, 거리는 가까울수록 표시하며 가격에는 우열 표시를 붙이지 않습니다. 내 예산과 생활 조건을 함께 살펴보세요."), cards);
     out.classList.remove("pop"); void out.offsetWidth; out.classList.add("pop");
     // 공유: 같은 비교를 여는 링크와 등급 카드를 나란히 그린 그림 카드 (공유 시트, sharekit.js)
     shareBtn.onclick = () => {
