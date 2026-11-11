@@ -276,9 +276,8 @@ figure { margin: 0; } figcaption { font-weight: 700; font-size: 14px; margin-bot
   body[data-page="apt"] { padding-bottom: 150px; }
   body[data-page="apt"] .rcd { bottom: calc(138px + env(safe-area-inset-bottom)); }
   .kb-open .apt-cta { display: none !important; }
-  .apt-cta.off { visibility: hidden; opacity: 0; transition: opacity 140ms; }   /* 행동 줄이 보이는 동안 */
+  .apt-cta.off { visibility: hidden; opacity: 0; transition: opacity 140ms; }   /* 카드 아래 같은 버튼이 보이는 동안 */
 }
-@media (prefers-reduced-motion: reduce) { .apt-cta.off { transition: none; } }
 .pb-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
 .pb-quick a { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 64px; padding: 8px 6px; border-radius: var(--r-md); background: var(--chip); color: var(--text); text-align: center; }
 .pb-quick a:hover { text-decoration: none; filter: brightness(.97); }
@@ -2413,7 +2412,9 @@ body[data-page="intro"] {
   --shadow: none; color-scheme: dark; background: var(--bg); color: var(--text);
 }
 body[data-page="intro"] main { max-width: none; padding: 0; }
-body[data-page="intro"] .top-nav, body[data-page="intro"] .tabbar { display: none; }
+body[data-page="intro"] .top-nav { display: none; }
+/* 맨 앞 지역 고르기 화면에서만 하단 메뉴를 숨김. 지역 첫 화면(.it-region)에는 처음 온 사람도 5개 메뉴가 보이게 */
+body[data-page="intro"]:not(:has(.it-start)) .tabbar { display: none; }
 body[data-page="intro"] header.site { position: relative; z-index: 3; }
 /* 지역 고르기 창이 열리면 머리글을 뒤 어둡게 깔린 막(z 90) 위로 (안 그러면 창이 막 아래에 깔려 못 누름) */
 body[data-page="intro"] header.site:has(.rg-pop:not([hidden])) { z-index: 96; }
@@ -5175,3 +5176,49 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
   body.cmp-ready .vs-result > .cmp-diff { order: -2; }
   body.cmp-ready .vs-result > .cmp-deck { order: -1; }
 }
+@media (prefers-reduced-motion: reduce) { .apt-cta.off { transition: none; } }
+/* ===== UX v3.2 · 단지 상세: 담은 뒤 알림은 아래 고정 버튼 바로 위에 (가격 숫자를 가리지 않게) ===== */
+@media (max-width: 719px) {
+  body[data-page="apt"] .toast-zone { top: auto; bottom: calc(76px + env(safe-area-inset-bottom)); }   /* 하단 메뉴 바로 위: 카드와 가격을 덜 가림 */
+  body[data-page="apt"] .toast { pointer-events: auto; }
+  .apt-cta .btn.done .apt-cta-plus { font-size: 22px; font-weight: 900; }
+}
+
+/* 카드의 실거래 가격 옆에 '어느 면적이 거래됐는지'를 함께 (아래 추정가는 전용 84㎡ 환산이라 숫자가 다른 이유가 첫 화면에서 보이게) */
+.mc-price .mc-pr-a { margin-top: 1px; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.82); white-space: nowrap; }
+.mc-price .mc-pr-a .ar small { font-size: inherit; font-weight: inherit; }
+.mc-badges.tight .mc-price > .mc-pr-a { display: inline; }   /* 좁은 화면에서도 면적은 접지 않음 (날짜 줄만 접음) */
+.mc-badges.tight .mc-price > .mc-pr-l { display: none; }
+
+/* 카드 바로 아래의 같은 버튼(휴대폰만): 첫 화면에서 가장 중요한 행동이 보이게 */
+.apt-cta-inline { display: none; }
+@media (max-width: 719px) {
+  .apt-cta-inline:not([hidden]) { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 56px; margin: 12px 0 0; padding: 0 20px; border-radius: var(--r-md); font-size: 17px; font-weight: 800; }
+  .apt-cta-inline.done { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+  .pb > .apt-cta-inline + .apt-actions { margin-top: 10px; }
+  .kb-open .apt-cta-inline { display: none !important; }
+}
+/* ===== UX v3.2 · 지역 첫 화면: 읽기 전에 시작 (검색 칸 + 예산 칩 + 56px 버튼) ===== */
+.it-start-search { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; margin-top: 24px; padding: 0 18px; border-radius: 18px;
+  border: 1px solid var(--border); background: rgba(255,255,255,.08); color: var(--text-2); font: inherit; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; }
+.it-start-search .ic { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.it-start-search:focus-visible, .it-budget a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.it-budget { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+@media (max-width: 380px) { .it-budget { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.it-budget a { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 6px; white-space: nowrap; border-radius: 14px; border: 1px solid var(--border);
+  background: rgba(255,255,255,.06); color: var(--text); font-size: 16px; font-weight: 800; text-decoration: none; }
+.it-start .it-cta { margin-top: 18px; }
+.it-start .it-btn { height: 56px; font-size: 18px; }
+.it-start .it-nums { margin-top: 24px; }
+@media (max-width: 560px) {
+  .it-start .it-btn { height: 56px; padding: 0 20px; font-size: 18px; flex: 1 1 140px; justify-content: center; }
+  .it-start .it-lead { font-size: 18px; }
+  .it-start .it-eyebrow { display: none; }
+  .it-start { padding-bottom: 32px; }
+}
+@media (max-width: 560px) and (max-height: 700px) {
+  .it-start .it-lead { display: none; }
+  .it-start .it-start-search { margin-top: 16px; }
+  .it-start .it-nums { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .it-start-search, .it-budget a { transition: none; } }

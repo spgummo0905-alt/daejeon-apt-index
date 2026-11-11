@@ -51,8 +51,8 @@
     {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{% if c.small %}{{ c.small_reason or '소규모' }} 단지는 일반 아파트와 가격 구조가 달라 순위에서 제외합니다{% else %}입지·거래 자료가 부족해 지수를 산정하지 않았습니다{% endif %}">순위 제외</button>{% endif %}
     <p class="mc-tip" data-mc-tip role="status" hidden></p>
     <div class="mc-badges">
-      {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="{% if t0.high %}신고가 {% endif %}{{ t0.price | price }} 실거래 {{ t0.date.strftime('%m.%d') }}, 거래 내역 펼치기">
-        {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span>실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span></button>{% endif %}
+      {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="{% if t0.high %}신고가 {% endif %}{{ t0.price | price }} 실거래 {{ t0.date.strftime('%m.%d') }} {{ t0.area | int }}㎡ 전용 기준, 거래 내역 펼치기">
+        {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span class="mc-pr-l">실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span><span class="mc-pr-a">{{ ar(c, t0.area) }} 거래</span></button>{% endif %}
       <div class="mc-medals">
         {% for b in badges %}<button type="button" class="mc-medal" data-badge data-title="{{ b.title }}" data-desc="{{ b.tip }}" aria-label="{{ b.title }} {{ b.short }}"><svg class="ic" aria-hidden="true"><use href="#i-{{ b.icon }}"/></svg><span>{{ b.short }}{% if b.unit %}<small>{{ b.unit }}</small>{% endif %}</span></button>{% endfor %}
       </div>
@@ -94,6 +94,8 @@
   </div>
   </div>
 </div></div>
+  {# 휴대폰: 카드 바로 아래에 같은 버튼을 한 번 더 둡니다(첫 화면에서 보이게). 이 버튼이 화면 밖으로 지나가면 아래 고정 버튼이 나타납니다 (app.js aptCta). 저장은 원래 버튼이 함 #}
+  <button type="button" class="btn primary apt-cta-inline" data-apt-cta-inline hidden><span data-apt-cta-t>임장 코스에 넣기</span><span class="apt-cta-plus" aria-hidden="true">＋</span></button>
   <div class="icon-actions apt-actions">
     <button class="icon-btn action-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-action-label>관심</span></button>
     <a class="icon-btn action-btn" data-compare-here href="{{ root }}compare.html?a={{ c.slug | urlencode }}" aria-label="다른 단지와 비교하기" title="다른 단지와 비교하기"><svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span>비교</span></a>

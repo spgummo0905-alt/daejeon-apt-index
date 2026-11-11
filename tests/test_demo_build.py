@@ -189,7 +189,7 @@ def test_intro_page_and_first_visit(tmp_path):
     assert 'class="gcard it-card g-' in intro and "1위" in intro
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
     assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
-    assert 'class="it-hot"' in intro and 'href="index.html">궁금한 아파트 찾기' in intro
+    assert 'class="it-hot"' in intro and 'href="finder.html">조건으로 찾기' in intro   # 지역 첫 화면의 주 버튼은 찾기로 바로 가요 (UX v3.2: 예전엔 같은 홈으로 되돌아가던 '궁금한 아파트 찾기')
     assert "대전 아파트 검색하기" not in intro and "대전 아파트의" not in intro
     assert "같은 지역의 단지끼리 비교한 상대 점수" in intro
     assert 'data-search-go' in intro and 'href="index.html#list">아파트 검색하기' in intro
@@ -679,7 +679,7 @@ def test_project_workspace_keeps_full_tools_inside_a_lazy_same_origin_panel(tmp_
     assert '.pw-dialog[open]' in css and '.pw-frame[hidden]' in css and '.pj-embed-field' in css
     assert 'body[data-page="projects"] .rcd { display: none; }' in css
     assert 'href="projects.html"' in (out / 'index.html').read_text(encoding='utf-8')
-    assert '한 화면에서 집 찾기' in (out / 'intro.html').read_text(encoding='utf-8')
+    assert 'href="projects.html"' in (out / 'intro.html').read_text(encoding='utf-8')   # 임장(프로젝트) 입구는 하단 메뉴에 계속 보여요 (UX v3.2: 첫 화면에도 하단 메뉴를 둠)
 
 
 def test_my_settings_and_note_export(tmp_path):
