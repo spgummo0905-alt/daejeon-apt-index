@@ -23,6 +23,49 @@ from .config import ROOT
 LEGACY = "daejeon"   # 예전에 맨 앞 주소에 있던 지역 폴더
 
 
+# 없는 주소(404) 안내 화면: GitHub Pages 는 맨 앞의 404.html 을 없는 주소에서 보여 줍니다.
+# 어느 주소에서 열려도 깨지지 않게 링크는 모두 절대 주소, 스타일은 파일 안에 넣었습니다(외부 파일 없음).
+NOT_FOUND = """<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>페이지를 찾을 수 없어요 · 집감</title>
+<style>
+*{{box-sizing:border-box;margin:0}}
+h1,p{{word-break:keep-all}}
+body{{min-height:100dvh;display:flex;flex-direction:column;background:linear-gradient(180deg,#0a1630,#10244a 70%);color:#fff;font-family:'Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}}
+header{{padding:16px 20px}}
+header a{{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#fff;text-decoration:none;font-weight:800;font-size:20px}}
+header b{{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:#1f3a6b;font-size:14px}}
+main{{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 20px 56px;max-width:520px;width:100%;margin:0 auto}}
+.code{{font-size:15px;font-weight:700;color:#9fb0cc;letter-spacing:.04em}}
+h1{{margin-top:8px;font-size:28px;line-height:1.25;letter-spacing:-.03em}}
+p{{margin-top:12px;font-size:18px;line-height:1.5;color:#c4d2ea}}
+.btns{{display:grid;gap:12px;margin-top:28px}}
+.btns a{{display:flex;align-items:center;justify-content:center;min-height:56px;border-radius:16px;font-size:18px;font-weight:800;text-decoration:none;color:#fff}}
+.p{{background:#1f66c1}}
+.g{{border:1.5px solid rgba(255,255,255,.4)}}
+a:focus-visible{{outline:3px solid #9cc2ff;outline-offset:3px}}
+</style>
+</head>
+<body>
+<header><a href="/"><b>감</b>집감</a></header>
+<main>
+<p class="code">404</p>
+<h1>찾으시는 페이지가 없어요</h1>
+<p>주소가 바뀌었거나, 잘못 입력됐을 수 있어요. 아래에서 다시 시작해 보세요.</p>
+<div class="btns">
+<a class="p" href="/">집감 홈으로</a>
+<a class="g" href="/{folder}/finder.html">내 예산으로 아파트 찾기</a>
+</div>
+</main>
+</body>
+</html>
+"""
+
+
 def _folder(url: str, base: str) -> str:
     """지역 주소 → 이 사이트 안의 폴더 이름 ('https://www.jipgam.kr/seoul/' → 'seoul')"""
     if base and url.startswith(base):
@@ -199,6 +242,7 @@ def build(cfg, out_dir: Path) -> int:
     Image.open(ROOT / "static" / "brand" / "favicon-96.png").convert("RGBA").save(
         out_dir / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
 
+    (out_dir / "404.html").write_text(NOT_FOUND.format(folder=folder), encoding="utf-8")
     (out_dir / "sw.js").write_text(SW, encoding="utf-8")
     n_stub = write_redirects(out_dir, legacy["folder"], legacy["name"], base, {r["folder"] for r in rows}) if legacy else 0
 
