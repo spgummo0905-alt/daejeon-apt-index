@@ -5324,3 +5324,8 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
   .it-start .it-btn.ghost { color: #6fd1ae; border-color: #6fd1ae; }
 }
 .hc-collect .hc-plannorth { position: absolute; right: 8px; top: 6px; font-size: 12px; font-weight: 800; color: #cfe9df; line-height: 1.4; }
+
+/* ===== UX v4.1 · 터치 칸: 일조 '내 단지 고르기' 시트의 닫기 버튼 (39×22 → 44px 이상, 글자 크기는 그대로) ===== */
+.pick-x { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; }
+.pick-x { border: 1px solid var(--ctl-line); border-radius: 22px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.pick-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
