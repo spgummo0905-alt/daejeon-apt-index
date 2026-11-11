@@ -322,6 +322,31 @@ def _account(cfg) -> dict | None:
     return dict(acc, url=url, key=key)
 
 
+
+def _write_locmap(cfg, out_dir: Path) -> None:
+    """단지 상세 큰 카드의 입지 지도: 구 경계(통계청 2013)와 중심지 좌표(직장·학원가, 설정에 있는 것만). 새로 만든 값은 없고, 좌표가 없는 곳은 그리지 않음."""
+    import json
+    bf = ROOT / "assets" / "boundary.json"
+    if not bf.exists():
+        return
+    allb = json.loads(bf.read_text(encoding="utf-8"))["districts"]
+    ds = []
+    for code, name in cfg.districts.items():
+        g = allb.get(code)
+        if not g:
+            continue
+        rings = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+        ds.append({"n": name, "r": [[[round(x, 4), round(y, 4)] for x, y in ring[0]] for ring in rings]})
+    marks = []
+    for w in cfg.raw.get("finder", {}).get("workplaces", []):
+        if "lat" in w and "lng" in w:
+            marks.append({"n": w["name"], "la": w["lat"], "ln": w["lng"], "t": "w"})
+    for h in cfg.hub.get("hubs", []):
+        if "lat" in h and "lng" in h:
+            marks.append({"n": h["name"], "la": h["lat"], "ln": h["lng"], "t": "a"})
+    if ds:
+        (out_dir / "locmap.json").write_text(json.dumps({"d": ds, "m": marks}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
 def _preview_setup(cfg, out_dir: Path, demo: bool = False, src_root: Path | None = None) -> set[str]:
     """일조 미리보기: data/preview/<지역 폴더>/<단지>.json (scripts/preview_build.py 가 만든 A·B 등급 단지) 을 사이트에 싣고,
     열린 단지 목록(preview/list.json)을 만듭니다. 자료가 없는 지역·데모에서는 아무것도 하지 않습니다. 반환: 열린 단지 slug 집합"""
@@ -338,14 +363,6 @@ def _preview_setup(cfg, out_dir: Path, demo: bool = False, src_root: Path | None
         m = doc["m"]
         shutil.copyfile(f, dst / f.name)
         items.append({"s": m["id"], "n": m.get("name", ""), "gu": m.get("gu", ""), "d": m.get("dong", "")})
-    # 카드 그림용 단지 배치도: 동마다 [층수, 추정 여부(0/1), x1,y1,x2,y2,…] (미터, 단지 가운데 기준, 북쪽이 위). 일조 미리보기와 같은 건축물 자료이며 새로 만든 값은 없음
-    plans = {}
-    for f in sorted(src.glob("*.json")):
-        doc = json.loads(f.read_text(encoding="utf-8"))
-        own = [b for b in doc.get("b", []) if b.get("k") == "own" and b.get("p")]
-        if own:
-            plans[doc["m"]["id"]] = [[int(b.get("f") or 0), 1 if b.get("s") == "est" else 0] + [int(round(v)) for pt in b["p"] for v in pt] for b in own]
-    (out_dir / "plans.json").write_text(json.dumps(plans, separators=(",", ":")), encoding="utf-8")
     items.sort(key=lambda x: (x["gu"], x["d"], x["n"]))
     (dst / "list.json").write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return {x["s"] for x in items}
@@ -594,6 +611,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
                                                        finder=cfg.raw.get("finder", {}), **common),
             encoding="utf-8")
     preview_ok = _preview_setup(cfg, out_dir, demo)
+    _write_locmap(cfg, out_dir)
     if preview_ok:
         (out_dir / "preview.html").write_text(
             env.get_template("preview.html").render(root="", page_path="preview.html", **common), encoding="utf-8")

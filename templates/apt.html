@@ -45,7 +45,7 @@
     </div>
     <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}</div>
   </div>
-  <div class="mc-art" data-mc-art>
+  <div class="mc-art" data-mc-art{% if latlng %} data-la="{{ latlng[0] }}" data-ln="{{ latlng[1] }}"{% endif %}>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
     {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ c.rank }}위/{{ n_total }} · {{ region }} {{ n_total }}곳 중 {{ c.rank }}위 (종합 지수 순위)"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
     {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{% if c.small %}{{ c.small_reason or '소규모' }} 단지는 일반 아파트와 가격 구조가 달라 순위에서 제외합니다{% else %}입지·거래 자료가 부족해 지수를 산정하지 않았습니다{% endif %}">순위 제외</button>{% endif %}
@@ -619,6 +619,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
 {% endblock %}
 {% block scripts %}
 {% if satellite_url %}<script src="{{ root }}static/satellite.js?v={{ v }}" defer></script>{% endif %}
+<script src="{{ root }}static/locmap.js?v={{ v }}"></script>
 <script src="{{ root }}static/cardgen.js?v={{ v }}"></script>
 <script src="{{ root }}static/fit.js?v={{ v }}"></script>
 <script src="{{ root }}static/project-store.js?v={{ v }}"></script>

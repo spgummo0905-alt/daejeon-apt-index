@@ -31,8 +31,3 @@ def test_grade_colors_logo_and_chart_colors_untouched():
     for t in ("--g-S: #b8912f", "--g-A: #8b95a7", "--g-B: #2f6fb8", "--g-C: #66738a", "--g-D: #b9c0ca", "--s1: #2a78d6", "--s2: #eb6834", "--s3: #1baf7a"):
         assert t in CSS
     assert "brand-sym" in SEG and "static/brand" in R("templates/base.html")
-
-
-def test_plan_thumbnail_is_navy_inside_card_and_scale_is_blue_white():
-    assert ".hc-collect .hc-photo.plan { background: #16305a; }" in SEG
-    assert "a = [95, 118, 160], b = [225, 235, 250]" in R("static/cover.js")
