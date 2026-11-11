@@ -1618,24 +1618,28 @@
   function aptCta() {
     const bar = document.querySelector("[data-apt-cta]");
     if (!bar) return;
+    const inline = document.querySelector("[data-apt-cta-inline]");
     const src = document.querySelector("[data-course-add]"), isCourse = !!src, base = src || document.querySelector("[data-fav]");
     if (!base) return;
-    const btn = bar.querySelector("[data-apt-cta-btn]"), t = bar.querySelector("[data-apt-cta-t]");
+    const btns = [bar.querySelector("[data-apt-cta-btn]"), inline].filter(Boolean);
     const paint = () => {
       const on = base.getAttribute("aria-pressed") === "true";
-      t.textContent = isCourse ? (on ? "임장 코스에 있어요" : "임장 코스에 넣기") : (on ? "관심 단지예요" : "관심 단지에 담기");
-      btn.classList.toggle("done", on); btn.setAttribute("aria-pressed", String(on));
+      const label = isCourse ? (on ? "임장 코스에 있어요" : "임장 코스에 넣기") : (on ? "관심 단지예요" : "관심 단지에 담기");
+      btns.forEach(b => {
+        b.querySelector("[data-apt-cta-t]").textContent = label;
+        b.classList.toggle("done", on); b.setAttribute("aria-pressed", String(on));
+        const mark = b.querySelector(".apt-cta-plus"); if (mark) mark.textContent = on ? "✓" : "＋";   // 담긴 뒤에는 + 대신 ✓
+      });
     };
-    btn.addEventListener("click", () => { base.click(); setTimeout(paint, 60); setTimeout(paint, 400); });
+    btns.forEach(b => b.addEventListener("click", () => { base.click(); setTimeout(paint, 60); setTimeout(paint, 400); }));
     new MutationObserver(paint).observe(base, { attributes: true, attributeFilter: ["aria-pressed", "class"] });
     document.addEventListener("dj:course", paint);
-    paint(); bar.hidden = false;
-    // 카드 아래 행동 줄(관심·비교·일조·현장 체크·공유)이 화면에 보이는 동안은 고정 버튼이 비켜 줌 (가리지 않게). 줄이 지나가면 다시 나타남
-    // (하단 메뉴 높이를 실제로 재서 그만큼 뺌: 짧은 폰에서 줄이 메뉴 뒤에 가려졌는데도 '보인다'고 판단해 고정 버튼까지 숨던 문제 수정. 줄이 60% 이상 보일 때만 비켜 줌)
-    const row = document.querySelector(".apt-actions");
-    if (row && "IntersectionObserver" in window) {
+    paint(); bar.hidden = false; if (inline) inline.hidden = false;
+    // 카드 아래의 같은 버튼이 하단 메뉴 위에 60% 이상 보이는 동안은 아래 고정 버튼이 비켜 줌(둘이 겹쳐 보이지 않게).
+    // 지나가면 고정 버튼이 나타나므로 어느 화면 크기에서도 이 행동이 늘 보입니다. 하단 메뉴 높이는 실제로 잼(고정 숫자 아님)
+    if (inline && "IntersectionObserver" in window) {
       const tabH = Math.ceil((document.querySelector(".tabbar") || { getBoundingClientRect: () => ({ height: 64 }) }).getBoundingClientRect().height) || 64;
-      new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.intersectionRatio >= 0.6)), { rootMargin: `0px 0px -${tabH}px 0px`, threshold: [0, 0.6, 1] }).observe(row);
+      new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.intersectionRatio >= 0.6)), { rootMargin: `0px 0px -${tabH}px 0px`, threshold: [0, 0.6, 1] }).observe(inline);
     }
   }
 
@@ -1660,7 +1664,7 @@
       } else if (DJ.addToCourse([slug]) < 0) {
         DJ.toast("임장 코스가 꽉 찼어요", "하루에 둘러보기 알맞은 8곳까지 추가할 수 있어요. 관심 화면의 코스에서 한 곳을 빼 주세요");
         return;
-      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 정리했어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요");
+      } else DJ.toast("임장 코스에 넣었어요", "가까운 순서로 정리했어요. 현장 모드에서 다음 단지로 바로 넘어갈 수 있어요", 0, { href: (window.DJ_ROOT || "") + "my.html#course", label: "코스 보기" });
       paint();
       document.dispatchEvent(new CustomEvent("dj:course"));
     });

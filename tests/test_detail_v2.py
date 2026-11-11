@@ -24,7 +24,7 @@ def test_integrated_id_card_and_action_row_rules_are_preserved():
     assert order == sorted(order)                                                # 관심·비교·일조(없으면 입지)·현장 체크·공유
     assert "preview_ok" in row and "data-loc-here" in row
     app = _r("static/app.js")
-    assert 'bar.classList.toggle("off", e.intersectionRatio >= 0.6)' in app and "rootMargin: `0px 0px -${tabH}px 0px`" in app   # 고정 CTA 가림 규칙 유지(하단 메뉴 높이를 실제로 잼: 메뉴 뒤에 가린 줄을 '보인다'고 보지 않음)
+    assert 'bar.classList.toggle("off", e.intersectionRatio >= 0.6)' in app and "rootMargin: `0px 0px -${tabH}px 0px`" in app   # 고정 CTA 가림 규칙 유지(v3.2: 기준이 카드 아래 같은 버튼)(하단 메뉴 높이를 실제로 잼: 메뉴 뒤에 가린 줄을 '보인다'고 보지 않음)
 
 
 def test_card_expand_and_deals_expand_are_separate_controls():
