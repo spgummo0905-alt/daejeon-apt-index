@@ -17,7 +17,7 @@ def test_inline_course_button_sits_between_card_and_action_row_and_reuses_origin
     a = _r("static/app.js")
     seg = a[a.index("function aptCta()"):a.index("function courseButton()")]
     assert "base.click()" in seg and "localStorage" not in seg and "DJ.addToCourse" not in seg   # 저장은 원래 버튼이 함
-    assert '.observe(inline)' in seg and "e.intersectionRatio >= 0.6" in seg            # 카드 아래 버튼이 보이는 동안 고정 버튼이 비켜 줌
+    assert '.observe(inline)' in seg and "e.intersectionRatio >= 0.95" in seg            # 카드 아래 버튼이 보이는 동안 고정 버튼이 비켜 줌
 
 
 def test_after_adding_shows_check_mark_and_a_next_step_link_without_new_storage():

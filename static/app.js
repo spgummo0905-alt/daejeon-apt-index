@@ -1635,11 +1635,11 @@
     new MutationObserver(paint).observe(base, { attributes: true, attributeFilter: ["aria-pressed", "class"] });
     document.addEventListener("dj:course", paint);
     paint(); bar.hidden = false; if (inline) inline.hidden = false;
-    // 카드 아래의 같은 버튼이 하단 메뉴 위에 60% 이상 보이는 동안은 아래 고정 버튼이 비켜 줌(둘이 겹쳐 보이지 않게).
+    // 카드 아래의 같은 버튼이 하단 메뉴 위에 온전히(95% 이상) 보이는 동안은 아래 고정 버튼이 비켜 줌(둘이 겹쳐 보이지 않게).
     // 지나가면 고정 버튼이 나타나므로 어느 화면 크기에서도 이 행동이 늘 보입니다. 하단 메뉴 높이는 실제로 잼(고정 숫자 아님)
     if (inline && "IntersectionObserver" in window) {
       const tabH = Math.ceil((document.querySelector(".tabbar") || { getBoundingClientRect: () => ({ height: 64 }) }).getBoundingClientRect().height) || 64;
-      new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.intersectionRatio >= 0.6)), { rootMargin: `0px 0px -${tabH}px 0px`, threshold: [0, 0.6, 1] }).observe(inline);
+      new IntersectionObserver(es => es.forEach(e => bar.classList.toggle("off", e.intersectionRatio >= 0.95)), { rootMargin: `0px 0px -${tabH}px 0px`, threshold: [0, 0.95, 1] }).observe(inline);
     }
   }
 
