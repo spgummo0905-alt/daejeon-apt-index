@@ -86,7 +86,10 @@
     const favs = DJ.favs().map(s => D.bySlug[s]).filter(c => c && !current.slugs.includes(c.s));
     find("[data-pj-favs]").replaceChildren(...favs.map(c => { const b = el("button", "chip", "+ " + c.n); b.type = "button"; b.addEventListener("click", () => add(c)); return b; }));
     const cards = find("[data-pj-candidates]"); cards.replaceChildren();
-    if (!current.slugs.length) cards.append(el("p", "pj-empty muted", "아직 담은 후보가 없어요. 눈여겨본 아파트 두 곳부터 시작해 보세요."));
+    if (!current.slugs.length) {
+      const emp = el("div", "pj-empty empty-next"), go = el("a", "btn primary", "아파트 찾으러 가기"); go.href = (window.DJ_ROOT || "") + "finder.html";
+      emp.append(el("p", "muted", "아직 담은 후보가 없어요. 눈여겨본 아파트 두 곳부터 시작해 보세요."), go); cards.append(emp);
+    }
     current.slugs.forEach((s, idx) => {
       const c = D.bySlug[s], wrap = el("div", "pj-candidate");
       if (c) {

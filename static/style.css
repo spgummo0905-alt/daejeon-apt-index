@@ -4926,6 +4926,17 @@ body[data-page="intro"] .it-hero h1 em { background: linear-gradient(110deg, #9b
 body[data-page="intro"] .it-sec:nth-of-type(odd) { background: linear-gradient(180deg, #0a2b24, #072019); }
 body[data-page="intro"] .it-btn.primary { color: #062018; background: #6fd1ae; box-shadow: 0 8px 24px rgba(111, 209, 174, .28); }
 body[data-page="intro"] .it-btn.primary:hover { background: #86dcbc; }
+/* ===== UX v3.6 · 빈 화면은 '다음에 누를 것 하나', 로딩은 글자 대신 자리표시(스켈레톤) =====
+   스켈레톤은 기존 'ph' 반짝임을 재사용. 움직임 줄이기 설정이면 멈춤. 글자 정보는 role=status 로 읽어 줌 */
+.skel { display: block; border-radius: 8px; background: linear-gradient(110deg, var(--chip) 30%, var(--grid) 50%, var(--chip) 70%); background-size: 200% 100%; animation: ph 1.2s linear infinite; }
+.skel-line { height: 14px; margin: 12px 0; } .skel-line.w60 { width: 60%; } .skel-line.w80 { width: 80%; }
+.skel-block { height: 120px; margin-top: 16px; border-radius: var(--r-md); }
+.skel-card { height: 220px; margin-bottom: 12px; border-radius: var(--r-lg); }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+.empty-next { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 0; }
+.empty-next > p { margin: 0; }
+.empty-next .btn { min-height: 48px; }
+li.empty-next { list-style: none; }
 
 /* 휴대폰: 구·면적 칩을 폭이 같은 격자로 (한 칩만 혼자 다음 줄로 떨어지거나 줄마다 폭이 들쭉날쭉한 것 방지). 숨는 항목 없음 */
 @media (max-width: 560px) {
