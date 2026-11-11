@@ -4,16 +4,16 @@
 /* font-faces:end */
 /* 색 토큰. 차트 색은 dataviz 팔레트 검증(라이트/다크 각각)을 통과한 값입니다. */
 :root {
-  --bg: #f6f8fb; --surface: #ffffff; --text: #172338; --text-2: #4a5568; --muted: #5b6472;
-  --border: rgba(11, 11, 11, 0.10); --grid: #e6eaf0; --axis: #c3c9d3; --chip: #eef2f7;
-  --accent: #1f66c1; --pos: #b03a0a; --neg: #1d4ed8;
+  --bg: #f7f4ec; --surface: #ffffff; --text: #172338; --text-2: #4a5568; --muted: #5b6472;
+  --border: rgba(11, 11, 11, 0.10); --grid: #e6eaf0; --axis: #c3c9d3; --chip: #efe9db;
+  --accent: #13795b; --pos: #b03a0a; --neg: #1d4ed8;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --dim: #d3d2cb; --ref: #898781;
   --g-S: #b8912f; --g-A: #8b95a7; --g-B: #2f6fb8; --g-C: #66738a; --g-D: #b9c0ca;
   --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #ffffff; --g-C-ink: #ffffff; --g-D-ink: #1d232c;
   --navy: #13294b; --gold: #c9a24a; --on-navy: #ffffff;
   /* 브랜드 '집감': 심볼의 하늘 → 파랑 → 보라 그라데이션과 워드마크 남색. 로고·소개·대표 버튼 같은 브랜드 자리에만 씀
      (차트·등급 색은 위 토큰 그대로) */
-  --brand-ink: #182848; --brand-sky: #3cbaf6; --brand-blue: #3a8cf7; --brand-violet: #7b5cf8;
+  --brand-ink: #182848; --brand-sky: #3cbaf6; --brand-blue: #3a8cf7; --brand-violet: #13795b;
   --brand-grad: linear-gradient(135deg, var(--brand-sky), var(--brand-blue) 45%, var(--brand-violet));
   --quad: rgba(42, 120, 214, 0.06);
   --banner: #fff4d6; --banner-text: #6b4e00;
@@ -34,14 +34,14 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111110; --surface: #1d1d1b; --text: #f0efec; --text-2: #c3c2b7; --muted: #9a998f;
-    --border: rgba(255, 255, 255, 0.10); --grid: #2c2c2a; --axis: #383835; --chip: #2a2a27;
-    --accent: #6da7ec; --pos: #fb923c; --neg: #7aa7ff;
+    --bg: #0b1f1a; --surface: #12302a; --text: #f0efec; --text-2: #c3c2b7; --muted: #9a998f;
+    --border: rgba(255, 255, 255, 0.10); --grid: #2c2c2a; --axis: #383835; --chip: #1b3d35;
+    --accent: #6fd1ae; --pos: #fb923c; --neg: #7aa7ff;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --dim: #3a3a37; --ref: #898781;
     --g-S: #d4af52; --g-A: #a9b3c4; --g-B: #4f8fd8; --g-C: #7f8ca0; --g-D: #5b6370;
     --g-S-ink: #1a1406; --g-A-ink: #10151d; --g-B-ink: #10151d; --g-C-ink: #10151d; --g-D-ink: #f0efec;
     --navy: #9ec5f4; --gold: #d4af52; --on-navy: #0d1b2e;
-    --brand-ink: #eef0f8; --brand-violet: #9a83ff;
+    --brand-ink: #eef0f8; --brand-violet: #6fd1ae;
     --quad: rgba(57, 135, 229, 0.10);
     --banner: #3a3012; --banner-text: #f5d98a;
     --shadow: none;
@@ -118,7 +118,7 @@ main .panel[id], main section[id] { scroll-margin-top: 62px; }
 .my-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 12px 14px 12px 18px; border: 0; border-radius: var(--r-lg); background: var(--accent); color: var(--on-accent); }
 .my-next[hidden] { display: none; }
 .my-next-t { font-size: 17px; font-weight: 800; }
-.my-next .btn, .my-next .btn.primary { margin: 0; min-height: 48px; background: #fff; border-color: #fff; color: #174f99; font-weight: 800; }
+.my-next .btn, .my-next .btn.primary { margin: 0; min-height: 48px; background: #fff; border-color: #fff; color: #0f5f47; font-weight: 800; }
 .mg-off { display: none !important; }
 @media (max-width: 720px) {  /* 휴대폰: 바로가기는 한 줄로 밀어서 */
   .jump { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
@@ -500,7 +500,7 @@ footer .ft-brand b { line-height: 1; }
 footer .ft-brand .brand-dot { margin-bottom: .06em; }
 .brand-sub { font-size: 13px; font-weight: 700; color: var(--text-2); padding: 3px 8px; border-radius: 999px; background: var(--chip); }
 body[data-page="intro"] .brand-word { color: #fff; }
-body[data-page="intro"] .brand-dot { background: #a28cff; }
+body[data-page="intro"] .brand-dot { background: #6fd1ae; }
 .hd-end { display: flex; align-items: center; gap: 14px; margin-left: auto; }
 @media (max-width: 1000px) { .hd-end { gap: 10px; } }
 h1 { letter-spacing: -0.03em; font-weight: 800; }
@@ -3658,7 +3658,7 @@ a.notice-text { text-decoration: underline; text-underline-offset: 3px; }
    화면 색 설정과 상관없이 늘 밤. 불빛은 번쩍이지 않고 은은하게, 소리는 기본 꺼짐. */
 body[data-page="rooftop"] {
   --bg: #070d1f; --surface: #111e39; --text: #f4f6fb; --text-2: rgba(244,246,251,.78); --muted: rgba(244,246,251,.58);
-  --border: rgba(255,255,255,.12); --chip: rgba(255,255,255,.08); --accent: #7fb2f0; --gold: #e3b955; --brand-ink: #fff; --brand-violet: #a28cff;
+  --border: rgba(255,255,255,.12); --chip: rgba(255,255,255,.08); --accent: #7fb2f0; --gold: #e3b955; --brand-ink: #fff; --brand-violet: #6fd1ae;
   --shadow: none; color-scheme: dark; background: var(--bg); color: var(--text);
 }
 body[data-page="rooftop"] main { max-width: none; padding: 0; }
@@ -4387,7 +4387,7 @@ body[data-page="rooftop"] header.site .rg { display: none; }
 .pj-sum-row li { margin: 4px 0; font-size: 16px; line-height: 1.5; }
 .pj-sum-h { margin: 10px 14px 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
 .pj-sum-memo { margin: 4px 14px 12px; font-size: 16px; line-height: 1.55; }
-.pj-sum-more > summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--accent, #1f66c1); cursor: pointer; }
+.pj-sum-more > summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--accent, #13795b); cursor: pointer; }
 .pj-sum-more ul { margin-top: 0; }
 
 /* 비교 화면: 내 조건 기준 */
@@ -4618,9 +4618,9 @@ p.muted { text-wrap: balance; }
 @media (max-width: 560px) { .sv-art:empty { min-height: 152px; } .sv-q:empty { min-height: 276px; } }
 /* ===== 집감 카드 시스템 (C0·C1): 카드 3종 + 단지 상세 메인 카드 + 홈 첫 화면 =====
    한 장의 아파트 카드가 화면마다 크기만 달라지는 구조. 값은 모두 기존 자료(새 계산 없음). 건물 그림은 실제 외관이 아닌 평면 추상 그래픽 */
-:root { --hc-blue: #2867ef; --hc-blue-ink: #1b46b8; --hc-ink: #162642; --hc-soft: #eef4ff; --hc-line: #e4ebf5; --hc-r: 22px;
+:root { --hc-blue: #13795b; --hc-blue-ink: #0f5f47; --hc-ink: #162642; --hc-soft: #e6f2ec; --hc-line: #e4ebf5; --hc-r: 22px;
   --hc-sky1: #dcecff; --hc-sky2: #f1f7ff; --hc-ground: #c4d9c2; --hc-wall: #dbe7f4; --hc-wall-d: #b4c8de; --hc-glass: #4f8ce7; --hc-glass2: #a6ceff; }
-@media (prefers-color-scheme: dark) { :root { --hc-blue: #6da7ec; --hc-blue-ink: #9cc4ff; --hc-ink: #f0efec; --hc-soft: #1f2a3b; --hc-line: rgba(255,255,255,.10);
+@media (prefers-color-scheme: dark) { :root { --hc-blue: #6fd1ae; --hc-blue-ink: #9be8cc; --hc-ink: #f0efec; --hc-soft: #17382f; --hc-line: rgba(255,255,255,.10);
   --hc-sky1: #243247; --hc-sky2: #1c2635; --hc-ground: #35493a; --hc-wall: #4a5b72; --hc-wall-d: #3a495e; --hc-glass: #4f8fd8; --hc-glass2: #7fb2ee; } }
 /* 건물 그림 (추상) */
 .hc-art { position: relative; display: block; overflow: hidden; isolation: isolate; border-radius: 16px; background: linear-gradient(165deg, var(--hc-sky1), var(--hc-sky2)); }
@@ -4903,6 +4903,76 @@ p.muted { text-wrap: balance; }
   .pb .mc-strip { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .pb .mc-strip::-webkit-scrollbar { display: none; }
   .pb .mc-strip > * { flex: none; }
+}
+
+/* ===== UX v3.5 · 집감 대표 색 B안(딥그린 + 크림) 시험 적용: 지역 첫 화면과 단지 상세만 =====
+   색 토큰은 전체에 정의하되, 실제로 바꾸는 곳은 아래 두 화면뿐(나머지 화면은 그대로 → 확인 후 넓힘).
+   로고(심볼)와 S~D 등급 카드 색은 바꾸지 않음. 금색은 S 카드와 작은 강조에만. 규칙: docs/design/BRAND.md */
+:root {
+  --jg-green-950: #072019; --jg-green-900: #0a2b24; --jg-green-800: #0f3d33; --jg-green-600: #13795b; --jg-green-300: #6fd1ae; --jg-green-200: #9be8cc;
+  --jg-cream: #f7f4ec; --jg-cream-2: #efe9db;
+}
+/* 단지 상세: 크림 바탕 + 초록 행동색 (밝은 화면 5.4:1, 어두운 화면은 밝은 초록) */
+body[data-page="apt"] { --accent: #13795b; --bg: #f7f4ec; --chip: #efe9db; }
+@media (prefers-color-scheme: dark) { body[data-page="apt"] { --accent: #6fd1ae; --bg: #111110; --chip: #1b3d35; } }
+body[data-page="apt"] .toast { background: var(--jg-green-800); color: #fff; }
+@media (prefers-color-scheme: dark) { body[data-page="apt"] .toast { background: var(--jg-green-200); color: #062018; } }
+/* 지역 첫 화면: 딥그린 바탕, 밝은 초록 행동색, 큰 제목 강조는 초록 계열(보라 번짐 제거) */
+body[data-page="intro"] { --bg: #0a2b24; --surface: #0f3d33; --accent: #6fd1ae; --neg: #9be8cc; --brand-violet: #6fd1ae; }
+body[data-page="intro"] .it-hero {
+  background: radial-gradient(900px 560px at 78% 42%, #15564a 0%, rgba(21,86,74,0) 70%), radial-gradient(700px 500px at 0% 100%, #0f3d33 0%, rgba(15,61,51,0) 70%),
+  linear-gradient(160deg, #072019 0%, #0a2b24 55%, #072019 100%); }
+body[data-page="intro"] .it-hero h1 em { background: linear-gradient(110deg, #9be8cc 0%, #6fd1ae 55%, #bff3de 100%); -webkit-background-clip: text; background-clip: text; }
+body[data-page="intro"] .it-sec:nth-of-type(odd) { background: linear-gradient(180deg, #0a2b24, #072019); }
+body[data-page="intro"] .it-btn.primary { color: #062018; background: #6fd1ae; box-shadow: 0 8px 24px rgba(111, 209, 174, .28); }
+body[data-page="intro"] .it-btn.primary:hover { background: #86dcbc; }
+/* ===== UX v3.6 · 빈 화면은 '다음에 누를 것 하나', 로딩은 글자 대신 자리표시(스켈레톤) =====
+   스켈레톤은 기존 'ph' 반짝임을 재사용. 움직임 줄이기 설정이면 멈춤. 글자 정보는 role=status 로 읽어 줌 */
+.skel { display: block; border-radius: 8px; background: linear-gradient(110deg, var(--chip) 30%, var(--grid) 50%, var(--chip) 70%); background-size: 200% 100%; animation: ph 1.2s linear infinite; }
+.skel-line { height: 14px; margin: 12px 0; } .skel-line.w60 { width: 60%; } .skel-line.w80 { width: 80%; }
+.skel-block { height: 120px; margin-top: 16px; border-radius: var(--r-md); }
+.skel-card { height: 220px; margin-bottom: 12px; border-radius: var(--r-lg); }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+.empty-next { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 0; }
+.empty-next > p { margin: 0; }
+.empty-next .btn { min-height: 48px; }
+li.empty-next { list-style: none; }
+
+/* ===== UX v3.7 · 공용 색 전체 통일 + 지역 첫 화면 구조(위 딥그린, 아래 크림, 카드가 주인공) =====
+   위 :root 의 --accent/--bg/--surface/--chip 이 전체 기본값이 됨(앞 v3.5 의 화면별 덮어쓰기는 같은 값이라 그대로 둠).
+   S~D 등급 카드 색, 로고 심볼, 차트 색(--s1..)은 바꾸지 않음. 금색은 등급·점수에만. */
+:root { --ctl-line: #5e9483; }                                   /* 입력·칩 테두리: 크림 위 3:1 이상 */
+@media (prefers-color-scheme: dark) { :root { --ctl-line: #4f8f7a; } }
+.chip, .hero-search input, .field input[type=search], .it-start-search, .it-budget a { border-color: var(--ctl-line); }
+.mc-more-btn { background: #13795b; border-color: #13795b; color: #fff; min-height: 56px; }          /* 금 테두리 → 행동 초록 채움 */
+.mc-more-btn:hover { background: #0f6a4f; }
+.mc-more-btn:focus-visible { outline-color: #9be8cc; }
+.mc.g-D .mc-more-btn { background: #13795b; border-color: #13795b; color: #fff; }
+@media (max-width: 560px) {
+  /* 글은 제목·검색·예산·카드·버튼 순으로만. 설명 글·숫자 줄은 카드 아래 소개 구간으로 */
+  .it-start .it-hero-grid { gap: 14px; }
+  .it-start .it-copy { display: contents; }
+  .it-start .it-eyebrow, .it-start .it-lead, .it-start .it-nums { display: none; }
+  .it-start h1 { order: 1; font-size: 28px; margin: 0; }
+  .it-start .it-start-search { order: 2; margin-top: 4px; }
+  .it-start .it-budget { order: 3; margin: 0; }
+  .it-start .it-fan { order: 4; padding: 0; margin-top: 6px; }
+  .it-start .it-cta { order: 5; margin-top: 4px; }
+  .it-start .it-back, .it-start .it-scroll { display: none; }
+  .it-start .it-card { animation: none; box-shadow: 0 14px 30px rgba(7, 32, 25, .35); }
+  .it-start .it-card .gstats { display: none; }                  /* 카드는 등급·이름·지수·순위만 (세부 막대는 아래 '카드 읽는 법') */
+  .it-start .it-fan-tag { margin-top: 10px; font-size: 13px; }
+  /* 위 딥그린, 카드 가운데부터 아래 크림: 카드 뒤에 화면 폭만큼 넓은 크림 판을 깔고, 버튼 줄은 그 위에 올림 */
+  .it-start { padding-top: 84px; padding-bottom: 28px; }
+  .it-start .it-fan { position: relative; }
+  .it-start .it-fan::before { content: ""; position: absolute; z-index: 0; left: 50%; width: 100vw; transform: translateX(-50%); top: 64px; bottom: -600px; background: #f7f4ec; }
+  .it-start .it-card, .it-start .it-fan-tag, .it-start .it-cta { position: relative; z-index: 1; }
+  .it-start .it-fan-tag { color: #4a5568; }
+  body[data-page="intro"] .it-start .it-btn.primary { background: #13795b; color: #fff; box-shadow: 0 6px 18px rgba(19, 121, 91, .28); }
+  body[data-page="intro"] .it-start .it-btn.primary:hover { background: #0f6a4f; }
+  .it-start .it-btn.ghost { color: #13795b; border: 1.5px solid #13795b; background: transparent; }
+  .it-start .it-budget { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .it-start .it-budget a { font-size: 15px; padding: 0 2px; }
 }
 
 /* 휴대폰: 구·면적 칩을 폭이 같은 격자로 (한 칩만 혼자 다음 줄로 떨어지거나 줄마다 폭이 들쭉날쭉한 것 방지). 숨는 항목 없음 */
