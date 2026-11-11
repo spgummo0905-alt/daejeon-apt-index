@@ -5329,3 +5329,27 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .pick-x { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; }
 .pick-x { border: 1px solid var(--ctl-line); border-radius: 22px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .pick-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ===== UX v4.3 · 색감 보정 (Fable 색감 심사 P0·P1): 지도 파랑 → 초록, 어두운 지도 덮개, 알림 면, 금색 한 가지, 선택 색 한 가지 ===== */
+/* P0 어두운 화면: 카카오 지도 타일(밝은 그림)을 어둡게 눌러 딥그린 바탕과 맞춤. 점·묶음 원은 필터 밖 */
+@media (prefers-color-scheme: dark) {
+  .mp-km img, #kmap img { filter: brightness(.62) contrast(1.05) saturate(.7) hue-rotate(-12deg); }
+  .mp-stage, #kmap { background: #0b1f1a; }
+  .toast, body[data-page="apt"] .toast { background: #12302a; color: #f0efec; border: 1px solid #6fd1ae; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  body[data-page="apt"] .toast span { color: #c3c2b7; }
+  .toast-act { color: #6fd1ae; }
+}
+/* P1 금색은 두 가지만: 밝은 곳 #b8912f, 남색 카드 위 #d4af52 (숫자·마름모·카드 뒷면 제목) */
+.mc-gems, .mc.g-S .mc-gems { color: #d4af52; }
+.mc-key b, .mc.g-S .mc-key b { color: #d4af52; }
+.mc.g-D .mc-key b { color: var(--ink); }
+.mcard-memo .mm-title { color: #f0efec; }
+.mc-medal .ic { stroke: #8b95a7; }
+.to-cards .tc-go { color: var(--accent); }
+/* P1 '지금 여기' 선택 색 한 가지: 위 칩·전환 버튼·아래 탭 모두 같은 딥그린(어두운 화면은 민트 채움) */
+.tabbar a.on { color: var(--navy); }
+.my-seg button[aria-pressed="true"], .mp-seg button[aria-pressed="true"] { background: var(--navy); color: var(--on-navy); box-shadow: none; }
+/* P1 로고 네모가 딥그린에 묻히지 않게 얇은 테 (로고 이미지는 그대로) */
+body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.18); border-radius: 7px; }
+/* P1 카드 안은 남색+금속색만: 배치도 썸네일 바탕을 남색 계열로, 높이 색도 남색 위에서 보이는 밝은 청록으로 */
+.hc-collect .hc-photo.plan { background: #16305a; }
