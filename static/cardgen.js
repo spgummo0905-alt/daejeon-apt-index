@@ -538,9 +538,24 @@
     const card = document.querySelector(".mc[data-apt]");
     if (!card) return;
     const c = { s: card.dataset.apt, g: card.dataset.grade, d: card.dataset.dong };
+    // 상세 큰 카드 그림: 단지 입지 지도(구 경계·주변 단지·중심지 방향과 직선거리). 좌표나 지도 자료가 없으면 옛 야경 그림 그대로
     card.querySelectorAll("canvas[data-art]").forEach(cv => {
       const paint = () => drawArt(cv, c);
-      if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); // 동 이름 글꼴이 들어온 뒤 그리기
+      const wrap = cv.parentNode, la = parseFloat(wrap.dataset.la), ln = parseFloat(wrap.dataset.ln);
+      const fallback = () => { if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); };   // 동 이름 글꼴이 들어온 뒤 그리기
+      if (!DJ.locSvg || !isFinite(la) || !isFinite(ln)) return fallback();
+      Promise.all([DJ.getLocMap(), DJ.data()]).then(([map, all]) => {
+        if (!map || !map.d || !map.d.length) return fallback();
+        const pts = all.complexes.filter(x => x.la && x.ln).map(x => ({ la: x.la, ln: x.ln }));
+        const r = DJ.locSvg({ la, ln, g: c.g, n: card.dataset.name || "" }, map, pts, { W: 650, H: 480, R: 3000, fs: 25, top: 70, bot: 190 });
+        cv.hidden = true; wrap.classList.add("loc"); wrap.prepend(r.svg);
+        const tag = document.createElement("span"); tag.className = "mc-loctag"; tag.textContent = "위치 지도 · 직선거리"; wrap.append(tag);
+        if (r.marks.length) {   // 지도 안 이름표가 겹치면 빠지므로, 거리는 읽기 좋은 글줄로 항상 함께 둠
+          const line = document.createElement("p"); line.className = "mc-locline";
+          line.textContent = "가까운 중심지(직선거리) · " + r.marks.map(m => m.n + " " + (m.d / 1000).toFixed(1) + "km").join(" · ");
+          wrap.after(line);
+        }
+      }).catch(fallback);
     });
     // 최근 실거래: 그림 위 아이콘을 누르면 카드 안에서 펼침
     const toggle = card.querySelector("[data-deals-toggle]"), deals = document.getElementById("mc-deals");
