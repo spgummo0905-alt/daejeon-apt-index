@@ -11,3 +11,4 @@ def test_cta_hides_only_when_action_row_is_mostly_visible_above_the_real_tab_bar
     assert 'document.querySelector(".tabbar")' in seg and "getBoundingClientRect().height" in seg      # 메뉴 높이를 실제로 잼
     assert "e.intersectionRatio >= 0.6" in seg and "threshold: [0, 0.6, 1]" in seg                    # 60% 이상 보일 때만
     assert "e.isIntersecting" not in seg and "-64px" not in seg                                        # 고정 숫자·단순 교차 판정 제거
+    assert '.observe(inline)' in seg and '.observe(row)' not in seg                                    # v3.2: 카드 아래 같은 버튼이 기준(행동 줄이 아님)
