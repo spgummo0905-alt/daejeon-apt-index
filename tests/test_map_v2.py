@@ -31,7 +31,7 @@ def test_unknown_location_has_entry_and_never_invents_coordinates():
     assert "data-mp-unk" in html and "지도에 없는 단지" in js
     assert "지도에는 표시하지 못했어요" in js
     assert "c.la != null && c.ln != null" in js and "NOXY" in js              # 좌표 없는 단지는 점을 만들지 않음
-    assert "lim = BANDS[band][1], unk = NOXY.filter" in js                    # 가격대 필터에도 같이 반응
+    assert "unk = NOXY.filter(okc)" in js and "lim = BANDS[band][1]; return (!lim || (c.p != null && c.p <= lim))" in js   # 가격대 필터에도 같이 반응(okc 안의 가격대 판정, 찾기 조건과 함께)
 
 
 def test_favorite_toast_undo_and_focus_return():

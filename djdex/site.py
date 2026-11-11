@@ -579,7 +579,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 카드 갤러리(검수용, 검색 노출 없음): 같은 실제 단지 자료로 카드 3종을 나란히
     (out_dir / "card-gallery.html").write_text(env.get_template("card-gallery.html").render(
         root="", page_path="card-gallery.html", samples=[r for r in sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])][:6], **common), encoding="utf-8")
-    (out_dir / "map.html").write_text(env.get_template("map.html").render(root="", page_path="map.html", **common), encoding="utf-8")
+    (out_dir / "map.html").write_text(env.get_template("map.html").render(root="", page_path="map.html", finder_cfg=__import__("json").dumps(cfg.raw.get("finder", {}), ensure_ascii=False), **common), encoding="utf-8")
     (out_dir / "rank.html").write_text(env.get_template("rank.html").render(
         root="", page_path="rank.html", ranks=month["ranks"],
         tops=[t for t in tops if t["tab"] != "신고가"], **common), encoding="utf-8")

@@ -575,6 +575,7 @@
     const idle = !narrowed();
     document.querySelector("[data-sv-wait]").hidden = !idle;
     document.querySelector("#results .seg").hidden = idle;
+    const mg = document.querySelector("[data-sv-map]"); if (mg) mg.hidden = idle;   // 조건을 고른 뒤에만(저장된 조건을 지도가 읽음)
     if (idle) {   // 조건을 고르기 전엔 단지를 늘어놓지 않아요
       list = []; shown = 0; peek();
       document.querySelector("[data-sv-res-n]").textContent = "";
