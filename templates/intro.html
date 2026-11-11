@@ -16,20 +16,26 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {% set s = grade_dist | selectattr("g", "equalto", "S") | first %}
 
 {# 1. 첫 장면: 카드 한 장으로 보는 아파트 #}
-<section class="it-hero">
+<section class="it-hero{% if not landing %} it-start{% endif %}">
   <div class="it-glow" aria-hidden="true"></div>
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
       <p class="it-eyebrow"><span class="live-dot"></span>아파트 비교부터 현장 기록까지 · 실거래 매일 반영</p>
       <h1><span class="sr-only">집감: </span>좋은 집의 가치<br><em><span class="nb">더 쉽게 찾고,</span> <span class="nb">더 꼼꼼히 보다</span></em></h1>
       <p class="it-lead">마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.</p>
+      {% if not landing %}{# 지역 첫 화면: 글을 읽기 전에 바로 시작할 수 있게 검색 칸과 예산 칩을 둡니다. 예산 칩은 찾기의 주소 조건(?budget=)을 그대로 씁니다 #}
+      <button type="button" class="it-start-search" data-it-search aria-haspopup="dialog">
+        <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>단지·동·역 이름으로 검색</span></button>
+      <ul class="it-budget" aria-label="예산으로 바로 찾기">
+        {% for b in (3, 5, 7, 10) %}<li><a href="finder.html?budget={{ b }}">{{ b }}억 이하</a></li>{% endfor %}
+      </ul>{% endif %}
       <div class="it-cta">
-        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기</button>{% else %}<a class="it-btn primary" href="index.html">궁금한 아파트 찾기</a>{% endif %}
-        <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'projects.html' }}">{{ '임장 도구 살펴보기' if landing else '한 화면에서 집 찾기' }}</a>
+        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기</button>{% else %}<a class="it-btn primary" href="finder.html">조건으로 찾기</a>{% endif %}
+        <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'map.html' }}">{{ '임장 도구 살펴보기' if landing else '지도로 보기' }}</a>
       </div>
       <dl class="it-nums">
-        <div><dt>예시 지역 · 지수 산정 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
-        <div><dt>예시 지역 · 반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
+        <div><dt>{{ '예시 지역' if landing else region }} · 지수 산정 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
+        <div><dt>{{ '예시 지역' if landing else region }} · 반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
       </dl>
     </div>
     {% if top %}
