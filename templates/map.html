@@ -16,6 +16,8 @@
     <p class="mp-count" data-mp-count aria-live="polite"></p>
     <button type="button" class="mp-unk-btn" data-mp-unk hidden></button>
   </div>
+  <div class="mp-cond" data-mp-cond hidden></div>
+  <div class="mp-zero" data-mp-zero hidden></div>
   <div class="mp-stage" data-mp-stage>
     <div class="mp-km" data-mp-km hidden></div>
     <svg class="mp-svg" data-mp-svg role="img" aria-label="{{ region }} 단지 위치 지도. 점을 누르면 요약이 열립니다. 키보드는 목록 보기를 쓰세요."></svg>
@@ -37,4 +39,5 @@
   <div class="mp-list" data-mp-list hidden></div>
 </section>
 {% endblock %}
-{% block scripts %}{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/housecard.js?v={{ v }}"></script><script src="static/map.js?v={{ v }}"></script>{% endblock %}
+{% block scripts %}<script id="finder-cfg" type="application/json">{{ finder_cfg | safe }}</script>
+<script src="static/workplaces.js?v={{ v }}"></script><script src="static/findcond.js?v={{ v }}"></script>{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/housecard.js?v={{ v }}"></script><script src="static/map.js?v={{ v }}"></script>{% endblock %}

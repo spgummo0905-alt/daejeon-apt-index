@@ -76,9 +76,34 @@
     apply();
   }
 
-  function visible() {
+  let cond = null;   // 찾기에서 고른 조건(읽기 전용, findcond.js). 이 화면에서 풀어도 저장된 설문은 그대로
+  const okc = c => { const nq = norm(q), lim = BANDS[band][1]; return (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq)) && (!cond || cond.pass(c)); };
+  function visible() { return ALL.filter(okc); }
+  function condBar() {   // 찾기에서 정한 조건을 지도에서도 보여 주고, 하나씩 풀 수 있게
+    const bar = $("[data-mp-cond]"); if (!bar) return;
+    if (!cond || (!cond.active() && !cond.droppedAny())) { bar.hidden = true; return; }
+    bar.hidden = false; bar.replaceChildren();
+    const row = document.createElement("div"); row.className = "mp-cond-row";
+    const lab = document.createElement("span"); lab.className = "mp-cond-l"; lab.textContent = "찾기 조건";
+    row.append(lab);
+    cond.tags().forEach(t => { const b = document.createElement("button"); b.type = "button"; b.className = "chip mp-cond-t"; b.dataset.condDrop = t.k; b.setAttribute("aria-label", t.t + " 조건 풀기"); b.textContent = t.t + " ×"; row.append(b); });
+    const a = document.createElement("a"); a.className = "mp-cond-edit"; a.href = (window.DJ_ROOT || "") + "finder.html#survey"; a.textContent = "조건 바꾸기"; row.append(a);
+    if (cond.droppedAny()) { const r = document.createElement("button"); r.type = "button"; r.className = "mp-cond-back"; r.dataset.condBack = "1"; r.textContent = "찾기 조건 다시 적용"; row.append(r); }
+    bar.append(row);
+    const note = document.createElement("p"); note.className = "mp-cond-n"; note.textContent = `전체 ${ALL.length.toLocaleString()}곳 중 ${shown.length.toLocaleString()}곳이에요. 여기서 푼 조건은 이 화면에서만 빠지고, 찾기에 저장한 조건은 그대로예요.`;
+    bar.append(note);
+  }
+  function zeroHelp() {   // 0곳일 때: 가장 많이 늘어나는 조건 하나를 풀자고 제안(개수는 실제 계산)
+    const box = $("[data-mp-zero]"); if (!box) return;
+    box.replaceChildren(); box.hidden = true;
+    if (shown.length || !cond || !cond.active()) return;
     const nq = norm(q), lim = BANDS[band][1];
-    return ALL.filter(c => (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq)));
+    const base = c => (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq));
+    const best = cond.relax(ALL, base)[0];
+    box.hidden = false;
+    const p = document.createElement("p"); p.textContent = "조건에 맞는 단지가 없어요. 조건을 하나만 풀어 볼까요?"; box.append(p);
+    if (best) { const t = cond.tags().find(x => x.k === best.k); const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.dataset.condDrop = best.k; b.textContent = `${t ? t.t.replace(/ .*$/, "") : "이"} 조건 풀면 ${best.n.toLocaleString()}곳`; box.append(b); }
+    else { const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.dataset.condDrop = "*"; b.textContent = "찾기 조건 모두 풀고 보기"; box.append(b); }   // 하나만 풀어도 0곳이면 전부 풀기(저장된 조건은 그대로)
   }
   function build() {
     shown = visible(); pinOf = new Map(); gLayer.replaceChildren();
@@ -91,7 +116,8 @@
     gLayer.append(frag);
     if (sel && !pinOf.has(sel)) closeSheet();
     $("[data-mp-count]").textContent = `${shown.length.toLocaleString()}곳`;
-    const nq2 = norm(q), lim2 = BANDS[band][1], nu = NOXY.filter(c => (!lim2 || (c.p != null && c.p <= lim2)) && (!nq2 || norm(c.n + c.gu + c.d).includes(nq2))).length;
+    condBar(); zeroHelp();
+    const nu = NOXY.filter(okc).length;
     const ub = $("[data-mp-unk]"); ub.hidden = !nu; ub.textContent = `지도에 없는 단지 ${nu.toLocaleString()}곳 ›`;
     apply(); if (km) realShow(); if (view === "list") buildList();
   }
@@ -107,7 +133,7 @@
     });
     listBox.append(ul);
     // 좌표가 없는 단지: 지도에는 점을 만들지 않고(임의 위치 금지) 목록 끝에 '위치 미확인'으로만 알림
-    const nq = norm(q), lim = BANDS[band][1], unk = NOXY.filter(c => (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq)));
+    const unk = NOXY.filter(okc);
     if (unk.length) {
       const h = document.createElement("p"); h.className = "mp-unk-h"; h.textContent = `지도에 없는 단지 ${unk.length}곳 · 위치 정보가 없어 지도에는 표시하지 못했어요`;
       const ul2 = document.createElement("ul"); ul2.className = "mp-ul mp-unk";
@@ -231,7 +257,9 @@
 
   root.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b || !root.contains(b)) return;
-    if (b.dataset.mpView) setView(b.dataset.mpView);
+    if (b.dataset.condDrop) { if (cond) { cond.drop(b.dataset.condDrop); build(); } }
+    else if (b.dataset.condBack) { if (cond) { cond.restore(); build(); } }
+    else if (b.dataset.mpView) setView(b.dataset.mpView);
     else if (b.dataset.mpZoom) { if (km) km.map.setLevel(km.map.getLevel() + (b.dataset.mpZoom === "in" ? -1 : 1), { animate: !calm() }); else { const s = size(); zoomAt(s.l + s.w / 2, s.t + s.h / 2, b.dataset.mpZoom === "in" ? .6 : 1 / .6); } }
     else if (b.hasAttribute("data-mp-close")) closeSheet();
     else if (b.hasAttribute("data-mp-expand")) setExpanded(!sheet.classList.contains("expanded"));
@@ -255,6 +283,7 @@
   DJ.data().then(d => {
     ALL = d.complexes.filter(c => c.la != null && c.ln != null); NOXY = d.complexes.filter(c => c.la == null || c.ln == null);
     if (!ALL.length) { root.querySelector(".mp-note").textContent = "표시할 단지 위치 자료가 아직 없어요"; return; }
+    if (DJ.cond) { try { cond = DJ.cond(d.complexes); } catch (e) { cond = null; } }   // 읽기 실패해도 지도는 그대로
     project(); fit(); build(); tryReal();
     const p = new URLSearchParams(location.search), qs = p.get("q");
     if (qs) { q = qs; $("[data-mp-q]").value = qs; build(); }
