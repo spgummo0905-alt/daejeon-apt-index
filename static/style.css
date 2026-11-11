@@ -5330,6 +5330,26 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .pick-x { border: 1px solid var(--ctl-line); border-radius: 22px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .pick-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
+/* ===== UX v4.2 · 첫 화면 '이어서 하기' + MY 단계 표시 (저장된 기록을 읽기만 함) ===== */
+.it-resume { display: grid; gap: 8px; margin: 0 0 14px; }
+.it-resume[hidden] { display: none; }
+.it-resume-main { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; background: #fff; color: #10241e; text-decoration: none; box-shadow: 0 6px 18px rgba(7, 32, 25, .22); }
+.it-resume-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.it-resume-t small { font-size: 13px; font-weight: 800; color: #13795b; }
+.it-resume-t b { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.it-resume-t .muted { font-size: 14px; color: #4a5568; }
+.it-resume-go { font-size: 22px; color: #13795b; }
+.it-resume-next { display: flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1.5px solid #6fd1ae; color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; }
+@media (max-width: 560px) {
+  .it-start .it-resume { order: 2; margin: 0; }
+  .it-start .it-start-search { order: 3; } .it-start .it-budget { order: 4; } .it-start .it-fan { order: 5; } .it-start .it-cta { order: 6; }
+}
+.my-stats > div { position: relative; padding-top: 22px; }
+.my-stats > div::before { position: absolute; top: 6px; left: 0; right: 0; font-size: 12px; font-weight: 800; color: var(--accent); }
+.my-stats > div:nth-child(1)::before { content: "1 · 담아 둔 집"; }
+.my-stats > div:nth-child(2)::before { content: "2 · 가 볼 곳"; }
+.my-stats > div:nth-child(3)::before { content: "3 · 다녀옴"; }
+.my-stats > div.zero dd, .my-stats > div.zero dt { opacity: .55; }
 /* ===== UX v4.3 · 색감 보정 (Fable 색감 심사 P0·P1): 지도 파랑 → 초록, 어두운 지도 덮개, 알림 면, 금색 한 가지, 선택 색 한 가지 ===== */
 /* P0 어두운 화면: 카카오 지도 타일(밝은 그림)을 어둡게 눌러 딥그린 바탕과 맞춤. 점·묶음 원은 필터 밖 */
 @media (prefers-color-scheme: dark) {
