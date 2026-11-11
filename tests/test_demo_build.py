@@ -1336,7 +1336,7 @@ def test_mobile_text_wrap_rules_stay(tmp_path):
     # .ki-note(단지 정보 칸의 긴 안내)는 줄바꿈을 허용: nowrap 이면 휴대폰에서 칸 밖으로 밀려 화면 전체가 옆으로 움직였다(Android 앱 UX)
     assert ".ki-note { white-space: normal; overflow-wrap: anywhere; }" in tail
     js = (root / "static" / "finder.js").read_text(encoding="utf-8")
-    assert "조건을 고를수록 좁혀집니다" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로
+    assert "조건을 고르면 맞는 단지 수가 바뀌어요" in js and "data-sv-delta" in js                                      # 문구와 연결은 그대로
 
 
 def test_mobile_visual_first_and_station_filter_box(tmp_path):
@@ -1817,7 +1817,7 @@ def test_map_list_marks_complexes_without_coordinates(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     js = (out / "static" / "map.js").read_text(encoding="utf-8")
-    assert "NOXY" in js and "위치 미확인" in js
+    assert "NOXY" in js and "지도에 없는 단지" in js
     assert "ALL = d.complexes.filter(c => c.la != null && c.ln != null)" in js      # 지도 점은 좌표 있는 단지만
 
 

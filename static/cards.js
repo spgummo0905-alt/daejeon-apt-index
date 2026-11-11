@@ -120,7 +120,7 @@
       back.setAttribute("aria-label", `${kind.label} 카드 열기`);
       const mark = el("span", "tc-mark");
       mark.append(DJ.icon(kind.icon));
-      back.append(el("span", "tc-kind", kind.label), mark, el("span", "tc-hint", "눌러서 열기"));
+      back.append(el("span", "tc-kind", kind.label), mark, el("span", "tc-hint", "눌러서 단지 보기"));
       const front = el("div", "tc-front");
       const card = DJ.miniCard(c);
       const tag = el("span", "tc-tag");

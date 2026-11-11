@@ -988,7 +988,7 @@
     const page = document.body.dataset.page;
     // 현재 화면이 속한 메뉴 묶음: 찾기(조건·테마·역세권) / 임장(프로젝트·비교) / 나의 집감(관심·카드첩)
     const tabOf = { themes: "finder", stations: "finder", map: "finder", cards: "my" }[page] || page;
-    const tabbarOf = { rank: "index" }[page] || tabOf;   // 아래 탭: 둘러보기(순위)는 홈 묶음
+    const tabbarOf = { rank: "finder", apt: "finder", preview: "finder", intro: "index" }[page] || tabOf;   // 아래 탭: 지역 첫 화면=홈, 순위·단지 상세·일조=찾기 묶음 (켜진 탭이 늘 하나 있게)
     document.querySelectorAll(".tabbar a").forEach(a => { if (a.dataset.tab === tabbarOf && !a.classList.contains("on")) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
     document.querySelectorAll(".top-nav > a[data-nav]").forEach(a => { if (a.dataset.nav === tabOf) { a.classList.add("on"); a.setAttribute("aria-current", "page"); } });
     const grp = { finder: "finder", themes: "finder", stations: "finder", projects: "project", compare: "project", cards: "project" }[page];

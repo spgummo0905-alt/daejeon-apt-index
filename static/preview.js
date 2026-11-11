@@ -572,8 +572,8 @@ function pickList(q) {
   box.classList.remove('wait');
   const qq = (q || '').replace(/\s+/g, '').toLowerCase();
   const hit = LIST.filter(x => !qq || (x.n + x.gu + x.d).replace(/\s+/g, '').toLowerCase().includes(qq)).slice(0, 40);
-  box.innerHTML = hit.length ? hit.map(x => '<li><a href="#c=' + encodeURIComponent(x.s) + '" data-go="' + esc(x.s) + '"><b>' + esc(x.n) + '</b><span>' + esc([x.gu, x.d].filter(Boolean).join(' ')) + '</span></a></li>').join('') : '<li class="none">맞는 단지가 없어요. 일조 미리보기는 건물 자료가 갖춰진 단지에만 열려 있어요.</li>';
-  $('pickCount').textContent = LIST.length.toLocaleString() + '개 단지에서 열려 있어요' + (qq ? ' · ' + hit.length + '개 보임' : '');
+  box.innerHTML = hit.length ? hit.map(x => '<li><a href="#c=' + encodeURIComponent(x.s) + '" data-go="' + esc(x.s) + '"><b>' + esc(x.n) + '</b><span>' + esc([x.gu, x.d].filter(Boolean).join(' ')) + '</span></a></li>').join('') : '<li class="none">맞는 단지가 없어요. 일조 미리보기는 건물 자료가 갖춰진 단지에서만 볼 수 있어요.</li>';
+  $('pickCount').textContent = LIST.length.toLocaleString() + '개 단지에서 볼 수 있어요' + (qq ? ' · ' + hit.length + '개 보임' : '');
 }
 document.addEventListener('click', ev => {
   const a = ev.target.closest('a[data-go]'); if (!a) return;
