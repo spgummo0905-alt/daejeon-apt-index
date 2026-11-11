@@ -141,24 +141,28 @@
     cs.forEach(c => row.append(DJ.hc.col(c)));
     return row;
   }
-  // 먼저 볼 차이 1~3개: 두 값이 실제로 다른 항목을 뽑아 사실만 적음(우열·추천 문구 없음). 가격은 추정(84㎡ 환산)임을 적고, 값이 없는 단지는 건너뜀
+  // 먼저 볼 차이 1~3개: 가격 → 종합 지수 → 입지 점수 순서로 두 값이 실제로 다른 항목을 앞에 두고(사용자가 가장 먼저 보는 세 가지),
+  // 부족하면 역 거리·학군으로 채움. 각 줄은 '얼마나 차이 나는지'를 먼저, 값은 뒤에 적음(우열·추천 문구 없음). 가격은 추정(84㎡ 환산)임을 적고, 값이 없는 단지는 건너뜀
   function diffsOf(cs) {
-    const sp = (g, f) => { const v = cs.map(c => ({ c, v: g(c) })).filter(x => x.v != null); return v.length >= 2 ? v.map(x => x.c.n + " " + f(x.v)).join(" · ") : null; };
-    const spread = g => { const v = cs.map(g).filter(x => x != null); return v.length >= 2 ? Math.max(...v) - Math.min(...v) : 0; };
-    const cand = [];
-    const pr = sp(c => c.p, v => cs.find(c => c.p === v).pt || "-");
-    if (pr && spread(c => c.p) > 0) cand.push([1e9, "84㎡ 기준 가격(추정)", pr]);
-    const ix = sp(c => c.i, v => v + "점"); if (ix && spread(c => c.i) > 0) cand.push([spread(c => c.i), "종합 지수", ix]);
-    const sb = sp(c => c.f.subway, v => v + "m"); if (sb && spread(c => c.f.subway) > 0) cand.push([spread(c => c.f.subway) / 40, "지하철역까지 거리", sb]);
-    const ed = sp(c => c.ed, v => v + "점"); if (ed && spread(c => c.ed) > 0) cand.push([spread(c => c.ed), "학군 점수", ed]);
-    const lc = sp(c => c.st[0], v => v + "점"); if (lc && spread(c => c.st[0]) > 0) cand.push([spread(c => c.st[0]), "입지 점수", lc]);
-    cand.sort((a, b) => b[0] - a[0]);
+    const vals = g => cs.map(c => ({ c, v: g(c) })).filter(x => x.v != null);
+    const spread = g => { const v = vals(g).map(x => x.v); return v.length >= 2 ? Math.max(...v) - Math.min(...v) : 0; };
+    const line = (g, f) => vals(g).map(x => x.c.n + " " + f(x)).join(" · ");
+    const won = m => m >= 10000 ? (Math.round(m / 1000) / 10).toString().replace(/\.0$/, "") + "억" : Math.round(m).toLocaleString() + "만원";   // p 는 만원 단위
+    const pts = n => Math.round(n) + "점";
+    const defs = [
+      [c => c.p, "가격", m => "약 " + won(m) + " 차이", x => cs.find(c => c === x.c).pt || "-", " · 84㎡ 추정"],
+      [c => c.i, "종합 지수", m => pts(m) + " 차이", x => x.v + "점", ""],
+      [c => c.st && c.st[0], "입지 점수", m => pts(m) + " 차이", x => x.v + "점", ""],
+      [c => c.f && c.f.subway, "지하철역 거리", m => Math.round(m) + "m 차이", x => x.v + "m", ""],
+      [c => c.ed, "학군 점수", m => pts(m) + " 차이", x => x.v + "점", ""],
+    ];
+    const cand = defs.map(([g, k, head, f, note]) => { const m = spread(g); return { m, k, head: head(m), v: line(g, f) + note }; }).filter(x => x.m > 0);
     const box = el("section", "cmp-diff");
     box.setAttribute("aria-label", "먼저 볼 차이");
     box.append(el("h3", "", "먼저 볼 차이"));
     if (!cand.length) { box.append(el("p", "muted", "고른 단지들의 값이 거의 같아요. 아래 표에서 항목별로 살펴보세요.")); return box; }
     const ul = el("ul", "");
-    cand.slice(0, 3).forEach(([, k, v]) => { const li = el("li", ""); li.append(el("b", "", k), el("span", "", v)); ul.append(li); });
+    cand.slice(0, 3).forEach(x => { const li = el("li", ""); li.append(el("b", "", x.k + " " + x.head), el("span", "", x.v)); ul.append(li); });
     box.append(ul, el("p", "muted small", "어느 집이 낫다는 판단은 하지 않아요. 같은 기준의 값만 나란히 보여 드려요."));
     return box;
   }
