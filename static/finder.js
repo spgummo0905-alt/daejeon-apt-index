@@ -395,7 +395,7 @@
     box.querySelector("[data-sv-unit]").textContent = idle ? "곳" : "곳 결과 보기";
     d.textContent = "";
     d.className = "sv-delta";
-    if (idle) d.textContent = "조건을 고를수록 좁혀집니다";
+    if (idle) d.textContent = "조건을 고르면 맞는 단지 수가 바뀌어요";
     else if (lastN != null) {
       d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄어듦" : "늘어남"}`;
       d.className = "sv-delta " + (n < lastN ? "down" : n > lastN ? "up" : "");
@@ -601,7 +601,7 @@
   function peek() {
     const pk = box.querySelector("[data-sv-peek]");
     if (!pk) return;
-    if (!narrowed()) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "조건을 고르면 맞는 단지가 여기에 바로 보여요")); return; }
+    if (!narrowed()) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "조건을 고르면 맞는 단지가 바로 보여요")); return; }
     if (!list.length) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "맞는 단지가 없어요. 조건을 하나 풀어 보세요")); return; }
     pk.className = "sv-peek";
     const row = el("div", "sv-peek-row");

@@ -34,7 +34,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'map.html' }}">{{ '임장 도구 살펴보기' if landing else '지도로 보기' }}</a>
       </div>
       <dl class="it-nums">
-        <div><dt>{{ '예시 지역' if landing else region }} · 지수 산정 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
+        <div><dt>{{ '예시 지역' if landing else region }} · 점수를 매긴 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
         <div><dt>{{ '예시 지역' if landing else region }} · 반영한 실거래</dt><dd data-count>{{ "{:,}".format(meta.n_trades) }}건</dd></div>
       </dl>
     </div>

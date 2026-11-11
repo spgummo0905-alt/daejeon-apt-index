@@ -92,7 +92,7 @@
     if (sel && !pinOf.has(sel)) closeSheet();
     $("[data-mp-count]").textContent = `${shown.length.toLocaleString()}곳`;
     const nq2 = norm(q), lim2 = BANDS[band][1], nu = NOXY.filter(c => (!lim2 || (c.p != null && c.p <= lim2)) && (!nq2 || norm(c.n + c.gu + c.d).includes(nq2))).length;
-    const ub = $("[data-mp-unk]"); ub.hidden = !nu; ub.textContent = `위치 미확인 ${nu.toLocaleString()}곳 ›`;
+    const ub = $("[data-mp-unk]"); ub.hidden = !nu; ub.textContent = `지도에 없는 단지 ${nu.toLocaleString()}곳 ›`;
     apply(); if (km) realShow(); if (view === "list") buildList();
   }
   function buildList() {
@@ -109,7 +109,7 @@
     // 좌표가 없는 단지: 지도에는 점을 만들지 않고(임의 위치 금지) 목록 끝에 '위치 미확인'으로만 알림
     const nq = norm(q), lim = BANDS[band][1], unk = NOXY.filter(c => (!lim || (c.p != null && c.p <= lim)) && (!nq || norm(c.n + c.gu + c.d).includes(nq)));
     if (unk.length) {
-      const h = document.createElement("p"); h.className = "mp-unk-h"; h.textContent = `위치 미확인 ${unk.length}곳 · 지도에는 표시하지 못했어요`;
+      const h = document.createElement("p"); h.className = "mp-unk-h"; h.textContent = `지도에 없는 단지 ${unk.length}곳 · 위치 정보가 없어 지도에는 표시하지 못했어요`;
       const ul2 = document.createElement("ul"); ul2.className = "mp-ul mp-unk";
       unk.slice(0, 30).forEach(c => { const li = document.createElement("li"), a = document.createElement("a"); a.href = DJ.href(c); const l = document.createElement("span"); l.className = "mp-ul-l"; const n = document.createElement("b"), p = document.createElement("span"); n.textContent = c.n; p.className = "mp-ul-p"; p.textContent = DJ.place(c) + " · 위치 미확인"; l.append(n, p); const v = document.createElement("span"); v.className = "mp-ul-v"; v.textContent = c.pt || "-"; a.append(l, v); li.append(a); ul2.append(li); });
       listBox.append(h, ul2);

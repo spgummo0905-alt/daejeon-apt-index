@@ -28,7 +28,7 @@ def test_expanded_rows_only_use_existing_values_and_skip_missing():
 
 def test_unknown_location_has_entry_and_never_invents_coordinates():
     html, js = _r("templates/map.html"), _r("static/map.js")
-    assert "data-mp-unk" in html and "위치 미확인" in js
+    assert "data-mp-unk" in html and "지도에 없는 단지" in js
     assert "지도에는 표시하지 못했어요" in js
     assert "c.la != null && c.ln != null" in js and "NOXY" in js              # 좌표 없는 단지는 점을 만들지 않음
     assert "lim = BANDS[band][1], unk = NOXY.filter" in js                    # 가격대 필터에도 같이 반응
