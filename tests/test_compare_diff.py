@@ -20,5 +20,5 @@ def test_dead_compare_art_css_removed_and_diff_block_keeps_no_verdict_wording():
     css, js = _r("static/style.css"), _r("static/compare.js")
     assert ".hc-col .hc-art" not in css
     seg = js[js.index("function diffsOf(cs)"):js.index("function render(d)")]
-    assert "어느 집이 낫다는 판단은 하지 않아요" in seg and "cand.slice(0, 3)" in seg
+    assert "어느 집이 낫다는 판단은 하지 않아요" in seg and "cand.slice(0, 3)" in seg   # (v3.2 에서도 최대 3개·우열 문구 없음 유지)
     assert "추천" not in seg and "우수" not in seg and "더 좋" not in seg
