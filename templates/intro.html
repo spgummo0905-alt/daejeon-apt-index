@@ -24,6 +24,8 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
       <h1><span class="sr-only">집감: </span>좋은 집의 가치<br><em><span class="nb">더 쉽게 찾고,</span> <span class="nb">더 꼼꼼히 보다</span></em></h1>
       <p class="it-lead">마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.</p>
       {% if not landing %}{# 지역 첫 화면: 글을 읽기 전에 바로 시작할 수 있게 검색 칸과 예산 칩을 둡니다. 예산 칩은 찾기의 주소 조건(?budget=)을 그대로 씁니다 #}
+      {# 다시 온 사람: 저장된 최근 본 단지·관심을 읽기만 해서 이어서 하기 한 칸(없으면 hidden 그대로, resume.js). 눌러야 이동 #}
+      <div class="it-resume" data-it-resume hidden></div>
       <button type="button" class="it-start-search" data-it-search aria-haspopup="dialog">
         <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>단지·동·역 이름으로 검색</span></button>
       <ul class="it-budget" aria-label="예산으로 바로 찾기">
@@ -262,3 +264,4 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   </div>
 </section>
 {% endblock %}
+{% block scripts %}{% if not landing %}<script src="{{ root }}static/resume.js?v={{ v }}" defer></script>{% endif %}{% endblock %}
