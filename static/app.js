@@ -1322,6 +1322,8 @@
       btn.focus({ preventScroll: true });
     }
     btn.addEventListener("click", e => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    // 지역 첫 화면의 큰 검색 칸(intro.html)도 같은 창을 엽니다 (새 검색 기능 없음)
+    document.querySelectorAll("[data-it-search]").forEach(b => b.addEventListener("click", () => btn.click()));
     pop.querySelector("[data-hs-close]").addEventListener("click", close);
     pop.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
     document.addEventListener("keydown", e => {
