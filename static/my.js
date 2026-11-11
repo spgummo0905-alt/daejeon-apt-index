@@ -175,7 +175,9 @@
     const projects = window.DJProjects ? DJProjects.list(region).filter(p => !p.archived) : [];
     const visits = window.DJVisitLog ? DJVisitLog.list({ region }) : [];
     const ms = k => document.querySelector(`[data-ms="${k}"]`);
-    if (ms("favs")) { ms("favs").textContent = favs.length; ms("proj").textContent = projects.length; ms("visits").textContent = visits.length; }
+    // 임장 코스: 직접 짠 코스만 셈(관심 단지에서 저절로 생긴 코스는 '관심 단지'와 겹치므로 0). 아래 안내 문구의 '임장 코스 N곳'과 같은 기준
+    const cs0 = DJ.load("course", {}), stops0 = DJ.courseStops(d).stops.length, courseN = (cs0 && !cs0.auto && Array.isArray(cs0.list) && cs0.list.length && stops0) ? stops0 : 0;
+    if (ms("favs")) { ms("favs").textContent = favs.length; ms("course").textContent = courseN; ms("visits").textContent = visits.length; }
     const nx = document.querySelector("[data-my-next]");
     if (nx) {
       const stops = DJ.courseStops(d).stops.length, cs = DJ.load("course", {}), own = !!(cs && !cs.auto && Array.isArray(cs.list) && cs.list.length && stops);   // 직접 짠 코스만 '코스 있음'(관심 단지에서 저절로 생긴 코스는 아님)
