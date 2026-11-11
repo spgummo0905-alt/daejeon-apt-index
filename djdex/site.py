@@ -338,6 +338,14 @@ def _preview_setup(cfg, out_dir: Path, demo: bool = False, src_root: Path | None
         m = doc["m"]
         shutil.copyfile(f, dst / f.name)
         items.append({"s": m["id"], "n": m.get("name", ""), "gu": m.get("gu", ""), "d": m.get("dong", "")})
+    # 카드 그림용 단지 배치도: 동마다 [층수, 추정 여부(0/1), x1,y1,x2,y2,…] (미터, 단지 가운데 기준, 북쪽이 위). 일조 미리보기와 같은 건축물 자료이며 새로 만든 값은 없음
+    plans = {}
+    for f in sorted(src.glob("*.json")):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        own = [b for b in doc.get("b", []) if b.get("k") == "own" and b.get("p")]
+        if own:
+            plans[doc["m"]["id"]] = [[int(b.get("f") or 0), 1 if b.get("s") == "est" else 0] + [int(round(v)) for pt in b["p"] for v in pt] for b in own]
+    (out_dir / "plans.json").write_text(json.dumps(plans, separators=(",", ":")), encoding="utf-8")
     items.sort(key=lambda x: (x["gu"], x["d"], x["n"]))
     (dst / "list.json").write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return {x["s"] for x in items}
