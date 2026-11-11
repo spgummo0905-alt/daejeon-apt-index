@@ -1857,7 +1857,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pc-line.sp { stroke-dasharray: 5 5; }
 .pc-ghost { fill: none; stroke: var(--ref); stroke-width: 1.6; opacity: .55; }
 .pc-reg { stroke: var(--s2); } .pc-gu { stroke: var(--s3); }
-.pc-rbase { stroke: var(--navy); stroke-width: 1.8; } .pc-rmort { stroke: var(--s1); stroke-width: 1.6; opacity: .8; }
+.pc-rbase { stroke: var(--navy-chart); stroke-width: 1.8; } .pc-rmort { stroke: var(--s1); stroke-width: 1.6; opacity: .8; }
 .pc-peak { stroke: var(--text-2); stroke-dasharray: 4 4; opacity: .7; }
 .pc-peak2 { stroke: var(--pos); stroke-dasharray: 2 3; opacity: .8; }
 text.pc-peak, text.pc-peak2 { stroke: none; opacity: 1; }
@@ -1871,7 +1871,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .pc-key { display: inline-flex; align-items: center; gap: 6px; }
 .pc-key i { display: inline-block; flex: none; }
 .k-line { width: 16px; height: 3px; border-radius: 2px; background: var(--s1); }
-.k-line.s2 { background: var(--s2); } .k-line.s3 { background: var(--s3); } .k-line.navy { background: var(--navy); }
+.k-line.s2 { background: var(--s2); } .k-line.s3 { background: var(--s3); } .k-line.navy { background: var(--navy-chart); }
 .k-line.ghost { background: var(--ref); opacity: .6; } .k-line.thin { height: 2px; }
 .k-dash { width: 16px; height: 0; border-top: 2.5px dashed var(--s1); }
 .k-band { width: 16px; height: 10px; border-radius: 3px; background: var(--s1); opacity: .2; }
@@ -1990,7 +1990,7 @@ circle.pc-now { fill: var(--surface); stroke: var(--s1); stroke-width: 2.5; }
 .art-link { stroke: var(--text-2); stroke-width: 2; stroke-dasharray: 6 6; fill: none; opacity: .5; }
 .art-stn { fill: var(--surface); stroke: var(--s1); stroke-width: 3; }
 .art-b { fill: var(--surface); stroke: var(--border); filter: drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
-.art-b.main { fill: var(--navy); stroke: var(--navy); }
+.art-b.main { fill: var(--navy-chart); stroke: var(--navy-chart); }
 .art-bt { font-size: 14px; font-weight: 800; fill: var(--text); }
 .art-bt.main { fill: var(--on-navy); } .art-bt.work, .art-bt.stn { fill: var(--accent); }
 .sv-qn { margin: 0; font-size: 13px; font-weight: 800; color: color-mix(in srgb, var(--s3) 60%, var(--text)); }
@@ -2959,7 +2959,7 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
 .cs-map { margin: 0; position: sticky; top: 72px; border-radius: 16px; overflow: hidden;
   background: radial-gradient(circle at 30% 20%, rgba(42,120,214,.08), transparent 60%), var(--chip); border: 1px solid var(--border); }
 .cs-svg { display: block; width: 100%; height: auto; }
-.cs-route { fill: none; stroke: var(--navy); stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+.cs-route { fill: none; stroke: var(--navy-chart); stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
 .cs-dot { fill: #13294b; stroke: #e8c66c; stroke-width: 2.5; }
 .cs-dot-no { font-size: 12px; font-weight: 800; fill: #fff; }
 .cs-dot-nm { font-size: 11px; font-weight: 700; fill: var(--text); paint-order: stroke; stroke: var(--chip); stroke-width: 3px; }
@@ -5300,3 +5300,27 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
   .it-start .it-nums { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .it-start-search, .it-budget a { transition: none; } }
+
+/* ===== UX v3.8 · 카드 그림: 단지 배치도 (건축물 자료가 있는 단지, 없으면 항공 사진 그대로) ===== */
+.hc-collect .hc-photo.plan { background: linear-gradient(160deg, #0f3d33, #0b2c25); }
+.hc-collect .hc-photo.plan::after { display: none; }
+.hc-collect .hc-photo.plan .hc-pin { display: none; }
+.hc-collect .hc-plan { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hc-collect .hc-plantag { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 9px; background: rgba(8, 24, 20, .78); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.4; }
+.tc .mcw-hc .hc-plantag, .tc .mcw-hc .hc-plannorth { display: none; }
+
+/* ===== UX v3.9 · Fable 완성도 심사 반영 =====
+   선택·켜짐 색(--navy)이 남색·하늘색으로 남아 있던 것을 브랜드 초록으로. 차트는 옛 값(--navy-chart)으로 고정.
+   금색은 등급·점수에만(소개 번호·재건축 칩은 초록/민트). 어두운 화면 첫 화면의 크림 띠 제거. 배치도: 높을수록 밝게 + 북쪽 표시. */
+:root { --navy: #0f3d33; --on-navy: #ffffff; --navy-chart: #13294b; --text: #10241e; }
+@media (prefers-color-scheme: dark) { :root { --navy: #6fd1ae; --on-navy: #0b1f1a; --navy-chart: #9ec5f4; --text: #f0efec; } }
+.it-kicker, .it-step-n { color: var(--accent); }
+.it-sec h2 em, .it-hero h1 em { background: linear-gradient(100deg, #b9f3de 0%, #6fd1ae 50%, #c9f7e6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.it-step-n span { background: var(--accent); color: var(--on-accent); }
+.mc-strip .mc-chip { color: #9be8cc; background: rgba(111, 209, 174, .14); border-color: rgba(111, 209, 174, .45); }
+@media (max-width: 560px) and (prefers-color-scheme: dark) {
+  .it-start .it-fan::before { background: #0b1f1a; }
+  .it-start .it-fan-tag { color: var(--text-2); }
+  .it-start .it-btn.ghost { color: #6fd1ae; border-color: #6fd1ae; }
+}
+.hc-collect .hc-plannorth { position: absolute; right: 8px; top: 6px; font-size: 12px; font-weight: 800; color: #cfe9df; line-height: 1.4; }

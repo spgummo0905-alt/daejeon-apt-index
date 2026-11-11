@@ -73,7 +73,7 @@
     const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "미산정" : c.i + "점"));
     foot.append(l, el("b", "", c.pt || "-"));
     let photo = null;   // 실제 항공 사진 표지: 좌표가 있고 사진 서버가 설정돼 있을 때만 (불러오기는 static/cover.js)
-    if (window.DJ_SAT && c.la && c.ln) { photo = el("span", "hc-photo"); photo.dataset.la = c.la; photo.dataset.ln = c.ln; photo.setAttribute("aria-hidden", "true"); photo.append(el("i", "hc-pin")); }
+    if (window.DJ_SAT && c.la && c.ln) { photo = el("span", "hc-photo"); photo.dataset.s = c.s; photo.dataset.la = c.la; photo.dataset.ln = c.ln; photo.setAttribute("aria-hidden", "true"); photo.append(el("i", "hc-pin")); }
     const nums = el("span", "hc-meta");   // 숫자 묶음마다 줄이 끊기지 않게 각각 한 덩어리
     [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : "", c.f && c.f.subway != null ? "역 " + Math.round(c.f.subway) + "m" : ""].filter(Boolean).forEach(x => nums.append(el("span", "hc-f", x)));
     inn.append(top); if (photo) inn.append(photo); inn.append(el("strong", "hc-cname", c.n), nums, foot);
