@@ -544,11 +544,13 @@
       const wrap = cv.parentNode, la = parseFloat(wrap.dataset.la), ln = parseFloat(wrap.dataset.ln);
       const fallback = () => { if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); };   // 동 이름 글꼴이 들어온 뒤 그리기
       if (!DJ.locSvg || !isFinite(la) || !isFinite(ln)) return fallback();
-      Promise.all([DJ.getLocMap(), DJ.data()]).then(([map, all]) => {
+      Promise.all([DJ.getLocMap(), DJ.data(), document.fonts ? document.fonts.ready : null]).then(([map, all]) => {
         if (!map || !map.d || !map.d.length) return fallback();
         const pts = all.complexes.filter(x => x.la && x.ln).map(x => ({ la: x.la, ln: x.ln }));
-        const r = DJ.locSvg({ la, ln, g: c.g, n: card.dataset.name || "" }, map, pts, { W: 650, H: 480, R: 3000, fs: 25, top: 70, bot: 190 });
-        cv.hidden = true; wrap.classList.add("loc"); wrap.prepend(r.svg);
+        // 좁은 화면에서 배지가 두 줄로 올라가면(.wrap) 그만큼 지도 칸을 키워, 배지가 지도 가운데를 가리지 않게
+        const tall = !!card.querySelector(".mc-badges.wrap"), H = tall ? 600 : 480;
+        const r = DJ.locSvg({ la, ln, g: c.g, n: card.dataset.name || "" }, map, pts, { W: 650, H, R: 3000, fs: 25, top: 70, bot: tall ? 310 : 190 });
+        cv.hidden = true; wrap.classList.add("loc"); if (tall) wrap.classList.add("tall"); wrap.prepend(r.svg);
         const tag = document.createElement("span"); tag.className = "mc-loctag"; tag.textContent = "위치 지도 · 직선거리"; wrap.append(tag);
         if (r.marks.length) {   // 지도 안 이름표가 겹치면 빠지므로, 거리는 읽기 좋은 글줄로 항상 함께 둠
           const line = document.createElement("p"); line.className = "mc-locline";
@@ -569,9 +571,10 @@
     const fit = () => {
       if (!row) return;
       const over = () => [...row.children].reduce((w, x) => w + x.scrollWidth, 0) + 6 * (row.children.length - 1) > row.clientWidth;
-      row.classList.remove("tight", "tighter");
+      row.classList.remove("tight", "tighter", "wrap");
       if (over()) row.classList.add("tight");
       if (over()) row.classList.add("tighter");   // 아주 좁은 화면: 아이콘만
+      if (over()) row.classList.add("wrap");      // 그래도 넘치면(신고가+메달 셋) 메달을 위 줄로 올려 잘리지 않게
     };
     fit();
     window.addEventListener("resize", fit);

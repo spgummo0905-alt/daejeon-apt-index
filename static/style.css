@@ -4903,6 +4903,9 @@ p.muted { text-wrap: balance; }
 .mc-art.loc, .pb .mc-art.loc { aspect-ratio: 650 / 480; }   /* 배지가 덮는 위·아래 띠를 빼도 지도가 읽히도록 키움(낮은 폰 포함) */
 .mc-locline { margin: 8px 4px 0; font-size: 14px; line-height: 1.45; color: var(--mc-sub, rgba(235, 242, 255, .85)); }
 
+.mc-art.loc.tall, .pb .mc-art.loc.tall { aspect-ratio: 650 / 600; }
+.mc-locline { color: var(--sub); }   /* 밝은 등급 카드(D 등)에서도 읽히게 카드 보조 글자색 */
+
 /* ===== UX v3.3 · 낮은 폰(높이 700 이하) 단지 상세: 카드를 조금 낮춰 '임장 코스에 넣기'가 '전체 평가 펼치기'를 덮지 않게 =====
    태그 칩 줄(준공·재건축·세대·거래)은 두 줄로 꺾이는 대신 한 줄로 옆으로 넘김(내용은 그대로). 사진 높이는 그대로 둠(낮추면 가격 칩이 순위 배지를 가림) */
 @media (max-width: 719px) and (max-height: 700px) {
@@ -5368,3 +5371,7 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
 .my-seg button[aria-pressed="true"], .mp-seg button[aria-pressed="true"] { background: var(--navy); color: var(--on-navy); box-shadow: none; }
 /* P1 로고 네모가 딥그린에 묻히지 않게 얇은 테 (로고 이미지는 그대로) */
 body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.18); border-radius: 7px; }
+
+/* ===== UX v4.7 · 상세 큰 카드 배지: 좁은 화면에서 가격+메달이 넘치면 메달을 위 줄로 (잘림 방지) ===== */
+.mc-badges.wrap { flex-wrap: wrap-reverse; justify-content: flex-start; row-gap: 6px; }
+.mc-badges.wrap .mc-medals { margin-left: 0; }
