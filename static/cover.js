@@ -28,31 +28,12 @@
   // 사진 한 장(약 120m 폭)에서 단지가 가장자리에 가까울 때만 옆 사진을 붙여, 단지가 항상 보이는 창 한가운데 오게 한다(사진 수는 1~4장).
   const T = 1.25;   // 사진 한 장의 폭 = 칸 폭의 1.25배 (약간 확대해서 단지가 또렷하게)
   // 단지 배치도: 일조 미리보기와 같은 건축물 자료(동마다 바닥 모양·층수)가 있는 단지는 사진 대신 배치도를 그린다. 값을 새로 만들지 않고, 없으면 항공 사진 그대로.
-  let plans = null;
-  function getPlans() {
-    if (!plans) plans = fetch((window.DJ_ROOT || "") + "plans.json").then(r => (r.ok ? r.json() : {})).catch(() => ({}));
-    return plans;
-  }
-  const NS = "http://www.w3.org/2000/svg";
-  const mk = (n, a) => { const e = document.createElementNS(NS, n); Object.keys(a || {}).forEach(k => e.setAttribute(k, a[k])); return e; };
-  function tone(f) {   // 층수 → 남색 위 청회→밝은 청백 농도 (모든 단지 같은 기준: 5층 이하 옅게, 50층 이상 진하게)
-    const t = clamp((f - 5) / 45, 0, 1), a = [95, 118, 160], b = [225, 235, 250];   // 낮은 동은 어둡게, 높은 동은 밝게 (어두운 바탕에서 높은 동이 먼저 보이게)
-    return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",") + ")";
-  }
+  // 배치도 그림은 static/planart.js (DJ.planSvg, DJ.getPlans)가 그립니다. 자료가 없으면 항공 사진 그대로.
   function drawPlan(box, doc) {
-    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, est = false;
-    doc.forEach(d => { if (d[1]) est = true; for (let i = 2; i < d.length; i += 2) { x0 = Math.min(x0, d[i]); x1 = Math.max(x1, d[i]); y0 = Math.min(y0, d[i + 1]); y1 = Math.max(y1, d[i + 1]); } });
-    const W = 200, H = 100, pad = 14, top = pad, bot = 28, k = Math.min((W - 2 * pad) / Math.max(x1 - x0, 1), (H - top - bot) / Math.max(y1 - y0, 1)), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, oy = top + (H - top - bot) / 2;   // 아래 28은 라벨 자리
-    const svg = mk("svg", { viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "xMidYMid meet", class: "hc-plan" });
-    doc.slice().sort((a, b) => a[0] - b[0]).forEach(d => {
-      const pts = []; for (let i = 2; i < d.length; i += 2) pts.push((W / 2 + (d[i] - cx) * k).toFixed(1) + "," + (oy - (d[i + 1] - cy) * k).toFixed(1));
-      const col = tone(d[0]);   // 추정한 동은 옅게(구분은 색 농도 + 아래 글자 "일부 추정"), 가는 동도 보이게 같은 색 가는 선을 둘러 줌
-      svg.append(mk("polygon", { points: pts.join(" "), fill: col, stroke: col, "stroke-width": "1", "stroke-linejoin": "round", opacity: d[1] ? ".62" : "1" }));
-    });
+    const r = DJ.planSvg(doc, { W: 200, H: 100, padX: 10, padT: 12, padB: 26, fs: 8, legendY: 95, layout: "card" });
     box.classList.add("plan", "on");
-    const tag = document.createElement("span"); tag.className = "hc-plantag"; tag.textContent = est ? "배치도 · 일부 추정" : "배치도";
-    const nn = document.createElement("span"); nn.className = "hc-plannorth"; nn.textContent = "N↑"; nn.setAttribute("aria-hidden", "true");
-    box.prepend(svg); box.append(tag, nn);
+    const tag = document.createElement("span"); tag.className = "hc-plantag"; tag.textContent = r.est ? "배치도 · 일부 추정" : "배치도";
+    box.prepend(r.svg); box.append(tag);
     notePlan();
   }
   let notedPlan = false;
@@ -66,7 +47,7 @@
   function load(box) {
     if (box.dataset.cv) return; box.dataset.cv = "1";
     const slug = box.dataset.s;
-    if (slug) { getPlans().then(P => { if (P[slug]) drawPlan(box, P[slug]); else photo(box); }); return; }
+    if (slug) { DJ.getPlans().then(P => { if (P[slug]) drawPlan(box, P[slug]); else photo(box); }); return; }
     photo(box);
   }
 

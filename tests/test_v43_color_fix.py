@@ -34,5 +34,5 @@ def test_grade_colors_logo_and_chart_colors_untouched():
 
 
 def test_plan_thumbnail_is_navy_inside_card_and_scale_is_blue_white():
-    assert ".hc-collect .hc-photo.plan { background: #16305a; }" in SEG
-    assert "a = [95, 118, 160], b = [225, 235, 250]" in R("static/cover.js")
+    assert ".hc-collect .hc-photo.plan { background: #16305a; }" in SEG  # v4.4 에서 도면 바탕(#0d2145)으로 한 번 더 덮음
+    assert "LO = [86, 112, 158], HI = [232, 240, 252]" in R("static/planart.js")

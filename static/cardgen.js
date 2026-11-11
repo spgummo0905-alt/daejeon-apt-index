@@ -538,9 +538,20 @@
     const card = document.querySelector(".mc[data-apt]");
     if (!card) return;
     const c = { s: card.dataset.apt, g: card.dataset.grade, d: card.dataset.dong };
+    // 상세 큰 카드 그림: 건축물 자료로 그린 단지 배치도(없으면 빈 도면). 건물 외관 그림은 더 이상 그리지 않음
     card.querySelectorAll("canvas[data-art]").forEach(cv => {
-      const paint = () => drawArt(cv, c);
-      if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); // 동 이름 글꼴이 들어온 뒤 그리기
+      const wrap = cv.parentNode;
+      if (!DJ.planSvg || !DJ.getPlans) return;   // 배치도 스크립트가 없으면 칸을 비워 둠(옛 야경 그림은 쓰지 않음)
+      cv.hidden = true;
+      const o = { W: 650, H: 330, padX: 40, padT: 70, padB: 104, fs: 22, legendY: 318, scale: true, layout: "detail" };
+      DJ.getPlans().then(P => {
+        const doc = P[c.s];
+        if (doc) {
+          const r = DJ.planSvg(doc, o); wrap.prepend(r.svg);
+          const tag = document.createElement("span"); tag.className = "mc-plantag"; tag.textContent = r.est ? "배치도 · 일부 추정" : "배치도 · 건축물 자료";
+          wrap.append(tag);
+        } else wrap.prepend(DJ.planBlank(o));
+      });
     });
     // 최근 실거래: 그림 위 아이콘을 누르면 카드 안에서 펼침
     const toggle = card.querySelector("[data-deals-toggle]"), deals = document.getElementById("mc-deals");
