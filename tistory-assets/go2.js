@@ -6,6 +6,7 @@ let html=SPEC.html.replace(/\{\{IMG:([a-z0-9-]+)\|([^}]*)\}\}/g,(m,n,cap)=>map[n
 // 1) 해당 임시저장 글 열기 (있으면)
 if(SPEC.draft){ const c=[...document.querySelectorAll('a.action')].find(e=>e.innerText.trim()==='임시저장').parentElement; [...c.querySelectorAll('a,button')].find(e=>/^\d+$/.test(e.innerText.trim()))?.click(); await sleep(1200);
   const it=[...document.querySelectorAll('a,button,li,div,span')].filter(e=>e.children.length<=2 && new RegExp(SPEC.draft).test(e.innerText||'')); if(it.length){ it[it.length-1].click(); await sleep(2500);} }
+await sleep(3500);
 // 2) 기본모드에서 본문
 const hb=[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.innerText.trim().startsWith('HTML')); if(hb){ hb.click(); await sleep(300); document.getElementById('editor-mode-kakao')?.click(); await sleep(900); }
 const ed=tinymce.activeEditor; ed.setContent(html); ed.fire('change'); ed.setDirty(true); await sleep(400);
@@ -20,6 +21,10 @@ if(!/부동산·임장 앱/.test(document.body.innerText.split('본문2')[0])){ 
 const catOk=/부동산·임장 앱/.test(document.body.innerText.split('본문2')[0]);
 const nimg=(ed.getContent().match(/\[##_Image/g)||[]).length, ntag=[...document.querySelectorAll('[class*=tag] span')].filter(e=>e.innerText.startsWith('#')&&e.innerText.length>1).length;
 if(!catOk || ed.getContent().length<1500 || ntag<6) return ['STOP', catOk, ed.getContent().length, ntag, nimg];
+await sleep(1500);
+const probe=html.replace(/<[^>]+>/g,'').slice(0,30);
+for(let k=0;k<3 && !ed.getBody().innerText.includes(probe.slice(0,20));k++){ ed.setContent(html); ed.fire('change'); ed.setDirty(true); await sleep(1500); }
+if(!ed.getBody().innerText.includes(probe.slice(0,20))) return ['STOP body not kept'];
 // 6) 발행 레이어
 [...document.querySelectorAll('button')].find(b=>b.innerText.trim()==='완료').click(); await sleep(1500);
 (document.querySelector('label[for="open20"]')||document.getElementById('open20')).click(); await sleep(400);
