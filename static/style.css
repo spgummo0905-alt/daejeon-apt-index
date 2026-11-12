@@ -5482,3 +5482,10 @@ h2, h3 { font-weight: 700; }
   .rcd.idle:not(.open) .rcd-fab { opacity: .55; }
 }
 @media (prefers-reduced-motion: reduce) { .rcd-fab { transition: none; } }
+
+/* v6.1 좁은 폰(400px 이하)에서 입지 점수 줄이 칸보다 넓어 가로로 밀리던 문제: 제목 칸이 줄어들며 줄바꿈되게 함(서울 360폭에서 2px, 320폭에서 42px 넘침) */
+@media (max-width: 400px) {
+  .loc-list li:not(.loc-grp) { grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
+  .loc-list li:not(.loc-grp) .loc-label { min-width: 0; overflow-wrap: anywhere; }
+  .loc-raw { max-width: 11em; }
+}
