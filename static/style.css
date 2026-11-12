@@ -5467,3 +5467,9 @@ h2, h3 { font-weight: 700; }
 .empty-start p { margin: 0 0 12px; max-width: 28em; }
 .empty-start .btn { min-height: 48px; }
 .vs-slot:not(.on) { font-size: 22px; font-weight: 300; color: var(--text-2); }
+
+/* v5.9 '카드 읽는 법'과 '등급 분포'를 한 구간으로 합침 (제목·여백 중복 제거) */
+.it-dist { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+.it-dist-h { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--text); }
+.it-dist .it-grades { margin-top: 14px; }
+.it-dist .it-sub { margin-top: 14px; font-size: 15px; line-height: 1.6; }
