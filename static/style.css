@@ -5480,3 +5480,6 @@ body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.1
 .tabbar a[data-tab="my"].has-dot::after { position: absolute; margin: 0; }
 .mc-news-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #c9302f; vertical-align: 1px; }
 
+/* ===== UX v5.3 · 같은 말 반복 걷어내기(찾기): 조건이 없을 땐 안내 문장 대신 큰 버튼 하나 ===== */
+.sv-peek.idle:empty, .sv-delta:empty { display: none; }
+

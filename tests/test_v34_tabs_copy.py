@@ -16,8 +16,10 @@ def test_every_screen_lights_one_bottom_tab():
 
 
 def test_plain_words_replace_hard_ones_without_touching_values():
-    assert "조건을 고르면 맞는 단지 수가 바뀌어요" in _r("static/finder.js")
-    assert "조건을 고르면 맞는 단지가 바로 보여요" in _r("static/finder.js")
+    # v5.3: 같은 뜻의 안내 문장 세 개를 큰 버튼 하나로 줄임(문장은 일부러 지움)
+    assert "조건을 고르면 맞는 단지 수가 바뀌어요" not in _r("static/finder.js")
+    assert "조건을 고르면 맞는 단지가 바로 보여요" not in _r("static/finder.js")
+    assert "하나만 골라도 맞는 단지가 보여요" in _r("static/finder.js")
     assert "개 단지에서 볼 수 있어요" in _r("static/preview.js") and "열려 있어요" not in _r("static/preview.js")
     m = _r("static/map.js")
     assert "지도에 없는 단지" in m and "`위치 미확인" not in m

@@ -395,7 +395,8 @@
     box.querySelector("[data-sv-unit]").textContent = idle ? "곳" : "곳 결과 보기";
     d.textContent = "";
     d.className = "sv-delta";
-    if (idle) d.textContent = "조건을 고르면 맞는 단지 수가 바뀌어요";
+    // 처음(조건 없음)에는 안내 문장을 두지 않는다: 아래 큰 버튼("하나만 골라도 맞는 단지가 보여요") 하나가 같은 말을 대신함
+    if (idle) d.textContent = "";
     else if (lastN != null) {
       d.textContent = n === lastN ? `그대로 ${n.toLocaleString()}곳` : `${Math.abs(n - lastN).toLocaleString()}곳 ${n < lastN ? "줄어듦" : "늘어남"}`;
       d.className = "sv-delta " + (n < lastN ? "down" : n > lastN ? "up" : "");
@@ -604,7 +605,7 @@
   function peek() {
     const pk = box.querySelector("[data-sv-peek]");
     if (!pk) return;
-    if (!narrowed()) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "조건을 고르면 맞는 단지가 바로 보여요")); return; }
+    if (!narrowed()) { pk.className = "sv-peek idle"; pk.replaceChildren(); return; }   // 조건이 없을 땐 빈 칸(같은 안내 문장 반복 제거)
     if (!list.length) { pk.className = "sv-peek idle"; pk.replaceChildren(el("p", "sv-peek-hint", "맞는 단지가 없어요. 조건을 하나 풀어 보세요")); return; }
     pk.className = "sv-peek";
     const row = el("div", "sv-peek-row");

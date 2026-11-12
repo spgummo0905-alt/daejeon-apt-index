@@ -147,10 +147,11 @@
     const vals = g => cs.map(c => ({ c, v: g(c) })).filter(x => x.v != null);
     const spread = g => { const v = vals(g).map(x => x.v); return v.length >= 2 ? Math.max(...v) - Math.min(...v) : 0; };
     const line = (g, f) => vals(g).map(x => x.c.n + " " + f(x)).join(" · ");
+    // 가격 차이는 화면에 보이는 값(0.1억 단위로 반올림, 카드의 가격과 같은 자릿수)끼리 빼서, 보이는 숫자와 어긋나지 않게
     const won = m => m >= 10000 ? (Math.round(m / 1000) / 10).toString().replace(/\.0$/, "") + "억" : Math.round(m).toLocaleString() + "만원";   // p 는 만원 단위
     const pts = n => Math.round(n) + "점";
     const defs = [
-      [c => c.p, "가격", m => "약 " + won(m) + " 차이", x => cs.find(c => c === x.c).pt || "-", " · 84㎡ 추정"],
+      [c => (c.p != null ? Math.round(c.p / 1000) * 1000 : null), "가격", m => "약 " + won(m) + " 차이", x => cs.find(c => c === x.c).pt || "-", " · 84㎡ 추정"],
       [c => c.i, "종합 지수", m => pts(m) + " 차이", x => x.v + "점", ""],
       [c => c.st && c.st[0], "입지 점수", m => pts(m) + " 차이", x => x.v + "점", ""],
       [c => c.f && c.f.subway, "지하철역 거리", m => Math.round(m) + "m 차이", x => x.v + "m", ""],
