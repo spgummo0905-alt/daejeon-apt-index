@@ -71,7 +71,8 @@
     const fr = el("span", "hc-frame"), inn = el("span", "hc-inner"), top = el("span", "hc-top");
     top.append(el("b", "", (c.gu || "") + (c.d ? " · " + c.d : "")), grade(c.g));   // 영어 라벨 대신 구·동 이름
     const foot = el("span", "hc-foot"), l = el("span", "", "집감 지수 "); l.append(el("b", "", c.i == null ? "미산정" : c.i + "점"));
-    foot.append(l, el("b", "", c.pt || "-"));
+    if (c.pt) { const fp = el("span", "hc-fp"); fp.append(el("b", "", c.pt), el("small", "", "84㎡ 추정")); foot.append(l, fp); }   // 가격은 84㎡ 환산 추정이라고 항상 함께
+    else foot.append(l, el("b", "", "-"));
     let photo = null;   // 실제 항공 사진 표지: 좌표가 있고 사진 서버가 설정돼 있을 때만 (불러오기는 static/cover.js)
     if (window.DJ_SAT && c.la && c.ln) { photo = el("span", "hc-photo"); photo.dataset.s = c.s; photo.dataset.la = c.la; photo.dataset.ln = c.ln; photo.setAttribute("aria-hidden", "true"); photo.append(el("i", "hc-pin")); }
     const nums = el("span", "hc-meta");   // 숫자 묶음마다 줄이 끊기지 않게 각각 한 덩어리

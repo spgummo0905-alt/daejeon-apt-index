@@ -4750,7 +4750,7 @@ p.muted { text-wrap: balance; }
 .tc .mcw-hc .hc-meta { font-size: 13px; }
 .tc .mcw-hc .hc-foot { flex-direction: column; align-items: flex-start; gap: 0; padding: 4px 0 0; font-size: 11px; }
 .tc .mcw-hc .hc-foot > span { white-space: nowrap; } .tc .mcw-hc .hc-foot > span b { font-size: 13px; }
-.tc .mcw-hc .hc-foot > b { font-size: 15px; }
+.tc .mcw-hc .hc-foot > b, .tc .mcw-hc .hc-foot > .hc-fp > b { font-size: 15px; }
 .tc .mcw-hc .mcard-turn { right: 8px; bottom: 8px; }
 .tc .mcw-hc .cs-stamp { display: none; }
 @media (min-width: 761px) { .tc .mcw-hc .hc-art { height: 56px; } .tc .mcw-hc .hc-top b { display: block; font-size: 12px; } .tc .mcw-hc .hc-cname { font-size: 15px; } .tc .mcw-hc .hc-foot { font-size: 12px; } }
@@ -4919,6 +4919,21 @@ p.muted { text-wrap: balance; }
 .mp-zero .btn { min-height: 48px; }
 .mp-go { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
 .mp-go[hidden] { display: none; }
+
+/* ===== UX v5.0 · Impeccable 비평 반영: 알림은 아래 메뉴 위로, 떠 있는 버튼은 큰 버튼 위로, 카드 가격엔 '추정' 표시 ===== */
+.hc-fp { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+.hc-fp small { font-size: 12px; font-weight: 700; color: var(--sub); }
+@media (max-width: 720px) {
+  /* 알림이 제목·점수를 덮지 않게: 휴대폰은 하단 메뉴 바로 위 (앱 화면 전체) */
+  .toast-zone { top: auto; bottom: calc(76px + env(safe-area-inset-bottom)); width: calc(100% - 24px); }
+  .toast { padding: 10px 14px; }
+  .toast > strong, .toast > b { font-size: 14px; }
+  .toast span { font-size: 13px; }
+  /* 아래에 큰 고정 버튼이 있는 화면(비교·찾기)은 그 버튼 위로 */
+  body.cmp-ready .toast-zone, body[data-page="finder"] .toast-zone { bottom: calc(148px + env(safe-area-inset-bottom)); }
+  /* 비교 화면 '임장 코스 만들기' 버튼 위로 최근 본 단지 버튼 */
+  body.cmp-ready .rcd { bottom: calc(148px + env(safe-area-inset-bottom)); }
+}
 
 /* ===== UX v3.3 · 낮은 폰(높이 700 이하) 단지 상세: 카드를 조금 낮춰 '임장 코스에 넣기'가 '전체 평가 펼치기'를 덮지 않게 =====
    태그 칩 줄(준공·재건축·세대·거래)은 두 줄로 꺾이는 대신 한 줄로 옆으로 넘김(내용은 그대로). 사진 높이는 그대로 둠(낮추면 가격 칩이 순위 배지를 가림) */
