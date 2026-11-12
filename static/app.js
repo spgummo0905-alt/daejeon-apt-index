@@ -135,6 +135,7 @@
     f = on ? [s, ...f] : f.filter(x => x !== s);
     if (!save("favs", f)) return DJ.isFav(s);
     DJ.paintFavCount();
+    DJ.tap();
     return on;
   };
   // 메뉴의 '관심 단지' 옆 숫자. 새 소식이 있는 관심 단지가 있으면 그 수를 빨간 숫자로
@@ -360,6 +361,8 @@
     if (active && active.focus) active.focus({ preventScroll: true });
     return ok;
   }
+  // 짧은 진동(8ms): 담기·저장 같은 '눌렀다'는 손맛. 줄이기 설정이거나 진동이 안 되는 기기에서는 아무 일도 안 함
+  DJ.tap = function () { try { if (!DJ.calm && navigator.vibrate) navigator.vibrate(8); } catch (e) {} };
   DJ.copy = function (text) {
     if (copyNow(text)) return Promise.resolve(true);
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => false);
