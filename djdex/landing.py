@@ -146,7 +146,7 @@ self.addEventListener("activate", e => {
 AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "PerplexityBot", "Google-Extended", "Bingbot"]
 
 
-def _write_llms(out_dir: Path, base: str, rows: list[dict], today: str) -> None:
+def _write_llms(out_dir: Path, base: str, rows: list[dict], today: str, posts: list[dict] = ()) -> None:
     """AI 검색·답변 도구가 읽는 안내 파일(llms.txt): 무엇을 담은 사이트인지, 점수 뜻, 갱신일, 주요 주소. 사실만 적습니다."""
     total = sum(r["n"] for r in rows)
     lines = [
@@ -169,6 +169,11 @@ def _write_llms(out_dir: Path, base: str, rows: list[dict], today: str) -> None:
         lines.append(f"- [{r['name']} 산출 방법]({base}{r['path']}methodology): 지수 계산식과 기준")
     lines += ["", "## 단지 페이지", "",
               "단지마다 주소 형식은 `/지역/apt/단지번호`입니다(예: `/daejeon/apt/30170-41`). 각 단지 페이지에는 가격, 단지 정보, 생활 입지, 자주 묻는 질문이 있고, 값이 없는 항목은 비워 두지 않고 싣지 않습니다.", ""]
+    if posts:
+        lines += ["## 임장 가이드", "",
+                  f"아파트 임장을 찾기 → 카드 읽기 → 비교 → 코스 → 현장 기록 순서로 따라가는 글입니다. 목록: {base}blog/", ""]
+        lines += [f"- [{p['title']}]({p['url']}): {p['question']}" for p in posts]
+        lines.append("")
     (out_dir / "llms.txt").write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -249,11 +254,21 @@ def build(cfg, out_dir: Path) -> int:
     # 검색엔진: 맨 앞 주소 + 지역마다의 사이트맵
     if base:
         from xml.sax.saxutils import escape as xe
+        from . import blog
         today = datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+        # 임장 가이드 블로그(/blog/): 글의 lastmod 는 오늘이 아니라 글을 실제로 고친 날(date_modified)
+        posts = blog.build(cfg, out_dir, base)
+        blog_urls = ""
+        if posts:
+            newest = max(p["lastmod"] for p in posts)
+            blog_urls = (f"<url><loc>{xe(base)}blog/</loc><lastmod>{newest}</lastmod><priority>0.7</priority></url>\n"
+                         + "".join(f"<url><loc>{xe(p['url'])}</loc><lastmod>{p['lastmod']}</lastmod><priority>0.6</priority></url>\n"
+                                   for p in posts))
         (out_dir / "sitemap-root.xml").write_text(
             '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             f"<url><loc>{xe(base)}</loc><lastmod>{today}</lastmod><priority>1.0</priority></url>\n"
-            f"<url><loc>{xe(base)}about</loc><lastmod>{today}</lastmod><priority>0.8</priority></url>\n</urlset>\n", encoding="utf-8")
+            f"<url><loc>{xe(base)}about</loc><lastmod>{today}</lastmod><priority>0.8</priority></url>\n"
+            + blog_urls + "</urlset>\n", encoding="utf-8")
         maps = [f"{base}sitemap-root.xml"] + [f"{base}{r['path']}sitemap.xml" for r in rows
                                               if (out_dir / r["folder"] / "sitemap.xml").exists()]
         (out_dir / "sitemap.xml").write_text(
@@ -264,7 +279,7 @@ def build(cfg, out_dir: Path) -> int:
         ai = "".join(f"User-agent: {b}\nAllow: /\n\n" for b in AI_BOTS)
         (out_dir / "robots.txt").write_text("User-agent: *\nAllow: /\n\n" + ai + "".join(f"Sitemap: {m}\n" for m in maps[1:])
                                             + f"Sitemap: {base}sitemap.xml\n", encoding="utf-8")
-        _write_llms(out_dir, base, rows, today)
+        _write_llms(out_dir, base, rows, today, posts)
 
     # 안드로이드 앱 소유 확인 파일은 맨 앞 주소에만 둘 수 있어요
     from .site import write_assetlinks
