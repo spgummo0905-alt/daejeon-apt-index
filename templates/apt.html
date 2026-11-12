@@ -43,20 +43,37 @@
       <h1 id="pb-t" class="mc-name">{{ c.name }}</h1>
       <p>{{ region }} {{ c | place }} {{ c.jibun }}</p>
     </div>
-    <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}</div>
+    <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}<span class="mc-rk">{% if c.rank %}지수 산정 {{ n_total }}곳 중 {{ c.rank }}위{% elif c.small %}{{ c.small_reason or "소규모" }} 단지라 순위 제외{% else %}자료가 부족해 순위 제외{% endif %}</span></div>
   </div>
+  {% if latlng %}<div class="mc-lochead"><b>위치 · 직선거리</b><a href="{{ root }}map.html?s={{ c.slug | urlencode }}">실제 지도로 보기 ›</a></div>{% endif %}
   <div class="mc-art" data-mc-art{% if latlng %} data-la="{{ latlng[0] }}" data-ln="{{ latlng[1] }}"{% endif %}>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
-    {% if c.rank %}<button type="button" class="mc-rank" data-badge data-title="{{ region }} {{ n_total }}곳 중 {{ c.rank }}위" data-desc="종합 지수 순위 · {{ c.grade }}등급 {{ c.grade_name }}" aria-label="{{ c.rank }}위/{{ n_total }} · {{ region }} {{ n_total }}곳 중 {{ c.rank }}위 (종합 지수 순위)"><b>{{ c.rank }}</b>위<small>/{{ n_total }}</small></button>
-    {% else %}<button type="button" class="mc-rank" data-badge data-title="순위 제외" data-desc="{% if c.small %}{{ c.small_reason or '소규모' }} 단지는 일반 아파트와 가격 구조가 달라 순위에서 제외합니다{% else %}입지·거래 자료가 부족해 지수를 산정하지 않았습니다{% endif %}">순위 제외</button>{% endif %}
+  </div>
+  {# 생활 시설 거리: 값이 있는 것만(없으면 칸째 숨김, '-'도 쓰지 않음). 역·학교·마트는 단지 중심에서 잰 직선거리, 병원은 반경 1km 안 개수 #}
+  {% macro dist(v) %}{% if v >= 1000 %}{{ "%.1f" | format(v / 1000) }}km{% else %}{{ "{:,.0f}".format(v) }}m{% endif %}{% endmacro %}
+  {% set f_sub = c.get("subway_raw") %}{% set f_el = c.get("elementary_raw") %}{% set f_mt = c.get("mart_raw") %}{% set f_hp = c.get("hospital_raw") %}
+  {% set tb = badges | selectattr("icon", "equalto", "train") | list %}
+  {% set has_fac = (f_sub is not none and f_sub == f_sub) or (f_el is not none and f_el == f_el) or (f_mt is not none and f_mt == f_mt) or (f_hp is not none and f_hp == f_hp) %}
+  {% if has_fac %}
+  <ul class="mc-fac" aria-label="생활 시설까지 거리">
+    {% if f_sub is not none and f_sub == f_sub %}<li><span>{{ tb[0].title if tb else "역" }}</span><b>{{ dist(f_sub) }}</b></li>{% endif %}
+    {% if f_el is not none and f_el == f_el %}<li><span>초등학교</span><b>{{ dist(f_el) }}</b></li>{% endif %}
+    {% if f_mt is not none and f_mt == f_mt %}<li><span>대형마트</span><b>{{ dist(f_mt) }}</b></li>{% endif %}
+    {% if f_hp is not none and f_hp == f_hp %}<li><span>병원 1km 안</span><b>{{ "{:,.0f}".format(f_hp) }}곳</b></li>{% endif %}
+  </ul>
+  <p class="mc-fnote">역·학교·마트는 단지 중심에서 잰 직선거리예요</p>
+  {% endif %}
+  <div class="mc-under">
     <p class="mc-tip" data-mc-tip role="status" hidden></p>
-    <div class="mc-badges">
+    <div class="mc-prices">
       {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="{% if t0.high %}신고가 {% endif %}{{ t0.price | price }} 실거래 {{ t0.date.strftime('%m.%d') }} {{ t0.area | int }}㎡ 전용 기준, 거래 내역 펼치기">
         {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span class="mc-pr-l">실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span><span class="mc-pr-a">{{ ar(c, t0.area) }} 거래</span></button>{% endif %}
-      <div class="mc-medals">
-        {% for b in badges %}<button type="button" class="mc-medal" data-badge data-title="{{ b.title }}" data-desc="{{ b.tip }}" aria-label="{{ b.title }} {{ b.short }}"><svg class="ic" aria-hidden="true"><use href="#i-{{ b.icon }}"/></svg><span>{{ b.short }}{% if b.unit %}<small>{{ b.unit }}</small>{% endif %}</span></button>{% endfor %}
-      </div>
+      {% if c.price_ref is not nan %}<div class="mc-est"><small>84㎡로 맞추면</small><b>{{ c.price_ref | price }}</b><span>{{ ref_area }}㎡ 추정</span></div>{% endif %}
     </div>
+    {% if lead and c.price_ref is not nan and (lead.area | int) != (ref_area | int) %}<p class="mc-pnote">거래한 면적과 추정 면적이 달라 바로 견줄 수 없어요</p>{% endif %}
+    <div class="mc-badges"><div class="mc-medals">
+      {% for b in badges if b.icon != "train" %}<button type="button" class="mc-medal" data-badge data-title="{{ b.title }}" data-desc="{{ b.tip }}" aria-label="{{ b.title }}{% if b.icon == 'book' %} {{ b.short }}{% endif %}"><svg class="ic" aria-hidden="true"><use href="#i-{{ b.icon }}"/></svg><span>{{ b.title }}{% if b.icon == "book" %} {{ b.short }}{% endif %}</span></button>{% endfor %}
+    </div></div>
   </div>
   {% if fresh %}
   <div class="mc-deals" id="mc-deals" hidden>

@@ -544,17 +544,14 @@
       const wrap = cv.parentNode, la = parseFloat(wrap.dataset.la), ln = parseFloat(wrap.dataset.ln);
       const fallback = () => { if (document.fonts) document.fonts.ready.then(() => glyphs(c.d || "")).then(paint); else paint(); };   // 동 이름 글꼴이 들어온 뒤 그리기
       if (!DJ.locSvg || !isFinite(la) || !isFinite(ln)) return fallback();
-      Promise.all([DJ.getLocMap(), DJ.data(), document.fonts ? document.fonts.ready : null]).then(([map, all]) => {
+      Promise.all([DJ.getLocMap(), document.fonts ? document.fonts.ready : null]).then(([map]) => {
         if (!map || !map.d || !map.d.length) return fallback();
-        const pts = all.complexes.filter(x => x.la && x.ln).map(x => ({ la: x.la, ln: x.ln }));
-        // 좁은 화면에서 배지가 두 줄로 올라가면(.wrap) 그만큼 지도 칸을 키워, 배지가 지도 가운데를 가리지 않게
-        const tall = !!card.querySelector(".mc-badges.wrap"), H = tall ? 600 : 480;
-        const r = DJ.locSvg({ la, ln, g: c.g, n: card.dataset.name || "" }, map, pts, { W: 650, H, R: 3000, fs: 25, top: 70, bot: tall ? 310 : 190 });
-        cv.hidden = true; wrap.classList.add("loc"); if (tall) wrap.classList.add("tall"); wrap.prepend(r.svg);
-        const tag = document.createElement("span"); tag.className = "mc-loctag"; tag.textContent = "위치 지도 · 직선거리"; wrap.append(tag);
-        if (r.marks.length) {   // 지도 안 이름표가 겹치면 빠지므로, 거리는 읽기 좋은 글줄로 항상 함께 둠
+        const narrow = window.innerWidth < 360;   // 아주 좁은 폰: 이름표 2개만
+        const r = DJ.locSvg({ la, ln, g: c.g, n: card.dataset.name || "" }, map, null, { W: 650, H: 400, R: 3000, maxMarks: narrow ? 2 : 3 });
+        cv.hidden = true; wrap.classList.add("loc"); wrap.prepend(r.svg);
+        if (r.hidden.length) {   // 자리가 없어 지도에서 빠진 중심지는 지도 아래 글줄로(거리는 항상 보이게)
           const line = document.createElement("p"); line.className = "mc-locline";
-          line.textContent = "가까운 중심지(직선거리) · " + r.marks.map(m => m.n + " " + (m.d / 1000).toFixed(1) + "km").join(" · ");
+          line.textContent = r.hidden.map(m => m.n + " " + (m.d / 1000).toFixed(1) + "km").join(" · ") + " (직선거리)";
           wrap.after(line);
         }
       }).catch(fallback);

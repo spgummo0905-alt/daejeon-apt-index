@@ -5,10 +5,12 @@ ROOT = Path(__file__).resolve().parent.parent
 R = lambda p: (ROOT / p).read_text(encoding="utf-8")
 
 
-def test_badges_wrap_instead_of_clipping_and_map_grows():
+def test_badges_no_longer_sit_on_the_map_so_no_wrapping_logic_needed():
+    """v4.7은 지도 위 배지가 잘리지 않게 두 줄로 올렸다. v5.2에서 배지·가격을 지도 밖으로 옮겨 그 문제 자체가 사라졌다(이 시험은 그 상태를 고정)."""
     g = R("static/cardgen.js")
-    assert 'row.classList.remove("tight", "tighter", "wrap")' in g and 'row.classList.add("wrap")' in g
-    assert 'card.querySelector(".mc-badges.wrap")' in g and "H = tall ? 600 : 480" in g and "bot: tall ? 310 : 190" in g
+    assert "H: 400" in g and "bot:" not in g.split("DJ.locSvg(")[1].split(")")[0]
+    h = R("templates/apt.html")
+    art = h[h.index('class="mc-art"'):h.index('class="mc-under"')]
+    assert "mc-price" not in art and "mc-rank" not in art and "mc-medal" not in art
     c = R("static/style.css")
-    assert ".mc-badges.wrap { flex-wrap: wrap-reverse;" in c and "650 / 600" in c
     assert ".mc-locline { color: var(--sub); }" in c

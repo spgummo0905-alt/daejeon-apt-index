@@ -5442,3 +5442,41 @@ body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.1
 .mc-title p { color: #d5dceb; font-size: 14px; }
 /* '(전용 84)' 같은 면적 보조 글자가 11.7px로 12px 기준 밑이라 12px로 */
 .mc .ar small, .mcard .ar small { font-size: 12px; opacity: .8; }
+
+/* ===== UX v5.2 · 위치 지도 새 안(이름표 약도 + 생활 시설 거리) + 배지 알림 대신 MY 점 ===== */
+/* 지도 칸: 지도 위에 얹혔던 순위·배지·가격·그림 버튼을 지도 밖으로. 높이는 650:400 */
+.mc-art.loc, .pb .mc-art.loc { aspect-ratio: 650 / 400; }
+.mc-lochead { display: flex; align-items: center; justify-content: space-between; margin: 10px 2px 6px; }
+.mc-lochead b { font-size: 16px; font-weight: 800; color: var(--ink); }
+.mc-lochead a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; font-size: 15px; font-weight: 700; color: #8fe0c4; text-decoration: none; }
+.mc-lochead a:focus-visible { outline: 2px solid #8fe0c4; outline-offset: 2px; border-radius: 6px; }
+.mc-fac { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.mc-fac li { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; min-width: 0; text-align: center; }
+.mc-fac li + li { border-left: 1px solid var(--line); }
+.mc-fac span { font-size: 14px; color: var(--sub); line-height: 1.2; overflow-wrap: anywhere; }
+.mc-fac b { font-size: 20px; font-weight: 800; color: var(--ink); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.mc-fnote { margin: 6px 2px 0; font-size: 14px; color: var(--sub); }
+.mc-under { position: relative; margin-top: 12px; }
+.mc-under .mc-tip { bottom: calc(100% + 6px); top: auto; left: 0; right: 0; }
+.mc-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mc-under .mc-price { position: relative; display: flex; flex-direction: column; align-items: flex-start; min-height: 74px; padding: 10px 12px; border-radius: 12px; width: 100%; background: var(--glass); border: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.mc-under .mc-price b { font-size: 24px; color: var(--ink); }
+.mc-under .mc-price > span { font-size: 14px; color: var(--sub); }
+.mc-under .mc-price .mc-hi { position: static; margin: 0 0 2px; align-self: flex-start; box-shadow: none; }
+.mc-est { display: flex; flex-direction: column; justify-content: center; min-height: 74px; padding: 10px 12px; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); }
+.mc-est small { font-size: 14px; color: var(--sub); }
+.mc-est b { font-size: 24px; font-weight: 900; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mc-est span { font-size: 14px; color: var(--sub); }
+.mc-pnote { margin: 6px 2px 0; font-size: 14px; color: var(--sub); }
+.mc-under .mc-badges { position: static; padding: 0; margin-top: 10px; }
+.mc-under .mc-medals { margin-left: 0; flex-wrap: wrap; }
+.mc-under .mc-medal { flex-direction: row; gap: 6px; min-width: 0; height: 44px; padding: 0 12px; background: var(--glass); border: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--ink); }
+.mc-under .mc-medal span { font-size: 14px; }
+.mc-rk { display: block; margin-top: 2px; font-size: 14px; font-weight: 600; color: var(--sub); }
+.mc-top .mc-score { min-width: 0; }
+/* 알림 대신 MY 메뉴의 작은 점(저장 값 변화 없음, 보기만) */
+.tabbar a.has-dot::after, .site-nav a.has-dot::after, a[data-nav="my"].has-dot::after { content: ""; position: absolute; top: 4px; right: calc(50% - 20px); width: 9px; height: 9px; border-radius: 50%; background: #c9302f; box-shadow: 0 0 0 2px var(--bg, #fff); }
+.site-nav a[data-nav="my"].has-dot::after, a[data-nav="my"].has-dot::after { position: static; display: inline-block; margin-left: 5px; vertical-align: 3px; }
+.tabbar a[data-tab="my"].has-dot::after { position: absolute; margin: 0; }
+.mc-news-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #c9302f; vertical-align: 1px; }
+
