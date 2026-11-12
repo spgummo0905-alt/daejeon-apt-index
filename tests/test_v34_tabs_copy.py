@@ -24,7 +24,7 @@ def test_plain_words_replace_hard_ones_without_touching_values():
     m = _r("static/map.js")
     assert "지도에 없는 단지" in m and "`위치 미확인" not in m
     assert "점수를 매긴 단지" in _r("templates/intro.html") and "지수 산정 단지" not in _r("templates/intro.html")
-    assert "눌러서 단지 보기" in _r("static/cards.js")
+    assert "눌러서 단지 보기" not in _r("static/cards.js")   # v5.4: 뒷면(뒤집기) 없앰
 
 
 def test_no_new_claims_or_numbers_in_new_copy():

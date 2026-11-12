@@ -108,58 +108,27 @@
       DJ.save(key, st);
     }
     const row = sec.querySelector("[data-today-row]"), done = sec.querySelector("[data-today-done]");
-    const paint = () => { done.hidden = !st.n.every(v => v !== null); };
+    const paint = () => { const al = DJ.album(); done.hidden = !st.s.every(x => al[x]); };   // 세 곳이 모두 카드첩에 있으면 '모두 확인'
     row.replaceChildren();
     st.s.forEach((s, i) => {
       const c = d.bySlug[s], kind = KIND[st.k[i]] || KIND.more;
       const col = el("div", "tc-col");
       const slot = el("div", "tc g-" + c.g);
-      const inner = el("div", "tc-in");
-      const back = el("button", "tc-back");
-      back.type = "button";
-      back.setAttribute("aria-label", `${kind.label} 카드 열기`);
-      const mark = el("span", "tc-mark");
-      mark.append(DJ.icon(kind.icon));
-      back.append(el("span", "tc-kind", kind.label), mark, el("span", "tc-hint", "눌러서 단지 보기"));
       const front = el("div", "tc-front");
       const card = DJ.miniCard(c);
       const tag = el("span", "tc-tag");
       front.append(card, tag);
-      inner.append(back, front);
-      slot.append(inner);
-      const why = el("p", "tc-why pending");   // 열기 전엔 어떤 후보인지만, 열면 왜 골랐는지
-      const whyText = document.createTextNode("");
-      why.append(el("b", "", kind.label), whyText);
+      slot.append(front);
+      const why = el("p", "tc-why");   // 뒤집지 않고 처음부터 단지와 고른 이유를 함께 보여 줌
+      why.append(el("b", "", kind.label), document.createTextNode(" " + (st.w[i] || "")));
       col.append(slot, why);
       row.append(col);
-      const show = () => {
-        const n = st.n[i];
-        tag.textContent = n ? `새 카드 · ${n.toLocaleString()}장째` : "이미 살펴본 단지";
-        tag.classList.toggle("new", !!n);
-        slot.classList.add("open");
-        back.inert = true;   // 뒤집힌 뒷면은 화면엔 남지만(돌아가는 동안) 누르거나 읽히지 않게
-        back.setAttribute("aria-hidden", "true");
-        front.inert = false;
-        front.removeAttribute("aria-hidden");
-        whyText.textContent = " " + (st.w[i] || "");
-        why.classList.remove("pending");
-      };
-      if (st.n[i] !== null) { show(); return; }
-      front.inert = true;
-      front.setAttribute("aria-hidden", "true");
-      back.addEventListener("click", e => {
-        st.n[i] = DJ.collect(c.s);
-        DJ.save(key, st);
+      const have = !!DJ.album()[s];   // 읽기만 함: 카드를 열어 단지 페이지가 열릴 때 카드첩에 모임(app.js 의 DJ.collect)
+      tag.textContent = have ? "이미 살펴본 단지" : "새 단지";
+      tag.classList.toggle("new", !have);
+      card.link.addEventListener("click", () => {   // 후보를 눌러 열면 예전에 뒤집을 때와 같은 저장을 함(카드첩에 모으고, 열어 본 날 기록). 저장 방식은 그대로
+        DJ.collect(c.s);
         DJ.markDay();
-        if (!DJ.calm) {
-          slot.classList.add("flip");
-          if (c.g === "S" || c.g === "A") slot.classList.add("shine");
-        }
-        show();
-        paint();
-        DJ.checkBadges(d);
-        album(d);
-        if (e.detail === 0) card.link.focus();   // 키보드로 열었으면 연 카드로
       });
     });
     paint();

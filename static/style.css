@@ -2719,7 +2719,7 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
 .mcard-high { position: absolute; top: 0; left: 50%; transform: translateX(-50%); padding: 1px 8px 2px; border-radius: 0 0 8px 8px;
   font-size: 12px; font-weight: 800; line-height: 1.4; white-space: nowrap; background: #d4af52; color: #1a1406; }
 
-/* ---------- 오늘의 카드: 뒷면(남색 금테) → 눌러서 뒤집기 ---------- */
+/* ---------- 오늘의 카드: 단지 카드와 고른 이유를 바로 보여 줌(뒤집기 없음) ---------- */
 .today { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px 28px; align-items: center; }
 .today h2 { margin: 2px 0 6px; }
 .today-text > .muted { margin: 0; }
@@ -2729,42 +2729,12 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
 .tc-why { margin: 18px 2px 0; font-size: 13px; line-height: 1.5; color: var(--text-2); }
 .tc-why.pending { color: var(--muted); }
 .tc-why b { display: block; font-size: 12px; color: var(--text); }
-.tc-kind { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: #f5dd92; }
 .tc { position: relative; aspect-ratio: 5 / 7; }
-.tc-in { position: absolute; inset: 0; transform-style: preserve-3d; }
-.tc.flip .tc-in { transition: transform .85s var(--ease-out); }
-.tc.open .tc-in { transform: rotateY(180deg); }
-.tc-back, .tc-front { position: absolute; inset: 0; border-radius: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
-.tc-front { display: flex; transform: rotateY(180deg); }
-.tc-back { display: grid; place-content: center; justify-items: center; gap: 12px; padding: 0; border: 0; cursor: pointer; overflow: hidden;
-  font: inherit; color: #e8c66c;
-  background: radial-gradient(circle at 50% 40%, rgba(232,198,108,.20), transparent 58%),
-              repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 6px, transparent 6px 12px),
-              linear-gradient(160deg, #1a3354, #0b1525);
-  box-shadow: inset 0 0 0 1.5px rgba(232,198,108,.6), inset 0 0 0 7px #0f203a, inset 0 0 0 8px rgba(232,198,108,.28), 0 10px 26px rgba(10,20,40,.28);
-  transition: transform var(--t-fast) var(--ease-out); }
-.tc-back::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, transparent 35%, rgba(255,236,180,.22) 48%, transparent 60%); background-size: 260% 100%;
-  animation: tc-glint 4.5s ease-in-out infinite; }
-@keyframes tc-glint { 0%, 55% { background-position: 120% 0; } 85%, 100% { background-position: -20% 0; } }
-.tc:not(.open) .tc-back:hover { transform: translateY(-4px); }
-.tc-back:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-.tc-mark { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; color: #1a1406;
-  background: radial-gradient(circle at 30% 30%, #fff3c4, #d9b55a 55%, #8a6a12); box-shadow: 0 0 0 4px rgba(232,198,108,.18), 0 6px 14px rgba(0,0,0,.35); }
-.tc-mark .ic { width: 24px; height: 24px; stroke-width: 2.2; }
-.tc-hint { font-size: 13px; font-weight: 700; color: rgba(246,240,225,.82); }
+.tc-front { position: absolute; inset: 0; display: flex; border-radius: 16px; }
 .tc-tag { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); z-index: 3; white-space: nowrap;
   padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--surface); color: var(--text-2);
   box-shadow: 0 0 0 1px var(--border), 0 4px 10px rgba(0,0,0,.08); }
 .tc-tag.new { background: var(--navy); color: var(--on-navy); box-shadow: 0 4px 12px rgba(10,20,40,.25); }
-/* S·A 를 열면 금빛이 한 번 번지고 지나감 */
-.tc.shine .tc-front { animation: tc-glow 1.8s .45s ease-out both; }
-.tc.shine .mcard::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background: linear-gradient(115deg, transparent 30%, rgba(255,240,190,.75) 48%, transparent 64%); background-size: 260% 100%;
-  animation: tc-sweep 1.3s .55s ease-out both; }
-@keyframes tc-glow { 0% { box-shadow: 0 0 0 0 rgba(232,198,108,0); } 35% { box-shadow: 0 0 0 6px rgba(232,198,108,.45), 0 0 46px 10px rgba(232,198,108,.45); }
-  100% { box-shadow: 0 0 0 0 rgba(232,198,108,0), 0 0 0 0 rgba(232,198,108,0); } }
-@keyframes tc-sweep { from { background-position: 120% 0; } to { background-position: -30% 0; } }
 @media (max-width: 760px) {
   .today { grid-template-columns: 1fr; }
   /* 휴대폰: 후보마다 한 줄 (왼쪽 카드, 오른쪽 왜 골랐는지) */
@@ -2777,13 +2747,9 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
   .tc .mcard-where, .tc .mcard-foot { font-size: 12px; }
   .tc .mcard-high { font-size: 12px; padding: 0 6px 1px; }
   .tc .mcard-facts { display: none; }
-  .tc-mark { width: 40px; height: 40px; }
-  .tc-mark .ic { width: 20px; height: 20px; }
-  .tc-kind { font-size: 12px; }
   .tc-why { margin: 0; font-size: 14px; }
   .tc-why b { font-size: 13px; }
   .tc .mcard-memo .mm-list { font-size: 12px; }
-  .tc-hint { font-size: 12px; }
   .tc-tag { font-size: 12px; padding: 1px 8px; }
 }
 
@@ -2813,7 +2779,7 @@ body[data-page="intro"] footer .ft-brand b { color: #eef0f8; }
   border-radius: 14px; font-weight: 700; color: #f6f0e1; background: linear-gradient(135deg, #1a3354, #0b1525); }
 .album-next .btn { margin: 0; border: 0; color: #1a1406; font-weight: 800; background: linear-gradient(135deg, #fff1bf, #d9b55a 55%, #b8912f); }
 @media (prefers-reduced-motion: reduce) {
-  .mcard, .mcard::before, .tc-back, .tc-back::after, .tc-in, .tc-front, .mcard::after, .album-bar > span { animation: none !important; transition: none !important; }
+  .mcard, .mcard::before, .mcard::after, .album-bar > span { animation: none !important; transition: none !important; }
 }
 
 /* ---------- 작은 카드 뒷면: 임장 메모 (오른쪽 아래 버튼으로 뒤집기) ---------- */
@@ -5247,7 +5213,7 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
   /* 하단 메뉴: 뒤 글자가 비치지 않게 완전 불투명 (흐림 효과도 없애 가볍게) */
   .tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
   /* 카드첩·오늘의 카드·배지: 읽기 어려운 12~13px 를 14px 로 */
-  .tc-kind, .tc-hint, .badge-n { font-size: 14px; }
+  .badge-n { font-size: 14px; }
   .badge-name { font-size: 14px; }
   .tc .mcw-hc .hc-meta { font-size: 13px; }
   .gstat-val, .gstat-name { font-size: 14px; }
@@ -5373,11 +5339,6 @@ footer a::after, .pb-asof a::after { content: ""; position: absolute; left: -6px
   .it-start .it-resume { order: 2; margin: 0; }
   .it-start .it-start-search { order: 3; } .it-start .it-budget { order: 4; } .it-start .it-fan { order: 5; } .it-start .it-cta { order: 6; }
 }
-.my-stats > div { position: relative; padding-top: 22px; }
-.my-stats > div::before { position: absolute; top: 6px; left: 0; right: 0; font-size: 12px; font-weight: 800; color: var(--accent); }
-.my-stats > div:nth-child(1)::before { content: "1 · 담아 둔 집"; }
-.my-stats > div:nth-child(2)::before { content: "2 · 가 볼 곳"; }
-.my-stats > div:nth-child(3)::before { content: "3 · 다녀옴"; }
 .my-stats > div.zero dd, .my-stats > div.zero dt { opacity: .55; }
 /* ===== UX v4.3 · 색감 보정 (Fable 색감 심사 P0·P1): 지도 파랑 → 초록, 어두운 지도 덮개, 알림 면, 금색 한 가지, 선택 색 한 가지 ===== */
 /* P0 어두운 화면: 카카오 지도 타일(밝은 그림)을 어둡게 눌러 딥그린 바탕과 맞춤. 점·묶음 원은 필터 밖 */
@@ -5482,4 +5443,11 @@ body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.1
 
 /* ===== UX v5.3 · 같은 말 반복 걷어내기(찾기): 조건이 없을 땐 안내 문장 대신 큰 버튼 하나 ===== */
 .sv-peek.idle:empty, .sv-delta:empty { display: none; }
+
+/* ===== UX v5.4 · MY·카드첩·찾기 정리: 번호 머리말 삭제, 글자 굵기 단계 줄이기(굵게는 숫자·화면 이름·버튼에만) ===== */
+/* 숫자 세 칸 위에 붙던 번호 머리말은 지움(이름은 아래 글자 하나만) */
+h2, h3 { font-weight: 700; }
+.sv-opt b, .chip, .chip.on, .unit-seg button, .rcd-label, .album-count, .bd-row span, .sv-qn, .fd-cmp-txt, .pf-title, .hc-sec-h a { font-weight: 600; }
+.hc-top b, .mm-title, .mm-name, .mm-list dd { font-weight: 600; }
+.tc-why b { font-weight: 700; }
 
