@@ -1,0 +1,56 @@
+<!doctype html>
+{# 블로그 글 한 편 (blog.py). 첫 문단은 머리말 answer, FAQ 는 머리말 faq — 화면과 JSON-LD 가 같은 값을 씁니다. #}
+<html lang="ko">
+<head>
+<title>{{ p.title }} | 집감</title>
+<meta name="description" content="{{ p.description }}">
+<link rel="canonical" href="{{ p.url }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ p.title }}">
+<meta property="og:description" content="{{ p.description }}">
+<meta property="og:url" content="{{ p.url }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="article:published_time" content="{{ p.date_published }}">
+<meta property="article:modified_time" content="{{ p.date_modified }}">
+<meta name="twitter:card" content="summary_large_image">
+{% include "_blog_head.html" %}
+</head>
+<body>
+<header>
+  <a class="brand" href="{{ base }}"><img src="{{ base }}static/brand/symbol-96.png" alt="" width="32" height="32">집감</a>
+  <a class="home" href="{{ base }}daejeon/finder">아파트 찾기</a>
+</header>
+<main>
+<article>
+  <nav class="crumbs" aria-label="위치"><a href="{{ base }}">집감</a> › <a href="{{ base }}blog/">임장 가이드</a></nav>
+  <h1>{{ p.title }}</h1>
+  <p class="meta">임장 가이드 {{ p.order }}화 · 숫자 기준일 {{ p.data_asof }} · 글 <time datetime="{{ p.date_published }}">{{ p.date_published }}</time>{% if p.date_modified != p.date_published %} · 고친 날 <time datetime="{{ p.date_modified }}">{{ p.date_modified }}</time>{% endif %}</p>
+  <p class="answer">{{ p.answer }}</p>
+  {{ p.body_html | safe }}
+  {% if p.faq %}
+  <section class="faq">
+    <h2>자주 묻는 질문</h2>
+    <dl>
+    {% for q in p.faq %}<dt>{{ q.q }}</dt><dd>{{ q.a }}</dd>
+    {% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+  <p class="note">집감 지수·등급은 공개 자료로 계산한 참고 정보이며 투자 권유나 가격 예측이 아닙니다. 글 속 인물은 이야기를 위한 예시이고, 화면과 숫자는 {{ p.data_asof }} 집감 화면 그대로입니다. 계산 방법은 <a href="{{ base }}daejeon/methodology">산출 방법</a>에 있습니다.</p>
+  <nav class="pn" aria-label="이전·다음 글">
+    {% if p.prev %}<a href="{{ p.prev.url }}"><small>← 이전 {{ p.prev.order }}화</small><br>{{ p.prev.title }}</a>{% endif %}
+    {% if p.next %}<a class="nx" href="{{ p.next.url }}"><small>다음 {{ p.next.order }}화 →</small><br>{{ p.next.title }}</a>{% endif %}
+  </nav>
+</article>
+<h2>임장 가이드 전체</h2>
+<ol class="series">
+{% for s in posts %}<li><a href="{{ s.url }}"{% if s.slug == p.slug %} aria-current="page"{% endif %}><small>{{ s.order }}화</small><b>{{ s.title }}</b></a></li>
+{% endfor %}
+</ol>
+<a class="go" href="{{ base }}">집감에서 우리 동네 아파트 찾기</a>
+</main>
+<footer>
+  <p><a href="{{ base }}about">집감이란?</a> · <a href="{{ base }}blog/feed.xml">RSS</a> · <a href="{{ base }}daejeon/privacy">개인정보 처리방침</a> · <a href="{{ base }}daejeon/terms">이용약관</a></p>
+</footer>
+</body>
+</html>

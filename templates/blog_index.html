@@ -1,0 +1,37 @@
+<!doctype html>
+{# 블로그 목록 (www.jipgam.kr/blog/). blog.py 가 만듭니다. #}
+<html lang="ko">
+<head>
+<title>아파트 임장 가이드 — 찾기부터 현장 기록까지 | 집감</title>
+<meta name="description" content="아파트 임장을 처음 하는 분을 위해 조건으로 찾기, 단지 카드 읽기, 비교, 임장 코스, 현장 체크리스트와 기록까지 집감 화면으로 순서대로 따라가는 가이드입니다.">
+<link rel="canonical" href="{{ base }}blog/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="아파트 임장 가이드 — 찾기부터 현장 기록까지">
+<meta property="og:description" content="조건으로 찾기, 카드 읽기, 비교, 임장 코스, 현장 기록까지 순서대로.">
+<meta property="og:url" content="{{ base }}blog/">
+<meta property="og:image" content="{{ base }}static/og/jipgam.jpg">
+<meta name="twitter:card" content="summary_large_image">
+{% include "_blog_head.html" %}
+</head>
+<body>
+<header>
+  <a class="brand" href="{{ base }}"><img src="{{ base }}static/brand/symbol-96.png" alt="" width="32" height="32">집감</a>
+  <a class="home" href="{{ base }}daejeon/finder">아파트 찾기</a>
+</header>
+<main>
+  <nav class="crumbs" aria-label="위치"><a href="{{ base }}">집감</a> › 임장 가이드</nav>
+  <h1>아파트 임장 가이드</h1>
+  <p class="answer">아파트 임장은 ‘조건으로 후보 추리기 → 카드로 읽기 → 2~3곳 비교 → 코스 짜기 → 현장 체크·기록’ 순서로 하면 주말 오전 한 번에 끝낼 수 있습니다.</p>
+  <p>아래 글은 그 순서를 집감 화면으로 한 단계씩 따라갑니다. 처음이라면 0화부터 읽어 보세요.</p>
+  <ol class="series">
+  {% for s in posts %}<li><a href="{{ s.url }}"><small>{{ s.order }}화 · {{ s.question }}</small><b>{{ s.title }}</b></a></li>
+  {% endfor %}
+  </ol>
+  <p class="note">집감 지수·등급은 공개 자료로 계산한 참고 정보이며 투자 권유나 가격 예측이 아닙니다.</p>
+  <a class="go" href="{{ base }}">집감에서 우리 동네 아파트 찾기</a>
+</main>
+<footer>
+  <p><a href="{{ base }}about">집감이란?</a> · <a href="{{ base }}blog/feed.xml">RSS</a> · <a href="{{ base }}daejeon/privacy">개인정보 처리방침</a> · <a href="{{ base }}daejeon/terms">이용약관</a></p>
+</footer>
+</body>
+</html>
