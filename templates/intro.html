@@ -147,7 +147,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>임장 도구</p>
     <h2 data-reveal>현장에서 확인한 것까지,<br><em>한곳에 기록하세요</em></h2>
-    <p class="it-tools-lead" data-reveal>주차 자리, 밤의 소음, 역에서 걸어오는 길. 직접 가 봐야 아는 차이를 놓치지 마세요. 후보 저장부터 코스·체크리스트·메모까지 로그인 없이 시작할 수 있습니다.</p>
+    <p class="it-tools-lead" data-reveal>직접 가 봐야 아는 차이를 놓치지 마세요. 로그인 없이 바로 시작할 수 있어요.</p>
     <div class="it-flow">
       <div class="it-step" data-reveal>
         <div class="it-step-art route" aria-hidden="true">
@@ -158,9 +158,9 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         </div>
         <p class="it-step-n"><span>1</span>가기 전 · 방문할 단지 정하기</p>
         <a class="it-tool" href="my.html#course"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></span>
-          <span class="it-tool-t"><b>임장 코스</b><span>단지 간 직선거리로 방문 순서를 정하고, 구간마다 카카오맵 길찾기로 연결합니다</span></span></a>
+          <span class="it-tool-t"><b>임장 코스</b><span>방문 순서를 정하고 길찾기까지 이어 줘요</span></span></a>
         <a class="it-tool" href="{{ apt_top }}{% if top %}#alts{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg></span>
-          <span class="it-tool-t"><b>같은 예산, 다른 선택지</b><span>보러 가는 단지와 가격이 비슷한 주변 단지를 함께 확인합니다</span></span></a>
+          <span class="it-tool-t"><b>같은 예산, 다른 선택지</b><span>가격이 비슷한 주변 단지를 함께 봐요</span></span></a>
       </div>
       <div class="it-step" data-reveal>
         <div class="it-step-art phone" aria-hidden="true">
@@ -169,10 +169,10 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         </div>
         <p class="it-step-n"><span>2</span>현장에서 · 직접 확인하고 기록하기</p>
         <a class="it-tool" href="{{ apt_top }}{% if top %}#field{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span>
-          <span class="it-tool-t"><b>현장 체크</b><span>단지별 확인 항목을 체크하고, 들은 호가를 평형별 추정 시세와 비교하며 메모를 남깁니다</span></span></a>
+          <span class="it-tool-t"><b>현장 체크</b><span>체크 항목, 들은 호가 비교, 메모</span></span></a>
         {% if account %}
         <a class="it-tool" href="{{ apt_top }}{% if top %}#field{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg></span>
-          <span class="it-tool-t"><b>현장 사진 · 로그인 후</b><span>말로 담기 어려운 주차장·동 간격·전망을 사진으로 남깁니다. 위치 정보는 지우고 올립니다</span></span></a>
+          <span class="it-tool-t"><b>현장 사진 · 로그인 후</b><span>주차장·전망을 사진으로 남겨요. 위치 정보는 지워요</span></span></a>
         {% endif %}
       </div>
       <div class="it-step" data-reveal>
@@ -184,13 +184,13 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         </div>
         <p class="it-step-n"><span>3</span>다녀와서 · 기록을 모아 비교하기</p>
         <a class="it-tool" href="my.html#notes"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
-          <span class="it-tool-t"><b>임장 노트</b><span>체크·호가·메모를 단지별로 모아 비교하고 엑셀·PDF로 정리하세요.{% if account %} 로그인하면 다른 기기에서도 이어 볼 수 있습니다{% endif %}</span></span></a>
+          <span class="it-tool-t"><b>임장 노트</b><span>체크·호가·메모를 모아 비교하고 엑셀·PDF로 정리</span></span></a>
         {% if account %}
         <a class="it-tool" href="me.html#share"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
-          <span class="it-tool-t"><b>가족과 함께 보기 · 로그인 후</b><span>계정에 보관한 관심 단지와 임장 노트를 보기 전용 링크로 공유합니다</span></span></a>
+          <span class="it-tool-t"><b>가족과 함께 보기 · 로그인 후</b><span>관심 단지·임장 노트를 보기 전용 링크로 공유</span></span></a>
         {% endif %}
         <a class="it-tool" href="my.html#my-favs"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span>
-          <span class="it-tool-t"><b>관심 단지 새 소식</b><span>마지막으로 확인한 뒤 등록된 새 실거래와 추정 시세 변동을 관심 화면에 모아 보여 줍니다</span></span></a>
+          <span class="it-tool-t"><b>관심 단지 새 소식</b><span>새 실거래와 추정 시세 변동을 모아 보여 줘요</span></span></a>
       </div>
     </div>
     {% if account %}
