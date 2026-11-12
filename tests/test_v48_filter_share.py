@@ -35,7 +35,7 @@ def test_findcond_is_read_only_and_never_writes_survey():
 
 def test_map_uses_condition_and_can_drop_without_touching_saved():
     m, t = R("static/map.js"), R("templates/map.html")
-    assert "DJ.cond(d.complexes)" in m and "cond.pass(c)" in m and "cond.drop(" in m and "cond.restore()" in m
+    assert "DJ.cond(d.complexes," in m and "cond.pass(c)" in m and "cond.drop(" in m and "cond.restore()" in m
     assert "DJ.save" not in m[m.index("function condBar"):m.index("function buildList")]
     assert "찾기에 저장한 조건은 그대로예요" in m and "찾기 조건 다시 적용" in m and "조건 바꾸기" in m
     assert "data-mp-cond" in t and "data-mp-zero" in t and "static/findcond.js" in t and "static/workplaces.js" in t
