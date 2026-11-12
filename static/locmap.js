@@ -25,11 +25,11 @@
     const X = ln => W / 2 + (ln - me.ln) * Math.cos(me.la * Math.PI / 180) * 111320 * ppm;
     const Y = la => cy0 - (la - me.la) * 111320 * ppm;
     const svg = mk("svg", { viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "xMidYMid meet", class: "mc-loc", role: "img" });
-    svg.append(mk("rect", { width: W, height: H, fill: "#0f2447" }));
+    svg.append(mk("rect", { width: W, height: H, fill: "#0c2230" }));
     const clip = mk("clipPath", { id: "lm-c" }); clip.append(mk("rect", { width: W, height: H })); svg.append(clip);
     const g = mk("g", { "clip-path": "url(#lm-c)" });
     // 구 경계
-    const tint = ["#1c3a6a", "#25477d"];
+    const tint = ["#12344a", "#173f57"];
     map.d.forEach((d, i) => {
       let sx = 0, sy = 0, n = 0;
       d.r.forEach(ring => {
@@ -63,18 +63,18 @@
       }
       const col = m.t === "a" ? "#f2c879" : "#9fe3c8"; boxes.push({ x: x - 10, y: y - 10, w: 20, h: 20 });
       svg.append(mk("line", { x1: W / 2, y1: cy0, x2: x, y2: y, stroke: col, "stroke-width": 2, "stroke-dasharray": "7 5", opacity: out ? .55 : .9 }));
-      svg.append(mk("rect", { x: x - 8, y: y - 8, width: 16, height: 16, transform: "rotate(45 " + x + " " + y + ")", fill: col, stroke: "#0f2447", "stroke-width": 2 }));
+      svg.append(mk("rect", { x: x - 8, y: y - 8, width: 16, height: 16, transform: "rotate(45 " + x + " " + y + ")", fill: col, stroke: "#0c2230", "stroke-width": 2 }));
       const txt = m.n + " " + km(m.d), w = txt.length * fs * .9 + 8, h = fs * 1.3;
       const spots = [[x + 14, y - h / 2], [x - 14 - w, y - h / 2], [x - w / 2, y - h - 12], [x - w / 2, y + 12]];
       const pick = spots.map(s => ({ x: s[0], y: s[1], w, h })).find(free);
       if (!pick) return;   // 자리가 없으면 이름표는 그리지 않음(겹쳐 읽기 어려운 것보다 낫습니다). 거리는 지도 아래 글줄에 있음
       boxes.push(pick);
-      const t = mk("text", { x: pick.x + 2, y: pick.y + h * .8, "font-size": fs, "font-weight": 800, fill: m.t === "a" ? "#ffe2ad" : "#c9f3e2", "paint-order": "stroke", stroke: "#0f2447", "stroke-width": 6, "stroke-linejoin": "round" });
+      const t = mk("text", { x: pick.x + 2, y: pick.y + h * .8, "font-size": fs, "font-weight": 800, fill: m.t === "a" ? "#ffe2ad" : "#c9f3e2", "paint-order": "stroke", stroke: "#0c2230", "stroke-width": 6, "stroke-linejoin": "round" });
       t.setAttribute("aria-hidden", "true"); t.textContent = txt; svg.append(t);
     });
     // 내 단지
     svg.append(mk("circle", { cx: W / 2, cy: cy0, r: fs * 1.7, fill: "rgba(255,214,110,.24)" }), mk("circle", { cx: W / 2, cy: cy0, r: fs * .85, fill: GC[me.g] || "#d4af52", stroke: "#fff", "stroke-width": 3 }));
-    const nt = mk("text", { x: W / 2, y: cy0 - fs * 1.35, "text-anchor": "middle", "font-size": fs * 1.05, "font-weight": 800, fill: "#fff", "paint-order": "stroke", stroke: "#0f2447", "stroke-width": 5, "stroke-linejoin": "round" });
+    const nt = mk("text", { x: W / 2, y: cy0 - fs * 1.35, "text-anchor": "middle", "font-size": fs * 1.05, "font-weight": 800, fill: "#fff", "paint-order": "stroke", stroke: "#0c2230", "stroke-width": 5, "stroke-linejoin": "round" });
     nt.textContent = me.n; svg.append(nt);
     svg.setAttribute("aria-label", me.n + " 위치 지도. " + (marks.length ? marks.map(m => m.n + "까지 직선 " + km(m.d)).join(", ") + "." : "") + " 구 경계는 대략적인 위치입니다.");
     return { svg, marks };

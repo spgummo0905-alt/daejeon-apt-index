@@ -14,7 +14,8 @@ def test_selection_color_token_is_brand_green_and_charts_keep_old_navy():
 
 def test_gold_not_used_for_intro_labels_or_detail_chip():
     assert ".it-kicker, .it-step-n { color: var(--accent); }" in SEG
-    assert "rgba(111, 209, 174, .14)" in SEG and ".it-sec h2 em, .it-hero h1 em { background: linear-gradient(100deg, #b9f3de" in SEG
+    # v5.1(Fable 평가)에서 제목의 색 번짐은 일부러 걷어냈다. 칩 색은 그대로 지키고, 번짐 제거는 v5.1 시험이 고정한다.
+    assert "rgba(111, 209, 174, .14)" in SEG
     assert "--g-S: #b8912f" in CSS          # 등급 금색은 그대로
 
 
