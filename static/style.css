@@ -5473,3 +5473,12 @@ h2, h3 { font-weight: 700; }
 .it-dist-h { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--text); }
 .it-dist .it-grades { margin-top: 14px; }
 .it-dist .it-sub { margin-top: 14px; font-size: 15px; line-height: 1.6; }
+
+/* v6.0 폰에서 '최근 본' 단추가 글을 가리는 문제: 둥근 아이콘 하나로 줄이고(44px), 가만히 있으면 흐리게 */
+@media (max-width: 720px) {
+  .rcd { right: 8px; }
+  .rcd-fab { position: relative; width: 44px; min-height: 44px; height: 44px; padding: 0; justify-content: center; transition: transform 280ms var(--ease-out), opacity 400ms, border-color var(--t-fast); }
+  .rcd-fab b { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0 5px; font-size: 14px; }
+  .rcd.idle:not(.open) .rcd-fab { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) { .rcd-fab { transition: none; } }

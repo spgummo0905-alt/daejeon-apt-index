@@ -1475,11 +1475,13 @@
     document.addEventListener("click", e => { if (!pop.hidden && !dock.contains(e.target)) close(); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { close(); btn.focus(); } });
     dock.querySelector("[data-rcd-clear]").addEventListener("click", () => { save("recent", []); close(); paint(); });
-    let lastY = scrollY;
+    let lastY = scrollY, idleT = 0;
     addEventListener("scroll", () => {
       const y = scrollY;
       if (pop.hidden) dock.classList.toggle("tuck", y > lastY + 4 && y > 240);
       if (Math.abs(y - lastY) > 4) lastY = y;
+      dock.classList.remove("idle"); clearTimeout(idleT);   // 가만히 2.5초 있으면 흐려져서 뒤의 글이 비쳐 보임
+      idleT = setTimeout(() => { if (pop.hidden) dock.classList.add("idle"); }, 2500);
     }, { passive: true });
     addEventListener("storage", e => { if (e.key === DJ.records.key("recent")) paint(); });
     addEventListener("dj:recent", paint);
