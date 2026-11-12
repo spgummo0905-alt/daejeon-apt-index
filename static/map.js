@@ -84,13 +84,13 @@
     if (!cond || (!cond.active() && !cond.droppedAny())) { bar.hidden = true; return; }
     bar.hidden = false; bar.replaceChildren();
     const row = document.createElement("div"); row.className = "mp-cond-row";
-    const lab = document.createElement("span"); lab.className = "mp-cond-l"; lab.textContent = "찾기 조건";
+    const lab = document.createElement("span"); lab.className = "mp-cond-l"; lab.textContent = cond.fromLink ? "링크 조건" : "찾기 조건";
     row.append(lab);
     cond.tags().forEach(t => { const b = document.createElement("button"); b.type = "button"; b.className = "chip mp-cond-t"; b.dataset.condDrop = t.k; b.setAttribute("aria-label", t.t + " 조건 풀기"); b.textContent = t.t + " ×"; row.append(b); });
-    const a = document.createElement("a"); a.className = "mp-cond-edit"; a.href = (window.DJ_ROOT || "") + "finder.html#survey"; a.textContent = "조건 바꾸기"; row.append(a);
+    const a = document.createElement("a"); a.className = "mp-cond-edit"; a.href = (window.DJ_ROOT || "") + "finder.html" + (cond.fromLink && DJ.condQuery ? "?" + DJ.condQuery(cond.saved) : "") + "#survey"; a.textContent = "조건 바꾸기"; row.append(a);
     if (cond.droppedAny()) { const r = document.createElement("button"); r.type = "button"; r.className = "mp-cond-back"; r.dataset.condBack = "1"; r.textContent = "찾기 조건 다시 적용"; row.append(r); }
     bar.append(row);
-    const note = document.createElement("p"); note.className = "mp-cond-n"; note.textContent = `전체 ${ALL.length.toLocaleString()}곳 중 ${shown.length.toLocaleString()}곳이에요. 여기서 푼 조건은 이 화면에서만 빠지고, 찾기에 저장한 조건은 그대로예요.`;
+    const note = document.createElement("p"); note.className = "mp-cond-n"; note.textContent = cond.fromLink ? `받은 링크의 조건이에요. 전체 ${ALL.length.toLocaleString()}곳 중 ${shown.length.toLocaleString()}곳이고, 이 기기에 저장된 찾기 조건과는 별개예요. 여기서 푼 조건은 이 화면에서만 빠져요.` : `전체 ${ALL.length.toLocaleString()}곳 중 ${shown.length.toLocaleString()}곳이에요. 여기서 푼 조건은 이 화면에서만 빠지고, 찾기에 저장한 조건은 그대로예요.`;
     bar.append(note);
   }
   function zeroHelp() {   // 0곳일 때: 가장 많이 늘어나는 조건 하나를 풀자고 제안(개수는 실제 계산)
@@ -283,7 +283,7 @@
   DJ.data().then(d => {
     ALL = d.complexes.filter(c => c.la != null && c.ln != null); NOXY = d.complexes.filter(c => c.la == null || c.ln == null);
     if (!ALL.length) { root.querySelector(".mp-note").textContent = "표시할 단지 위치 자료가 아직 없어요"; return; }
-    if (DJ.cond) { try { cond = DJ.cond(d.complexes); } catch (e) { cond = null; } }   // 읽기 실패해도 지도는 그대로
+    if (DJ.cond) { try { cond = DJ.cond(d.complexes, DJ.condFromQuery ? DJ.condFromQuery(location.search) : null); } catch (e) { cond = null; } }   // 읽기 실패해도 지도는 그대로
     project(); fit(); build(); tryReal();
     const p = new URLSearchParams(location.search), qs = p.get("q");
     if (qs) { q = qs; $("[data-mp-q]").value = qs; build(); }

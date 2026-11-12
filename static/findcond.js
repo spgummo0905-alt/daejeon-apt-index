@@ -61,10 +61,38 @@
   const shortName = n => n.split(/[·(]/)[0];
 
   // all: complexes.json 의 단지들. 반환: {state, works, pass, count, tags, relax}
-  DJ.cond = function (all) {
-    const cfg = cfgOf(), saved = DJ.load("survey", {}) || {};
-    const S = Object.assign({ gus: [], works: [], two: false, commute: "", budget: 0, py: [], age: "", stn: 0, sch: 0, must: [], here: null }, saved);
-    if (!("commute" in saved) && window.DJWorkplaces && DJWorkplaces.active(saved, cfg.workplaces || []).length) S.commute = "work";
+  // 조건 링크: 조건을 주소(?budget=5&py=20&gu=…)로 만들고 읽습니다. 직장·내 위치는 개인 정보라 링크에 넣지 않습니다.
+  // 읽는 규칙·값 범위는 finder.js 의 fromUrl 과 같고, 저장된 설문(survey)은 읽지도 쓰지도 않습니다.
+  DJ.condQuery = function (s) {
+    s = s || {}; const p = new URLSearchParams();
+    if (s.budget > 0) p.set("budget", String(s.budget));
+    if (s.py && s.py.length) p.set("py", s.py.join(","));
+    if (s.gus && s.gus.length) p.set("gu", s.gus.join(","));
+    if (s.age) p.set("age", s.age);
+    if (s.stn > 0) p.set("stn", String(s.stn));
+    if (s.sch > 0) p.set("sch", String(s.sch));
+    if (s.must && s.must.length) p.set("must", s.must.join(","));
+    return p.toString().replace(/%2C/g, ",");
+  };
+  DJ.condFromQuery = function (search) {
+    let qs; try { qs = new URLSearchParams(search || ""); } catch (e) { return null; }
+    if (!["budget", "py", "gu", "age", "stn", "sch", "must"].some(k => qs.has(k))) return null;
+    const list = k => (qs.get(k) || "").split(",").filter(Boolean);
+    const s = { gus: [], works: [], two: false, commute: "any", budget: 0, py: [], age: "", stn: 0, sch: 0, must: [], here: null };
+    const b = +qs.get("budget"); if (b > 0) s.budget = b;
+    s.py = list("py").filter(id => PY.some(p => p.id === id));
+    s.gus = list("gu");
+    if (AGE.some(a => a.id && a.id === qs.get("age"))) s.age = qs.get("age");
+    s.stn = Math.max(0, +qs.get("stn") || 0); s.sch = Math.max(0, +qs.get("sch") || 0);
+    s.must = list("must").filter(id => MUST.some(m => m.id === id));
+    return s;
+  };
+
+  // over: 받은 링크의 조건. 있으면 이 기기에 저장된 설문 대신 이 조건을 씁니다(저장은 하지 않음)
+  DJ.cond = function (all, over) {
+    const cfg = cfgOf(), saved = over ? {} : (DJ.load("survey", {}) || {});
+    const S = Object.assign({ gus: [], works: [], two: false, commute: "", budget: 0, py: [], age: "", stn: 0, sch: 0, must: [], here: null }, saved, over || {});
+    if (!over && !("commute" in saved) && window.DJWorkplaces && DJWorkplaces.active(saved, cfg.workplaces || []).length) S.commute = "work";
     const q70 = arr => { const v = arr.filter(x => x != null).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length * 0.7)] : Infinity; };
     ctx = { hasHub: all.some(c => c.hm != null), acadQ: q70(all.map(c => c.f.academy_math ?? c.f.academy)),
             eduQ: q70(all.map(c => c.ed)), hospQ: q70(all.map(c => c.f.hospital)) };
@@ -100,6 +128,7 @@
     }
     return {
       saved: S,
+      fromLink: !!over,
       tags: () => tags(eff()),
       active: () => tags(eff()).length > 0,
       pass: c => pass(c, eff()),

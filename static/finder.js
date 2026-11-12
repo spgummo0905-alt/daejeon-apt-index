@@ -571,12 +571,23 @@
   const gridBox = document.getElementById("finder-results"), more = document.getElementById("finder-more");
   gridBox.classList.add("hc-flist");
   if (location.search.length > 1) { gridBox.setAttribute("aria-busy", "true"); for (let i = 0; i < 3; i++) gridBox.append(el("span", "skel skel-card")); }   // 조건을 들고 들어오면 단지 목록이 올 때까지 빈 칸 대신 자리표시(목록이 오면 바로 지워짐)
+  // 조건 링크 복사: 지금 조건(직장 위치 제외)을 주소에 담음. 받은 사람은 같은 조건으로 시작(fromUrl). 저장 형식은 그대로
+  const shareBtn = document.querySelector("[data-sv-share]");
+  if (shareBtn) shareBtn.addEventListener("click", () => {
+    const q = DJ.condQuery ? DJ.condQuery(S) : ""; if (!q) return;
+    const url = new URL("finder.html?" + q + "#results", location.href).href;
+    const note = works(S).length ? " 직장 위치 조건은 개인 정보라 링크에 담지 않았어요." : "";
+    DJ.copy(url).then(ok => DJ.toast(ok ? "링크를 복사했어요" : "복사하지 못했어요", ok ? "받은 사람은 같은 조건으로 시작해요." + note : "주소창의 주소를 직접 복사해 주세요.", 6000));
+  });
   function results() {
     gridBox.removeAttribute("aria-busy");   // 스켈레톤 자리표시는 아래 replaceChildren 에서 지워짐
     const idle = !narrowed();
     document.querySelector("[data-sv-wait]").hidden = !idle;
     document.querySelector("#results .seg").hidden = idle;
     const mg = document.querySelector("[data-sv-map]"); if (mg) mg.hidden = idle;   // 조건을 고른 뒤에만(저장된 조건을 지도가 읽음)
+    const qstr = DJ.condQuery ? DJ.condQuery(S) : "";
+    if (mg) mg.setAttribute("href", "map.html" + (qstr && !works(S).length ? "?" + qstr : ""));   // 직장 조건이 있으면 주소에 못 담으니 저장된 조건으로 그대로 이어감(지금 동작)
+    const sb = document.querySelector("[data-sv-share]"); if (sb) sb.hidden = idle || !qstr;
     if (idle) {   // 조건을 고르기 전엔 단지를 늘어놓지 않아요
       list = []; shown = 0; peek();
       document.querySelector("[data-sv-res-n]").textContent = "";
