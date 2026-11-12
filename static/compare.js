@@ -119,14 +119,15 @@
     const box = el("div", "vs-start");
     const slots = el("ol", "vs-slots");
     for (let i = 0; i < MAX; i++) {
-      const li = el("li", "vs-slot" + (cs[i] ? " on" : ""), cs[i] ? cs[i].n : (i < 2 ? "비어 있음" : "선택"));
+      const li = el("li", "vs-slot" + (cs[i] ? " on" : ""), cs[i] ? cs[i].n : "＋");
+      if (!cs[i]) li.setAttribute("aria-label", i < 2 ? "비어 있는 칸(필수)" : "비어 있는 칸(선택)");
       slots.append(li);
     }
     const need = Math.max(0, 2 - cs.length);
     box.append(el("p", "vs-prog", `${cs.length} / 2곳 이상`), slots,
       el("p", "vs-need", need ? `${need}곳 더 담으면 비교할 수 있어요` : ""));
     if (!quick.length && !cs.length) {
-      box.append(el("p", "muted center", "아직 관심·최근 본 단지가 없어요."));
+      box.append(el("p", "muted center", "담아 둔 단지가 아직 없어요."));
       const a = el("a", "btn primary", "조건으로 단지 찾으러 가기"); a.href = root + "finder.html"; box.append(a);
     } else if (!quick.length) {
       const a = el("a", "btn", "다른 단지 찾으러 가기"); a.href = root + "finder.html"; box.append(a);

@@ -131,7 +131,8 @@
     const favBox = document.getElementById("favs");
     if (!favs.length) {
       const empty = el("div", "empty-start");
-      empty.append(el("b", "", "먼저, 눈여겨본 단지 두 곳을 담아 보세요"), el("p", "muted", "단지 화면의 ‘관심’을 누르면 여기에 모입니다. 후보를 비교하고 임장 코스까지 한 번에 준비할 수 있어요."));
+      const ic = el("span", "empty-ic"); ic.setAttribute("aria-hidden", "true"); ic.textContent = "☆";
+      empty.append(ic, el("b", "", "눈여겨본 단지를 담아 보세요"), el("p", "muted", "단지 화면에서 ‘관심’을 누르면 여기에 모여요. 두 곳이면 바로 비교할 수 있어요."));
       const start = el("a", "btn primary", "아파트 찾아보기"); start.href = "index.html?stay=1";
       empty.append(start); favBox.append(empty);
     }
