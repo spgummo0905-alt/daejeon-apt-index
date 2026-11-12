@@ -9,8 +9,8 @@
   <h1>집감 카드 3종</h1>
   <p class="lead">한 장의 아파트 카드가 화면에 따라 작게(목록), 크게(상세), 수집용(카드첩)으로 보입니다. 값은 모두 이 지역의 실제 자료이고, 건물 그림은 실제 외관이 아닌 추상 그래픽입니다.</p>
 </section>
-<section class="hc-gal" aria-labelledby="g1"><h2 id="g1">A. 미니 카드 · 목록·지도·홈 후보</h2><div class="hc-gal-list">{% for c in samples %}{{ mini(c, root ~ "apt/" ~ c.slug ~ ".html") }}{% endfor %}</div></section>
-<section class="hc-gal" aria-labelledby="g2"><h2 id="g2">C. 수집 카드 · 카드첩·공유</h2><div class="hc-gal-rail">{% for c in samples %}{{ collect(c, root ~ "apt/" ~ c.slug ~ ".html", loop.index0) }}{% endfor %}</div></section>
+<section class="hc-gal" aria-labelledby="g1"><h2 id="g1">A. 미니 카드 · 목록·지도·홈 후보</h2><div class="hc-gal-list">{% for c in samples %}{{ mini(c, root ~ "apt/" ~ c.slug) }}{% endfor %}</div></section>
+<section class="hc-gal" aria-labelledby="g2"><h2 id="g2">C. 수집 카드 · 카드첩·공유</h2><div class="hc-gal-rail">{% for c in samples %}{{ collect(c, root ~ "apt/" ~ c.slug, loop.index0) }}{% endfor %}</div></section>
 <section class="hc-gal" aria-labelledby="g3"><h2 id="g3">B. 메인 카드 · 단지 상세 맨 위</h2><p class="muted">단지 상세 화면의 첫 카드가 메인 카드입니다. 실거래와 추정가를 나눠 적는 칸이 있어 상세 화면 안에서 같은 모양으로 그립니다.</p>
-  {% if samples %}<a class="btn" href="{{ root }}apt/{{ samples[0].slug }}.html">{{ samples[0].name }} 상세 열기</a>{% endif %}</section>
+  {% if samples %}<a class="btn" href="{{ root }}apt/{{ samples[0].slug }}">{{ samples[0].name }} 상세 열기</a>{% endif %}</section>
 {% endblock %}

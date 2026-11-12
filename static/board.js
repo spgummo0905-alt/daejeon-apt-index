@@ -93,7 +93,7 @@
       box.append(el("p", "hc-sub", "이 동네 지수 상위"));
       const ol = el("ol");
       top.forEach(([s, n, gr, idx]) => {
-        const a = el("a"); a.href = "apt/" + s + ".html";
+        const a = el("a"); a.href = "apt/" + s;
         a.append(el("span", "grade g-" + gr, gr), el("span", "hc-top-name", n), el("span", "hc-top-score", idx + "점"));
         const li = el("li"); li.append(a); ol.append(li);
       });

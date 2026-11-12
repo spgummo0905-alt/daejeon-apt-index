@@ -1,8 +1,8 @@
 {# 찾는 방법 4가지를 한 줄로: 조건 · 테마 · 역 주변 · 지도 (현재 화면은 seg_cur) #}
 <nav class="seg-nav" aria-label="찾는 방법">
-  <a href="finder.html"{% if seg_cur == 'finder' %} aria-current="page"{% endif %}>조건으로</a>
-  <a href="themes.html"{% if seg_cur == 'themes' %} aria-current="page"{% endif %}>테마로</a>
-  {% if transit.page %}<a href="stations.html"{% if seg_cur == 'stations' %} aria-current="page"{% endif %}>{{ transit.tab }} 주변</a>{% endif %}
-  <a href="map.html"{% if seg_cur == 'map' %} aria-current="page"{% endif %}>지도에서</a>
-  <a href="rank.html">순위로</a>
+  <a href="finder"{% if seg_cur == 'finder' %} aria-current="page"{% endif %}>조건으로</a>
+  <a href="themes"{% if seg_cur == 'themes' %} aria-current="page"{% endif %}>테마로</a>
+  {% if transit.page %}<a href="stations"{% if seg_cur == 'stations' %} aria-current="page"{% endif %}>{{ transit.tab }} 주변</a>{% endif %}
+  <a href="map"{% if seg_cur == 'map' %} aria-current="page"{% endif %}>지도에서</a>
+  <a href="rank">순위로</a>
 </nav>

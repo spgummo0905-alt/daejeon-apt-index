@@ -531,7 +531,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
         tops.insert(0, {"title": "최근 신고가", "tab": "신고가", "items": highs,
                         "value": lambda r: f"{eok(r['last_price'])} · {int(r['last_area'])}㎡ · {r['last_date']:%m.%d}"})
 
-    link = "apt/{}.html"
+    link = "apt/{}"
     index_charts = {
         "map": charts.responsive(charts.dot_map, [dict(r, href=link.format(r["slug"])) for r in rows if not r["small"]],
                                 mob={"width": 360, "max_height": 440}) if geo else "",
@@ -726,7 +726,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
     write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"] if n != "projects"] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"] if n != "projects"] + [f"apt/{r['slug']}.html" for r in rows if not r["small"]],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 

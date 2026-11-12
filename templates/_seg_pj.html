@@ -1,7 +1,7 @@
 {# 임장에 쓰는 도구를 한 줄로: 프로젝트 · 비교 · 카드첩 · 관심 단지 (현재 화면은 seg_cur) #}
 <nav class="seg-nav" aria-label="임장 도구">
-  <a href="projects.html"{% if seg_cur == 'projects' %} aria-current="page"{% endif %}>집 찾기 프로젝트</a>
-  <a href="compare.html"{% if seg_cur == 'compare' %} aria-current="page"{% endif %}>단지 비교</a>
-  <a href="cards.html"{% if seg_cur == 'cards' %} aria-current="page"{% endif %}>카드첩</a>
-  <a href="my.html">관심 단지</a>
+  <a href="projects"{% if seg_cur == 'projects' %} aria-current="page"{% endif %}>집 찾기 프로젝트</a>
+  <a href="compare"{% if seg_cur == 'compare' %} aria-current="page"{% endif %}>단지 비교</a>
+  <a href="cards"{% if seg_cur == 'cards' %} aria-current="page"{% endif %}>카드첩</a>
+  <a href="my">관심 단지</a>
 </nav>

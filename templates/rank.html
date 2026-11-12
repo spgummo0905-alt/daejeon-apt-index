@@ -19,7 +19,7 @@
     <ol class="podium">
       {% for it in top3 %}
       <li class="pd pd{{ loop.index }} t-{{ it.tone or 'flat' }}" style="--i: {{ [1, 0, 2][loop.index0] }}">
-        <a href="apt/{{ it.slug }}.html">
+        <a href="apt/{{ it.slug }}">
           <span class="pd-medal">{{ loop.index }}</span>
           <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
           <strong class="pd-name">{{ it.name }}</strong>
@@ -34,7 +34,7 @@
     {% if r["items"] | length > 3 %}
     <ol class="rank-list" start="4">
       {% for it in r["items"][3:] %}
-      <li style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}.html">
+      <li style="--i: {{ loop.index0 }}"><a href="apt/{{ it.slug }}">
         <span class="rl-no">{{ loop.index + 3 }}</span>
         <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
         <span class="rl-name"><strong>{{ it.name }}</strong><span class="muted">{% for part in ((it | place) ~ " · " ~ it.sub).split(" · ") %}<span class="nw">{{ part }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</span></span>
@@ -59,7 +59,7 @@
       <h3>{{ t.title }}</h3>
       <ol>
       {% for r in t["items"] %}
-        <li><a href="apt/{{ r.slug }}.html"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
+        <li><a href="apt/{{ r.slug }}"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
           <span class="top-name">{{ r.name }}<span class="muted"> {{ r | place }}</span></span>
           <span class="top-val">{{ t.value(r) }}</span></a></li>
       {% endfor %}

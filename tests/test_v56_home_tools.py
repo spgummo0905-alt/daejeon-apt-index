@@ -8,7 +8,7 @@ def test_tool_descriptions_are_short_and_links_kept():
     descs = re.findall(r'<span class="it-tool-t"><b>[^<]*</b><span>([^<]*)', SEG)
     assert len(descs) == 7
     assert all(len(d) <= 34 for d in descs), [d for d in descs if len(d) > 34]
-    for href in ("my.html#course", "my.html#notes", "my.html#my-favs", "me.html#share"):
+    for href in ("my#course", "my#notes", "my#my-favs", "me#share"):
         assert href in SEG
 
 

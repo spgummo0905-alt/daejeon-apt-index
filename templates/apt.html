@@ -20,11 +20,11 @@
 {% endblock %}
 {% block body %}
 <div class="apt-topbar">
-  <p class="crumb"><a href="{{ root }}index.html">단지 목록</a> › {{ c | place }}</p>
+  <p class="crumb"><a href="{{ root or './' }}">단지 목록</a> › {{ c | place }}</p>
   <div class="unit-seg" role="group" aria-label="면적 단위"><button type="button" data-area-unit="m2">㎡</button><button type="button" data-area-unit="py">평</button></div>
 </div>
 
-{% if preview_ok %}<a class="pv-link" href="{{ root }}preview.html#c={{ c.slug | urlencode }}"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조 미리보기<small>동·층을 고르면 앞 동이 햇빛을 가리는 시간을 추정해 보여 줘요 (추정한 참고용)</small></span></a>{% endif %}
+{% if preview_ok %}<a class="pv-link" href="{{ root }}preview#c={{ c.slug | urlencode }}"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조 미리보기<small>동·층을 고르면 앞 동이 햇빛을 가리는 시간을 추정해 보여 줘요 (추정한 참고용)</small></span></a>{% endif %}
 {# 가격판: 실제 거래(최근 유효 실거래)와 비교용 추정을 서로 다른 모양으로 나란히. 두 값은 면적 기준이 다를 수 있어 각각 면적을 적고 안내 한 줄을 둠.
    이 단지의 값만 쓰고(새 계산 없음), 해제(취소) 거래는 대표 가격으로 쓰지 않음(site.py _lead_trade). h1 은 문서 맨 앞인 여기 #}
 {# 임장 때 직접 확인할 것: 이 단지의 실제 값에서만 만듦(거래 건수 부족·언덕·소음·소규모). 해당하는 것이 없으면 통째로 안 보임 #}
@@ -45,7 +45,7 @@
     </div>
     <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}<span class="mc-rk">{% if c.rank %}지수 산정 {{ n_total }}곳 중 {{ c.rank }}위{% elif c.small %}{{ c.small_reason or "소규모" }} 단지라 순위 제외{% else %}자료가 부족해 순위 제외{% endif %}</span></div>
   </div>
-  {% if latlng %}<div class="mc-lochead"><b>위치 · 직선거리</b><span class="mc-lochead-l"><a href="https://map.kakao.com/link/to/{{ c.name | urlencode }},{{ c.lat }},{{ c.lng }}" target="_blank" rel="noopener">길찾기 ›</a><a href="{{ root }}map.html?s={{ c.slug | urlencode }}">실제 지도 ›</a></span></div>{% endif %}
+  {% if latlng %}<div class="mc-lochead"><b>위치 · 직선거리</b><span class="mc-lochead-l"><a href="https://map.kakao.com/link/to/{{ c.name | urlencode }},{{ c.lat }},{{ c.lng }}" target="_blank" rel="noopener">길찾기 ›</a><a href="{{ root }}map?s={{ c.slug | urlencode }}">실제 지도 ›</a></span></div>{% endif %}
   <div class="mc-art" data-mc-art{% if latlng %} data-la="{{ latlng[0] }}" data-ln="{{ latlng[1] }}"{% endif %}>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
   </div>
@@ -115,8 +115,8 @@
   <button type="button" class="btn primary apt-cta-inline" data-apt-cta-inline hidden><span data-apt-cta-t>임장 코스에 넣기</span><span class="apt-cta-plus" aria-hidden="true">＋</span></button>
   <div class="icon-actions apt-actions">
     <button class="icon-btn action-btn" data-fav type="button" aria-pressed="false" aria-label="관심 단지 저장" title="관심 단지 저장"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-action-label>관심</span></button>
-    <a class="icon-btn action-btn" data-compare-here href="{{ root }}compare.html?a={{ c.slug | urlencode }}" aria-label="다른 단지와 비교하기" title="다른 단지와 비교하기"><svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span>비교</span></a>
-    {% if preview_ok %}<a class="icon-btn action-btn" data-sun-here href="{{ root }}preview.html#c={{ c.slug | urlencode }}" aria-label="일조 미리보기 (추정한 참고용)" title="일조 미리보기"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조</span></a>{% else %}<a class="icon-btn action-btn" data-loc-here href="#loc" aria-label="생활 입지 보기 (역·학교·마트까지 거리)" title="생활 입지 보기"><svg class="ic" aria-hidden="true"><use href="#i-train"/></svg><span>입지</span></a>{% endif %}
+    <a class="icon-btn action-btn" data-compare-here href="{{ root }}compare?a={{ c.slug | urlencode }}" aria-label="다른 단지와 비교하기" title="다른 단지와 비교하기"><svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span>비교</span></a>
+    {% if preview_ok %}<a class="icon-btn action-btn" data-sun-here href="{{ root }}preview#c={{ c.slug | urlencode }}" aria-label="일조 미리보기 (추정한 참고용)" title="일조 미리보기"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>일조</span></a>{% else %}<a class="icon-btn action-btn" data-loc-here href="#loc" aria-label="생활 입지 보기 (역·학교·마트까지 거리)" title="생활 입지 보기"><svg class="ic" aria-hidden="true"><use href="#i-train"/></svg><span>입지</span></a>{% endif %}
     <button class="icon-btn action-btn" data-field type="button" aria-haspopup="dialog" aria-controls="field-sheet"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg><span>현장 체크</span></button>
     <button class="icon-btn action-btn" data-share-sheet type="button" aria-haspopup="dialog" aria-label="공유하기" title="공유하기"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span>공유</span></button>
   </div>
@@ -208,7 +208,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
 <div class="apt-more">
 <div class="sec-head">
   <h2>주요 지표 비교</h2>
-  <a href="{{ root }}compare.html?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg>다른 단지와 비교</a>
+  <a href="{{ root }}compare?a={{ c.slug | urlencode }}"><svg class="ic"><use href="#i-compare"/></svg>다른 단지와 비교</a>
 </div>
 <section class="cards" tabindex="0" aria-label="주요 지표">
   <div class="card">

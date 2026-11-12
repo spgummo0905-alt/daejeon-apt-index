@@ -25,9 +25,9 @@ def test_rooftop_page_and_entrances(tmp_path):
     assert 'data-roof-food="pork"' in page and "data-roof-fire" in page and "data-roof-photo" in page
     assert "data-roof-stars" in page and "data-roof-wishgo" in page and 'data-roof-amb="cricket"' in page   # 별 세기, 소원, 환경음 고르기
     assert 'data-page="rooftop"' in page and "static/rooftop.js" in page
-    assert 'href="rooftop.html"' in (out / "index.html").read_text(encoding="utf-8")      # 첫 화면 아래 줄
-    assert 'href="rooftop.html"' in (out / "compare.html").read_text(encoding="utf-8")    # 바닥글 (메뉴에는 없음)
-    assert 'top-nav' in page and '<a href="rooftop.html">' not in page.split('<nav class="top-nav">')[1].split("</nav>")[0]
+    assert 'href="rooftop"' in (out / "index.html").read_text(encoding="utf-8")      # 첫 화면 아래 줄
+    assert 'href="rooftop"' in (out / "compare.html").read_text(encoding="utf-8")    # 바닥글 (메뉴에는 없음)
+    assert 'top-nav' in page and '<a href="rooftop">' not in page.split('<nav class="top-nav">')[1].split("</nav>")[0]
     assert "<loc>https://www.jipgam.kr/daejeon/rooftop</loc>" in (out / "sitemap.xml").read_text(encoding="utf-8")
 
 

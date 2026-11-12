@@ -45,8 +45,8 @@ try {
       <nav class="resume" data-resume aria-label="이어서 보기" hidden></nav>
       {# 카드 중심 첫 화면(C1): 가장 최근에 본 단지 한 장. 기록이 없으면 처음 온 사람용 빈 상태(자리는 같은 높이). 단지 값은 complexes.json 의 기존 값 (static/housecard.js) #}
       <section class="hc-home" data-hc-feature aria-labelledby="hc-feat-h">
-        <div class="hc-sec-h"><h2 id="hc-feat-h" data-hc-feat-h>이어서 볼 집</h2><a href="my.html" data-hc-feat-more hidden>내 기록 ›</a></div>
-        <div class="hc-empty" data-hc-feat-empty><b>마음에 드는 집, 한 장으로 모아 보세요</b><span>검색하거나 아래 카드를 눌러 보면 여기에 이어서 볼 집이 생겨요.</span><a href="finder.html">조건으로 집 찾아보기</a></div>
+        <div class="hc-sec-h"><h2 id="hc-feat-h" data-hc-feat-h>이어서 볼 집</h2><a href="my" data-hc-feat-more hidden>내 기록 ›</a></div>
+        <div class="hc-empty" data-hc-feat-empty><b>마음에 드는 집, 한 장으로 모아 보세요</b><span>검색하거나 아래 카드를 눌러 보면 여기에 이어서 볼 집이 생겨요.</span><a href="finder">조건으로 집 찾아보기</a></div>
       </section>
     {# 핵심 두 입구: 입지 검색(찾기)과 임장. 바로가기 4칸·배너를 하나로 모음 #}
     <div class="gates" data-gates>
@@ -55,7 +55,7 @@ try {
         <p class="gate-k">찾기</p>
         <h2 id="gate-find">어디에 살지,<br>조건부터 골라 볼까요?</h2>
         <p>예산·지역·집·생활, 4가지를 고르면 맞는 단지를 추려 드려요.</p>
-        <a class="gate-btn" href="finder.html"><span>조건으로 찾기<span class="gate-long"> 시작</span></span></a>
+        <a class="gate-btn" href="finder"><span>조건으로 찾기<span class="gate-long"> 시작</span></span></a>
       </section>
     {# 비교 입구: 관심 단지가 둘 이상이면 app.js(gates)가 그 단지들로 바로 비교를 엽니다. 없으면 빈 비교 화면 #}
       <section class="gate" data-gate-compare aria-labelledby="gate-compare">
@@ -63,7 +63,7 @@ try {
         <p class="gate-k">비교</p>
         <h2 id="gate-compare">마음에 둔 단지,<br>나란히 견줘 볼까요?</h2>
         <p data-gc-desc>가격·입지·수익률을 같은 기준으로 최대 4곳까지.</p>
-        <a class="gate-btn" href="compare.html" data-gc-btn><span data-gc-label>단지 비교하기</span></a>
+        <a class="gate-btn" href="compare" data-gc-btn><span data-gc-label>단지 비교하기</span></a>
       </section>
     {# 임장 입구: 진행 중인 프로젝트가 있으면 app.js(gates)가 '이어서 하기'로 바꿉니다 #}
       <section class="gate gold" data-gate-visit aria-labelledby="gate-visit">
@@ -71,14 +71,14 @@ try {
         <p class="gate-k" data-gv-k>임장 준비</p>
         <h2 id="gate-visit" data-gv-h>가 볼 단지,<br>한 화면에 모아 둘까요?</h2>
         <p data-gv-desc>모으고, 비교하고, 다녀온 기록까지 한곳에서.</p>
-        <a class="gate-btn" href="projects.html" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
+        <a class="gate-btn" href="projects" data-gv-btn><span data-gv-label>임장 준비 열기</span></a>
       </section>
     </div>
     {# 둘러보기: 하단 탭에서 빠진 순위·테마·지도를 홈에서 한 번에 (주소는 그대로) #}
     <nav class="browse" aria-label="둘러보기">
-      <a href="rank.html"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>
-      <a href="themes.html"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>테마</a>
-      <a href="map.html"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>지도</a>
+      <a href="rank"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>
+      <a href="themes"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>테마</a>
+      <a href="map"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>지도</a>
     </nav>
     {# 다시 온 사람의 첫 화면 자리 맞춤: app.js(gates·resume)가 늦게 도착해도 카드가 커졌다 줄며 아래가 밀리지 않게, 저장된 기록만으로 정해지는 부분(진행 중 프로젝트면 임장 입구가 으뜸이 됨, 이어서 줄 자리)을 문서에서 바로 맞춤. 판단 기준은 app.js(DJ.activeProject·resume)와 같고 못 읽으면 아무것도 안 함. 세부 문구(방문 수·다음 할 일)는 app.js 가 채움 #}
     <script>try{var a=JSON.parse(localStorage.getItem("djdex-auth")||"null"),pre=a&&a.user?"djdex@"+a.user.id+":":"djdex:",rg={{ region | tojson }},best=null,L=function(k,f){try{var v=JSON.parse(localStorage.getItem(pre+k));return v==null?f:v}catch(e){return f}};
@@ -90,12 +90,12 @@ try {
     </div>
     {% if hero_cards %}
     <div class="hero-deck" data-hc-deck aria-label="종합 지수 상위 단지 카드">
-      <div class="hc-sec-h"><h2>{{ region }} 집감 지수 상위 카드</h2><a href="cards.html">카드첩 ›</a></div>
+      <div class="hc-sec-h"><h2>{{ region }} 집감 지수 상위 카드</h2><a href="cards">카드첩 ›</a></div>
       <div class="deck-rail">
-      {% for c in hero_cards %}{{ collect(c, "apt/" ~ c.slug ~ ".html", loop.index0) }}{% endfor %}
+      {% for c in hero_cards %}{{ collect(c, "apt/" ~ c.slug, loop.index0) }}{% endfor %}
       </div>
-      <a class="hc-album-link" href="cards.html"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg><span><b>나의 아파트 카드첩</b><small>본 집이 카드로 모이고, 다녀오면 도장이 찍혀요</small></span><span class="chev" aria-hidden="true">›</span></a>
-      <a class="deck-more" href="rank.html">전체 랭킹 보기 <span aria-hidden="true">→</span></a>
+      <a class="hc-album-link" href="cards"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg><span><b>나의 아파트 카드첩</b><small>본 집이 카드로 모이고, 다녀오면 도장이 찍혀요</small></span><span class="chev" aria-hidden="true">›</span></a>
+      <a class="deck-more" href="rank">전체 랭킹 보기 <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
   </div>
@@ -105,14 +105,14 @@ try {
     <div class="ticker-window">
       <div class="ticker-track">
       {% for dup in [0, 1] %}
-        {% for t in ticker %}<a class="tk t-{{ t.tone or 'flat' }}" href="apt/{{ t.slug }}.html"{% if dup %} aria-hidden="true" tabindex="-1"{% endif %}><span class="tk-tag">{{ t.tag }}</span><strong>{{ t.name }}</strong><span class="tk-val">{{ t.value }}</span></a>{% endfor %}
+        {% for t in ticker %}<a class="tk t-{{ t.tone or 'flat' }}" href="apt/{{ t.slug }}"{% if dup %} aria-hidden="true" tabindex="-1"{% endif %}><span class="tk-tag">{{ t.tag }}</span><strong>{{ t.name }}</strong><span class="tk-val">{{ t.value }}</span></a>{% endfor %}
       {% endfor %}
       </div>
     </div>
-    <a class="ticker-more" href="rank.html">랭킹 <span aria-hidden="true">→</span></a>
+    <a class="ticker-more" href="rank">랭킹 <span aria-hidden="true">→</span></a>
   </div>
   {% endif %}
-  <a class="roof-strip" href="rooftop.html"><span class="roof-strip-moon" aria-hidden="true">🌙</span><span class="roof-strip-t"><b>별빛옥상 파티</b> 모닥불·음악·불꽃놀이를 함께해요</span><i aria-hidden="true">→</i></a>
+  <a class="roof-strip" href="rooftop"><span class="roof-strip-moon" aria-hidden="true">🌙</span><span class="roof-strip-t"><b>별빛옥상 파티</b> 모닥불·음악·불꽃놀이를 함께해요</span><i aria-hidden="true">→</i></a>
 </section>
 
 <section class="stat-strip" aria-label="데이터 요약">
@@ -125,7 +125,7 @@ try {
 </section>
 
 <section class="panel my-strip" id="my-strip" hidden>
-  <div class="panel-head row-between"><h2>관심 단지 <a class="strip-news" href="my.html#news" data-strip-news hidden></a></h2><a href="my.html">전체 보기 →</a></div>
+  <div class="panel-head row-between"><h2>관심 단지 <a class="strip-news" href="my#news" data-strip-news hidden></a></h2><a href="my">전체 보기 →</a></div>
   <div class="strip" id="my-strip-list"></div>
 </section>
 <section class="panel my-strip" id="recent-strip" hidden>
@@ -223,7 +223,7 @@ try {
     {% for r in (rows | rejectattr("small") | list)[:30] %}
     <tr data-gu="{{ r.gu }}" data-q="{{ r.name }} {{ r.dong }}"{% if r.small %} data-small="1"{% endif %}>
       <td data-v="{{ r.rank or '' }}">{{ r.rank or "-" }}</td>
-      <td class="col-name"><a href="apt/{{ r.slug }}.html">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
+      <td class="col-name"><a href="apt/{{ r.slug }}">{{ r.name }}</a>{% if r.new_high_recent %}<span class="badge-high">신고가</span>{% endif %}{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}<span class="t-place">{{ r | place }}</span></td>
       <td data-v="{{ '' if r.index is nan else r.index }}" class="idx-cell">
         <span class="idx-bar"><span style="width: {{ 0 if r.index is nan else r.index | round(1) }}%"></span></span>
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
@@ -285,7 +285,7 @@ try {
         {% for t in board.tiles %}{% if t.pin %}<g class="pin" style="--i: {{ t.pin }}" transform="translate({{ t.x }} {{ t.y - 6 }})"><g class="pin-in"><circle class="pin-pulse" r="11"/><circle class="pin-dot" r="10"/><text y="4">{{ t.pin }}</text></g></g>{% endif %}{% endfor %}
         </g>
       </svg>
-      <p class="heat-note muted">동 경계는 단지 위치로 그린 근사치이며, 단지가 없는 산·강은 비워 두었습니다. <a href="methodology.html#heat">산출 기준</a></p>
+      <p class="heat-note muted">동 경계는 단지 위치로 그린 근사치이며, 단지가 없는 산·강은 비워 두었습니다. <a href="methodology#heat">산출 기준</a></p>
     </div>
     <aside class="heat-card" id="heat-card" aria-live="polite" data-start="{{ board.start or '' }}" data-of="{{ board.n_ranked }}">
       <p class="muted">지도에서 동네를 선택하면 요약이 표시됩니다.</p>
@@ -430,7 +430,7 @@ try {
   {% if rail %}<div class="rail-wrap" data-rail>{% endif %}
   <div class="leader-row{% if rail %} rail{% endif %}">
   {% for d in leaders %}
-    <a class="leader" href="apt/{{ d.slug }}.html" data-reveal style="--i: {{ loop.index0 }}">
+    <a class="leader" href="apt/{{ d.slug }}" data-reveal style="--i: {{ loop.index0 }}">
       <span class="ld-top"><svg class="ld-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg><strong>{{ d.gu | area }}</strong><span class="muted">{{ d.n }}개 단지</span></span>
       <span class="ld-name"><span class="grade g-{{ d.grade }}">{{ d.grade }}</span>{{ d.name }}</span>
       <span class="ld-price" data-count>{{ d.price_text }}</span>
@@ -460,7 +460,7 @@ try {
   </div>
   <ol class="value-list" id="value-list">
   {% for r in value_list %}
-    <li data-type="{{ 'villa' if r.small else 'apt' }}"{% if r.small %} hidden{% endif %}><a href="apt/{{ r.slug }}.html">
+    <li data-type="{{ 'villa' if r.small else 'apt' }}"{% if r.small %} hidden{% endif %}><a href="apt/{{ r.slug }}">
       <span class="vl-rank">{{ loop.index }}</span>
       <span class="vl-name"><span class="vl-title"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span><strong>{{ r.name }}</strong>{% if r.small %}<span class="badge-small">{{ r.small_reason }}</span>{% endif %}</span><span class="muted">{{ r | place }}{% if r.build_year %} · {{ r.build_year }}년{% endif %}</span></span>
       <span class="vl-loc"><span class="vl-label">입지</span><span class="gbar"><span style="width: {{ r.location_score | round(1) }}%"></span></span><strong>{{ r.location_score | score }}</strong></span>

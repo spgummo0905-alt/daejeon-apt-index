@@ -51,7 +51,7 @@
     }
     return dataPromise;
   };
-  DJ.href = c => ROOT + "apt/" + c.s + ".html";
+  DJ.href = c => ROOT + "apt/" + c.s;
   // '서구 둔산동'. 구가 없는 지역(세종)은 구 자리에 동이 들어 있어 한 번만.
   DJ.place = c => (c.gu === c.d ? c.d : c.gu + " " + c.d);
   // 받침에 맞춘 조사: DJ.josa("래미안", "이/가") → "래미안이", DJ.josa("자이(아)", "을/를") → "자이(아)를"
@@ -499,7 +499,7 @@
     if (cond.sch) p.set("sch", cond.sch);
     if (cond.must.length) p.set("must", cond.must.join(","));
     if (gu) p.set("gu", gu);
-    return ROOT + "finder.html?" + p.toString() + "#results";
+    return ROOT + "finder?" + p.toString() + "#results";
   };
   // 조건에 맞는 단지 수 (조건으로 찾기와 같은 셈: 평형별 추정 시세 tp)
   function condCount(cs, cond, gu) {
@@ -670,10 +670,10 @@
           const starts = (s, x) => norm(s).startsWith(x) || norm(s).replace(/(동|가|읍|면|역)$/, "") === x;
           const areas = [
             ...P.gu.filter(g => starts(g.gu, q)).map(g => ({ kind: "gu", label: g.gu, sub: `단지 ${g.n.toLocaleString()}곳 · 목록에서 보기`,
-              href: ROOT + "index.html?area=" + encodeURIComponent(g.gu) + "#list", n: g.n })),
+              href: ROOT + "?area=" + encodeURIComponent(g.gu) + "#list", n: g.n })),
             ...P.dong.filter(x => starts(x.d, q)).map(x => ({ kind: "dong", label: x.d,
               sub: (x.gu !== x.d ? x.gu + " · " : "") + `단지 ${x.n.toLocaleString()}곳 · 목록에서 보기`,
-              href: ROOT + "index.html?area=" + encodeURIComponent(x.gu) + (x.gu !== x.d ? "&dong=" + encodeURIComponent(x.d) : "") + "#list", n: x.n })),
+              href: ROOT + "?area=" + encodeURIComponent(x.gu) + (x.gu !== x.d ? "&dong=" + encodeURIComponent(x.d) : "") + "#list", n: x.n })),
           ].sort((a, b) => (norm(b.label) === q) - (norm(a.label) === q) || b.n - a.n).slice(0, 3);
           if (areas.length) { group("동네"); areas.forEach(item); }
           const sts = P.stn.filter(x => starts(x.s, q) || norm(x.s).includes(q) && q.length >= 2)
@@ -681,7 +681,7 @@
           if (sts.length) {
             group("역");
             sts.forEach(x => item({ kind: "stn", label: x.s, sub: `${STN_R}m 안 단지 ${x.n.toLocaleString()}곳`,
-              href: ROOT + "stations.html?st=" + encodeURIComponent(x.s) }));
+              href: ROOT + "stations?st=" + encodeURIComponent(x.s) }));
           }
         }
         const apts = d.complexes.filter(c => norm(c.n).includes(q) || norm(c.d).includes(q) || norm(c.gu).includes(q))
@@ -1754,7 +1754,7 @@
       const n = DJ.courseStops(d).stops.length;
       if (n >= 2) chip("my.html#course", "i-route", `임장 코스 ${n}곳`);
       const last = rec.map(r => d.bySlug[r.s]).find(Boolean);
-      if (last) chip("apt/" + last.s + ".html", "i-clock", last.n);
+      if (last) chip("apt/" + last.s, "i-clock", last.n);
     });
   }
 

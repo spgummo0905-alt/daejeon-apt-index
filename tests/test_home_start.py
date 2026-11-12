@@ -13,14 +13,14 @@ def _r(p):
 
 def test_region_intro_primary_buttons_go_where_their_names_say():
     h = _r("templates/intro.html")
-    assert 'href="finder.html">조건으로 찾기' in h and "map.html" in h and "지도로 보기" in h
+    assert 'href="finder"' in h and "<b>조건으로 찾기</b>" in h and "else 'map' }}" in h and "지도로 보기" in h
     assert "궁금한 아파트 찾기" not in h and "한 화면에서 집 찾기" not in h
     assert 'class="it-hero{% if not landing %} it-start{% endif %}"' in h
 
 
 def test_search_field_and_budget_chips_reuse_existing_search_and_finder_url():
     h, a = _r("templates/intro.html"), _r("static/app.js")
-    assert "data-it-search" in h and 'finder.html?budget={{ b }}' in h and "(3, 5, 7, 10)" in h
+    assert "data-it-search" in h and 'finder?budget={{ b }}' in h and "(3, 5, 7, 10)" in h
     assert 'querySelectorAll("[data-it-search]")' in a and "btn.click()" in a        # 새 검색 기능 없이 기존 창을 연다
     f = _r("static/finder.js")
     assert 'qs.get("budget")' in f and '"budget", "py", "gu"' in f                      # 찾기는 이미 이 주소 조건을 읽는다

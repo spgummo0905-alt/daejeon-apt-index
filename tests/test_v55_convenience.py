@@ -25,7 +25,7 @@ def test_pay_chip_touch_size_and_calm():
 def test_navigate_link_uses_kakao_and_keeps_map_link():
     h = _t("templates/apt.html")
     assert "map.kakao.com/link/to/" in h and 'rel="noopener"' in h
-    assert "map.html?s=" in h and "실제 지도 ›" in h
+    assert "map?s=" in h and "실제 지도 ›" in h
 
 
 def test_tap_vibration_respects_reduced_motion_and_support():

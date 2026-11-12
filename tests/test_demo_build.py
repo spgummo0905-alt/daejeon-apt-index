@@ -56,7 +56,7 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "brand" / "favicon-48.png").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 9  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 집감 옥상, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001</loc>" in sitemap
+    assert sitemap.count("<url>") == 63 + 9 - 10  # 소규모 10곳은 사이트맵에서 뺌; 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 집감 옥상, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001</loc>" in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -189,10 +189,10 @@ def test_intro_page_and_first_visit(tmp_path):
     assert 'class="gcard it-card g-' in intro and "1위" in intro
     grades = intro.split('class="it-grades"')[1].split("</ul>")[0]
     assert grades.count('<span class="grade g-') == 5 and 'class="it-bar"' in intro
-    assert 'class="it-hot"' in intro and 'href="finder.html">조건으로 찾기' in intro   # 지역 첫 화면의 주 버튼은 찾기로 바로 가요 (UX v3.2: 예전엔 같은 홈으로 되돌아가던 '궁금한 아파트 찾기')
+    assert 'class="it-hot"' in intro and 'href="finder">조건으로 찾기' in intro   # 지역 첫 화면의 주 버튼은 찾기로 바로 가요 (UX v3.2: 예전엔 같은 홈으로 되돌아가던 '궁금한 아파트 찾기')
     assert "대전 아파트 검색하기" not in intro and "대전 아파트의" not in intro
     assert "같은 지역의 단지끼리 비교한 상대 점수" in intro
-    assert 'data-search-go' in intro and 'href="index.html#list">아파트 검색하기' in intro
+    assert 'data-search-go' in intro and 'href="./#list">아파트 검색하기' in intro
     # 요즘 뜨거운 동네: 지역 이름 없이, 온도 상위 동네를 넘겨 볼 자료와 대장 단지
     assert "최근 거래 흐름이 강한 동네" in intro and "지금 대전에서는" not in intro
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
@@ -202,7 +202,7 @@ def test_intro_page_and_first_visit(tmp_path):
     # 첫 화면: 들어올 때마다 인트로로 (같은 창에서 이미 봤거나 로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'location.replace("intro.html")' in index and "yeti" in index and 'sessionStorage.getItem("dj-intro")' in index
-    assert '<a href="intro.html">서비스 소개</a>' in index
+    assert '<a href="intro">서비스 소개</a>' in index
     assert 'location.replace' not in (out / "rank.html").read_text(encoding="utf-8")
 
 
@@ -235,13 +235,13 @@ def test_cards_page_today_badges_album(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert 'id="today"' not in index and "cards.html" in index   # 메인엔 없고 메뉴에만
+    assert 'id="today"' not in index and 'href="cards"' in index   # 메인엔 없고 메뉴에만
     cards = (out / "cards.html").read_text(encoding="utf-8")
     for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 비교 후보", "임장 배지", "살펴본 아파트 카드", "static/cards.js"):
         assert sec in cards, sec
     assert cards.index('id="today"') < cards.index('id="badges"') < cards.index('id="album"')
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'id="album"' not in my and 'class="to-cards" href="cards.html"' in my   # 관심 단지 화면은 카드첩으로 가는 카드만
+    assert 'id="album"' not in my and 'class="to-cards" href="cards"' in my   # 관심 단지 화면은 카드첩으로 가는 카드만
     assert my.index('id="favs"') < my.index('id="course"') < my.index('class="to-cards"')
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.collect = function" in app and "DJ.miniCard = function" in app and "DJ.memo = function" in app
@@ -315,7 +315,7 @@ def test_search_by_dong_station_and_condition(tmp_path):
         html = (out / page).read_text(encoding="utf-8")
         assert 'data-hs-open' in html and 'id="hs-pop"' in html, page
     js = (out / "static" / "app.js").read_text(encoding="utf-8")
-    assert "DJ.parseCond" in js and "DJ.condHref" in js and '"stations.html?st="' in js and '"index.html?area="' in js
+    assert "DJ.parseCond" in js and "DJ.condHref" in js and '"stations?st="' in js and '"?area="' in js
     assert "{ grouped: true }" in js   # 단지 페이지로 가는 검색창만 묶음 결과 (비교·임장 코스는 단지만)
     stations = (out / "stations.html").read_text(encoding="utf-8")
     assert "data-st-name=" in stations
@@ -429,10 +429,10 @@ def test_kakao_login_only_with_keys_and_privacy_contact(tmp_path, monkeypatch):
     my = (out / "my.html").read_text(encoding="utf-8")
     assert 'window.DJ_SB = {"key": "sb_publishable_test", "provider": "custom:kakao", "url": "https://demo.supabase.co"}' in my
     assert my.index("static/app.js") < my.index("static/sync.js") < my.index("static/my.js")
-    assert 'id="account"' in my and "data-login" in my and 'href="me.html"' in my
+    assert 'id="account"' in my and "data-login" in my and 'href="me"' in my
     assert my.index('id="favs"') < my.index('id="account"') < my.index('id="course"')
     index = (out / "index.html").read_text(encoding="utf-8")
-    assert "data-acct" in index and 'href="privacy.html"><b>개인정보처리방침</b>' in index
+    assert "data-acct" in index and 'href="privacy"><b>개인정보처리방침</b>' in index
     assert "(skip|code|error|stay)" in index   # 카카오에서 돌아올 때 인트로로 보내지 않음
     privacy = (out / "privacy.html").read_text(encoding="utf-8")
     for s in ("Supabase, Inc.", "일본(도쿄)", "help@example.com", "운영자", "2026-10-26", "만 14세 미만", "118"):
@@ -484,7 +484,7 @@ def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     intro = (out / "intro.html").read_text(encoding="utf-8")
-    assert ">임장 도구<" in intro and ">동네 온도<" in intro and "04 · 임장 도구" not in intro and "#field" in intro and "my.html#course" in intro and "#alts" in intro
+    assert ">임장 도구<" in intro and ">동네 온도<" in intro and "04 · 임장 도구" not in intro and "#field" in intro and "my#course" in intro and "#alts" in intro
     assert "acct-pop" not in intro and "현장 사진" not in intro and "가족과 함께 보기" not in intro and "data-login" not in intro
 
     monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")
@@ -497,7 +497,7 @@ def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
         assert s in intro
     assert intro.count("data-login") == 2   # 위쪽 창과 인트로 로그인 줄
     apt = next((out / "apt").glob("*.html")).read_text(encoding="utf-8")
-    assert 'id="acct-pop"' in apt and 'href="../me.html#prefs"' in apt and 'href="../me.html"' in apt and 'href="../privacy.html"' in apt
+    assert 'id="acct-pop"' in apt and 'href="../me#prefs"' in apt and 'href="../me"' in apt and 'href="../privacy"' in apt
     assert 'id="my-favs"' in (out / "my.html").read_text(encoding="utf-8")
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert 'body[data-page="intro"] .acct-btn { display: none; }' not in css
@@ -528,7 +528,7 @@ def test_my_info_page_only_for_logged_in(tmp_path, monkeypatch):
         assert s in gated, s
     assert "static/prefs.js" in me and "static/me.js" in me
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'id="prefs"' in my and "data-share-actions" not in my and "data-delete" not in my and 'href="me.html"' in my
+    assert 'id="prefs"' in my and "data-share-actions" not in my and "data-delete" not in my and 'href="me"' in my
     assert "data-nt-csv" in my   # 임장 노트 내보내기는 관심 화면에
     js = (out / "static" / "me.js").read_text(encoding="utf-8")
     assert "아직 안 가 본 관심 단지" in js and 'DJ.save("course"' in js
@@ -639,7 +639,7 @@ def test_project_page_preserves_existing_records_and_is_not_indexed(tmp_path):
     assert page.index("static/records.js") < page.index("static/project-store.js") < page.index("static/projects.js")
     assert 'class="me-gate"' not in page
     assert "기존 내 코스를 덮어쓰지 않습니다" in page and "단지별 공통 기록" in page
-    assert 'href="projects.html"' in (out / "my.html").read_text(encoding="utf-8")
+    assert 'href="projects"' in (out / "my.html").read_text(encoding="utf-8")
     assert "projects" not in (out / "sitemap.xml").read_text(encoding="utf-8")
     sw = (out / "sw.js").read_text(encoding="utf-8")
     assert '"projects.html"' in sw and "static/project-store.js" in sw
@@ -678,8 +678,8 @@ def test_project_workspace_keeps_full_tools_inside_a_lazy_same_origin_panel(tmp_
     css = (ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
     assert '.pw-dialog[open]' in css and '.pw-frame[hidden]' in css and '.pj-embed-field' in css
     assert 'body[data-page="projects"] .rcd { display: none; }' in css
-    assert 'href="projects.html"' in (out / 'index.html').read_text(encoding='utf-8')
-    assert 'href="projects.html"' in (out / 'intro.html').read_text(encoding='utf-8')   # 임장(프로젝트) 입구는 하단 메뉴에 계속 보여요 (UX v3.2: 첫 화면에도 하단 메뉴를 둠)
+    assert 'href="projects"' in (out / 'index.html').read_text(encoding='utf-8')
+    assert 'href="projects"' in (out / 'intro.html').read_text(encoding='utf-8')   # 임장(프로젝트) 입구는 하단 메뉴에 계속 보여요 (UX v3.2: 첫 화면에도 하단 메뉴를 둠)
 
 
 def test_my_settings_and_note_export(tmp_path):
@@ -749,7 +749,7 @@ def test_admin_page_roles_settings_and_membership_groundwork(tmp_path, monkeypat
     for tab in ("overview", "members", "settings", "plans", "logs"):
         assert f'data-ad-go="{tab}"' in ad and f'data-ad-pane="{tab}"' in ad
     assert 'data-ad-go="logs" aria-selected="false" data-ad-min="admin"' in ad and "static/admin.js" in ad
-    assert '<symbol id="i-shield"' in ad and 'href="admin.html" data-admin-link hidden' in (out / "my.html").read_text(encoding="utf-8")
+    assert '<symbol id="i-shield"' in ad and 'href="admin" data-admin-link hidden' in (out / "my.html").read_text(encoding="utf-8")
     # 내 정보: 회원 번호(권한을 받을 때), 멤버십 줄(켰을 때만), 꺼질 수 있는 기능 표시
     me = (out / "me.html").read_text(encoding="utf-8")
     assert "data-member-id" in me and "data-member-copy" in me and '<li data-feature="membership">' in me
@@ -800,7 +800,7 @@ def test_rights_notice_terms_and_minified_deploy(tmp_path):
         assert s in terms, s
     for page in ("index.html", "rank.html", "methodology.html"):
         html = (out / page).read_text(encoding="utf-8")
-        assert 'href="terms.html">이용약관</a>' in html and "무단 복제와 자동 수집을 금지합니다" in html, page
+        assert 'href="terms">이용약관</a>' in html and "무단 복제와 자동 수집을 금지합니다" in html, page
     lic = (config.ROOT / "LICENSE").read_text(encoding="utf-8")
     assert "All rights reserved" in lic and "리버스 엔지니어링" in lic
     sh = (config.ROOT / "scripts" / "minify_site.sh").read_text(encoding="utf-8")
@@ -952,7 +952,7 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기' in page and 'aria-current="page"' not in page
     final = page.split('class="it-final"')[1].split('</section>')[0]
     assert 'data-rg-open' in final and "지역 고르고 아파트 찾기" in final
-    assert 'data-search-go' not in final and 'href="index.html#list"' not in final
+    assert 'data-search-go' not in final and 'href="index#list"' not in final
     assert "대전 아파트 검색하기" not in page and "대전 아파트의" not in page
     assert "분포 예시" in page and "지역마다 분포가 다릅니다" in page
     assert '<title>집감 | 아파트 실거래가 비교부터 임장 코스·기록까지</title>' in page
@@ -1160,7 +1160,7 @@ def test_rank_tab_is_named_browse(tmp_path):
     out = tmp_path / "site"
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     page = (out / "index.html").read_text(encoding="utf-8")
-    assert 'data-tab="rank"' not in page and 'href="rank.html"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>' in page   # 탭에서는 빠지고 홈 둘러보기 입구로
+    assert 'data-tab="rank"' not in page and 'href="rank"><svg class="ic" aria-hidden="true"><use href="#i-rank"/></svg>순위</a>' in page   # 탭에서는 빠지고 홈 둘러보기 입구로
     assert 'data-nav="rank">둘러보기</a>' in page and 'data-nav="rank">랭킹</a>' not in page
     assert (out / "rank.html").exists()
 
@@ -1203,11 +1203,11 @@ def test_ux_home_gates_and_next_actions_wiring(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     home = (out / "index.html").read_text(encoding="utf-8")
     gates = home[home.index("data-gates"):home.index('class="roof-strip"')]          # 위쪽 메뉴의 같은 링크와 섞이지 않게 입구 영역만
-    for key in ("data-gate-compare", "data-gate-visit", 'href="finder.html"', 'href="compare.html"', 'href="projects.html"'):
+    for key in ("data-gate-compare", "data-gate-visit", 'href="finder"', 'href="compare"', 'href="projects"'):
         assert key in gates, key
-    assert gates.index('href="finder.html"') < gates.index('href="compare.html"') < gates.index('href="projects.html"')   # 찾기 → 비교 → 임장 순서
+    assert gates.index('href="finder"') < gates.index('href="compare"') < gates.index('href="projects"')   # 찾기 → 비교 → 임장 순서
     assert gates.count('class="gate-btn"') == 3 and home.count("data-gates") == 1
-    assert "rooftop.html" in home and "roof-strip" in home       # 옥상은 그대로 있음
+    assert 'href="rooftop"' in home and "roof-strip" in home       # 옥상은 그대로 있음
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "function gates()" in app and "const entries = () => {" in app and "gates(); resume(); };" in app
     assert "DJ.activeProject()" in app[app.index("function gates()"):app.index("function gates()") + 900]
@@ -1288,7 +1288,7 @@ def test_apt_detail_has_compare_in_the_action_row(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     page = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
     row = page[page.index('class="icon-actions apt-actions"'):page.index("</div>", page.index('class="icon-actions apt-actions"'))]
-    assert "data-compare-here" in row and 'compare.html?a=DEMO-0001' in row
+    assert "data-compare-here" in row and 'compare?a=DEMO-0001' in row
     third = "data-sun-here" if "data-sun-here" in row else "data-loc-here"          # 일조 자료가 없는 단지는 '일조' 대신 '입지'(생활 입지로 이동)
     assert "data-sun-here" in row or "data-loc-here" in row and not ("data-sun-here" in row and "data-loc-here" in row)
     assert row.index("data-fav") < row.index("data-compare-here") < row.index(third) < row.index("data-field") < row.index("data-share-sheet")   # C5: 관심 · 비교 · 일조(없으면 입지) · 현장 체크 · 공유 순서
@@ -1296,7 +1296,7 @@ def test_apt_detail_has_compare_in_the_action_row(tmp_path):
     assert 'aria-label="다른 단지와 비교하기"' in row and "<span>비교</span>" in row
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "[data-compare-here]" in app and "DJ.favs().filter(s => s !== c.s" in app and ".slice(0, 3)" in app    # 관심 단지 최대 3곳 + 이 단지 = 최대 4곳
-    assert "compare.html?a=" in page[page.index("주요 지표 비교"):page.index("주요 지표 비교") + 400]          # 아래쪽 기존 '다른 단지와 비교' 링크는 그대로
+    assert "compare?a=" in page[page.index("주요 지표 비교"):page.index("주요 지표 비교") + 400]          # 아래쪽 기존 '다른 단지와 비교' 링크는 그대로
 
 
 def test_visit_prep_name_is_the_same_everywhere(tmp_path):
@@ -1306,14 +1306,14 @@ def test_visit_prep_name_is_the_same_everywhere(tmp_path):
     home = (out / "index.html").read_text(encoding="utf-8")
     tab = home[home.index('class="tabbar"'):home.index("</nav>", home.index('class="tabbar"'))]
     assert 'data-tab="projects"' in tab and "임장</a>" in tab
-    assert [tab.index(h) for h in ('index.html', 'finder.html', 'compare.html', 'projects.html', 'my.html')] == sorted(tab.index(h) for h in ('index.html', 'finder.html', 'compare.html', 'projects.html', 'my.html'))   # 탭 순서: 홈·찾기·비교·임장·MY
+    assert [tab.index(h) for h in ('href="./"', 'href="finder"', 'href="compare"', 'href="projects"', 'href="my"')] == sorted(tab.index(h) for h in ('href="./"', 'href="finder"', 'href="compare"', 'href="projects"', 'href="my"'))   # 탭 순서: 홈·찾기·비교·임장·MY
     assert ">임장 준비<svg" in home and ">임장</button>" not in home                                       # 위 메뉴
     gates = home[home.index("data-gates"):home.index('class="roof-strip"')]
-    assert "data-gv-k>임장 준비<" in gates and "임장 준비 열기" in gates and 'href="projects.html" data-gv-btn' in gates
+    assert "data-gv-k>임장 준비<" in gates and "임장 준비 열기" in gates and 'href="projects" data-gv-btn' in gates
     from pathlib import Path
     allmenu = (Path(__file__).resolve().parent.parent / "templates" / "_allmenu.html").read_text(encoding="utf-8")   # 전체 메뉴는 부분 화면이라 원본에서 확인
     assert "<h3>임장 준비</h3>" in allmenu and 'aria-label="임장 준비 메뉴"' in allmenu and "<h3>임장</h3>" not in allmenu
-    assert "<li><a href=\"my.html#course\">임장 코스</a></li>" in allmenu                                    # 코스 화면 이름은 그대로
+    assert "<li><a href=\"my#course\">임장 코스</a></li>" in allmenu                                    # 코스 화면 이름은 그대로
     assert "임장 코스" in home                                                                            # 코스 화면 이름은 그대로 남아 있음
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert '"이어하기"' in app and '"이어서 하기"' in app                                                   # 진행 중일 때의 이름은 그대로
@@ -1787,7 +1787,7 @@ def test_map_screen_is_wired(tmp_path):
     assert "window.kakao" in js and "kakao.maps.load" in js and "mp-note" in js                  # 카카오 지도는 있을 때만, 없으면 점 지도가 대체
     assert "dapi.kakao.com" not in page                                                         # 데모(키 없음)는 외부 SDK를 부르지 않음
     home = (out / "index.html").read_text(encoding="utf-8"); finder = (out / "finder.html").read_text(encoding="utf-8")
-    assert 'href="map.html"' in home and 'href="map.html"' in finder and 'id="map"' in home      # 입구 연결, 옛 지도 구역 보존
+    assert 'href="map"' in home and 'href="map"' in finder and 'id="map"' in home      # 입구 연결, 옛 지도 구역 보존
     assert 'data-tab="map"' not in page and 'data-tab="finder"' in page
 
 def test_apt_fixed_cta_reuses_existing_course_button(tmp_path):

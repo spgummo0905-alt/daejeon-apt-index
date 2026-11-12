@@ -16,7 +16,7 @@ def test_detail_card_moves_price_rank_badges_out_of_the_map():
     h = R("templates/apt.html")
     art = h[h.index('class="mc-art"'):h.index('class="mc-under"')]
     assert "mc-price" not in art and "mc-rank" not in art and "mc-medal" not in art and "mc-badges" not in art
-    assert "mc-lochead" in h and "map.html?s=" in h and "위치 · 직선거리" in h
+    assert "mc-lochead" in h and "map?s=" in h and "위치 · 직선거리" in h
     assert 'class="mc-fac"' in h and "초등학교" in h and "대형마트" in h and "병원 1km 안" in h
     assert "단지 중심에서 잰 직선거리" in h
     assert "84㎡로 맞추면" in h and "거래한 면적과 추정 면적이 달라 바로 견줄 수 없어요" in h

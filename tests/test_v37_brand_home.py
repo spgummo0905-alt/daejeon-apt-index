@@ -43,4 +43,4 @@ def test_theme_color_follows_brand_and_no_violet_left_in_brand_dot():
 
 def test_existing_copy_and_buttons_kept_in_markup():
     h = (ROOT / "templates/intro.html").read_text(encoding="utf-8")
-    assert "좋은 집의 가치" in h and 'href="finder.html">조건으로 찾기' in h and "지도로 보기" in h and "점수를 매긴 단지" in h
+    assert "좋은 집의 가치" in h and 'href="finder">조건으로 찾기' in h and "지도로 보기" in h and "점수를 매긴 단지" in h

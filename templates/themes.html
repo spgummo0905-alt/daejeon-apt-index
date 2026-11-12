@@ -31,7 +31,7 @@
   </div>
   <ol class="theme-grid" data-theme-list data-total="{{ th.count }}" data-counts="{{ th.by_gu | tojson | forceescape }}">
     {% for it in th["items"] %}
-    <li data-reveal data-gu="{{ it.gu }}" style="--i: {{ loop.index0 % 12 }}"{% if loop.index > 12 %} hidden{% endif %}><a href="apt/{{ it.slug }}.html">
+    <li data-reveal data-gu="{{ it.gu }}" style="--i: {{ loop.index0 % 12 }}"{% if loop.index > 12 %} hidden{% endif %}><a href="apt/{{ it.slug }}">
       <span class="th-rank">{{ loop.index }}</span>
       <span class="grade g-{{ it.grade }}">{{ it.grade }}</span>
       <span class="th-name"><strong>{{ it.name }}</strong><span class="muted">{{ it | place }}</span></span>

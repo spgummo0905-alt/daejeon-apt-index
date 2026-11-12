@@ -36,7 +36,7 @@ def test_cheongju_demo_has_no_station_pages(tmp_path):
     cli.main(["--config", "config.cheongju.toml", "--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     index = (out / "index.html").read_text(encoding="utf-8")
     assert not (out / "stations.html").exists()
-    assert 'href="stations.html"' not in index and 'data-km-flag="stn"' not in index
+    assert 'href="stations"' not in index and 'data-km-flag="stn"' not in index
     assert "data-no-stop" in (out / "finder.html").read_text(encoding="utf-8")
     assert "<h2>기차역</h2>" not in (out / "themes.html").read_text(encoding="utf-8")
     cx = json.loads((out / "complexes.json").read_text(encoding="utf-8"))["complexes"]

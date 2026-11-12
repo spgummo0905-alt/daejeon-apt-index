@@ -28,11 +28,11 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
       <button type="button" class="it-start-search" data-it-search aria-haspopup="dialog">
         <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>단지·동·역 이름으로 검색</span></button>
       <ul class="it-budget" aria-label="예산으로 바로 찾기">
-        {% for b in (3, 5, 7, 10) %}<li><a href="finder.html?budget={{ b }}">{{ b }}억 이하</a></li>{% endfor %}
+        {% for b in (3, 5, 7, 10) %}<li><a href="finder?budget={{ b }}">{{ b }}억 이하</a></li>{% endfor %}
       </ul>{% endif %}
       <div class="it-cta">
-        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기</button>{% else %}<a class="it-btn primary" href="finder.html">조건으로 찾기</a>{% endif %}
-        <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'map.html' }}">{{ '임장 도구 살펴보기' if landing else '지도로 보기' }}</a>
+        {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기</button>{% else %}<a class="it-btn primary" href="finder">조건으로 찾기</a>{% endif %}
+        <a class="it-btn ghost" href="{{ '#it-tools' if landing else 'map' }}">{{ '임장 도구 살펴보기' if landing else '지도로 보기' }}</a>
       </div>
       <dl class="it-nums">
         <div><dt>{{ '예시 지역' if landing else region }} · 점수를 매긴 단지</dt><dd data-count>{{ "{:,}".format(meta.n_ranked) }}곳</dd></div>
@@ -43,7 +43,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     <div class="it-fan" aria-label="종합 지수 1위 카드">
       <span class="it-back b1" aria-hidden="true"><b>?</b></span>
       <span class="it-back b2" aria-hidden="true"><b>?</b></span>
-      <a class="gcard it-card g-{{ top.grade }}" href="apt/{{ top.slug }}.html" data-holo>
+      <a class="gcard it-card g-{{ top.grade }}" href="apt/{{ top.slug }}" data-holo>
         <div class="gcard-head">
           <span class="grade big g-{{ top.grade }}">{{ top.grade }}</span>
           <div class="gcard-title"><strong>{{ top.name }}</strong><span class="muted">{{ top | place }}{% if top.build_year %} · {{ top.build_year }}년{% endif %}</span></div>
@@ -74,7 +74,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     <h2 data-reveal>복잡한 아파트 정보,<br><em>카드 한 장</em>에</h2>
     <div class="it-ana-grid">
       <div class="it-ana-card" data-reveal>
-        <a class="gcard g-{{ c2.grade }}" href="apt/{{ c2.slug }}.html" data-holo>
+        <a class="gcard g-{{ c2.grade }}" href="apt/{{ c2.slug }}" data-holo>
           <div class="gcard-head">
             <span class="grade big g-{{ c2.grade }}">{{ c2.grade }}</span>
             <div class="gcard-title"><strong>{{ c2.name }}</strong><span class="muted">{{ c2 | place }}{% if c2.build_year %} · {{ c2.build_year }}년{% endif %}</span></div>
@@ -119,16 +119,16 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     <p class="it-kicker" data-reveal>활용 방법</p>
     <h2 data-reveal>임장 가기 전,<br><em>필요한 정보부터</em> 확인하세요</h2>
     <div class="it-use-grid">
-      <a class="it-use" href="index.html#heat" data-reveal>
+      <a class="it-use" href="./#heat" data-reveal>
         <div class="it-art heat" aria-hidden="true">{% for k in [5,4,3,4,2,5,3,1,2,3,4,1] %}<i class="h{{ k }}"></i>{% endfor %}</div>
         <b>동네 온도</b><span>최근 가격 변화와 거래량을 동네별로 비교</span></a>
-      <a class="it-use" href="compare.html" data-reveal>
+      <a class="it-use" href="compare" data-reveal>
         <div class="it-art vs" aria-hidden="true"><span class="mini g-A"><i>A</i>71</span><em>VS</em><span class="mini g-S"><i>S</i>86</span></div>
         <b>단지 비교</b><span>최대 4곳의 입지·수익률·전세가율을 나란히</span></a>
-      <a class="it-use" href="finder.html" data-reveal>
+      <a class="it-use" href="finder" data-reveal>
         <div class="it-art find" aria-hidden="true"><span>생애최초</span><span>학원가</span><span>5억 이하</span><strong>조건에 맞는 단지</strong></div>
         <b>조건으로 찾기</b><span>예산·직장·학군을 고르면 맞는 단지만 남습니다</span></a>
-      <a class="it-use" href="rank.html" data-reveal>
+      <a class="it-use" href="rank" data-reveal>
         <div class="it-art chart" aria-hidden="true"><svg viewBox="0 0 120 56"><path class="band" d="M0 44 L20 40 L40 41 L60 30 L80 26 L100 18 L120 12 L120 24 L100 30 L80 36 L60 40 L40 50 L20 50 L0 54Z"/><path class="ln" d="M0 49 L20 45 L40 46 L60 35 L80 31 L100 24 L120 18"/><circle cx="120" cy="18" r="3.5"/></svg></div>
         <b>시세와 랭킹</b><span>평형별 추정 시세·전세가율, 가격 변동과 최근 신고가</span></a>
     </div>
@@ -137,7 +137,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 
 {# 4-2. 임장 도구: 가기 전 → 현장에서 → 다녀와서. 집은 결국 직접 가 보고 정하니까, 발품 판 기록을 흘리지 않게.
    사진·이어 보기·함께 보기는 카카오 로그인을 켰을 때만 (account) #}
-{% set apt_top = ("apt/" ~ top.slug ~ ".html") if top else "index.html" %}
+{% set apt_top = ("apt/" ~ top.slug) if top else "./" %}
 <section class="it-sec it-tools" id="it-tools">
   <div class="it-wrap">
     <p class="it-kicker" data-reveal>임장 도구</p>
@@ -152,7 +152,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
             <circle cx="172" cy="60" r="10"/><text x="172" y="64">3</text><circle cx="214" cy="28" r="10"/><text x="214" y="32">4</text></g></svg>
         </div>
         <p class="it-step-n"><span>1</span>가기 전 · 방문할 단지 정하기</p>
-        <a class="it-tool" href="my.html#course"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></span>
+        <a class="it-tool" href="my#course"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></span>
           <span class="it-tool-t"><b>임장 코스</b><span>방문 순서를 정하고 길찾기까지 이어 줘요</span></span></a>
         <a class="it-tool" href="{{ apt_top }}{% if top %}#alts{% endif %}"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg></span>
           <span class="it-tool-t"><b>같은 예산, 다른 선택지</b><span>가격이 비슷한 주변 단지를 함께 봐요</span></span></a>
@@ -178,13 +178,13 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
           <span class="it-link-pill"><svg class="ic"><use href="#i-link"/></svg>보기 전용 링크</span>
         </div>
         <p class="it-step-n"><span>3</span>다녀와서 · 기록을 모아 비교하기</p>
-        <a class="it-tool" href="my.html#notes"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
+        <a class="it-tool" href="my#notes"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
           <span class="it-tool-t"><b>임장 노트</b><span>체크·호가·메모를 모아 비교하고 엑셀·PDF로 정리</span></span></a>
         {% if account %}
-        <a class="it-tool" href="me.html#share"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
+        <a class="it-tool" href="me#share"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
           <span class="it-tool-t"><b>가족과 함께 보기 · 로그인 후</b><span>관심 단지·임장 노트를 보기 전용 링크로 공유</span></span></a>
         {% endif %}
-        <a class="it-tool" href="my.html#my-favs"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span>
+        <a class="it-tool" href="my#my-favs"><span class="it-tool-ic"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span>
           <span class="it-tool-t"><b>관심 단지 새 소식</b><span>새 실거래와 추정 시세 변동을 모아 보여 줘요</span></span></a>
       </div>
     </div>
@@ -197,7 +197,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <span>카카오 로그인</span></button>
       <div class="it-login-copy" data-when-in hidden><b><span data-user-name></span>의 기록은 카카오 계정에 저장됩니다</b>
         <span>다른 기기에서도 관심 화면에서 이어 볼 수 있습니다.</span></div>
-      <a class="it-btn ghost" href="my.html" data-when-in hidden>내 임장 기록</a>
+      <a class="it-btn ghost" href="my" data-when-in hidden>내 임장 기록</a>
     </div>
     {% endif %}
   </div>
@@ -219,7 +219,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
           <div><dt>신고가</dt><dd><b data-hot-h>{{ h.h }}곳</b><small>최근 90일</small></dd></div>
           <div><dt>매매</dt><dd><b data-hot-n3>{{ h.n3 }}건</b><small data-hot-v>{{ ('평소의 ' ~ h.v) if h.v else '최근 3개월' }}</small></dd></div>
         </dl>
-        <a class="it-best" data-hot-best href="{% if h.b %}apt/{{ h.b.s }}.html{% else %}rank.html{% endif %}"{% if not h.b %} hidden{% endif %}>
+        <a class="it-best" data-hot-best href="{% if h.b %}apt/{{ h.b.s }}{% else %}rank.html{% endif %}"{% if not h.b %} hidden{% endif %}>
           <span class="it-best-l">지수 1위</span><span class="grade g-{{ h.b.g if h.b else '-' }}" data-hot-bg>{{ h.b.g if h.b else '-' }}</span><b data-hot-bn>{{ h.b.n if h.b else '' }}</b><em data-hot-bi>{{ (h.b.i ~ '점') if h.b else '' }}</em><span class="it-best-go" aria-hidden="true">→</span></a>
       </div>
       <div class="it-hot-side" data-reveal>
@@ -253,7 +253,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <svg class="ic"><use href="#i-search"/></svg>
         <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
       </div>{% endif %}
-      {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 아파트 찾기</button>{% else %}<a class="it-btn primary" href="index.html#list">아파트 검색하기</a>{% endif %}
+      {% if landing %}<button type="button" class="it-btn primary" data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">지역 고르고 아파트 찾기</button>{% else %}<a class="it-btn primary" href="./#list">아파트 검색하기</a>{% endif %}
     </div>
   </div>
 </section>
