@@ -27,5 +27,5 @@ def test_my_stats_keep_contract_and_only_add_state_labels():
     h = R("templates/my.html")
     assert '<dt>관심 단지</dt><dd data-ms="favs">' in h and '<dt>임장 코스</dt><dd data-ms="course">' in h and '<dt>다녀온 집</dt><dd data-ms="visits">' in h
     css = R("static/style.css")
-    assert '1 · 담아 둔 집' in css and '3 · 다녀옴' in css
+    assert '1 · 담아 둔 집' not in css and '3 · 다녀옴' not in css   # v5.4: 번호 머리말 삭제(이름은 dt 하나)
     assert 'classList.toggle("zero"' in R("static/my.js")

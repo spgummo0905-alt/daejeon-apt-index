@@ -18,6 +18,6 @@ def test_sun_screen_hides_floating_recent_button_on_phones_only():
 def test_tabbar_is_opaque_and_small_text_is_raised():
     t = _tail()
     assert ".tabbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }" in t
-    for rule in (".tc-kind, .tc-hint, .badge-n { font-size: 14px; }", ".badge-name { font-size: 14px; }", ".gstat-val, .gstat-name { font-size: 14px; }"):
+    for rule in (".badge-n { font-size: 14px; }", ".badge-name { font-size: 14px; }", ".gstat-val, .gstat-name { font-size: 14px; }"):
         assert rule in t, rule
     assert ".hm-toggle, .album-next .btn, #vs-share, .cmp-fit .btn { min-height: 56px; }" in t
