@@ -99,24 +99,19 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
         <li data-reveal><b><i>4</i>순위와 가격</b><span>지역 안 순위와 84㎡로 환산한 비교용 가격이에요. 실제 가격은 평형·층마다 달라요.</span></li>
       </ol>
     </div>
-  </div>
-</section>
-{% endif %}
-
-{# 3. 등급 사다리: 실제 분포 #}
-<section class="it-sec it-ladder">
-  <div class="it-wrap">
-    <p class="it-kicker" data-reveal>등급</p>
-    <h2 data-reveal>아파트의 차이를<br><em>등급으로 한눈에</em></h2>
-    <div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
+    <div class="it-dist">
+      <p class="it-dist-h" data-reveal>우리 지역 단지는 이렇게 나뉘어요</p>
+<div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
       {% for d in grade_dist %}{% if d.n %}<span class="seg g-{{ d.g }}" style="--w: {{ '%.2f' | format(d.pct) }}"><b>{{ d.g }}</b></span>{% endif %}{% endfor %}
     </div>
     <ul class="it-grades" data-reveal>
       {% for d in grade_dist %}<li><span class="grade g-{{ d.g }}">{{ d.g }}</span><b>{{ d.name }}</b><span>{{ "{:,}".format(d.n) }}곳 · {{ "%.0f" | format(d.pct) }}%</span></li>{% endfor %}
     </ul>
     <p class="it-sub" data-reveal>한 지역에서 지수를 산정한 {{ "{:,}".format(meta.n_ranked) }}곳의 분포 예시입니다. 등급과 순위는 같은 지역 안에서 비교하며, 지역마다 분포가 다릅니다.{% if meta.n_ranked < meta.n_complexes %} 입지·거래 자료가 부족한 {{ "{:,}".format(meta.n_complexes - meta.n_ranked) }}곳은 등급을 매기지 않았습니다.{% endif %}</p>
+    </div>
   </div>
 </section>
+{% endif %}
 
 {# 4. 이렇게 써 보세요 #}
 <section class="it-sec it-uses">
