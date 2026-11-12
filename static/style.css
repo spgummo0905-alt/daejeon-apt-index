@@ -5459,3 +5459,11 @@ h2, h3 { font-weight: 700; }
 .pay-quick .chip:active { transform: scale(.96); }
 @media (prefers-reduced-motion: reduce) { .pay-quick .chip { transition: none; } .pay-quick .chip:active { transform: none; } }
 .mc-lochead-l { display: inline-flex; gap: 6px; }
+
+/* v5.8 빈 화면: 아이콘 하나 + 한 줄 + 버튼 하나 / 비교 빈 칸은 ＋ 표시 */
+.empty-start { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 26px 18px 22px; border: 0; background: var(--hc-soft, #e6f2ec); }
+.empty-start .empty-ic { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 4px; border-radius: 50%; background: #0F3D33; color: #6fd1ae; font-size: 28px; line-height: 1; }
+.empty-start b { font-size: 18px; font-weight: 700; }
+.empty-start p { margin: 0 0 12px; max-width: 28em; }
+.empty-start .btn { min-height: 48px; }
+.vs-slot:not(.on) { font-size: 22px; font-weight: 300; color: var(--text-2); }
