@@ -45,7 +45,7 @@
     </div>
     <div class="mc-score"><small>종합 지수</small>{% if c.index is nan %}<strong class="mc-na">미산정</strong>{% else %}<strong>{{ c.index | score }}</strong>{% endif %}<span class="mc-rk">{% if c.rank %}지수 산정 {{ n_total }}곳 중 {{ c.rank }}위{% elif c.small %}{{ c.small_reason or "소규모" }} 단지라 순위 제외{% else %}자료가 부족해 순위 제외{% endif %}</span></div>
   </div>
-  {% if latlng %}<div class="mc-lochead"><b>위치 · 직선거리</b><a href="{{ root }}map.html?s={{ c.slug | urlencode }}">실제 지도로 보기 ›</a></div>{% endif %}
+  {% if latlng %}<div class="mc-lochead"><b>위치 · 직선거리</b><span class="mc-lochead-l"><a href="https://map.kakao.com/link/to/{{ c.name | urlencode }},{{ c.lat }},{{ c.lng }}" target="_blank" rel="noopener">길찾기 ›</a><a href="{{ root }}map.html?s={{ c.slug | urlencode }}">실제 지도 ›</a></span></div>{% endif %}
   <div class="mc-art" data-mc-art{% if latlng %} data-la="{{ latlng[0] }}" data-ln="{{ latlng[1] }}"{% endif %}>
     <canvas data-art width="650" height="330" aria-hidden="true"></canvas>
   </div>
@@ -335,6 +335,13 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
         <label><span>상황</span><select data-pay-st>
           <option value="first">생애최초</option><option value="none" selected>무주택</option><option value="switch">1주택 갈아타기</option><option value="multi">2주택 이상</option></select></label>
         <label><span>자기자본 (만원)</span><input type="number" inputmode="numeric" min="0" step="500" placeholder="예: 20000" data-pay-eq></label>
+        <div class="pay-quick pay-wide" role="group" aria-label="자기자본 빠른 입력">
+          <span class="pay-read" data-pay-read aria-live="polite">금액을 누르거나 직접 적어 주세요</span>
+          <button type="button" class="chip" data-pay-add="1000">+1천만</button>
+          <button type="button" class="chip" data-pay-add="5000">+5천만</button>
+          <button type="button" class="chip" data-pay-add="10000">+1억</button>
+          <button type="button" class="chip" data-pay-add="0">지우기</button>
+        </div>
         <label><span>금리 (%)</span><input type="number" inputmode="decimal" min="0" step="0.1" data-pay-rate></label>
         <label><span>기간 (년)</span><input type="number" inputmode="numeric" min="1" step="1" data-pay-yr></label>
       </div>

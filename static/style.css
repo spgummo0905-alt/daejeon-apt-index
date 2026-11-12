@@ -5451,3 +5451,11 @@ h2, h3 { font-weight: 700; }
 .hc-top b, .mm-title, .mm-name, .mm-list dd { font-weight: 600; }
 .tc-why b { font-weight: 700; }
 
+
+/* v5.5 편의 단추: 자기자본 빠른 입력, 길찾기 (토스식 금액 단추) */
+.pay-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pay-quick .pay-read { flex: 1 0 100%; min-height: 24px; font-size: 16px; font-weight: 700; color: var(--text); }
+.pay-quick .chip { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform .12s ease, background .12s ease; }
+.pay-quick .chip:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { .pay-quick .chip { transition: none; } .pay-quick .chip:active { transform: none; } }
+.mc-lochead-l { display: inline-flex; gap: 6px; }

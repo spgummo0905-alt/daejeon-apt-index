@@ -42,6 +42,15 @@
     if (loan) out.append(row("필요한 연소득 (소득 대비 상환 한도 DSR " + Math.round(DSR * 100) + "%)", "약 " + eok(pay * 12 / DSR) + " 이상"),
       row(Math.round(n / 12) + "년간 낼 이자", "약 " + eok(pay * n - loan)));
   }
+  // 빠른 단추: 누른 만큼 더하고(0은 지우기), 적힌 금액을 '2억 5천만원'처럼 한글로 바로 읽어 줌. 계산·저장 방식은 그대로(입력 이벤트만 보냄)
+  const read = box.querySelector("[data-pay-read]");
+  const won = m => { m = Math.round(+m || 0); if (m <= 0) return ""; const e = Math.floor(m / 10000), r = m % 10000; return (e ? e + "억" : "") + (e && r ? " " : "") + (r ? (r % 1000 === 0 ? r / 1000 + "천만" : r.toLocaleString() + "만") : "") + "원"; };
+  const paintRead = () => { if (read) read.textContent = eq.value ? "= " + won(eq.value) : "금액을 누르거나 직접 적어 주세요"; };
+  box.querySelectorAll("[data-pay-add]").forEach(b => b.addEventListener("click", () => {
+    const n = +b.dataset.payAdd; eq.value = n ? String((+eq.value || 0) + n) : "";
+    eq.dispatchEvent(new Event("input", { bubbles: true })); if (DJ.tap) DJ.tap();
+  }));
+  eq.addEventListener("input", paintRead); paintRead();
   [py, st, eq, rate, yr].forEach(x => x.addEventListener("input", calc));
   calc();
 })();
