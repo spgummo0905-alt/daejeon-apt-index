@@ -7,13 +7,19 @@ R = lambda p: (ROOT / p).read_text(encoding="utf-8")
 
 def _blk():
     c = R("static/style.css")
-    return c[c.index("UX v5.1 · Fable 디자인 평가 반영"):]
+    s = c[c.index("UX v5.1 · Fable 디자인 평가 반영"):]
+    n = s.find("/* ===== UX ", 10)   # 다음 버전 블록 전까지만
+    return s[:n] if n > 0 else s
 
 
-def test_v51_block_is_last_so_it_wins_the_cascade():
+def test_v51_block_comes_after_older_rules_so_it_wins_the_cascade():
     c = R("static/style.css")
-    assert c.rstrip().endswith("opacity: .8; }")
     assert c.count("UX v5.1 · Fable 디자인 평가 반영") == 1
+    i = c.index("UX v5.1 · Fable 디자인 평가 반영")
+    # 앞선 버전 블록(v3.x~v5.0)은 모두 v5.1 앞에 있고, v5.1 뒤에는 더 새로운 v5.2 이상만 붙는다
+    assert c.rindex("UX v5.0 · Impeccable 비평 반영") < i
+    assert "UX v3.3 · 낮은 폰" in c[:i]
+    assert c.rstrip().endswith("}")
 
 
 def test_intro_template_tells_removed():

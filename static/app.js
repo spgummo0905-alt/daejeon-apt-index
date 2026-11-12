@@ -963,6 +963,17 @@
   ];
   DJ.badgeState = data => ({ seen: DJ.seen(), favs: DJ.favs(), acts: load("acts", {}), days: load("days", []), album: DJ.album(), data });
   DJ.earned = () => load("badges", {});
+  // MY 메뉴 점: 새 배지가 생겼고 아직 카드첩·MY 를 열지 않았을 때만(이 탭이 열려 있는 동안만 기억, 저장 안 함)
+  DJ.paintDot = function () {
+    const page = document.body.dataset.page || "";
+    let flag = !!DJ.badgeDot; try { flag = flag || sessionStorage.getItem("dj-badge-dot") === "1"; } catch (e) { /* 막혀 있으면 이 화면에서만 */ }
+    if (/^(my|cards)$/.test(page)) { try { sessionStorage.removeItem("dj-badge-dot"); } catch (e) { /* 무시 */ } DJ.badgeDot = false; flag = false; }   // MY·카드첩을 열면 점을 지움
+    document.querySelectorAll('[data-tab="my"], [data-nav="my"]').forEach(a => {
+      a.classList.toggle("has-dot", flag);
+      if (flag) a.setAttribute("aria-label", "MY, 새 배지가 있어요"); else a.removeAttribute("aria-label");
+    });
+  };
+  document.addEventListener("DOMContentLoaded", () => DJ.paintDot());
   // 새로 받은 배지가 있으면 저장하고 알림. 여러 개면 한 번에 묶어서
   DJ.checkBadges = function (data) {
     if (DJ.locked()) return [];
@@ -974,8 +985,10 @@
     });
     if (!fresh.length) return fresh;
     save("badges", got);
-    if (fresh.length === 1) DJ.toast(`‘${fresh[0].name}’ 배지를 받았어요`, fresh[0].tip + " · 카드첩에서 확인할 수 있어요");
-    else DJ.toast(`임장 배지 ${fresh.length}개를 받았어요`, fresh.map(b => b.name).join(", "));
+    // 알림을 띄우지 않고 MY 메뉴에 점만 찍습니다(보고 있는 가격·거리를 가리지 않게). 카드첩·MY 를 열면 점이 사라집니다.
+    // 이 점은 '이 화면에서 새로 받은 배지가 있다'는 표시일 뿐 저장하지 않으므로, 기록 형식·키는 그대로입니다.
+    try { sessionStorage.setItem("dj-badge-dot", "1"); } catch (e) { DJ.badgeDot = true; }   // 이 탭에서만 기억(기록 저장소와 무관)
+    DJ.paintDot();
     document.dispatchEvent(new Event("dj:badges"));
     return fresh;
   };
