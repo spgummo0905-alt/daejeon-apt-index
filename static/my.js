@@ -174,10 +174,13 @@
     const region = document.body.dataset.region;
     const projects = window.DJProjects ? DJProjects.list(region).filter(p => !p.archived) : [];
     const visits = window.DJVisitLog ? DJVisitLog.list({ region }) : [];
+    const beenSet = new Set(visits.map(v => v.slug));   // 다녀온 단지: 방문 기록(회차)이 있거나 '다녀왔어요' 날짜가 있는 단지, 단지마다 한 번
+    try { (DJ.records ? DJ.records.keys() : []).filter(k => k.startsWith("visit:")).forEach(k => { const s = k.slice(6), c = d.bySlug[s], v = DJ.visit(s); if (c && v.d) beenSet.add(s); }); } catch (e) { /* 세기만 하므로 실패해도 기록은 그대로 */ }
+    const beenN = beenSet.size;
     const ms = k => document.querySelector(`[data-ms="${k}"]`);
     // 임장 코스: 직접 짠 코스만 셈(관심 단지에서 저절로 생긴 코스는 '관심 단지'와 겹치므로 0). 아래 안내 문구의 '임장 코스 N곳'과 같은 기준
     const cs0 = DJ.load("course", {}), stops0 = DJ.courseStops(d).stops.length, courseN = (cs0 && !cs0.auto && Array.isArray(cs0.list) && cs0.list.length && stops0) ? stops0 : 0;
-    if (ms("favs")) { ms("favs").textContent = favs.length; ms("course").textContent = courseN; ms("visits").textContent = visits.length; }
+    if (ms("favs")) { ms("favs").textContent = favs.length; ms("course").textContent = courseN; ms("visits").textContent = beenN; }
     document.querySelectorAll("[data-my-stats] > div").forEach(c => { const dd = c.querySelector("dd"); c.classList.toggle("zero", !!dd && dd.textContent === "0"); });   // 비어 있는 단계는 흐리게(상태 구분용, 값은 그대로)
     const nx = document.querySelector("[data-my-next]");
     if (nx) {
@@ -186,7 +189,7 @@
       const tab = g => () => { DJ.myShow && DJ.myShow(g); scrollTo(0, 0); };
       let msg, label, act;
       // 실제 저장 상태 순서: 다녀옴 → 직접 짠 코스 → 후보 2곳 이상 → 후보 1곳 → 아무것도 없음
-      if (visits.length) { msg = `방문 기록 ${visits.length}건이 있어요`; label = "기록 정리하기"; act = tab("visit"); }
+      if (beenN) { msg = `다녀온 집 ${beenN}곳의 기록이 있어요`; label = "기록 정리하기"; act = tab("visit"); }
       else if (own) { msg = `임장 코스 ${stops}곳이 있어요`; label = "코스 보기"; act = tab("visit"); }
       else if (favs.length > 1) { msg = `관심 단지 ${favs.length}곳`; label = "비교해 보기"; act = go("compare.html?s=" + favs.slice(0, 4).map(c => encodeURIComponent(c.s)).join(",")); }
       else if (favs.length) { msg = "관심 단지 1곳"; label = "임장 코스 만들기"; act = tab("visit"); }
