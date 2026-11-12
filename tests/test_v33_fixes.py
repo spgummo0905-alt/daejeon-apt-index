@@ -12,6 +12,8 @@ def _r(p):
 def test_low_phone_detail_collapses_tag_strip_to_one_scroll_row_and_keeps_art_height():
     css = _r("static/style.css")
     seg = css[css.index("UX v3.3 · 낮은 폰"):]
+    nxt = seg.find("/* ===== UX ", 10)   # 이 시험은 v3.3 구간만 본다(뒤에 이어지는 다른 버전 블록은 대상 아님)
+    seg = seg[:nxt] if nxt > 0 else seg
     assert "@media (max-width: 719px) and (max-height: 700px)" in seg
     assert ".pb .mc-strip { flex-wrap: nowrap; overflow-x: auto;" in seg      # 태그는 한 줄로 옆으로 넘김(내용은 그대로)
     assert ".mc-art" not in seg                                              # 사진 높이는 건드리지 않음(가격 칩이 순위 배지를 가리지 않게)

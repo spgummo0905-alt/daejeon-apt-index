@@ -20,7 +20,6 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
   <div class="it-glow" aria-hidden="true"></div>
   <div class="it-wrap it-hero-grid">
     <div class="it-copy">
-      <p class="it-eyebrow"><span class="live-dot"></span>아파트 비교부터 현장 기록까지 · 실거래 매일 반영</p>
       <h1><span class="sr-only">집감: </span>좋은 집의 가치<br><em><span class="nb">더 쉽게 찾고,</span> <span class="nb">더 꼼꼼히 보다</span></em></h1>
       <p class="it-lead">마음에 드는 집을 찾고, 직접 둘러보세요.<br>실거래가·입지 비교부터 임장 코스와 현장 기록까지, 집감에서.</p>
       {% if not landing %}{# 지역 첫 화면: 글을 읽기 전에 바로 시작할 수 있게 검색 칸과 예산 칩을 둡니다. 예산 칩은 찾기의 주소 조건(?budget=)을 그대로 씁니다 #}
@@ -71,7 +70,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {% if c2 %}
 <section class="it-sec it-anatomy" id="it-card">
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>01 · 카드 읽는 법</p>
+    <p class="it-kicker" data-reveal>카드 읽는 법</p>
     <h2 data-reveal>복잡한 아파트 정보,<br><em>카드 한 장</em>에</h2>
     <div class="it-ana-grid">
       <div class="it-ana-card" data-reveal>
@@ -107,7 +106,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {# 3. 등급 사다리: 실제 분포 #}
 <section class="it-sec it-ladder">
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>02 · 등급</p>
+    <p class="it-kicker" data-reveal>등급</p>
     <h2 data-reveal>아파트의 차이를<br><em>등급으로 한눈에</em></h2>
     <div class="it-bar" role="img" aria-label="등급 분포: {% for d in grade_dist %}{{ d.g }} {{ d.n }}곳{{ ', ' if not loop.last }}{% endfor %}" data-reveal>
       {% for d in grade_dist %}{% if d.n %}<span class="seg g-{{ d.g }}" style="--w: {{ '%.2f' | format(d.pct) }}"><b>{{ d.g }}</b></span>{% endif %}{% endfor %}
@@ -122,7 +121,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {# 4. 이렇게 써 보세요 #}
 <section class="it-sec it-uses">
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>03 · 활용 방법</p>
+    <p class="it-kicker" data-reveal>활용 방법</p>
     <h2 data-reveal>임장 가기 전,<br><em>필요한 정보부터</em> 확인하세요</h2>
     <div class="it-use-grid">
       <a class="it-use" href="index.html#heat" data-reveal>
@@ -146,7 +145,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {% set apt_top = ("apt/" ~ top.slug ~ ".html") if top else "index.html" %}
 <section class="it-sec it-tools" id="it-tools">
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>04 · 임장 도구</p>
+    <p class="it-kicker" data-reveal>임장 도구</p>
     <h2 data-reveal>현장에서 확인한 것까지,<br><em>한곳에 기록하세요</em></h2>
     <p class="it-tools-lead" data-reveal>주차 자리, 밤의 소음, 역에서 걸어오는 길. 직접 가 봐야 아는 차이를 놓치지 마세요. 후보 저장부터 코스·체크리스트·메모까지 로그인 없이 시작할 수 있습니다.</p>
     <div class="it-flow">
@@ -213,7 +212,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 {% if hot %}{% set h = hot[0] %}
 <section class="it-sec it-live" data-hot>
   <div class="it-wrap">
-    <p class="it-kicker" data-reveal>05 · 동네 온도</p>
+    <p class="it-kicker" data-reveal>동네 온도</p>
     <h2 data-reveal>최근 거래 흐름이 강한 동네<br><span class="it-roll"><em data-hot-name>{{ h.d }}</em></span><span data-hot-j>{{ h.j }}</span></h2>
     <p class="it-live-lead" data-reveal>한 지역의 동네 온도 예시입니다. 최근 가격 변화와 거래량으로 지역 안의 흐름을 비교하고, 매달 새 실거래로 다시 계산합니다.</p>
     <div class="it-live-grid">
@@ -244,7 +243,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
 <section class="it-sec it-end">
   <div class="it-wrap">
     {% if regions | length > 1 %}
-    <p class="it-kicker" data-reveal>06 · 지역</p>
+    <p class="it-kicker" data-reveal>지역</p>
     <h2 data-reveal>어느 지역부터 볼까요?</h2>
     <div class="it-regions" data-reveal>
       {% for g in regions %}{% set cur = g.name == region and not landing %}

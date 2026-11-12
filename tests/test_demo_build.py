@@ -484,7 +484,7 @@ def test_account_menu_everywhere_and_intro_tools(tmp_path, monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     intro = (out / "intro.html").read_text(encoding="utf-8")
-    assert "04 · 임장 도구" in intro and "05 · 동네 온도" in intro and "#field" in intro and "my.html#course" in intro and "#alts" in intro
+    assert ">임장 도구<" in intro and ">동네 온도<" in intro and "04 · 임장 도구" not in intro and "#field" in intro and "my.html#course" in intro and "#alts" in intro
     assert "acct-pop" not in intro and "현장 사진" not in intro and "가족과 함께 보기" not in intro and "data-login" not in intro
 
     monkeypatch.setenv("SUPABASE_URL", "https://demo.supabase.co")

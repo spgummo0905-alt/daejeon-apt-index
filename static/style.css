@@ -5419,3 +5419,26 @@ body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.1
 /* 어두운 화면 보조 글자색: 밝은 초록 면(#1b3d35) 위 대비 4.15 → 5.27 (기준 4.5) */
 /* '실거래 매일 반영' 점은 실시간이 아니므로 깜빡이지 않게(가짜 실시간 느낌 금지) */
 .live-dot { animation: none; box-shadow: none; }
+
+/* ===== UX v5.1 · Fable 디자인 평가 반영: 템플릿 티 걷어내기, 청록 남색, 금색 한 가지 ===== */
+/* 인트로: 제목은 번지는 색 없이 한 가지, 버튼 빛 번짐·점 격자 배경 제거 */
+.it-hero h1 em, body[data-page="intro"] .it-hero h1 em { background: none; -webkit-text-fill-color: #fff; color: #fff; }
+.it-sec h2 em { background: none; -webkit-text-fill-color: var(--accent); color: var(--accent); }
+.it-btn.primary, body[data-page="intro"] .it-btn.primary { box-shadow: none; }
+.it-glow { display: none; }
+/* 카드: 남색의 보랏빛을 빼고 청록 쪽으로(딥그린과 한 가족), 금테는 얇은 단색 */
+.mc.g-S, .mcard.g-S, .hc-collect.g-S, .gcard.g-S { --in1: #0c2230; --in2: #12344a; --in3: #0a1b26; }
+.mc.g-S { background: #c9a24a; padding: 3px; box-shadow: 0 14px 30px rgba(6, 20, 28, .32); }
+.mc.g-S .mc-in { border-radius: 25px; }
+.mc.g-S .mc-in::before { opacity: .18; animation: none; }
+.mc.g-S .mc-art { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.mcard.g-S { border-width: 2px; background: linear-gradient(160deg, var(--in1), var(--in2) 55%, var(--in3)) padding-box, linear-gradient(#c9a24a, #c9a24a) border-box; }
+.hc-collect.g-S { background: #c9a24a; padding: 3px; box-shadow: 0 13px 26px rgba(6, 20, 28, .22); }
+.gcard.g-S { background: linear-gradient(150deg, var(--in1) 0%, var(--in2) 55%, var(--in3) 100%) padding-box, linear-gradient(#c9a24a, #c9a24a) border-box; }
+/* 금색: 등급 배지·종합 점수·지도 중심 세 곳만 번지는 금, 나머지는 단색 */
+.mc.g-S .mc-score strong, .mcard.g-S .mcard-score, .gcard.g-S .gcard-score { background: none; -webkit-text-fill-color: #d9b45a; color: #d9b45a; }
+.mc.g-S .mc-gems { color: #d9b45a; }
+/* 카드 속 보조 글자: 더 밝고 14px 이상 */
+.mc-title p { color: #d5dceb; font-size: 14px; }
+/* '(전용 84)' 같은 면적 보조 글자가 11.7px로 12px 기준 밑이라 12px로 */
+.mc .ar small, .mcard .ar small { font-size: 12px; opacity: .8; }
