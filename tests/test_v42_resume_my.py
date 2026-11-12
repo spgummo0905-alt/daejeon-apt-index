@@ -25,7 +25,7 @@ def test_resume_js_reads_only_and_never_writes_or_navigates_by_itself():
 
 def test_my_stats_keep_contract_and_only_add_state_labels():
     h = R("templates/my.html")
-    assert '<dt>관심 단지</dt><dd data-ms="favs">' in h and '<dt>임장 코스</dt><dd data-ms="course">' in h and '<dt>방문 기록</dt><dd data-ms="visits">' in h
+    assert '<dt>관심 단지</dt><dd data-ms="favs">' in h and '<dt>임장 코스</dt><dd data-ms="course">' in h and '<dt>다녀온 집</dt><dd data-ms="visits">' in h
     css = R("static/style.css")
     assert '1 · 담아 둔 집' in css and '3 · 다녀옴' in css
     assert 'classList.toggle("zero"' in R("static/my.js")

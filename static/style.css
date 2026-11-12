@@ -34,7 +34,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b1f1a; --surface: #12302a; --text: #f0efec; --text-2: #c3c2b7; --muted: #9a998f;
+    --bg: #0b1f1a; --surface: #12302a; --text: #f0efec; --text-2: #c3c2b7; --muted: #aeada3;
     --border: rgba(255, 255, 255, 0.10); --grid: #2c2c2a; --axis: #383835; --chip: #1b3d35;
     --accent: #6fd1ae; --pos: #fb923c; --neg: #7aa7ff;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --dim: #3a3a37; --ref: #898781;
@@ -4880,7 +4880,7 @@ p.muted { text-wrap: balance; }
 @media (max-width: 719px) { #favs.fav-rail.hc-flist { display: grid; overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; } #favs.fav-rail.hc-flist > * { flex: none; } }
 .hc-mini .cs-stamp { top: 6px; right: 8px; }
 .hc-mini.been { border-color: var(--gold); }
-.hc-collect .cs-stamp { position: absolute; left: 16px; top: 52px; right: auto; z-index: 2; }
+.hc-collect .cs-stamp { position: static; align-self: flex-start; margin: 2px 0 0; transform: rotate(-3deg); z-index: 2; }   /* v4.9: 글씨 위에 얹지 않고 이름 위 한 줄 */
 .hc-collect { position: relative; }
 @media (prefers-reduced-motion: reduce) { .hc-my-rail { scroll-behavior: auto; } }
 
@@ -5399,3 +5399,8 @@ body[data-page="intro"] .brand-sym { box-shadow: 0 0 0 1.5px rgba(255,255,255,.1
 /* ===== UX v4.7 · 상세 큰 카드 배지: 좁은 화면에서 가격+메달이 넘치면 메달을 위 줄로 (잘림 방지) ===== */
 .mc-badges.wrap { flex-wrap: wrap-reverse; justify-content: flex-start; row-gap: 6px; }
 .mc-badges.wrap .mc-medals { margin-left: 0; }
+
+/* ===== UX v4.9 · Impeccable 점검 반영 ===== */
+/* 어두운 화면 보조 글자색: 밝은 초록 면(#1b3d35) 위 대비 4.15 → 5.27 (기준 4.5) */
+/* '실거래 매일 반영' 점은 실시간이 아니므로 깜빡이지 않게(가짜 실시간 느낌 금지) */
+.live-dot { animation: none; box-shadow: none; }

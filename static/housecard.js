@@ -76,8 +76,10 @@
     if (window.DJ_SAT && c.la && c.ln) { photo = el("span", "hc-photo"); photo.dataset.s = c.s; photo.dataset.la = c.la; photo.dataset.ln = c.ln; photo.setAttribute("aria-hidden", "true"); photo.append(el("i", "hc-pin")); }
     const nums = el("span", "hc-meta");   // 숫자 묶음마다 줄이 끊기지 않게 각각 한 덩어리
     [c.y ? c.y + "년" : "", c.hh ? c.hh.toLocaleString() + "세대" : "", c.f && c.f.subway != null ? "역 " + Math.round(c.f.subway) + "m" : ""].filter(Boolean).forEach(x => nums.append(el("span", "hc-f", x)));
-    inn.append(top); if (photo) inn.append(photo); inn.append(el("strong", "hc-cname", c.n), nums, foot);
-    const b = !(opt && opt.stamp === false) && DJ.been && DJ.been(c); if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
+    inn.append(top); if (photo) inn.append(photo);
+    const b = !(opt && opt.stamp === false) && DJ.been && DJ.been(c);
+    if (b) { inn.append(el("span", "cs-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }   // 도장은 이름 위 한 줄로 흐름 안에 둠(이름을 가리지 않음)
+    inn.append(el("strong", "hc-cname", c.n), nums, foot);
     fr.append(inn); a.append(fr); return a;
   }
   DJ.hc = { mini, feature, fcard, col, collect, art, grade };
