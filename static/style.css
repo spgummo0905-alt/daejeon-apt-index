@@ -5499,3 +5499,8 @@ h2, h3 { font-weight: 700; }
 /* D1 좁은 폰·터치: 카드 칸이 화면보다 넓어지지 않게(320px MY 3px 넘침), 직접 입력칸 높이 44px */
 .card-grid { grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); }
 .sv-own input { height: 44px; }
+
+/* D2 차트 글자: 폰 폭에 맞춰 차트가 줄어도 글자가 너무 작아지지 않게(실제 화면 기준 약 10~12px 이상) */
+.chart .axis { font-size: 15px; }
+.chart .lbl, .chart .val { font-size: 14px; }
+.pc-ylab { font-size: 14px; }
