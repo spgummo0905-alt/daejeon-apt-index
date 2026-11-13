@@ -1,0 +1,4 @@
+window.__up=async(names)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));const base='https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/BASE/side/';const map=JSON.parse(localStorage.getItem('__imgmap')||'{}');const ed=tinymce.activeEditor;
+for(const n of names){ if(map[n]) continue; const before=(ed.getContent().match(/\[##_Image[^\]]*_##\]/g)||[]).length; const blob=await (await fetch(base+n+'.jpg')).blob(); const dt=new DataTransfer(); dt.items.add(new File([blob],n+'.jpg',{type:'image/jpeg'})); ed.focus(); ed.getBody().dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));
+ for(let i=0;i<30;i++){ await sleep(700); const all=ed.getContent().match(/\[##_Image[^\]]*_##\]/g)||[]; if(all.length>before){ map[n]=all[all.length-1]; break; } } if(!map[n]) map[n]='FAIL'; }
+localStorage.setItem('__imgmap',JSON.stringify(map)); return names.map(n=>n+':'+(map[n]==='FAIL'?'FAIL':'ok'));};
