@@ -25,7 +25,9 @@
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
-{% if site.adsense_client and not demo %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>{% endif %}
+{# 광고는 글을 읽는 화면에만(단지 상세·랭킹·테마·역별·산출 방법). 찾기·비교·지도·MY·홈 같은 쓰는 화면과 앱 안 화면은 빠르고 방해 없게 뺀다. 목록을 늘리면 tests/test_v63_ads_pages.py 도 함께 고친다. #}
+{% set _ad_pages = ["apt", "rank", "themes", "stations", "methodology"] %}
+{% if site.adsense_client and not demo and (page_path.split("/")[0].replace(".html", "") in _ad_pages) %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>{% endif %}
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
 <link rel="icon" href="{{ root }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
