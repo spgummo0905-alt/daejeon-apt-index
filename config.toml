@@ -18,6 +18,8 @@ naver_site_verification = "ffb371c396da76d1bb43d727523fbb50b1079361"
 # 위성 사진 대리 서버(Supabase 함수 satellite; Cloudflare는 브이월드가 거절해 쓰지 않음). 배포한 주소를 넣으면 단지 상세에 '위에서 본 단지'가 나옵니다. 비우면 나오지 않습니다.
 satellite_url = "https://bgfhduwmmqudlcobbodr.supabase.co/functions/v1/satellite"
 google_site_verification = "ih0mjE1xK4FiqFC_zBSPhggbr7LM-IztpDvm3yzQGyU"
+# 구글 애드센스 게시자 ID(ca-pub-…). 넣으면 모든 페이지에 광고 코드와 ads.txt 를 만들고 처리방침에 광고 안내를 넣습니다. 비우면 아무것도 넣지 않습니다.
+adsense_client = "ca-pub-9082842625119087"
 # 방문 통계(Cloudflare Web Analytics) 토큰. 비워 두면 통계 코드와 처리방침 안내를 넣지 않습니다.
 cf_beacon_token = "c317ca59ed1c4a5e995aadd0b450215a"
 # 위쪽 지역 고르기 (각 지역 사이트 주소). 지역마다 폴더 하나 (대전 /daejeon/, 세종은 config.sejong.toml 로 /sejong/ …).
