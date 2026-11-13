@@ -269,6 +269,9 @@ jobs:
       # 만들어진 지역 폴더만 카드로 보여 주므로 지역 사이트를 모두 만든 뒤에 합니다
       - name: 맨 앞 지역 고르기 화면
         run: python -m djdex landing --out site
+      # 내부 링크를 canonical(.html 없는 주소)과 맞춤: 같은 화면이 두 주소로 크롤링되는 것을 막아 색인 누락을 줄입니다
+      - name: 내부 링크 canonical 정리
+        run: python scripts/clean_links.py site
       # 배포본 화면 코드 압축: 설명 주석을 지우고 이름을 줄여 그대로 가져다 쓰기 어렵게 (저장소 원본은 그대로).
       # 압축에 실패하면 압축하지 않은 채로 배포합니다
       - name: 화면 코드 압축
