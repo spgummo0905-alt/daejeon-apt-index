@@ -266,6 +266,36 @@
     })().finally(() => { pushing = null; });
     return pushing;
   }
+  // 같은 단지 메모를 두 기기가 따로 고친 경우: 더 새 쪽으로 덮어쓰면 다른 쪽이 사라지므로, 이 기기에 아직 못 보낸 수정이 있고
+  // 서버의 것이 이 기기가 마지막으로 본 것과 다를 때만 두 쪽을 합쳐(R.mergeVisit, 처음 이을 때와 같은 규칙) 다시 보냅니다.
+  // 그 밖의 기록은 건드리지 않고(받아오기도 하지 않음), 지운 체크·메모·사진이 되살아나지 않게 더 새 쪽을 그대로 받습니다.
+  async function mergeConflicts() {
+    const m = meta(), at = owns() && m && m.uid === S.user.id && await token();
+    if (!at) return [];
+    const t = R.times(), dirty = localKeys().filter(k => k.startsWith("visit:") && m.sent[k] !== (t[k] || 1) && isObj(getLocal(k)));
+    if (!dirty.length) return [];
+    const merged = [];
+    for (let i = 0; i < dirty.length; i += 40) {
+      const part = dirty.slice(i, i + 40);
+      const rows = await call("/rest/v1/user_kv?select=k,v,t&k=in.(" + part.map(k => encodeURIComponent('"' + k + '"')).join(",") + ")", null, at);
+      if (!owns()) throw new Error("계정이 변경됐어요");
+      (rows || []).forEach(r => {
+        if (!part.includes(r.k) || !isObj(r.v) || m.sent[r.k] === r.t) return;   // 서버 것이 이 기기가 마지막으로 본 것이면 충돌이 아님
+        const mine = getLocal(r.k);
+        if (JSON.stringify(mine) === JSON.stringify(r.v)) { t[r.k] = r.t; m.sent[r.k] = r.t; return; }
+        const v = R.mergeVisit(mine, r.v);
+        if (JSON.stringify(v) !== JSON.stringify(mine) && !putLocal(r.k, v)) throw new Error("기기 저장 공간이 부족해요");
+        t[r.k] = Math.max(Date.now(), r.t + 1, (t[r.k] || 0) + 1); delete m.sent[r.k];   // 합친 것을 새 수정으로 보냄
+        merged.push(r.k);
+      });
+    }
+    R.setTimes(t); if (!R.setMeta(m)) throw new Error("기기 저장 공간이 부족해요");
+    if (merged.length) {
+      document.dispatchEvent(new CustomEvent("dj:merged", { detail: merged }));
+      DJ.toast("다른 기기에서 고친 메모와 합쳤어요", "두 내용이 모두 남아 있어요. 필요 없는 줄은 지워도 돼요.", 8000);
+    }
+    return merged;
+  }
   // 다른 기기에서 바뀐 기록을 받아 이 기기보다 새 것만 반영. 바뀐 기록 이름을 돌려줌
   async function pull() {
     const m = meta(), at = owns() && m && m.uid === S.user.id && await token();
@@ -602,15 +632,21 @@
         setState("saved");
         return ["*"];
       }
+      // 서버에 다른 기기의 같은 메모가 있으면 덮어쓰기 전에 합침. 이 확인이 요청 형식 문제(400·404·406 등)로 거절돼도 저장이 막히지 않게 건너뜀
+      // (연결 문제·로그인 만료·계정 변경은 그대로 오류로 두어 기록을 지키고 "다시 시도"가 뜸)
+      let mg = [];
+      try { mg = await mergeConflicts(); } catch (e) { if (!(e && [400, 404, 406, 422].includes(e.status))) throw e; }
       await push();
       const ch = withPull ? await pull() : [];
       setState("saved");
-      return ch;
+      return mg.length ? Array.from(new Set([...ch, ...mg])) : ch;
     } catch (e) {
       setState(S.user ? "error" : "");
       return [];
     } finally { S.linking = false; }
   }
+  // 인터넷이 끊겨 보내지 못했다가 연결이 돌아오면 한 번 자동으로 다시 보냄 (이미 있는 '다시 보내기'를 그대로 부름. 받아오기는 하지 않음)
+  addEventListener("online", () => { if (S.user && S.state === "error") sync(false); });
   // 화면을 떠날 때 남은 저장을 마저 보냄
   addEventListener("pagehide", () => {
     if (timer) { clearTimeout(timer); timer = null; push(true).catch(() => {}); }

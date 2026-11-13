@@ -370,6 +370,8 @@
     t.rows = 3; t.placeholder = "동·층·향, 단지 분위기, 부동산에서 들은 이야기";
     t.setAttribute("aria-label", name + " 메모");
     t.value = v.m || "";
+    // 다른 기기의 메모와 합쳐졌으면 열려 있는 칸도 합쳐진 글로 (옛 글로 다시 덮어쓰지 않게)
+    document.addEventListener("dj:merged", e => { if ((e.detail || []).includes("visit:" + slug)) { v = DJ.visit(slug); t.value = v.m || ""; } });
     t.addEventListener("input", () => { v.m = t.value; keep(); });   // 못 남기면 DJ.save 가 알려요. 입력한 글은 칸에 그대로 남아 있어요
     const been = el("button", "btn fm-been", "");
     been.type = "button";
