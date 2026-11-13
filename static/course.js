@@ -156,8 +156,18 @@
     const enough = st.list.length >= 2;
     body.hidden = !enough;
     empty.hidden = enough;
+    const top = sec.querySelector("[data-cs-top]");
+    if (top) top.hidden = true;
     if (!enough) return;
     const { stops, legs, total, move } = plan();
+    // 맨 위 "현장 체크 시작": 첫 단지의 기존 현장 체크 버튼과 같은 주소로만 이어짐 (저장·순서 계산은 그대로)
+    if (top && stops.length) {
+      const c0 = stops[0], b0 = DJ.been(c0), a = top.querySelector("[data-cs-top-go]");
+      a.textContent = (b0 ? "현장 체크 이어서 하기" : "현장 체크 시작") + " · 첫 단지 " + c0.n;
+      a.href = DJ.href(c0) + "#field";
+      top.querySelector("[data-cs-top-sum]").textContent = stops.length + "곳 · 직선거리 " + dist(total) + " · " + SPEED[st.mode].label + " 약 " + hm(move);
+      top.hidden = false;
+    }
     const sum = sec.querySelector("[data-cs-sum]");
     sum.replaceChildren();
     [["단지", stops.length + "곳"], ["직선거리 합계", dist(total)], [SPEED[st.mode].label + " 예상", "약 " + hm(move)], ["둘러보기 포함", "약 " + hm(move + VISIT * stops.length)]]
