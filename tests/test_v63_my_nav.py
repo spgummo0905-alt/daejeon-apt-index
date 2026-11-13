@@ -4,14 +4,14 @@ R = pathlib.Path(__file__).resolve().parent.parent
 def _r(p): return (R / p).read_text(encoding="utf8")
 def test_stat_cells_become_links_to_lists():
     j = _r("static/my.js")
-    assert "DJ.myGo" in j and 'el("a", "ms-go"' in j
+    assert "DJ.myGo = (g, ids) =>" in j and 'el("a", "ms-go"' in j and "DJ.myGo(g[0], g[1])" in j   # 정의와 호출이 모두 있어야 함
     for sec in ("my-favs", "course", "visit-history", "notes"):
         assert sec in j
     h = _r("templates/my.html")
     assert 'id="my-favs"' in h and 'id="course"' in _r("templates/_course.html") and 'id="visit-history"' in h
 def test_tab_tap_no_longer_jumps_to_page_top():
     j = _r("static/my.js")
-    assert "scrollTo(0, 0)" not in j and "DJ.myTabsTop" in j and "data-my-top" in j
+    assert "scrollTo(0, 0)" not in j and "DJ.myTabsTop = toTabs" in j and "DJ.myTabsTop && DJ.myTabsTop()" in j and "data-my-top" in j
     assert "data-my-top" in _r("templates/my.html")
 def test_duplicate_cards_entry_removed_but_summary_kept_on_top():
     h = _r("templates/my.html")
