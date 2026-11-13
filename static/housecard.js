@@ -99,15 +99,10 @@
       const more = box.querySelector("[data-hc-feat-more]"); if (more) more.hidden = false;
     }).catch(() => {});
   }
-  // MY 맨 위 '내 카드첩': 모은 카드 수 + 관심 카드(없으면 최근 본 단지) 2~3장을 바로. 숫자는 기존 앨범·방문 기록에서 세기만 함
+  // MY '내 카드첩' 한 줄: 모은 카드 수 + 임장 배지 수. 숫자는 기존 앨범·방문 기록에서 세기만 함(카드 그림은 카드첩 화면에서)
   const my = document.querySelector("[data-hc-my]");
   if (my) DJ.data().then(d => {
     const all = d.complexes.filter(c => c.g && c.g !== "-"), n = DJ.albumCount ? DJ.albumCount(all) : 0;
     const cnt = my.querySelector("[data-hc-my-n]"); if (cnt) cnt.textContent = `${n.toLocaleString()}장 모음 · 임장 배지 ${Object.keys(DJ.earned ? DJ.earned() : {}).length}/${DJ.BADGES ? DJ.BADGES.length : 0}개`;
-    const seen = new Set(), pick = [];
-    [...DJ.favs(), ...DJ.recent().map(r => r && r.s)].forEach(s => { if (s && !seen.has(s) && d.bySlug[s] && pick.length < 3) { seen.add(s); pick.push(d.bySlug[s]); } });
-    const rail = my.querySelector("[data-hc-my-rail]"), empty = my.querySelector("[data-hc-my-empty]");
-    if (!pick.length) return;
-    rail.replaceChildren(...pick.map(collect)); rail.hidden = false; if (empty) empty.hidden = true;
   }).catch(() => {});
 })();
