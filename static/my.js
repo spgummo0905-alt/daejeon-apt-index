@@ -21,7 +21,19 @@
     if (e) e.scrollIntoView({ block: "start" });
     return true;
   }
-  seg.addEventListener("click", ev => { const b = ev.target.closest("[data-mg-btn]"); if (b) { show(b.dataset.mgBtn); scrollTo(0, 0); } });
+  // 탭 바가 화면 맨 위에 붙는 자리(= 위 카드첩 영역이 지나간 자리)로 올려, 눌린 칸의 내용이 바로 보이게 한다
+  const topY = () => { const a = document.querySelector("[data-my-top]"); return a ? Math.max(0, Math.round(a.getBoundingClientRect().top + scrollY)) : 0; };
+  const toTabs = () => { const y = topY(); if (scrollY !== y) scrollTo({ top: y, behavior: DJ.calm ? "auto" : "smooth" }); };
+  DJ.myTabsTop = toTabs;
+  // 숫자 칸을 누르면 그 칸의 목록으로: 보이는 첫 구역(없으면 탭 바 아래 맨 앞)
+  DJ.myGo = (g, ids) => {
+    show(g);
+    const t = (ids || []).map(i => document.getElementById(i)).find(e => e && !e.hidden && e.offsetParent !== null);
+    if (!t) { toTabs(); return; }
+    const y = Math.max(0, Math.round(t.getBoundingClientRect().top + scrollY - seg.offsetHeight - 12));
+    scrollTo({ top: y, behavior: DJ.calm ? "auto" : "smooth" });
+  };
+  seg.addEventListener("click", ev => { const b = ev.target.closest("[data-mg-btn]"); if (b) { show(b.dataset.mgBtn); toTabs(); } });
   addEventListener("hashchange", fromHash);
   let saved = null; try { saved = sessionStorage.getItem(KEY); } catch (e) {}
   if (!fromHash()) show(saved);
@@ -29,12 +41,6 @@
 (function () {
   const { el } = DJ;
   DJ.data().then(d => {
-    // 카드첩으로 가는 카드: 모은 카드·받은 배지 수
-    const sum = document.querySelector("[data-cards-sum]");
-    if (sum) {
-      const all = d.complexes.filter(c => c.g && c.g !== "-");
-      sum.textContent = `카드 ${DJ.albumCount(all).toLocaleString()}장 · 임장 배지 ${Object.keys(DJ.earned()).length}/${DJ.BADGES.length}개`;
-    }
     const favs = DJ.favs().map(s => d.bySlug[s]).filter(Boolean);
     const recent = DJ.recent().map(r => d.bySlug[r.s]).filter(Boolean);
     const journal = document.querySelector("[data-visit-history]");
@@ -182,12 +188,21 @@
     // 임장 코스: 직접 짠 코스만 셈(관심 단지에서 저절로 생긴 코스는 '관심 단지'와 겹치므로 0). 아래 안내 문구의 '임장 코스 N곳'과 같은 기준
     const cs0 = DJ.load("course", {}), stops0 = DJ.courseStops(d).stops.length, courseN = (cs0 && !cs0.auto && Array.isArray(cs0.list) && cs0.list.length && stops0) ? stops0 : 0;
     if (ms("favs")) { ms("favs").textContent = favs.length; ms("course").textContent = courseN; ms("visits").textContent = beenN; }
+    const GO = { favs: ["favs", ["my-favs"], "관심 단지 목록 보기"], course: ["visit", ["course"], "임장 코스 보기"], visits: ["visit", ["visit-history", "notes", "course"], "다녀온 집 기록 보기"] };
+    document.querySelectorAll("[data-my-stats] > div").forEach(c => {
+      const k = c.querySelector("dd") && c.querySelector("dd").dataset.ms, g = GO[k], dt = c.querySelector("dt");
+      if (g && dt && !dt.querySelector("a")) {
+        const a = el("a", "ms-go", dt.textContent); a.href = "#" + g[1][0]; a.setAttribute("aria-label", g[2]);
+        a.addEventListener("click", ev => { ev.preventDefault(); DJ.myGo(g[0], g[1]); });
+        dt.replaceChildren(a);
+      }
+    });
     document.querySelectorAll("[data-my-stats] > div").forEach(c => { const dd = c.querySelector("dd"); c.classList.toggle("zero", !!dd && dd.textContent === "0"); });   // 비어 있는 단계는 흐리게(상태 구분용, 값은 그대로)
     const nx = document.querySelector("[data-my-next]");
     if (nx) {
       const stops = DJ.courseStops(d).stops.length, cs = DJ.load("course", {}), own = !!(cs && !cs.auto && Array.isArray(cs.list) && cs.list.length && stops);   // 직접 짠 코스만 '코스 있음'(관심 단지에서 저절로 생긴 코스는 아님)
       const go = href => () => { location.href = href; };
-      const tab = g => () => { DJ.myShow && DJ.myShow(g); scrollTo(0, 0); };
+      const tab = g => () => { DJ.myShow && DJ.myShow(g); DJ.myTabsTop && DJ.myTabsTop(); };
       let msg, label, act;
       // 실제 저장 상태 순서: 다녀옴 → 직접 짠 코스 → 후보 2곳 이상 → 후보 1곳 → 아무것도 없음
       if (beenN) { msg = `다녀온 집 ${beenN}곳의 기록이 있어요`; label = "기록 정리하기"; act = tab("visit"); }

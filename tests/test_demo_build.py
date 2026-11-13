@@ -241,8 +241,9 @@ def test_cards_page_today_badges_album(tmp_path):
         assert sec in cards, sec
     assert cards.index('id="today"') < cards.index('id="badges"') < cards.index('id="album"')
     my = (out / "my.html").read_text(encoding="utf-8")
-    assert 'id="album"' not in my and 'class="to-cards" href="cards.html"' in my   # 관심 단지 화면은 카드첩으로 가는 카드만
-    assert my.index('id="favs"') < my.index('id="course"') < my.index('class="to-cards"')
+    assert 'id="album"' not in my and 'class="to-cards"' not in my   # 관심 단지 화면: 카드첩 입구는 위 '내 카드첩' 한 곳뿐(아래 중복 카드 없음)
+    assert 'data-hc-my' in my and '카드첩 열기' in my and '카드첩 · 임장 배지' not in my   # 위 '내 카드첩' 한 곳만(아래 중복 카드와 그 요약 문구 없음)
+    assert my.index('id="favs"') < my.index('id="course"')
     app = (out / "static" / "app.js").read_text(encoding="utf-8")
     assert "DJ.collect = function" in app and "DJ.miniCard = function" in app and "DJ.memo = function" in app
     assert app.index("DJ.collect(c.s)") < app.index("DJ.addRecent(c)")   # 처음 쓰는 기기에서 '첫 카드'로 세어지게
