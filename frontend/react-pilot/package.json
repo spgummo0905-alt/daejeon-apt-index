@@ -1,0 +1,29 @@
+{
+  "name": "jipgam-react-pilot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "집감 React 파일럿(R1): 운영 사이트와 완전히 분리된 격리 폴더. 운영 파일·빌드·저장소를 건드리지 않음.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "size": "node scripts/size.mjs"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "31.0.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

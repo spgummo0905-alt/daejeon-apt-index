@@ -1,0 +1,12 @@
+/* 운영 style.css 와 같은 값만 사용 */
+:root { --deep:#0F3D33; --cream:#F7F4EC; --action:#13795b; }
+body { margin:0; background:var(--cream); color:var(--deep); font:16px/1.5 system-ui, "Apple SD Gothic Neo", sans-serif; }
+.jg-lab { max-width:480px; margin:0 auto; padding:20px 16px 60px; }
+.jg-card { background:#fff; border:1px solid #e1dccd; border-radius:16px; padding:14px; margin:12px 0; }
+.jg-card h3 { margin:6px 0 2px; font-size:18px; }
+.jg-sub { color:#3c5a52; font-size:14px; margin:0 0 6px; }
+.jg-est { color:#3c5a52; font-size:14px; }
+.jg-grade { display:inline-flex; min-width:32px; height:32px; padding:0 8px; align-items:center; justify-content:center; border-radius:9px; color:#fff; font-weight:800; }
+.jg-grade--none { background:#e4dfd0; color:var(--deep); font-weight:700; font-size:13px; }
+.jg-notice { border-radius:12px; padding:10px 12px; font-size:14px; background:#e6f4ee; margin:8px 0; }
+.jg-notice--failed { background:#fdecea; color:#7a2a1d; }
