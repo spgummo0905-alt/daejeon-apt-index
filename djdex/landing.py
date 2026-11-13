@@ -281,6 +281,11 @@ def build(cfg, out_dir: Path) -> int:
                                             + f"Sitemap: {base}sitemap.xml\n", encoding="utf-8")
         _write_llms(out_dir, base, rows, today, posts)
 
+    # 애드센스 광고 판매 권한 확인 파일(ads.txt)은 도메인 맨 앞 주소에만 둘 수 있어요
+    client = cfg.site.get("adsense_client", "")
+    if client.startswith("ca-pub-"):
+        (out_dir / "ads.txt").write_text(f"google.com, {client[3:]}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
+
     # 안드로이드 앱 소유 확인 파일은 맨 앞 주소에만 둘 수 있어요
     from .site import write_assetlinks
     write_assetlinks(out_dir, cfg, root=True)

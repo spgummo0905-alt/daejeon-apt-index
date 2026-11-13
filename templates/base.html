@@ -25,6 +25,7 @@
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
+{% if site.adsense_client and not demo %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>{% endif %}
 {% if demo %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
 <link rel="icon" href="{{ root }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
