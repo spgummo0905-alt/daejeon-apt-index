@@ -5526,3 +5526,19 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .hc-my .hcm-t .hc-my-n, .hc-my .hcm-t span { margin: 0; font-size: 14px; color: var(--text-2); }
 .hc-my .hcm-go { margin-left: auto; font-size: 24px; line-height: 1; color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { a.hc-my:active { transform: none; } }
+
+/* D3 현장 모드 안 2: 체크리스트가 맨 위, 맨 아래에 진행 · 저장 상태 · '오늘 다녀왔어요' 고정 줄 */
+.fm-bar { position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); z-index: 3; display: flex; align-items: center; gap: 10px; margin: 8px -20px calc(-16px - env(safe-area-inset-bottom)); padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -6px 16px rgba(0, 0, 0, .08); }
+.fm-bar-st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fm-bar-st b { font-size: 16px; }
+.fm-bar-st span { font-size: 14px; line-height: 1.35; color: var(--text-2); }
+.fm-bar.bad { border-top-color: #d33; }
+.fm-bar.bad { flex-wrap: wrap; }   /* 저장 실패일 때만: 문구는 윗줄 전체, 버튼 둘은 아랫줄에 나란히 */
+.fm-bar.bad .fm-bar-st { flex: 1 1 100%; }
+.fm-bar.bad .fm-bar-retry, .fm-bar.bad .fm-bar-go { flex: 1 1 0; min-width: 0; }
+.fm-bar.bad .fm-bar-st span { color: var(--text); font-weight: 700; }
+.fm-bar .fm-bar-go { flex: none; min-height: 52px; min-width: 132px; margin: 0; padding: 0 14px; justify-content: center; font-size: 16px; font-weight: 800; }
+.fm-bar .fm-bar-go.on { background: color-mix(in srgb, var(--s3) 15%, var(--surface)); color: var(--text); border-color: var(--s3); }
+.fm-bar .fm-bar-retry { flex: none; min-height: 44px; }
+.kb-open .fm-bar { display: none; }   /* 키보드가 올라오면 입력칸을 가리지 않게 */
+.pj-embed-field .fm-bar { display: none; }
