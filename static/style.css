@@ -5555,3 +5555,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 
 /* D3 핵심 포인트 칸: 긴 단지 이름·문장이 칸 밖으로 늘어나 320px 화면이 옆으로 밀리던 것(세종 새나루마을 등) */
 .pt-k, .pt-s, .pt-v { overflow-wrap: anywhere; }
+
+/* C1 수집 카드 틀: 갤러리 S 만 3px 이던 것을 카드첩과 같은 4px 로 (등급 색·반짝임·이름 크기는 그대로) */
+.hc-collect.g-S { padding: 4px; }
