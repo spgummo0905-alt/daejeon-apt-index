@@ -1235,17 +1235,19 @@ def hill_view(c: dict) -> dict | None:
 
 def hill_svg(pf: list[float], dist: float, name: str) -> Markup:
     """역 → 단지 직선 단면 (땅 높이). 잡음이 산처럼 보이지 않게 세로 범위는 최소 20m."""
-    W, H, L, R, T, B = 560, 170, 44, 16, 14, 30
+    W, H, R, T, B = 360, 150, 12, 14, 34   # 폰 폭(약 230~330px)에 맞춰 줄어드는 정도를 줄여 글자가 읽히게(전: 가로 560 기준)
     lo, hi = min(pf), max(pf)
     span = max(20.0, hi - lo)
     mid = (lo + hi) / 2
     y0, y1 = mid - span / 2 - 2, mid + span / 2 + 2
+    step = 10 if span <= 40 else 20 if span <= 100 else 50
+    ymax_label = len(f"{math.floor(y1 / step) * step:.0f}m")   # 가장 긴 눈금 글자 수(3자리 높이면 4글자)
+    L = 14 + 11 * ymax_label   # 눈금 글자(좁은 화면 기준 약 18px)가 잘리지 않을 왼쪽 여백
     X = lambda k: L + (W - L - R) * k / (len(pf) - 1)
     Y = lambda v: T + (H - T - B) * (1 - (v - y0) / (y1 - y0))
     pts = [(X(k), Y(v)) for k, v in enumerate(pf)]
     line = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
     area = f"M{pts[0][0]:.1f},{H - B} L" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + f" L{pts[-1][0]:.1f},{H - B} Z"
-    step = 10 if span <= 40 else 20 if span <= 100 else 50
     grid = []
     v = math.ceil(y0 / step) * step
     while v <= y1:
