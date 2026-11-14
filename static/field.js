@@ -36,6 +36,7 @@
 
   // 저장 상태 한 줄: 이 기기에 저장 / 계정에 보내는 중 / 계정에도 저장 / 계정 저장 실패(기기에는 있음)를 실제 결과로만 구분 (저장 확인 전에는 '저장'이라고 쓰지 않음)
   let pending = false, saveEl = null, retryBtn = null;
+  let beenBtn = null, fmProg = [0, 0], bar = null;   // 고정 줄이 비춰 보는 값(진행·'다녀왔어요' 단추)
   function saveMark() { pending = !!(DJ.sync && DJ.sync.user); paintSave(); }
   function paintSave() {
     if (!saveEl) return;
@@ -47,6 +48,32 @@
     else t = "이 기기와 내 계정에 저장됐어요.";
     saveEl.firstChild.textContent = t; saveEl.classList.toggle("bad", bad);
     retryBtn.hidden = !bad;
+    paintBar();
+  }
+  // 아래 고정 줄: 진행 n/N · 저장 상태 문구 · '오늘 다녀왔어요'. 값은 기존 칸(체크 수·저장 문구·다녀왔어요 단추)을 그대로 읽어 비추고, 단추는 기존 단추를 눌러 줄 뿐이라 저장 확인 뒤에만 켜지는 규칙이 같다
+  function buildBar() {
+    if (bar) { paintBar(); return; }
+    bar = el("div", "fm-bar"); bar.dataset.fmBar = "";
+    const st = el("div", "fm-bar-st"), prog = el("b", "", ""), save = el("span", "", "");
+    prog.dataset.fbProg = ""; save.dataset.fbSave = ""; save.setAttribute("aria-hidden", "true");   // 같은 문구는 위 칸의 role=status 가 이미 읽어 줌
+    st.append(prog, save);
+    const retry = el("button", "btn sm fm-bar-retry", "다시 보내기"); retry.type = "button"; retry.hidden = true; retry.dataset.fbRetry = "";
+    retry.addEventListener("click", () => retryBtn && retryBtn.click());
+    const go = el("button", "btn primary fm-bar-go", "오늘 다녀왔어요"); go.type = "button"; go.dataset.fbGo = "";
+    go.addEventListener("click", () => beenBtn && beenBtn.click());
+    bar.append(st, retry, go);
+    body.after(bar); paintBar();
+  }
+  function paintBar() {
+    if (!bar) return;
+    bar.querySelector("[data-fb-prog]").textContent = fmProg[1] ? `체크 ${fmProg[0]}/${fmProg[1]}` : "현장 기록";
+    const sv = saveEl && saveEl.firstChild ? saveEl.firstChild.textContent : "";
+    bar.querySelector("[data-fb-save]").textContent = sv;
+    const bad = !!(saveEl && saveEl.classList.contains("bad"));
+    bar.classList.toggle("bad", bad);
+    bar.querySelector("[data-fb-retry]").hidden = !bad;
+    const go = bar.querySelector("[data-fb-go]");
+    if (beenBtn) { go.textContent = beenBtn.textContent; go.classList.toggle("on", beenBtn.classList.contains("on")); go.setAttribute("aria-pressed", beenBtn.getAttribute("aria-pressed") || "false"); }
   }
   document.addEventListener("dj:sync-state", e => { if (e.detail === "saved") pending = false; paintSave(); });
   function open() {
@@ -88,7 +115,8 @@
     last = [c, d];
     journal = DJVisitLogUI({ region, slug, names: { [slug]: name }, data: d, defaultProjectId: window.DJWorkspaceEmbed?.projectId });
     DJ.hasVisitLogDraft = journal.dirty;
-    body.replaceChildren(...[course(c, d), where(c), checks(c), quotes(c), photos(), memo(), journal.element].filter(Boolean));
+    body.replaceChildren(...[checks(c), quotes(c), course(c, d), where(c), photos(), memo(), journal.element].filter(Boolean));
+    buildBar();   // 아래 고정 줄(진행·저장 상태·다녀왔어요): 기존 칸의 상태를 비춰 보일 뿐, 저장 코드는 그대로
     if (DJ.paintSync) DJ.paintSync();
   }
 
@@ -189,7 +217,7 @@
     const s = section("현장 체크리스트", items.length ? "숫자로 본 이 단지의 약점부터 직접 확인해 보세요." : null);
     const cnt = el("span", "fm-cnt");
     s.querySelector("h4").append(cnt);
-    const paint = () => { const [n, all] = DJ.visitDone(v, items); cnt.textContent = `${n}/${all}`; cnt.classList.toggle("done", n === all); };
+    const paint = () => { const [n, all] = DJ.visitDone(v, items); cnt.textContent = `${n}/${all}`; cnt.classList.toggle("done", n === all); fmProg = [n, all]; paintBar(); };
     const row = (txt, why, on, set) => {
       const lab = el("label", "fm-chk" + (why ? " mine" : ""));
       const cb = el("input"); cb.type = "checkbox"; cb.checked = on;
@@ -384,6 +412,7 @@
       been.textContent = v.d ? `${v.d.slice(5).replace("-", ".")} 다녀왔어요 ✓` : "오늘 다녀왔어요";
       been.classList.toggle("on", !!v.d);
       been.setAttribute("aria-pressed", v.d ? "true" : "false");
+      beenBtn = been; paintBar();
     };
     been.addEventListener("click", () => {
       const was = !!v.d, prev = v.d;
