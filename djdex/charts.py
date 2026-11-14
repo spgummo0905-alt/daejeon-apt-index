@@ -222,7 +222,7 @@ def histogram(values: list[float], highlight: float | None = None, width: int = 
     for v in vals:
         bins[max(0, min(nb - 1, int(v // step)))] += 1
     hb = None if nan(highlight) else max(0, min(nb - 1, int(highlight // step)))
-    pl, pr, pt, pb = 40, 8, 22, 28
+    pl, pr, pt, pb = 40, 14, 22, 28   # 오른쪽 여백 8->14: 마지막 눈금 '100' 이 그림 밖으로 잘리지 않게
     ymax = max(bins) or 1
     bw = (width - pl - pr) / nb
     out = []

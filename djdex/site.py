@@ -678,7 +678,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
             "radar": charts.radar([(f.get("short") or f["label"], c.get(f["key"] + "_pct"), factor_med[f["key"]])
                                    for g in loc_groups for f in g["factors"]]) if has_loc_c else "",
             "hist": charts.responsive(charts.histogram, index_values, highlight=c.get("index"), height=180,
-                                      mob={"width": 360}),
+                                      mob={"width": 280}),   # 360 이면 폰에서 0.6배로 줄어 눈금이 8~9px
         }
         loc_sets = [{"key": g["key"], "label": g["label"], "score": c.get(f"grp_{g['key']}"), "top": c.get(f"grp_{g['key']}_top"),
                      "rows": [{"label": f["label"], "pct": c.get(f["key"] + "_pct"), "score": f["kind"] == "score",
