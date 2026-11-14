@@ -5545,3 +5545,10 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 
 /* D3 나의 집감: '내 설정' 박스가 위 박스(최근 본 단지)에 붙던 것(위쪽 간격 0) -> 다른 박스와 같은 16px */
 .prefs { margin-top: 16px; }
+
+/* D3 좁은 폰(320px): 시세 표의 '월세' 칸과 자주 묻는 질문의 긴 단지 이름이 화면 밖으로 삐져나가던 것 */
+@media (max-width: 380px) {
+  .qt th, .qt td { white-space: normal; padding-left: 2px; padding-right: 2px; }
+  .qt th:first-child, .qt td:first-child { padding-left: 0; }
+}
+.faq-it summary, .faq-it p { overflow-wrap: anywhere; min-width: 0; }
