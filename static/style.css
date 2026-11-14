@@ -5542,3 +5542,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .fm-bar .fm-bar-retry { flex: none; min-height: 44px; }
 .kb-open .fm-bar { display: none; }   /* 키보드가 올라오면 입력칸을 가리지 않게 */
 .pj-embed-field .fm-bar { display: none; }
+
+/* D3 나의 집감: '내 설정' 박스가 위 박스(최근 본 단지)에 붙던 것(위쪽 간격 0) -> 다른 박스와 같은 16px */
+.prefs { margin-top: 16px; }
