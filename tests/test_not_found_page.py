@@ -13,7 +13,7 @@ def test_not_found_page_has_brand_message_and_two_absolute_buttons():
     h = _page()
     assert "찾으시는 페이지가 없어요" in h and "집감" in h and 'lang="ko"' in h
     hrefs = re.findall(r'href="([^"]+)"', h)
-    assert hrefs == ["/", "/", "/daejeon/finder.html"]          # 로고, 홈으로, 찾기: 모두 절대 주소
+    assert hrefs == ["/", "/", "/daejeon/finder"]   # 로고, 홈으로, 찾기: 모두 절대 주소(canonical 과 같이 .html 없이)          # 로고, 홈으로, 찾기: 모두 절대 주소
     assert not re.search(r'(src|href)="(?!/|#)', h)               # 상대 경로·외부 파일 없음
     assert "<link" not in h and "<script" not in h
 
@@ -33,5 +33,5 @@ def test_root_landing_build_writes_404_html_at_site_root(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out / "daejeon")])
     cli.main(["--data", str(tmp_path / "data"), "landing", "--out", str(out)])
     page = (out / "404.html").read_text(encoding="utf-8")
-    assert "찾으시는 페이지가 없어요" in page and 'href="/daejeon/finder.html"' in page
+    assert "찾으시는 페이지가 없어요" in page and 'href="/daejeon/finder"' in page and ".html" not in page
     assert "word-break:keep-all" in page

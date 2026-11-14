@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}집 찾기 프로젝트 · 집감{% endblock %}
 {% block description %}집을 찾는 목적별로 후보 아파트를 묶고, 비교와 임장 코스로 이어가세요.{% endblock %}
-{% block head_extra %}{% if not demo %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+{# 검색 제외(noindex)는 base.html 의 목록에서 한 번에 넣습니다 #}
 {% block body %}
 {% set seg_cur = 'projects' %}{% include "_seg_pj.html" %}
 <section class="page-hero pj-hero lean">
