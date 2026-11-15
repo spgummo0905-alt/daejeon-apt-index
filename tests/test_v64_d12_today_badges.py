@@ -4,6 +4,9 @@ R = pathlib.Path(__file__).resolve().parent.parent
 JS = (R / "static/cards.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* D12 오늘의 비교 후보"):]
+_n = B.find("\n/* E1 홈", 5)
+if _n > 0:
+    B = B[:_n]   # 자기 블록만
 def test_badges_are_built_beside_the_text_not_inside_the_card():
     assert 'front.append(card);' in JS and 'front.append(card, tag)' not in JS
     assert 'badges.append(tag); if (c.h) badges.append(el("span", "tc-tag high", "신고가"));' in JS

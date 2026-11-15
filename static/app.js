@@ -1717,6 +1717,16 @@
       box.querySelector(".gate-main")?.classList.remove("gate-main"); v.classList.add("gate-main");   // 다시 온 사람의 주 행동은 '이어서 하기'
       v.querySelector("[data-gv-label]").textContent = "이어서 하기";
     }
+    // E1 홈 큰 카드: 진행 중인 프로젝트가 있으면 그 이름·후보 수·다녀온 수(실제 기록)로, 없으면 시작 문구 그대로
+    const hh = document.querySelector("[data-hm-hero]");
+    if (pj && hh) {
+      const n = pj.slugs.length, region = document.body.dataset.region;
+      const went = window.DJVisitLog ? new Set(DJVisitLog.list({ region, projectId: pj.id }).map(x => x.slug).filter(x => pj.slugs.includes(x))).size : 0;
+      hh.querySelector("[data-hm-k]").textContent = "WEEKEND PLAN · 임장 이어하기";
+      hh.querySelector("[data-hm-h]").replaceChildren(`이번 주말, 집 ${n}곳을`, el("br"), "직접 살펴보세요.");
+      hh.querySelector("[data-hm-small]").textContent = `${pj.name} · 후보 ${n}곳${went ? ` · 다녀온 ${went}곳` : ""}`;
+      hh.querySelector("[data-hm-btn-t]").textContent = "임장 준비 이어가기";
+    }
     const favs = DJ.favs();
     const c = box.querySelector("[data-gate-compare]");
     if (!c || !favs.length) return;
