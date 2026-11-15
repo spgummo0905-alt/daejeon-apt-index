@@ -192,6 +192,17 @@
   }
 
   // ---------- 내 카드첩: 모은 수, 등급별, 모은 카드, 구(동)별 진행, 아직 못 모은 귀한 카드 하나 ----------
+  // D6 시안 카드 모양(카드첩 격자에서만): 맨 위 'JIPGAM ✦ S TIER', 지역은 이름 아래 줄, 아래 줄은 [다녀옴 도장] + [지수 큰 숫자·가격].
+  // 값·링크·뒤집기·도장 조건은 그대로이고 자리만 옮김(등급 읽기용 글자는 카드의 aria-label 에 이미 있음)
+  function albumLook(wrap, c) {
+    const card = wrap.querySelector(".hc-collect:not(.hc-back)"); if (!card) return;
+    card.classList.add("al-look");
+    const top = card.querySelector(".hc-top"), name = card.querySelector(".hc-cname"), foot = card.querySelector(".hc-foot");
+    if (top) top.replaceChildren(el("b", "al-brand", "JIPGAM"), el("b", "al-tier", "\u2726 " + c.g + " TIER"));
+    if (name) { const pl = el("span", "al-place", DJ.place(c)); name.after(pl); const hi = card.querySelector(".mcard-high"); if (hi) pl.append(hi); }   // 신고가 표시는 지역 줄 끝으로(이름·사진을 가리지 않게)
+    const st = card.querySelector(".cs-stamp");
+    if (foot && st) foot.prepend(st);   // 도장은 같은 조건(DJ.been)으로 이미 붙어 있고, 자리만 아래 왼쪽으로
+  }
   let more = null, flt = "all";   // 걸러 보기: all · S~D · been(다녀옴)
   function album(d) {
     const sec = document.getElementById("album");
@@ -254,7 +265,7 @@
     box.replaceChildren();
     let shown = 0;
     const draw = k => {
-      sorted.slice(shown, shown + k).forEach(c => box.append(DJ.miniCard(c)));
+      sorted.slice(shown, shown + k).forEach(c => { const w = DJ.miniCard(c); albumLook(w, c); box.append(w); });
       shown = Math.min(sorted.length, shown + k);
       btn.hidden = shown >= sorted.length;
       btn.textContent = `${Math.min(24, sorted.length - shown)}장 더 보기`;
