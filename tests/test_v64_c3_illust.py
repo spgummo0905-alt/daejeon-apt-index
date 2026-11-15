@@ -6,7 +6,7 @@ FIND = (R / "static/finder.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 def test_empty_album_has_decorative_art_and_same_copy():
     m = re.search(r'data-album-empty hidden>(.*?)</div>', CARDS, re.S)
-    assert m and 'class="il-art" aria-hidden="true"' in m.group(1)
+    assert m and re.search(r'class="il-art( il-big)?" aria-hidden="true"', m.group(1))
     assert "아직 모은 단지가 없어요. 아파트를 열어 보면 카드가 한 장씩 모여요." in m.group(1) and 'href="finder.html">아파트 찾아보기' in m.group(1)
 def test_finder_failure_art_is_decorative_and_box_is_opened():
     assert 'ic.setAttribute("aria-hidden", "true")' in FIND
