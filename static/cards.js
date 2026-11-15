@@ -192,6 +192,23 @@
   }
 
   // ---------- 내 카드첩: 모은 수, 등급별, 모은 카드, 구(동)별 진행, 아직 못 모은 귀한 카드 하나 ----------
+  // 시안(A 카드첩)의 카드: 맨 위 JIPGAM / 연도 · ✦ 등급 TIER → 항공 사진 → 이름 → 지역 · 집감 지수 → 아래 [다녀옴 도장 또는 GOLD/PLATINUM] [지수 큰 숫자].
+  // 값(지수·등급·이름·지역)과 도장 조건(DJ.been)은 기존 그대로. 사진은 cover.js 가 .hc-photo 를 찾아 채움(못 받으면 칸의 집 그림이 보임)
+  const METAL = { S: "GOLD", A: "PLATINUM" };
+  function acCard(c) {
+    const a = el("a", "ac-card g-" + c.g); a.href = DJ.href(c); a.dataset.slug = c.s; a.dataset.g = c.g;
+    a.setAttribute("aria-label", `${c.n}, ${DJ.place(c)}, ${c.g === "-" ? "미산정" : c.g + "등급"}${c.i == null ? "" : " " + c.i + "점"}`);
+    const top = el("span", "ac-top"); top.append(el("span", "", "JIPGAM / " + new Date().getFullYear()), el("span", "", "\u2726 " + c.g + " TIER"));
+    const art = el("span", "ac-art"); art.setAttribute("aria-hidden", "true");
+    art.insertAdjacentHTML("beforeend", '<svg class="ac-house" viewBox="0 0 64 48"><path d="M8 24 32 6l24 18M14 21v21h36V21M27 42V29h10v13"/></svg>');
+    if (window.DJ_SAT && c.la && c.ln) { const ph = el("span", "hc-photo"); ph.dataset.s = c.s; ph.dataset.la = c.la; ph.dataset.ln = c.ln; ph.append(el("i", "hc-pin")); art.append(ph); }
+    const bottom = el("span", "ac-bottom"), b = DJ.been && DJ.been(c);
+    if (b) { bottom.append(el("span", "ac-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
+    else bottom.append(el("span", "ac-metal", METAL[c.g] || ""));
+    bottom.append(el("b", "", c.i == null ? "-" : String(c.i)));
+    a.append(top, art, el("strong", "ac-name", c.n), el("span", "ac-meta", DJ.place(c) + " \u00b7 집감 지수"), bottom);
+    return a;
+  }
   let more = null, flt = "all";   // 걸러 보기: all · S~D · been(다녀옴)
   function album(d) {
     const sec = document.getElementById("album");
@@ -242,7 +259,7 @@
     fbox.replaceChildren();
     fbox.hidden = !got.length;
     [["all", "전체"], ...GRADES.filter(g => counts[g]).map(g => [g, g + "등급"]), ...(beenN ? [["been", "다녀옴"]] : [])].forEach(([k, label]) => {
-      const b = el("button", "chip" + (flt === k ? " on" : ""), `${label} ${counts[k]}`);
+      const b = el("button", "chip" + (flt === k ? " on" : ""), label); b.setAttribute("aria-label", `${label} ${counts[k]}장`);   // 시안: 칩에는 글자만(개수는 읽어 주는 글에)
       b.type = "button"; b.setAttribute("aria-pressed", flt === k ? "true" : "false");
       b.addEventListener("click", () => { flt = k; album(d); });
       fbox.append(b);
@@ -254,7 +271,7 @@
     box.replaceChildren();
     let shown = 0;
     const draw = k => {
-      sorted.slice(shown, shown + k).forEach(c => box.append(DJ.miniCard(c)));
+      sorted.slice(shown, shown + k).forEach(c => box.append(acCard(c)));
       shown = Math.min(sorted.length, shown + k);
       btn.hidden = shown >= sorted.length;
       btn.textContent = `${Math.min(24, sorted.length - shown)}장 더 보기`;

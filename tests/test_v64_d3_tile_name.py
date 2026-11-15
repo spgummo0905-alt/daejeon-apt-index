@@ -3,8 +3,9 @@ import pathlib, re
 R = pathlib.Path(__file__).resolve().parent.parent
 CSS = (R / "static/style.css").read_text(encoding="utf8"); JS = (R / "static/cards.js").read_text(encoding="utf8")
 B = CSS[CSS.index("/* D3 내 카드 모아보기 타일"):]
-if "/* D5 카드첩 모양" in B:
-    B = B[:B.index("/* D5 카드첩 모양")]      # 자기 블록만(뒤에 오는 다른 블록의 글자 크기는 검사 대상이 아님)
+_n = B.find("\n/* ", 5)
+if _n > 0:
+    B = B[:_n]      # 자기 블록만(뒤에 오는 다른 블록의 글자 크기는 검사 대상이 아님)
 def test_name_is_clamped_to_two_lines_with_overflow_hidden():
     rule = B[B.index(".best-tile b {"):B.index("}", B.index(".best-tile b {"))]
     assert "-webkit-line-clamp: 2;" in rule and "line-clamp: 2;" in rule and "overflow: hidden;" in rule and "display: -webkit-box;" in rule

@@ -1240,6 +1240,9 @@ def test_lean_page_headers_keep_one_note_box(tmp_path):
     cli.main(["--data", str(tmp_path / "data"), "demo", "--out", str(out)])
     pages = {n: (out / f"{n}.html").read_text(encoding="utf-8") for n in ("finder", "compare", "cards", "projects")}
     for n, h in pages.items():
+        if n == "cards":   # D7: 카드첩은 시안 구조(머리가 page-hero 가 아님). 접이식 설명 상자 하나와 저장 안내는 '더 보기' 안에 그대로 있음
+            assert h.count('<details class="hero-note">') == 1 and "백업하세요" in h and 'class="lead"' not in h
+            continue
         hero = h[h.index('class="page-hero'):h.index("</section>", h.index('class="page-hero'))]
         assert "page-hero" in hero and "lean" in hero.split(">")[0], n
         assert hero.count('<details class="hero-note">') == 1 and 'class="lead"' not in hero, n    # 설명 상자 하나, 따로 떠 있는 긴 설명 없음
