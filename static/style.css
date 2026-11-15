@@ -5666,3 +5666,7 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .mc-price .mc-pr-a, .mc-price > span { white-space: normal; overflow-wrap: anywhere; }   /* 320·360폭에서 '99㎡(전용 74) 거래'가 칸 밖으로 나가던 것 */
 .mc-price .mc-pr-a { flex-wrap: wrap; min-width: 0; }
 .mc-price .ar, .mc-price .ar-m, .mc-price .ar-p, .mc-price .ar-m small, .mc-price .ar-p small { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+
+/* D1 카드첩 순서(시안 PDF/시제품): 맨 위에 '내가 모은 집들'과 모은 카드, 그 아래에 오늘의 비교 후보·임장 배지. 값·저장·계산 변경 0 */
+.page-hero .hero-lead { margin: 4px 0 0; font-size: 16px; color: var(--text-2, #556); }
+.album-filter { margin-top: 14px; }
