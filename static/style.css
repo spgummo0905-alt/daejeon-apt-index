@@ -5687,3 +5687,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .pb-prices { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
 .pb-p strong, .pb-p span, .pb-p small { overflow-wrap: anywhere; }
 .rv-q { overflow-wrap: anywhere; }
+
+/* D3 내 카드 모아보기 타일: 단지 이름은 두 줄까지만(길면 …). 글자 크기는 그대로, 전체 이름은 title·aria-label 에 있음 */
+.best-tile b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; word-break: keep-all; overflow-wrap: break-word; }
