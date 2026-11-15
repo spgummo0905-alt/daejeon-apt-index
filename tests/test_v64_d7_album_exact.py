@@ -12,12 +12,13 @@ def test_order_matches_the_mockup_top_to_bottom():
     assert o == sorted(o)
 def test_mint_strip_and_more_section_have_their_own_names_and_start_hidden_or_below():
     assert '<div class="ac-state" data-album-note hidden>' in HTML
-    assert '<section class="panel ac-more" aria-labelledby="album-more-title">' in HTML
+    assert '<section class="panel ac-more" aria-labelledby="album-more-title" hidden>' in HTML
     assert '<span class="ac-book" aria-hidden="true">' in HTML and '<span class="ac-pill" data-album-total>' in HTML
 def test_mockup_copy_is_used_verbatim():
     for k in ("MY COLLECTION", "<h1>내가 모은 집들</h1>", "직접 살펴본 단지가 기록으로 남습니다.", "수집한 기록이 차곡차곡", "방문 도장은 실제 임장 기록에만", ">내 카드 모아보기</h2>", "수집 현황", "수집과 실제 방문 기록은 구분해요."):
         assert k in HTML, k
-def test_things_not_in_the_mockup_are_below_the_mockup_part_inside_more():
+def test_things_not_in_the_mockup_are_hidden_not_deleted():
+    assert ".ac-more[hidden] { display: none; }" in B
     more = HTML[HTML.index("ac-more"):HTML.index('id="today"')]
     for k in ("hero-note", "data-album-best", "data-album-grades", "data-album-areas", "data-album-next"):
         assert k in more, k
@@ -49,3 +50,10 @@ def test_a_card_has_no_gold_border_and_text_never_below_12px_no_external_files()
     assert ".ac-card.g-A { border-color: #c3cbd4;" in B                      # A 는 금색 테두리가 아님(백금)
     assert "url(" not in B and "@import" not in B
     assert not re.search(r"font-size:\s*(?:[0-9]|1[01])(?:\.\d+)?px", B)
+def test_card_numbers_follow_the_mockup():
+    for k in ("min-height: 237px; padding: 13px; border: 3px solid #d2b274; border-radius: 20px;", "height: 102px; margin: 8px 0 10px;", "margin: 5px 0; font-size: 14px;", "letter-spacing: -.08em;", "rotate(-7deg)", ".ac-card::before"):
+        assert k in B, k
+def test_top_is_only_back_line_on_phone_for_the_album_page():
+    assert 'body[data-page="cards"] header.site .rg, body[data-page="cards"] header.site .hd-end, body[data-page="cards"] .seg-nav, body[data-page="cards"] .rcd { display: none; }' in CSS
+    assert '"cards": "돌아가기"' in (R / "templates/base.html").read_text(encoding="utf8")
+    assert 'body[data-page="cards"]' not in CSS[:CSS.index("/* D7 카드첩(시안 A 구조 그대로)")]    # 다른 곳에서 이 화면만 따로 만지지 않음
