@@ -35,19 +35,38 @@ try {
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">국토교통부 실거래 기준 · {{ meta.updated }} 업데이트</p>
-      <h1>눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}</button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
+      <h1 class="hm-seo">눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}</button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
+      <p class="hm-h1">좋은 집의 가치를,<br>내 기준으로 발견해요.</p>
+      <p class="hm-sub">실거래·입지·임장 기록까지, 한눈에 살펴보세요.</p>
       <p class="lead">{{ region }} 아파트 {{ "{:,}".format(meta.n_complexes) }}곳. 실거래가와 입지를 비교하고, 직접 가 볼 집을 골라보세요.</p>
       <div class="hero-search">
         <svg class="ic"><use href="#i-search"/></svg>
-        <input type="search" data-search-go placeholder="단지·동·역 이름, 또는 '7억 이하 30평대'" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
+        <input type="search" data-search-go placeholder="단지·지역·예산으로 찾아보기" aria-label="단지·동·역 이름이나 조건으로 찾기" enterkeyhint="search">
       </div>
+      {# E1 홈(시안 A 구조, 폰 전용): 큰 제목 → 한 줄 설명 → 검색 → 아이콘 4개 → 이번 주말 큰 카드 → 최근 눈여겨본 집 → 안내 박스. 값은 기존 기록(프로젝트·최근 본 단지)에서만 #}
+      <nav class="hm-quick" aria-label="바로가기">
+        <a href="finder.html"><span class="hm-qi"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>집 찾기</a>
+        <a href="map.html"><span class="hm-qi"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></span>지도</a>
+        <a href="projects.html"><span class="hm-qi"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></span>임장 코스</a>
+        <a href="cards.html"><span class="hm-qi"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>내 카드</a>
+      </nav>
+      <section class="hm-hero" data-hm-hero aria-label="이번 주말 임장 계획">
+        <div class="hm-hero-copy">
+          <p class="hm-k" data-hm-k>WEEKEND PLAN · 임장 준비</p>
+          <h2 class="hm-h" data-hm-h>이번 주말,<br>가 볼 집을 골라 볼까요?</h2>
+          <p class="hm-small" data-hm-small>관심 단지를 모아 임장 순서를 정해 보세요.</p>
+          <a class="hm-btn" href="projects.html" data-hm-btn><span data-hm-btn-t>임장 준비 시작하기</span><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+        <div class="hm-art" aria-hidden="true"><svg viewBox="0 0 320 175" aria-hidden="true"><defs><linearGradient id="sky-hm" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#b2dbd1"/><stop offset="1" stop-color="#e2eadb"/></linearGradient><linearGradient id="wall-hm" x1="0" x2="1"><stop stop-color="#d8e4da"/><stop offset="1" stop-color="#8db5b0"/></linearGradient></defs><rect width="320" height="175" fill="url(#sky-hm)"/><circle cx="253" cy="29" r="23" fill="#fff7cc" opacity=".8"/><ellipse cx="39" cy="139" rx="93" ry="28" fill="#6b9b8a" opacity=".6"/><ellipse cx="258" cy="147" rx="112" ry="27" fill="#639e81" opacity=".7"/><g transform="translate(65 29)"><path d="M0 26 28 8 64 21v125H0z" fill="#718b87"/><path d="M62 1h75v145H62z" fill="url(#wall-hm)"/><path d="M143 30h70v116h-70z" fill="#a4c5b9"/><path d="M62 0h76v10H62z" fill="#42625e"/><path d="M143 28h71v8h-71z" fill="#597974"/><rect x="74" y="19" width="9" height="12" rx="1" fill="#729b96"/><rect x="89" y="19" width="9" height="12" rx="1" fill="#ffdf9c"/><rect x="104" y="19" width="9" height="12" rx="1" fill="#729b96"/><rect x="119" y="19" width="9" height="12" rx="1" fill="#729b96"/><rect x="74" y="38" width="9" height="12" rx="1" fill="#ffdf9c"/><rect x="89" y="38" width="9" height="12" rx="1" fill="#729b96"/><rect x="104" y="38" width="9" height="12" rx="1" fill="#729b96"/><rect x="119" y="38" width="9" height="12" rx="1" fill="#729b96"/><rect x="74" y="57" width="9" height="12" rx="1" fill="#729b96"/><rect x="89" y="57" width="9" height="12" rx="1" fill="#729b96"/><rect x="104" y="57" width="9" height="12" rx="1" fill="#729b96"/><rect x="119" y="57" width="9" height="12" rx="1" fill="#729b96"/><rect x="74" y="76" width="9" height="12" rx="1" fill="#729b96"/><rect x="89" y="76" width="9" height="12" rx="1" fill="#729b96"/><rect x="104" y="76" width="9" height="12" rx="1" fill="#729b96"/><rect x="119" y="76" width="9" height="12" rx="1" fill="#ffdf9c"/><rect x="74" y="95" width="9" height="12" rx="1" fill="#729b96"/><rect x="89" y="95" width="9" height="12" rx="1" fill="#729b96"/><rect x="104" y="95" width="9" height="12" rx="1" fill="#ffdf9c"/><rect x="119" y="95" width="9" height="12" rx="1" fill="#729b96"/><rect x="74" y="114" width="9" height="12" rx="1" fill="#729b96"/><rect x="89" y="114" width="9" height="12" rx="1" fill="#ffdf9c"/><rect x="104" y="114" width="9" height="12" rx="1" fill="#729b96"/><rect x="119" y="114" width="9" height="12" rx="1" fill="#729b96"/><rect x="153" y="47" width="10" height="12" rx="1" fill="#f6d39b"/><rect x="171" y="47" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="189" y="47" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="153" y="66" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="171" y="66" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="189" y="66" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="153" y="85" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="171" y="85" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="189" y="85" width="10" height="12" rx="1" fill="#f6d39b"/><rect x="153" y="104" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="171" y="104" width="10" height="12" rx="1" fill="#f6d39b"/><rect x="189" y="104" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="153" y="123" width="10" height="12" rx="1" fill="#f6d39b"/><rect x="171" y="123" width="10" height="12" rx="1" fill="#7eaba4"/><rect x="189" y="123" width="10" height="12" rx="1" fill="#7eaba4"/></g><path d="M0 157q60-13 126-4t194 1v21H0z" fill="#567f68"/><path d="M7 148h308" stroke="#e8eadc" stroke-width="4"/><g fill="#2b745e"><circle cx="22" cy="139" r="15"/><circle cx="36" cy="141" r="15"/><circle cx="283" cy="134" r="17"/><circle cx="302" cy="143" r="13"/></g><path d="M27 143v25M290 144v24" stroke="#77654c" stroke-width="5"/></svg></div>
+      </section>
       {# 다시 온 사람: 하던 임장 준비를 바로 이어서 (app.js resume) #}
       <nav class="resume" data-resume aria-label="이어서 보기" hidden></nav>
       {# 카드 중심 첫 화면(C1): 가장 최근에 본 단지 한 장. 기록이 없으면 처음 온 사람용 빈 상태(자리는 같은 높이). 단지 값은 complexes.json 의 기존 값 (static/housecard.js) #}
       <section class="hc-home" data-hc-feature aria-labelledby="hc-feat-h">
-        <div class="hc-sec-h"><h2 id="hc-feat-h" data-hc-feat-h>이어서 볼 집</h2><a href="my.html" data-hc-feat-more hidden>내 기록 ›</a></div>
+        <div class="hc-sec-h"><h2 id="hc-feat-h" data-hc-feat-h>최근 눈여겨본 집</h2><a href="cards.html" data-hc-feat-more hidden>모두 보기 →</a></div>
         <div class="hc-empty" data-hc-feat-empty><b>마음에 드는 집, 한 장으로 모아 보세요</b><span>검색하거나 아래 카드를 눌러 보면 여기에 이어서 볼 집이 생겨요.</span><a href="finder.html">조건으로 집 찾아보기</a></div>
       </section>
+      <div class="hm-insight"><svg class="ic"   viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 1.8L21.5 18.5l-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z"/></svg><span><b>오늘의 집 찾기, 여기서 이어가세요.</b><small>실제 방문 기록은 완료한 뒤에만 남아요.</small></span></div>
     {# 핵심 두 입구: 입지 검색(찾기)과 임장. 바로가기 4칸·배너를 하나로 모음 #}
     <div class="gates" data-gates>
       <section class="gate gate-main" aria-labelledby="gate-find">

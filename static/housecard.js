@@ -27,6 +27,16 @@
     a.append(art(c.rk), body);
     return a;
   }
+  // E1 홈 '최근 눈여겨본 집'(시안): 작은 그림 · 지역 · 이름 · 집감 지수·등급 · 어떤 단지인지 한 줄 · 등급 배지. 값은 기존 그대로
+  function recentCard(c, tag) {
+    const a = el("a", "hm-recent g-" + c.g); a.href = DJ.href(c); a.dataset.hc = "feature"; a.dataset.slug = c.s;
+    const th = el("span", "hm-thumb"); th.append(art(c.rk));
+    const d = el("span", "hm-rdata");
+    d.append(el("span", "hm-rplace", DJ.place(c)), el("b", "", c.n), el("span", "hm-rline", c.i != null && c.g && c.g !== "-" ? `집감 지수 ${c.i} · ${c.g}등급` : "집감 지수 미산정"), el("span", "hm-rline", tag));
+    a.append(th, d);
+    if (c.g && c.g !== "-") { const g = el("span", "hm-rgrade g-" + c.g, c.g); g.setAttribute("aria-hidden", "true"); a.append(g); }
+    return a;
+  }
   // 찾기 결과 한 장: 미니 카드 + 관심 별(카드 오른쪽, 44px). 카드 전체는 단지 상세 링크, 별은 기존 관심 저장(DJ.toggleFav) 그대로
   function fcard(c, o) {
     o = o || {};
@@ -94,7 +104,7 @@
       const c = d.bySlug[want]; if (!c) return;
       const tag = rec[0] === want ? "최근 살펴본 단지" : "관심 단지";
       const empty = box.querySelector("[data-hc-feat-empty]");
-      const card = feature(c, tag);
+      const card = recentCard(c, tag);
       if (empty) empty.replaceWith(card); else box.append(card);
       const more = box.querySelector("[data-hc-feat-more]"); if (more) more.hidden = false;
     }).catch(() => {});

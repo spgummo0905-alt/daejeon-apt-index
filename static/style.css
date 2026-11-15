@@ -5788,3 +5788,63 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 
 /* D13 카드첩 카드 사진 가운데의 파란 위치 점은 숨김(사진은 그대로) */
 .ac-art .hc-pin, .ac-art .hc-photo.on .hc-pin { display: none; }
+
+/* E1 홈(시안 A 구조, 폰 전용): 큰 제목 · 한 줄 설명 · 검색 · 아이콘 4개 · 이번 주말 큰 카드(일러스트) · 최근 눈여겨본 집 · 안내 박스. 큰 화면은 그대로 */
+.hm-h1, .hm-sub, .hm-quick, .hm-hero, .hm-insight { display: none; }
+.hm-recent { position: relative; display: flex; align-items: center; gap: 13px; min-height: 103px; padding: 14px; border-radius: 19px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 9px 22px rgba(42, 68, 54, .06); color: var(--text); text-decoration: none; }
+.hm-recent:hover { text-decoration: none; }
+.hm-recent:focus-visible { outline: 3px solid var(--hc-blue, #2f6fe4); outline-offset: 2px; }
+.hm-thumb { position: relative; flex: none; width: 86px; height: 75px; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #d8eae5, #b4cec4); }
+.hm-thumb .hc-art { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; }
+.hm-rdata { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.hm-rplace, .hm-rline { font-size: 14px; color: var(--muted); line-height: 1.4; overflow-wrap: anywhere; }
+.hm-rdata b { font-size: 17px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+.hm-rgrade { flex: none; display: grid; place-items: center; min-width: 32px; height: 32px; padding: 0 6px; border-radius: 10px; font-size: 17px; font-weight: 900; background: linear-gradient(145deg, #f9e7b9, #ba933e); color: #4b391d; }
+.hm-rgrade.g-A { background: linear-gradient(145deg, #f1f2f7, #9da9bd); color: #303c47; }
+.hm-rgrade.g-B { background: #d8e7f7; color: #36608c; }
+.hm-rgrade.g-C { background: #dfe3e8; color: #4a5260; }
+.hm-rgrade.g-D { background: #eceef1; color: #5b6472; }
+@media (max-width: 720px) {
+  .hero-main .eyebrow { display: none; }
+  .hero-main h1.hm-seo { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hm-h1 { display: block; margin: 16px 0 8px; font-size: 28px; line-height: 1.27; font-weight: 900; letter-spacing: -.045em; }
+  .hm-sub { display: block; margin: 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+  .hero-main .hero-search { margin-top: 18px; }
+  .hero-main .hero-search input { min-height: 51px; border-radius: 17px; }
+  .hm-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+  .hm-quick a { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 2px; min-height: 44px; font-size: 14px; font-weight: 850; color: var(--text); text-decoration: none; text-align: center; }
+  .hm-qi { display: grid; place-items: center; width: min(60px, 100%); height: 55px; border-radius: 18px; background: #e6f2e8; color: #133f36; }
+  .hm-quick a:nth-child(2) .hm-qi { background: #fcf1d7; }
+  .hm-quick a:nth-child(3) .hm-qi { background: #f9e8e3; }
+  .hm-quick a:nth-child(4) .hm-qi { background: #e9eef7; }
+  .hm-qi .ic { width: 26px; height: 26px; }
+  .hm-hero { display: block; position: relative; min-height: 207px; margin-top: 24px; border-radius: 27px; overflow: hidden; background: linear-gradient(130deg, #d8e7d4, #a9cbb7); box-shadow: 0 9px 22px rgba(42, 68, 54, .06); }
+  .hm-hero-copy { position: relative; z-index: 2; padding: 20px 19px; max-width: 62%; }
+  .hm-k { margin: 0; font-size: 12px; font-weight: 900; letter-spacing: .04em; color: #3f6a54; }
+  .hm-h { margin: 7px 0; font-size: 21px; line-height: 1.34; font-weight: 900; letter-spacing: -.045em; color: #183a31; }
+  .hm-small { margin: 0; font-size: 13px; line-height: 1.4; color: #3f6a54; overflow-wrap: anywhere; }
+  .hm-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 13px; padding: 0 14px; border-radius: 13px; background: #133f36; color: #fff; font-size: 14px; font-weight: 900; text-decoration: none; }
+  .hm-btn:hover { text-decoration: none; }
+  .hm-btn .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .hm-art { position: absolute; right: -18px; bottom: -5px; width: 215px; height: 158px; z-index: 1; }
+  .hm-art svg { display: block; width: 100%; height: 100%; }
+  .hc-home .hc-sec-h { margin-top: 22px; }
+  .hm-insight { display: flex; align-items: center; gap: 12px; margin-top: 13px; padding: 15px; border-radius: 16px; background: #e9f3e8; color: #183a31; }
+  .hm-insight .ic { flex: none; box-sizing: content-box; width: 24px; height: 24px; padding: 8px; border-radius: 50%; background: #fff9dd; color: #b48c3f; }
+  .hm-insight span { display: grid; gap: 2px; min-width: 0; }
+  .hm-insight b { font-size: 15px; line-height: 1.3; }
+  .hm-insight small { font-size: 14px; line-height: 1.45; color: #4d6b60; }
+  .hero-main .resume, .hero-main .gates { display: none !important; }
+}
+@media (max-width: 360px) { .hm-art { width: 180px; height: 133px; } .hm-h1 { font-size: 26px; } .hm-quick a { font-size: 13px; } }
+.rcd { z-index: 5; }
+@media (max-width: 720px) { body[data-page="index"] .hc-home { padding-right: 0; } }
+@media (prefers-color-scheme: dark) {
+  .hm-recent { box-shadow: none; }
+  .hm-qi { background: #12332a !important; color: #d7f1e6; }
+  .hm-hero { background: linear-gradient(130deg, #16372f, #1f4a3e); }
+  .hm-k, .hm-small { color: #a9cdbd; } .hm-h { color: #f0efec; }
+  .hm-btn { background: #59e3ad; color: #0b2a21; }
+  .hm-insight { background: #12332a; color: #d7f1e6; box-shadow: inset 0 0 0 1px #2c5a4b; } .hm-insight small { color: #a9cdbd; } .hm-insight .ic { background: #3a3417; }
+  .hm-art { opacity: .75; }
+}
