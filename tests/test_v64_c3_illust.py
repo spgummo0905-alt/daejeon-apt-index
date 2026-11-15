@@ -14,6 +14,8 @@ def test_finder_failure_art_is_decorative_and_box_is_opened():
     assert FIND.index("advBox.open = true") < FIND.index("q.replaceChildren(ic,")
     assert "단지 목록을 불러오지 못했어요" in FIND and "인터넷 연결을 확인하고 다시 시도해 주세요. 골라 둔 조건은 그대로 남아 있어요." in FIND
 def test_no_external_files_or_motion():
-    block = CSS[CSS.index("/* C3 작은 그림"):]
+    start = CSS.index("/* C3 작은 그림")
+    end = CSS.find("/* C3 저장 완료 체크", start)   # 뒤에 붙는 체크 표시 블록은 test_v64_c3b_pin_check 가 따로 검사
+    block = CSS[start:end if end != -1 else len(CSS)]
     assert "url(" not in block and "animation" not in block and "@import" not in block
     assert "http" not in FIND[FIND.index("const ic = el"):FIND.index("const ic = el") + 900]
