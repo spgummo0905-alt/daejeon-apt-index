@@ -5629,3 +5629,40 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .mc.loc-fold:not(.loc-open) :is(.mc-lochead, .mc-art, .mc-locline, .mc-fac, .mc-fnote, .mc-key, .mc-strip) { display: none; }   /* 점수 줄·칩 줄도 '입지 보기'를 열면 보임(시안 B). '전체 평가 펼치기'에도 같은 값이 있음 */
 }
 @media (prefers-color-scheme: dark) { .apt-tile-loc { background: #12332a; color: #d7f1e6; } .apt-tile-cmp { background: #3a2822; color: #f0a58f; } }
+
+/* C9 글자 크기 키움 대응(휴대폰 글자 125%·200%): 상세 카드의 가격 두 칸이 글자 폭만큼 늘어나 화면 밖으로 밀리던 것을 칸 폭 고정 + 줄바꿈으로 */
+.mc-prices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mc-prices > *, .mc-under .mc-price, .mc-est { min-width: 0; }
+.mc-est small, .mc-est b, .mc-est span, .mc-under .mc-price b, .mc-under .mc-price > span { overflow-wrap: anywhere; }
+.pb-check b { white-space: normal; text-align: right; }
+.album-areas li { grid-template-columns: minmax(5em, 6em) minmax(0, 1fr) auto; }
+@media (max-width: 719px) {
+  .tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .tabbar a { min-width: 0; overflow-wrap: anywhere; text-align: center; }
+  .qt th, .qt td { white-space: normal; overflow-wrap: anywhere; }
+  .mc-foot { flex-wrap: wrap; }
+}
+
+/* C9 카드 윗줄: 이름이 긴 단지에서 오른쪽 점수 칸이 자리를 먹어 이름이 한 글자씩 세로로 쌓이던 것. 좁은 폰에서는 점수를 이름 아래 한 줄로 내림(값·문구 그대로) */
+@media (max-width: 400px) {
+  .mc-top { grid-template-columns: auto minmax(0, 1fr); row-gap: 10px; }
+  .mc-top .mc-score { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sm st" "rk st"; align-items: center; column-gap: 12px; text-align: left; }
+  .mc-top .mc-score small { grid-area: sm; }
+  .mc-top .mc-score strong { grid-area: st; text-align: right; }
+  .mc-top .mc-score .mc-rk { grid-area: rk; margin-top: 0; }
+}
+.cat-row > *, .pt-grid > li { min-width: 0; overflow-wrap: anywhere; }
+.pt-v { overflow-wrap: anywhere; min-width: 0; white-space: normal; }   /* 글자를 키우면 칸보다 넓어지던 값(예: ㎡당 1,626원)이 줄바꿈되게 */
+@media (max-width: 719px) { .sv-top h2 { white-space: normal; overflow-wrap: anywhere; } }
+.pt-k { white-space: normal; text-overflow: clip; }
+.ls em, .loc-pct { white-space: normal; }
+.loc-list li { flex-wrap: wrap; min-width: 0; }
+.loc-list li > * { min-width: 0; overflow-wrap: anywhere; }
+.loc-sum, .two-col { min-width: 0; }
+.loc-sum > *, .two-col > * { min-width: 0; }
+.chips { flex-wrap: wrap; min-width: 0; }
+.chips .chip { max-width: 100%; min-width: 0; }
+.chip .ar, .chip .ar-m, .chip .ar-m small { white-space: normal; overflow-wrap: anywhere; }
+.mc-price .mc-pr-a, .mc-price > span { white-space: normal; overflow-wrap: anywhere; }   /* 320·360폭에서 '99㎡(전용 74) 거래'가 칸 밖으로 나가던 것 */
+.mc-price .mc-pr-a { flex-wrap: wrap; min-width: 0; }
+.mc-price .ar, .mc-price .ar-m, .mc-price .ar-p, .mc-price .ar-m small, .mc-price .ar-p small { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
