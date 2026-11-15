@@ -203,7 +203,7 @@
     art.insertAdjacentHTML("beforeend", '<svg class="ac-house" viewBox="0 0 64 48"><path d="M8 24 32 6l24 18M14 21v21h36V21M27 42V29h10v13"/></svg>');
     if (window.DJ_SAT && c.la && c.ln) { const ph = el("span", "hc-photo"); ph.dataset.s = c.s; ph.dataset.la = c.la; ph.dataset.ln = c.ln; ph.append(el("i", "hc-pin")); art.append(ph); }
     const bottom = el("span", "ac-bottom"), b = DJ.been && DJ.been(c);
-    if (b) { bottom.append(el("span", "ac-stamp", "다녀옴" + (b.d ? " " + b.d.slice(5).replace("-", ".") : ""))); a.classList.add("been"); }
+    if (b) { const st = el("span", "ac-stamp", "다녀옴"); if (b.d) st.append(document.createElement("br"), b.d.slice(5).replace("-", ".")); bottom.append(st); a.classList.add("been"); }   // 시안처럼 두 줄(다녀옴 / 11.15)
     else bottom.append(el("span", "ac-metal", METAL[c.g] || ""));
     bottom.append(el("b", "", c.i == null ? "-" : String(c.i)));
     a.append(top, art, el("strong", "ac-name", c.n), el("span", "ac-meta", DJ.place(c) + " \u00b7 집감 지수"), bottom);
