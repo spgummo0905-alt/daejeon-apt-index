@@ -10,7 +10,7 @@ def test_sorted_by_collected_date_newest_first_then_latest_added():
     assert "String(a[y.s]).localeCompare(String(a[x.s])) || order.indexOf(y.s) - order.indexOf(x.s)" in JS
     assert "GRADES.indexOf(x.g) - GRADES.indexOf(y.g) || (y.i ?? -1)" not in JS[JS.index("function album(d)"):JS.index("const box = sec.querySelector")]
 def test_more_button_has_count_and_chevron_icon_and_hides_when_all_shown():
-    assert "`${sorted.length - shown}장 더 보기`" in JS and "#i-chev-down" in JS[JS.index("const draw = k"):]
+    assert 'createTextNode("더 보기")' in JS and "`카드 ${sorted.length - shown}장 더 보기`" in JS and "#i-chev-down" in JS[JS.index("const draw = k"):]
     assert "btn.hidden = shown >= sorted.length;" in JS
 def test_filter_chips_and_counts_untouched():
     assert "counts[k]}장`" in JS and "shownSet" in JS and "flt = k; album(d);" in JS

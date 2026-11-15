@@ -7,7 +7,7 @@ JS = (R / "static/cards.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* D7 카드첩(시안 A 구조 그대로)"):]
 def test_order_matches_the_mockup_top_to_bottom():
-    keys = ("ac-label", "ac-head", "data-album-note", 'id="album-title"', "data-album-total", "data-album-cards", "data-album-filter", "ac-prog", "ac-insight", "ac-more")
+    keys = ("ac-label", "ac-head", "data-album-note", 'id="album-title"', "data-album-total", "data-album-filter", "data-album-cards", "ac-prog", "ac-insight", "ac-more")
     o = [HTML.index(k) for k in keys]
     assert o == sorted(o)
 def test_mint_strip_and_more_section_have_their_own_names_and_start_hidden_or_below():
