@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}내 정보 · 집감{% endblock %}
 {% block description %}내 임장 기록과 설정, 가족과 함께 보기를 한곳에서 관리해요.{% endblock %}
-{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+{# 검색 제외(noindex)는 base.html 의 목록에서 한 번에 넣습니다 #}
 {% block body %}
 {# 내 정보: 카카오로 로그인한 사람만 (로그인 전엔 로그인 안내만). 카카오 로그인을 켰을 때만 만듭니다.
    나의 임장(관심 단지 중 직접 가 본 곳과 모은 기록) → 가족과 함께 보기 → 내 설정 → 내 기록 파일 → 계정 (me.js·prefs.js·sync.js) #}

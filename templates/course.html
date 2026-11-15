@@ -3,7 +3,7 @@
 {% block og_title %}임장 코스를 받았어요 · 집감{% endblock %}
 {% block description %}둘러볼 단지 순서와 지도, 구간마다 길찾기, 단지마다 현장 체크리스트까지. 눌러서 코스를 열어 보세요.{% endblock %}
 {% block og_image %}static/og/course.jpg{% endblock %}
-{% block head_extra %}<meta name="robots" content="noindex">{% endblock %}
+{# 검색 제외(noindex)는 base.html 의 목록에서 한 번에 넣습니다 #}
 {% block body %}
 {# 받은 임장 코스 (course.html?c=단지,단지&m=walk): 공유받은 사람이 처음 보는 화면.
    무엇을 받았는지(요약·지도·순서) → 바로 쓰기(내 코스로 저장·첫 단지 길찾기) → 이 사이트가 무엇인지 (course.js) #}

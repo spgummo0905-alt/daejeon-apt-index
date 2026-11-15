@@ -56,7 +56,10 @@ def test_share_tags_and_sitemap(tmp_path):
     assert 'property="og:title" content="데모단지 01 · 지수' in page
     assert (out / "static" / "og" / "daejeon.jpg").exists() and (out / "static" / "brand" / "favicon-48.png").exists()
     sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
-    assert sitemap.count("<url>") == 63 + 9  # 단지 비교, 조건으로 찾기, 관심 단지, 카드첩, 집감 옥상, 역세권, 랭킹, 테마, 인트로 and f"<loc>{base}apt/DEMO-0001</loc>" in sitemap
+    # 단지 61곳 + 지역 첫 화면·산출 방법·집감 옥상·역세권·랭킹·테마 (도구·개인 화면과 지역 인트로는 noindex 라 빠짐)
+    assert sitemap.count("<url>") == 61 + 6 and f"<loc>{base}apt/DEMO-0001</loc>" in sitemap
+    for gone in ("compare", "finder", "my", "cards", "intro", "projects"):
+        assert f"<loc>{base}{gone}</loc>" not in sitemap
     assert f"Sitemap: {base}sitemap.xml" in (out / "robots.txt").read_text(encoding="utf-8")
     # 데모 사이트는 검색엔진에 올라가지 않게 합니다.
     assert '<meta name="robots" content="noindex">' in page
@@ -949,15 +952,17 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     # 디자인은 인트로 그대로, 지역부터 고르게 (위쪽 '지역 선택', 시작 버튼이 지역 고르기 창을 엶)
     assert '<base href="/daejeon/">' in page and 'class="it-hero"' in page and "<span>지역 선택</span>" in page
     assert '<h1><span class="sr-only">집감: </span>좋은 집의 가치<br><em><span class="nb">더 쉽게 찾고,</span> <span class="nb">더 꼼꼼히 보다</span></em></h1>' in page
-    assert '실거래가·입지 비교부터 임장 기록까지,<br>집 볼 때 필요한 감을 한곳에서.' in page
+    assert '집감은 아파트 임장 앱입니다. 실거래가 비교부터 임장 체크리스트·기록까지,<br>집 볼 때 필요한 감을 한곳에서.' in page
     assert 'data-rg-open aria-haspopup="dialog" aria-controls="rg-pop">궁금한 동네 둘러보기' in page and 'aria-current="page"' not in page
     final = page.split('class="it-final"')[1].split('</section>')[0]
     assert 'data-rg-open' in final and "지역 고르고 아파트 찾기" in final
     assert 'data-search-go' not in final and 'href="index.html#list"' not in final
     assert "대전 아파트 검색하기" not in page and "대전 아파트의" not in page
     assert "분포 예시" in page and "지역마다 분포가 다릅니다" in page
-    assert '<title>집감 | 아파트 실거래가 비교부터 임장 코스·기록까지</title>' in page
-    assert 'property="og:title" content="집감 | 아파트 실거래가 비교부터 임장 코스·기록까지"' in page
+    # 맨 앞 주소는 브랜드·임장 대표 화면: 제목·설명에 '집감', '아파트 임장 앱', '임장 체크리스트', 'jipgam.kr'
+    assert '<title>집감 | 아파트 임장 앱 · 실거래가 비교·임장 체크리스트</title>' in page
+    assert 'property="og:title" content="집감 | 아파트 임장 앱 · 실거래가 비교·임장 체크리스트"' in page
+    assert "집감은 아파트 임장 앱입니다" in page and "jipgam.kr" in page.split('name="description"')[1][:400]
     schema = json.loads(page.split('<script type="application/ld+json">')[1].split('</script>')[0])
     assert schema["@type"] == "WebSite" and schema["name"] == "집감"
     assert schema["url"] == "https://www.jipgam.kr/" and schema["@id"] == "https://www.jipgam.kr/#website"
@@ -971,7 +976,7 @@ def test_root_landing_picks_region_and_redirects_old_links(tmp_path):
     assert (out / "favicon.ico").read_bytes()[:4] == b"\x00\x00\x01\x00"
     assert "지역 선택" not in (out / "daejeon" / "intro.html").read_text(encoding="utf-8")   # 지역 인트로는 그대로
     stub = (out / "apt" / "DEMO-0001.html").read_text(encoding="utf-8")
-    assert 'location.replace("/daejeon/apt/DEMO-0001.html"+location.search+location.hash)' in stub
+    assert 'location.replace("/daejeon/apt/DEMO-0001"+location.search+location.hash)' in stub   # 넘기는 곳도 .html 없이
     assert 'href="https://www.jipgam.kr/daejeon/apt/DEMO-0001"' in stub and 'content="noindex"' in stub
     assert (out / "rank.html").exists() and not (out / "sejong" / "rank.html").read_text(encoding="utf-8").startswith("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><title>집감 대전")
     sw = (out / "sw.js").read_text(encoding="utf-8")

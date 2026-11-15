@@ -5558,3 +5558,7 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 
 /* C1 수집 카드 틀: 갤러리 S 만 3px 이던 것을 카드첩과 같은 4px 로 (등급 색·반짝임·이름 크기는 그대로) */
 .hc-collect.g-S { padding: 4px; }
+
+/* SEO 개편: 맨 앞 주소(/)의 자주 묻는 질문 — 1080px 판 안에서 글줄이 너무 길지 않게 폭만 줄입니다 (landing.FAQ) */
+.it-faq .faq-list, .it-faq .it-tools-lead { max-width: 760px; }
+.it-faq .it-sub { margin-top: 18px; font-size: 15px; }

@@ -574,8 +574,11 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     (out_dir / "intro.html").write_text(env.get_template("intro.html").render(page_path="intro.html", **intro_ctx),
                                         encoding="utf-8")
     # 사이트 맨 앞 주소(www.jipgam.kr/)용 인트로: 같은 화면이지만 지역을 먼저 고르게 (landing.py 가 맨 앞에 옮겨 둠)
+    # 자주 묻는 질문은 landing.FAQ 한 곳에서 화면과 구조화 정보(FAQPage)가 함께 씁니다.
+    from .landing import FAQ as _landing_faq
     (out_dir / "landing.html").write_text(env.get_template("intro.html").render(page_path="landing.html", landing=True,
-                                                                                 **intro_ctx), encoding="utf-8")
+                                                                                 landing_faq=_landing_faq, **intro_ctx),
+                                          encoding="utf-8")
     # 카드 갤러리(검수용, 검색 노출 없음): 같은 실제 단지 자료로 카드 3종을 나란히
     (out_dir / "card-gallery.html").write_text(env.get_template("card-gallery.html").render(
         root="", page_path="card-gallery.html", samples=[r for r in sorted((r for r in rows if not r["small"] and r.get("rank")), key=lambda r: r["rank"])][:6], **common), encoding="utf-8")
@@ -726,7 +729,8 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     # 소규모·원룸형은 첫 화면 전체 목록의 '소규모·원룸형' 분류에서만 쓰므로 따로 (table.js)
     write_complexes(out_dir, [r for r in rows if r["small"]], factors, name="small.json")
     write_sitemap(out_dir, cfg.site.get("base_url", ""),
-                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes", "intro"] if n != "projects"] + [f"apt/{r['slug']}.html" for r in rows],
+                  [f"{n}.html" for n in APP_PAGES + (["stations"] if _transit(cfg)["page"] else []) + ["rank", "themes"]
+                   if n not in NOINDEX_PAGES] + [f"apt/{r['slug']}.html" for r in rows],
                   [g.get("url", "") for g in _regions(cfg)])
     return len(rows)
 
@@ -1109,6 +1113,11 @@ def _themes(main_t, by_id, cfg, meta) -> list[dict]:
 
 THEME_ROWS = 400  # 구별로 걸러도 끝까지 볼 수 있게 넉넉히 (화면엔 12곳씩, 나머지는 숨겨 둠)
 APP_PAGES = ["compare", "finder", "my", "cards", "rooftop", "projects"]
+
+# 검색에 올리지 않는 화면: 도구·개인·비공개 화면과 지역 인트로(맨 앞 주소와 같은 본문).
+# templates/base.html 이 같은 목록으로 noindex 를 넣고, write_sitemap 이 사이트맵에서도 뺍니다.
+# preview·card-gallery 는 각 화면이 직접 noindex 를 넣고 사이트맵에는 원래 넣지 않으므로 여기 두지 않습니다.
+NOINDEX_PAGES = ("my", "projects", "compare", "finder", "cards", "course", "me", "admin", "share", "intro")
 STATION_RADIUS = 700  # 역세권으로 보는 거리(m)
 
 
@@ -1406,6 +1415,8 @@ def write_sitemap(out_dir: Path, base: str, apt_paths: list[str], others: list[s
 
     today = date.today().isoformat()
     clean = lambda p: p[:-5] if p.endswith(".html") else p      # 주소는 .html 없이 (canonical 과 같게)
+    # noindex 화면은 사이트맵에 넣지 않습니다 (넣으면 '색인됨 - robots 로 차단됨' 충돌 보고가 납니다)
+    apt_paths = [p for p in apt_paths if clean(p).split("/")[0] not in NOINDEX_PAGES]
     entries = [("", "1.0"), ("methodology", "0.3")] + [(clean(p), "0.5" if "/" not in p else "0.7") for p in apt_paths]
     urls = "".join(
         f"<url><loc>{xml_escape(base + path)}</loc><lastmod>{today}</lastmod><priority>{pri}</priority></url>\n"

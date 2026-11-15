@@ -23,6 +23,57 @@ from .config import ROOT
 LEGACY = "daejeon"   # 예전에 맨 앞 주소에 있던 지역 폴더
 
 
+# 맨 앞 주소(/)의 '자주 묻는 질문'. 화면(templates/intro.html)과 구조화 정보(FAQPage)가 이 한 목록을 함께 씁니다.
+# 실제로 하는 일만 적고, 투자 권유·가격 예측·순위 자랑 문구는 쓰지 않습니다.
+FAQ = [
+    ("집감은 어떤 서비스인가요?",
+     "집감은 아파트 임장을 준비하고 기록하는 서비스입니다. 국토교통부 실거래가와 공공 자료로 단지마다 지수·등급 카드를 만들고, "
+     "조건으로 찾기·단지 비교·임장 코스·현장 기록을 한곳에서 쓸 수 있습니다."),
+    ("어느 지역 아파트를 볼 수 있나요?",
+     "서울·대전·세종·청주의 아파트를 제공합니다. 전국 모든 지역을 제공하지는 않으며, 자료가 갖춰지는 지역부터 늘립니다."),
+    ("임장 코스는 어떻게 만드나요?",
+     "관심 단지나 조건으로 찾은 단지를 담은 뒤 방문 순서를 정하면 코스가 됩니다. 지도에서 단지 위치와 이동 순서를 보며 정하고, "
+     "마지막 단지까지 길찾기로 이어집니다."),
+    ("임장 체크리스트에는 무엇이 있나요?",
+     "역까지 거리·주차·관리비·언덕·큰길 소음처럼 숫자로 볼 수 있는 항목을 현장에서 확인하고, 들은 호가와 메모를 남길 수 있습니다. "
+     "확인한 항목은 임장 배지와 임장 노트에 모입니다."),
+    ("요금이 있나요? 로그인해야 하나요?",
+     "무료로 쓸 수 있습니다. 후보 담기·임장 코스·현장 메모는 로그인 없이 이 기기에 저장되고, 카카오 로그인을 하면 기록을 계정에 "
+     "함께 보관해 다른 기기에서 이어 볼 수 있습니다."),
+    ("지수와 등급은 무엇을 뜻하나요?",
+     "집감 지수는 입지 점수와 10년·5년 상승률 순위 점수를 합쳐 0~100으로 만든 값이고, 등급 S~D는 그 점수 구간입니다. "
+     "같은 지역 단지끼리 비교한 참고 값이며 투자 권유나 가격 예측이 아닙니다."),
+]
+
+
+def _schemas(base: str) -> list[dict]:
+    """맨 앞 주소(/)의 구조화 정보: 사이트·조직·앱·자주 묻는 질문. 지어낸 값 없이 이번 화면에 있는 사실만 적습니다."""
+    names = ["Jipgam", "집감 임장", "집감 앱", "jipgam.kr"]
+    website = {"@context": "https://schema.org", "@type": "WebSite", "@id": base + "#website",
+               "name": "집감", "alternateName": names, "url": base, "inLanguage": "ko-KR",
+               "description": "아파트 실거래가·입지 비교, 임장 코스와 현장 기록을 한곳에서 준비하는 플랫폼",
+               "publisher": {"@id": base + "#organization"}}
+    org = {"@context": "https://schema.org", "@type": "Organization", "@id": base + "#organization",
+           "name": "집감", "alternateName": names, "url": base,
+           "logo": {"@type": "ImageObject", "url": base + "static/icons/icon-512.png", "width": 512, "height": 512},
+           "description": "국토교통부 실거래가와 공공 자료로 아파트를 비교하고 임장을 준비하는 서비스",
+           "areaServed": {"@type": "Country", "name": "대한민국"},
+           # 공식 채널: 검색엔진이 같은 브랜드의 사이트 밖 채널로 묶어 알아보게
+           "sameAs": ["https://blog.naver.com/happydalma1"]}
+    app = {"@context": "https://schema.org", "@type": "SoftwareApplication", "@id": base + "#app",
+           "name": "집감", "alternateName": ["Jipgam", "집감 임장 앱", "집감 앱"],
+           "applicationCategory": "LifestyleApplication", "operatingSystem": "Android, Web",
+           "url": base, "inLanguage": "ko-KR", "isAccessibleForFree": True,
+           "description": "아파트 실거래가 비교, 입지 점수, 임장 코스, 현장 체크리스트와 기록을 한곳에서 쓰는 임장 앱",
+           "offers": {"@type": "Offer", "price": "0", "priceCurrency": "KRW"},
+           "publisher": {"@id": base + "#organization"}, "screenshot": base + "static/og/jipgam.jpg"}
+    faq = {"@context": "https://schema.org", "@type": "FAQPage", "@id": base + "#faq",
+           "url": base + "#faq", "inLanguage": "ko-KR", "isPartOf": {"@id": base + "#website"},
+           "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+                          for q, a in FAQ]}
+    return [website, org, app, faq]
+
+
 # 없는 주소(404) 안내 화면: GitHub Pages 는 맨 앞의 404.html 을 없는 주소에서 보여 줍니다.
 # 어느 주소에서 열려도 깨지지 않게 링크는 모두 절대 주소, 스타일은 파일 안에 넣었습니다(외부 파일 없음).
 NOT_FOUND = """<!doctype html>
@@ -58,7 +109,7 @@ a:focus-visible{{outline:3px solid #9cc2ff;outline-offset:3px}}
 <p>주소가 바뀌었거나, 잘못 입력됐을 수 있어요. 아래에서 다시 시작해 보세요.</p>
 <div class="btns">
 <a class="p" href="/">집감 홈으로</a>
-<a class="g" href="/{folder}/finder.html">내 예산으로 아파트 찾기</a>
+<a class="g" href="/{folder}/finder">내 예산으로 아파트 찾기</a>
 </div>
 </main>
 </body>
@@ -125,7 +176,7 @@ def write_redirects(out_dir: Path, folder: str, name: str, base: str, skip: set[
             dst.write_text(body, encoding="utf-8")
             n += 1
             continue
-        to = f"/{folder}/{rel}"
+        to = f"/{folder}/{rel[:-5]}"     # 받는 곳도 canonical 과 같이 .html 없이 (예전 .html 주소가 다시 만들어지지 않게)
         canon = f"{base}{folder}/{rel[:-5]}" if base else to
         dst.write_text(STUB.format(name=escape(name), to=escape(to), canon=escape(canon)), encoding="utf-8")
         n += 1
@@ -212,20 +263,11 @@ def build(cfg, out_dir: Path) -> int:
         html = html.replace(f'href="{base}{folder}/landing"', f'href="{base}"').replace(
             f'content="{base}{folder}/landing"', f'content="{base}"')
         html = re.sub(r'(<meta property="og:image" content=")[^"]*(")', rf'\g<1>{base}static/og/jipgam.jpg\g<2>', html)
-        # 사이트 이름은 도메인 첫 화면에서 선언합니다. 지역 자료를 전국 합계나 전국 순위로 표현하지 않습니다.
-        website = {"@context": "https://schema.org", "@type": "WebSite", "@id": base + "#website",
-                   "name": "집감", "alternateName": ["Jipgam", "집감 임장"], "url": base, "inLanguage": "ko-KR",
-                   "description": "아파트 실거래가·입지 비교, 임장 코스와 현장 기록을 한곳에서 준비하는 플랫폼"}
+        # 사이트 이름·조직·앱·자주 묻는 질문을 도메인 첫 화면에서 선언합니다. 지역 자료를 전국 합계나 전국 순위로 표현하지 않습니다.
         # JSON 문자열 안의 HTML 종료 태그가 script 요소를 닫지 못하게 이스케이프합니다.
-        schema = json.dumps(website, ensure_ascii=False).replace("<", "\\u003c")
-        # 브랜드 검색(집감)에서 사이트와 로고를 알아보게: 조직 정보와 로고 (96px 아이콘이 아닌 512px)
-        org = {"@context": "https://schema.org", "@type": "Organization", "@id": base + "#organization",
-               "name": "집감", "alternateName": "Jipgam", "url": base, "logo": base + "static/icons/icon-512.png",
-               # 공식 채널: 검색엔진이 같은 브랜드의 사이트 밖 채널로 묶어 알아보게
-               "sameAs": ["https://blog.naver.com/happydalma1"]}
-        org_s = json.dumps(org, ensure_ascii=False).replace("<", "\\u003c")
-        html = html.replace("</head>", f'<script type="application/ld+json">{schema}</script>\n'
-                                       f'<script type="application/ld+json">{org_s}</script>\n</head>', 1)
+        tags = "".join(f'<script type="application/ld+json">{json.dumps(s, ensure_ascii=False).replace("<", "\\u003c")}</script>\n'
+                       for s in _schemas(base))
+        html = html.replace("</head>", f"{tags}</head>", 1)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
     if base:
@@ -250,6 +292,10 @@ def build(cfg, out_dir: Path) -> int:
     (out_dir / "404.html").write_text(NOT_FOUND.format(folder=folder), encoding="utf-8")
     (out_dir / "sw.js").write_text(SW, encoding="utf-8")
     n_stub = write_redirects(out_dir, legacy["folder"], legacy["name"], base, {r["folder"] for r in rows}) if legacy else 0
+    # 맨 앞 /intro.html 은 지역 인트로가 아니라 맨 앞 소개 화면(/)과 같은 내용이므로 / 로 보냅니다.
+    # (지역 인트로는 맨 앞 주소와 같은 본문이라 검색에 올리지 않습니다 — templates/base.html 의 noindex 목록)
+    if base and (out_dir / "intro.html").exists():
+        (out_dir / "intro.html").write_text(STUB.format(name="소개", to="/", canon=escape(base)), encoding="utf-8")
 
     # 검색엔진: 맨 앞 주소 + 지역마다의 사이트맵
     if base:

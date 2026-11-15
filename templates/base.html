@@ -28,7 +28,13 @@
 {# 광고는 글을 읽는 화면에만(단지 상세·랭킹·테마·역별·산출 방법). 찾기·비교·지도·MY·홈 같은 쓰는 화면과 앱 안 화면은 빠르고 방해 없게 뺀다. 목록을 늘리면 tests/test_v63_ads_pages.py 도 함께 고친다. #}
 {% set _ad_pages = ["apt", "rank", "themes", "stations", "methodology"] %}
 {% if site.adsense_client and not demo and (page_path.split("/")[0].replace(".html", "") in _ad_pages) %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site.adsense_client }}" crossorigin="anonymous"></script>{% endif %}
-{% if demo %}<meta name="robots" content="noindex">{% endif %}
+{# 검색에 올리지 않는 화면: 도구·개인·비공개 화면. 사이트맵(site.write_sitemap)에서도 같은 목록을 뺍니다.
+   my·projects·compare·finder·cards 는 화면마다 다른 값이 없고(기기·조건에 따라 달라짐), intro 는 맨 앞 주소(/)와
+   같은 본문이라 지역마다 하나씩 두면 서로 잠식합니다. 그래서 지역 intro 는 noindex, 맨 앞 주소(landing)만 색인합니다.
+   preview·card-gallery 는 각 화면 파일이 직접 noindex 를 넣습니다(검수용). 목록을 고치면 tests/test_seo_crawl.py 도 함께. #}
+{% set _seo_pk = page_path.split('/')[0].replace('.html', '') %}
+{% set _noindex_pages = ["my", "projects", "compare", "finder", "cards", "course", "me", "admin", "share", "intro"] %}
+{% if demo or _seo_pk in _noindex_pages %}<meta name="robots" content="noindex">{% endif %}
 <script>document.documentElement.classList.add("js");try{if(localStorage.getItem("dj-unit")==="py")document.documentElement.classList.add("u-py")}catch(e){}</script>
 <link rel="icon" href="{{ root }}static/brand/favicon-48.png" type="image/png" sizes="48x48">
 <link rel="icon" href="{{ root }}static/brand/favicon-96.png" type="image/png" sizes="96x96">
@@ -36,8 +42,10 @@
 <link rel="apple-touch-icon" href="{{ root }}static/icons/apple-touch-icon.png">
 <meta name="theme-color" content="#f7f4ec" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1f1a" media="(prefers-color-scheme: dark)">
-{# 하단 탭 4곳은 눌러 보기 전에 미리 받아 둠(받기만 하고 실행은 안 함). 지원 안 하는 브라우저는 그냥 무시 #}
-<script type="speculationrules">{"prefetch":[{"urls":["{{ root }}index.html","{{ root }}finder.html","{{ root }}projects.html","{{ root }}rank.html","{{ root }}my.html"],"eagerness":"moderate"}]}</script>
+{# 하단 탭 4곳은 눌러 보기 전에 미리 받아 둠(받기만 하고 실행은 안 함). 지원 안 하는 브라우저는 그냥 무시
+   주소는 canonical 과 같이 .html 없이 적습니다. .html 로 미리 받으면 검색 로봇이 그 주소까지 크롤해 같은 화면을
+   두 주소로 모으게 됩니다(서치콘솔 '리디렉션이 포함된 페이지'). #}
+<script type="speculationrules">{"prefetch":[{"urls":["{{ root or './' }}","{{ root }}finder","{{ root }}projects","{{ root }}rank","{{ root }}my"],"eagerness":"moderate"}]}</script>
 <meta name="apple-mobile-web-app-title" content="집감">
 {# 글꼴은 외부(CDN) 조각 14개 대신 우리 파일 두 개: 쓰는 글자(A)는 바로, 나머지 흔한 한글(B)은 필요할 때만 (scripts/build_font.py) #}
 <link rel="preload" as="font" type="font/woff2" href="{{ root }}static/fonts/pv-a.woff2" crossorigin>
