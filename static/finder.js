@@ -732,7 +732,9 @@
     if (fromSearch) document.getElementById("results").scrollIntoView();
   }).catch(() => {   // 단지 목록을 못 받았을 때: 빈 화면 대신 안내와 다시 시도 (자동으로 조건을 지우지 않음)
     box.querySelector("[data-sv-n]").textContent = "-";
-    q.replaceChildren(el("h3", "sv-qt", "단지 목록을 불러오지 못했어요"), el("p", "sv-qs", "인터넷 연결을 확인하고 다시 시도해 주세요. 골라 둔 조건은 그대로 남아 있어요."));
+    const ic = el("span", "il-art"); ic.setAttribute("aria-hidden", "true"); ic.innerHTML = '<svg viewBox="0 0 96 96" width="88" height="88" aria-hidden="true" focusable="false" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 42a40 40 0 0156 0M30 54a26 26 0 0136 0M40 65a12 12 0 0116 0"/><circle cx="48" cy="75" r="2.6" fill="currentColor"/><path d="M22 20l52 52" stroke="var(--il-mute)"/></svg>';   // 장식 그림(직접 그린 선, 외부 파일 없음)
+    const advBox = q.closest("details"); if (advBox) advBox.open = true;   // 안내·다시 시도가 닫힌 상자 안에 있어 안 보이던 것
+    q.replaceChildren(ic, el("h3", "sv-qt", "단지 목록을 불러오지 못했어요"), el("p", "sv-qs", "인터넷 연결을 확인하고 다시 시도해 주세요. 골라 둔 조건은 그대로 남아 있어요."));
     const retry = el("button", "btn primary", "다시 시도"); retry.type = "button"; retry.addEventListener("click", () => location.reload()); q.append(retry);
     document.querySelector("[data-sv-wait]").hidden = true;
     gridBox.replaceChildren(el("p", "sv-empty", "결과를 불러오지 못했어요. 위의 '다시 시도'를 눌러 주세요."));

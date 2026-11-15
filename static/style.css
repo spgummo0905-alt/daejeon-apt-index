@@ -5562,3 +5562,8 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 /* SEO 개편: 맨 앞 주소(/)의 자주 묻는 질문 — 1080px 판 안에서 글줄이 너무 길지 않게 폭만 줄입니다 (landing.FAQ) */
 .it-faq .faq-list, .it-faq .it-tools-lead { max-width: 760px; }
 .it-faq .it-sub { margin-top: 18px; font-size: 15px; }
+
+/* C3 작은 그림: 빈 카드첩·단지 목록 불러오기 실패에 장식용 선 그림(문장·버튼은 그대로, 그림은 aria-hidden) */
+.il-art { --il-soft: #eef2ee; --il-warm: #f6e7c8; --il-mute: #8b95a7; display: block; color: var(--text-2); line-height: 0; margin: 0 0 4px; }
+@media (prefers-color-scheme: dark) { .il-art { --il-soft: #1c2a26; --il-warm: #3a3d36; --il-mute: #7a8596; } }
+.il-art svg { display: block; max-width: 100%; height: auto; }
