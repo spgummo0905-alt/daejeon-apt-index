@@ -276,7 +276,8 @@
       sorted.slice(shown, shown + k).forEach(c => box.append(acCard(c)));
       shown = Math.min(sorted.length, shown + k);
       btn.hidden = shown >= sorted.length;
-      btn.replaceChildren(document.createTextNode(`${sorted.length - shown}장 더 보기`));
+      btn.replaceChildren(document.createTextNode("더 보기"));   // 남은 장수는 읽어 주는 글에만
+      btn.setAttribute("aria-label", `카드 ${sorted.length - shown}장 더 보기`);
       btn.insertAdjacentHTML("beforeend", '<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg>');
     };
     draw(2);

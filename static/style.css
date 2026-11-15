@@ -5761,3 +5761,8 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .ac-page .album-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 48px; margin: 12px 0 0; border-radius: 16px; font-size: 15px; font-weight: 850; }
 .ac-page .album-more[hidden] { display: none; }
 .ac-page .album-more .ic { width: 20px; height: 20px; }
+
+/* D10 걸러 보기 칩은 '내 카드 모아보기' 제목 바로 아래(시안 위치는 카드 아래였으나 요청으로 이동) */
+.ac-sec { margin-bottom: 8px; }
+.ac-page .ac-filter { margin: 0 0 4px; }
+.ac-page .album-shown { margin: 8px 0 0; }
