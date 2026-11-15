@@ -7,7 +7,7 @@ CSS = (R / "static/style.css").read_text(encoding="utf8")
 def test_note_and_tiles_markup_start_hidden_with_original_copy():
     assert 'data-album-note hidden>' in HTML and "수집한 기록이 차곡차곡" in HTML and "방문 도장은 실제 임장 기록에만" in HTML
     assert 'data-album-best hidden>' in HTML and "내 카드 모아보기" in HTML
-    assert HTML.index("data-album-note") < HTML.index('id="album"') < HTML.index("data-album-cards") < HTML.index("data-album-best") < HTML.index("album-prog") < HTML.index("album-legend")   # D5: 시안 순서
+    assert HTML.index("data-album-note") < HTML.index("data-album-cards") < HTML.index("ac-prog") < HTML.index("ac-insight") < HTML.index("data-album-best")   # D7: 시안 순서(대표 카드 타일은 '더 보기' 안)
 def test_both_show_only_when_cards_are_collected():
     assert "note.hidden = !got.length;" in JS and "best.hidden = !tops.length;" in JS
     assert 'const note = document.querySelector("[data-album-note]");' in JS      # 띠는 구역 밖에 있으니 문서 전체에서 찾아야 함(구역 안에서만 찾으면 영영 숨겨짐)
