@@ -240,7 +240,7 @@ def test_cards_page_today_badges_album(tmp_path):
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'id="today"' not in index and "cards.html" in index   # 메인엔 없고 메뉴에만
     cards = (out / "cards.html").read_text(encoding="utf-8")
-    for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 비교 후보", "임장 배지", "살펴본 아파트 카드", "static/cards.js"):
+    for sec in ('id="today"', 'id="badges"', 'id="album"', "오늘의 비교 후보", "임장 배지", "내 카드 모아보기", "static/cards.js"):
         assert sec in cards, sec
     assert cards.index('id="album"') < cards.index('id="today"') < cards.index('id="badges"')   # D1: 모은 카드가 맨 위
     my = (out / "my.html").read_text(encoding="utf-8")
