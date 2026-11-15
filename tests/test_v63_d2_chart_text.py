@@ -3,7 +3,9 @@ import pathlib, re
 R = pathlib.Path(__file__).resolve().parent.parent
 def _tail():
     c = (R / "static/style.css").read_text(encoding="utf8")
-    return c[c.index("/* D2 차트 글자"):]
+    t = c[c.index("/* D2 차트 글자"):]
+    _n = t.find("\n/* D7 카드첩", 5)
+    return t[:_n] if _n > 0 else t   # 자기 구역만(뒤의 D7 카드첩은 시안 글자 크기를 따름)
 def test_chart_text_sizes_raised_and_never_below_14():
     t = _tail()
     assert ".chart .axis { font-size: 15px; }" in t and ".pc-ylab { font-size: 14px; }" in t

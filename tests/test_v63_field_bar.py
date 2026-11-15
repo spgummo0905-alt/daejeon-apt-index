@@ -21,7 +21,7 @@ def test_existing_save_rules_still_in_place():
     assert "if (!persist())" in f and "cb.checked = was" in f and "nextAfterVisit()" in f
     assert "계정에는 보내지 못했어요. 이 기기에는 저장돼 있어요." in f and "이 기기와 내 계정에 저장됐어요." in f
 def test_bar_css_touch_size_keyboard_and_embed():
-    c = _r("static/style.css"); t = c[c.index("/* D3 현장 모드 안 2"):]
+    c = _r("static/style.css"); t = c[c.index("/* D3 현장 모드 안 2"):]; _n = t.find("\n/* D7 카드첩", 5); t = t[:_n] if _n > 0 else t
     assert "position: sticky" in t and "min-height: 52px" in t and ".kb-open .fm-bar { display: none; }" in t
     assert ".pj-embed-field .fm-bar { display: none; }" in t and ".fm-bar.bad { flex-wrap: wrap; }" in t
     assert min(int(x) for x in re.findall(r"font-size: (\d+)px", t)) >= 14

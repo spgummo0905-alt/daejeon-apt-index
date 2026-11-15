@@ -45,6 +45,9 @@ def test_v52_block_is_last_and_text_never_below_12px():
     c = R("static/style.css")
     assert c.count("UX v5.2 · 위치 지도 새 안") == 1
     tail = c[c.index("UX v5.2 · 위치 지도 새 안"):]
+    _n = tail.find("\n/* D7 카드첩", 5)
+    if _n > 0:
+        tail = tail[:_n]    # 자기 구역만(뒤의 D7 카드첩은 시안의 12px 글자를 따르고, 카드 안 12px 이하 금지는 test_card_cover 가 지킴)
     import re
     sizes = [int(x) for x in re.findall(r"font-size: (\d+)px", tail)]
     assert sizes and min(sizes) >= 14
