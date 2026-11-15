@@ -17,7 +17,9 @@ def test_failure_state_never_gets_ok():
     bad_line = s[s.index('s === "error"'):s.index("else if (pending")]
     assert "ok = true" not in bad_line and "bad = true" in bad_line
 def test_check_css_is_only_for_ok_and_has_no_motion():
-    block = CSS[CSS.index("/* C3 저장 완료 체크"):]
+    start = CSS.index("/* C3 저장 완료 체크")
+    end = CSS.find("/* C5 완료 카드", start)   # 뒤에 붙는 완료 카드 블록은 test_v64_c5_done_card 가 따로 검사
+    block = CSS[start:end if end != -1 else len(CSS)]
     assert ".fm-save.ok::before" in block and "animation" not in block
     urls = re.findall(r"url\(([^)]*)\)", block)
     assert urls and all(u.strip("\"'").startswith("data:image/svg+xml") for u in urls)   # 외부 파일 없이 직접 박은 그림만

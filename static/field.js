@@ -404,6 +404,24 @@
     const been = el("button", "btn fm-been", "");
     been.type = "button";
     const stamp = el("span", "fm-stamp"), again = el("a", "btn ghost fm-again", "다녀온 기록으로 다시 비교하기 ›");
+    // 완료 카드: '오늘 다녀왔어요'가 실제로 저장된 직후에만 보임(저장 실패·끄기에는 안 보임). 새 값·계산 없음
+    const done = el("div", "fm-done"); done.hidden = true; done.setAttribute("role", "status");
+    const doneIc = el("span", "fm-done-ic"); doneIc.setAttribute("aria-hidden", "true");
+    doneIc.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4 8-9"/></svg>';
+    const doneT = el("b", "fm-done-t", ""), doneS = el("span", "fm-done-s", "이 기기에 저장됐어요."), doneL = el("span", "fm-done-l", "");
+    const doneGo = el("a", "btn primary fm-done-go", "내 카드첩에서 보기"); doneGo.href = (window.DJ_ROOT || "") + "cards.html";
+    done.append(doneIc, doneT, doneS, doneL, doneGo);
+    const showDone = () => {   // 다녀온 단지가 이 하나뿐이면 '첫 임장'. 같은 기기의 저장된 기록만 셈
+      DJ.data().then(d => {
+        const n = d.complexes.filter(c => (DJ.visit(c.s) || {}).d).length;
+        doneT.textContent = n <= 1 ? "첫 임장 기록이 남았어요!" : "임장 기록이 남았어요";
+      }).catch(() => { doneT.textContent = "임장 기록이 남았어요"; });
+      doneT.textContent = "임장 기록이 남았어요";
+      doneL.textContent = name + " · " + v.d.slice(5).replace("-", ".") + " 방문 도장";
+      done.hidden = false;
+      if (!DJ.calm) { done.classList.remove("in"); void done.offsetWidth; done.classList.add("in"); }
+      done.scrollIntoView({ block: "nearest", behavior: DJ.calm ? "auto" : "smooth" });
+    };
     stamp.hidden = again.hidden = true;
     again.href = (window.DJ_ROOT || "") + "compare.html?a=" + encodeURIComponent(slug);
     const paint = (fresh) => {
@@ -419,6 +437,8 @@
       if (v.d) delete v.d; else v.d = DJ.today();
       if (!persist()) { if (prev) v.d = prev; else delete v.d; paint(); return; }   // 저장하지 못했으면 '다녀왔어요'도 켜지 않고 안내도 하지 않음
       paint(!was);
+      done.hidden = true;
+      if (!was) showDone();   // 완료 카드: 저장이 확인된 뒤 켠 순간에만
       if (!was) nextAfterVisit();   // '다녀왔어요'를 켠 순간에만. 끌 때는 아무 안내도 하지 않음
     });
     paint();
@@ -431,7 +451,7 @@
     retryBtn = el("button", "btn sm fm-retry", "다시 보내기"); retryBtn.type = "button"; retryBtn.hidden = true;
     retryBtn.addEventListener("click", () => { retryBtn.disabled = true; pending = true; paintSave(); Promise.resolve(DJ.syncRetry && DJ.syncRetry()).finally(() => { retryBtn.disabled = false; paintSave(); }); });
     saveEl.append(retryBtn); paintSave();
-    s.append(t, saveEl, been, stamp, again, dated, note);
+    s.append(t, saveEl, been, done, stamp, again, dated, note);
     return s;
   }
 
