@@ -5848,3 +5848,19 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .hm-insight { background: #12332a; color: #d7f1e6; box-shadow: inset 0 0 0 1px #2c5a4b; } .hm-insight small { color: #a9cdbd; } .hm-insight .ic { background: #3a3417; }
   .hm-art { opacity: .75; }
 }
+
+/* E2 홈 맨 위 헤더(시안 A, 폰·홈만): 로고+집감 · 지역 알약 · 검색 · 카드첩 둥근 버튼. 다른 화면·큰 화면은 그대로 */
+.hd-cards { display: none; }
+@media (max-width: 720px) {
+  body[data-page="index"] header.site { background: transparent; border-bottom: 0; box-shadow: none; padding: 11px 16px 0; min-height: 56px; gap: 8px; }
+  body[data-page="index"] .brand-sym { width: 33px; height: 33px; border-radius: 11px; }
+  body[data-page="index"] .brand-word { font-size: 20px; letter-spacing: -.07em; }
+  body[data-page="index"] .rg { margin-left: auto; margin-right: 0; }
+  body[data-page="index"] .rg-btn, body[data-page="index"] .hs-btn, body[data-page="index"] .hd-cards { height: 44px; min-width: 44px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 9px 22px rgba(42, 68, 54, .06); color: var(--text); }
+  body[data-page="index"] .rg-btn { padding: 0 11px; font-size: 15px; font-weight: 800; }
+  body[data-page="index"] .hd-end { gap: 8px; margin-left: 0; }
+  body[data-page="index"] .hd-cards { display: inline-grid; place-items: center; text-decoration: none; }
+  body[data-page="index"] .hd-cards .ic { width: 20px; height: 20px; }
+  body[data-page="index"] .hs-btn .hs-label { display: none; }
+}
+@media (max-width: 340px) { body[data-page="index"] .brand-word { font-size: 18px; } body[data-page="index"] header.site { padding-inline: 10px; } }
