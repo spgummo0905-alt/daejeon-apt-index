@@ -19,5 +19,8 @@ def test_both_hide_together_when_cards_exist():
     assert 'sec.querySelector("[data-album-empty]").hidden = got.length > 0;' in JS
 def test_css_no_external_files_no_motion_and_button_56():
     b = CSS[CSS.index("/* C6 빈 카드첩"):]
+    _n3 = b.find("\n/* E3 지역 소개", 5)
+    if _n3 > 0:
+        b = b[:_n3]   # 자기 블록만
     assert "url(" not in b and "animation" not in b and "@import" not in b
     assert "min-height: 56px" in b and ".empty-net[hidden] { display: none; }" in b

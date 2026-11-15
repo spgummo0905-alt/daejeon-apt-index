@@ -20,6 +20,9 @@ def test_tile_is_a_real_link_with_label_and_grade_colour_class():
     assert 'a.href = DJ.href(c)' in JS and "`${c.g}등급 ${c.n} 카드 보기`" in JS and '"best-tile g-" + c.g' in JS
 def test_css_no_motion_no_external_files_and_a_has_no_gold():
     b = CSS[CSS.index("/* C7 카드첩"):]
+    _n3 = b.find("\n/* E3 지역 소개", 5)
+    if _n3 > 0:
+        b = b[:_n3]   # 자기 블록만
     assert "url(" not in b and "animation" not in b and "@import" not in b
     assert ".best-tile.g-S { box-shadow: inset 0 0 0 1.5px #c9a34e; }" in b
     assert ".best-tile.g-A" not in b                               # A 는 금색을 쓰지 않음(S만 금)
