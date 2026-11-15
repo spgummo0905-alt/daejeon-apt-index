@@ -200,7 +200,8 @@
     const all = d.complexes.filter(c => GRADES.includes(c.g));
     const got = all.filter(c => a[c.s]);
     const pct = all.length ? got.length / all.length : 0;
-    sec.querySelector("[data-album-total]").textContent = `${got.length.toLocaleString()} / ${all.length.toLocaleString()}장`;
+    sec.querySelector("[data-album-total]").textContent = `${got.length.toLocaleString()}장 수집`;
+    const pc = sec.querySelector("[data-album-prog]"); if (pc) pc.textContent = `${got.length.toLocaleString()} / ${all.length.toLocaleString()}장`;   // 시안의 수집 현황 줄(같은 수)
     sec.querySelector("[data-album-bar]").style.width = (got.length ? Math.max(1.5, pct * 100) : 0) + "%";
     const gl = sec.querySelector("[data-album-grades]");
     gl.replaceChildren();
@@ -216,7 +217,7 @@
     sec.querySelector("[data-album-empty]").hidden = got.length > 0;
     const net = sec.querySelector("[data-album-empty-net]"); if (net) net.hidden = got.length > 0;   // 모은 카드가 없을 때만 함께 보임
     // 안내 띠 + 내 카드 모아보기: 모은 카드가 있을 때만. 타일은 실제로 모은 카드 중 등급마다 지수가 가장 높은 한 장(최대 3등급), 값은 기존 그대로
-    const note = sec.querySelector("[data-album-note]"); if (note) note.hidden = !got.length;
+    const note = document.querySelector("[data-album-note]"); if (note) note.hidden = !got.length;   // 시안(D5): 안내 띠는 구역 바로 위(구역 밖)에 있음
     const best = sec.querySelector("[data-album-best]");
     if (best) {
       const bl = best.querySelector("[data-album-best-list]"); bl.replaceChildren();
