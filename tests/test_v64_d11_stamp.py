@@ -4,6 +4,9 @@ R = pathlib.Path(__file__).resolve().parent.parent
 JS = (R / "static/cards.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* D11 다녀옴 도장"):]
+_n = B.find("\n/* D12", 5)
+if _n > 0:
+    B = B[:_n]   # 자기 블록만
 def test_stamp_is_two_lines_and_only_for_visited_cards():
     seg = JS[JS.index("function acCard(c)"):JS.index("let more = null")]
     assert 'el("span", "ac-stamp", "다녀옴")' in seg and 'document.createElement("br"), b.d.slice(5).replace("-", ".")' in seg

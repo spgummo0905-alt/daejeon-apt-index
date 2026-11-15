@@ -117,11 +117,14 @@
       const front = el("div", "tc-front");
       const card = DJ.miniCard(c);
       const tag = el("span", "tc-tag");
-      front.append(card, tag);
+      front.append(card);
       slot.append(front);
+      // D12: 새 단지·신고가 같은 배지는 카드 위에 겹치지 않고, 설명 글 위 한 줄(오른쪽)에 모아 보임
+      const badges = el("div", "tc-badges"); badges.append(tag); if (c.h) badges.append(el("span", "tc-tag high", "신고가"));
       const why = el("p", "tc-why");   // 뒤집지 않고 처음부터 단지와 고른 이유를 함께 보여 줌
       why.append(el("b", "", kind.label), document.createTextNode(" " + (st.w[i] || "")));
-      col.append(slot, why);
+      const side = el("div", "tc-side"); side.append(badges, why);
+      col.append(slot, side);
       row.append(col);
       const have = !!DJ.album()[s];   // 읽기만 함: 카드를 열어 단지 페이지가 열릴 때 카드첩에 모임(app.js 의 DJ.collect)
       tag.textContent = have ? "이미 살펴본 단지" : "새 단지";
