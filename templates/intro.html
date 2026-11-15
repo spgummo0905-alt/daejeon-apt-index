@@ -28,9 +28,10 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     <div class="iv-ground" aria-hidden="true">{{ scn | replace("-hm", "-iv") }}</div>
     {% set back = [("D", -10, -116), ("C", -5, -64), ("B", 5, 64), ("A", 10, 116)] %}
     {% for g, r, x in back %}{% set gg = "S" if g == top.grade else g %}
-    <span class="iv-card iv-back g-{{ gg }} {{ 'l' if x < 0 else 'r' }} {{ 'o' if x|abs > 100 else 'n' }}" style="--r: {{ r }}deg; --x: {{ x }}px; --i: {{ loop.index0 }}" aria-hidden="true"><b>{{ gg }}</b><small>등급</small></span>
+    <span class="iv-card iv-back g-{{ gg }} {{ 'l' if x < 0 else 'r' }} {{ 'o' if x|abs > 100 else 'n' }}" style="--r: {{ r }}deg; --x: {{ x }}px; --i: {{ loop.index0 }}" aria-hidden="true"><b>{{ gg }}</b><small>TIER</small></span>
     {% endfor %}
     <a class="iv-card iv-front g-{{ top.grade }}" style="--r: 0deg; --i: 4" href="apt/{{ top.slug }}.html" aria-label="{{ top.name }}, {{ top.grade }}등급, 지수 {{ top.index | score }}">
+      <span class="iv-top"><span>JIPGAM</span><span>&#10022; {{ top.grade }} TIER</span></span>
       <span class="iv-badge">{{ top.grade }}</span>
       <strong>{{ top.name }}</strong><span class="iv-place">{{ top | place }}</span>
       <em>{{ top.index | score }}</em><span class="iv-unit">집감 지수</span>

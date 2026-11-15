@@ -5943,6 +5943,26 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   body[data-page="intro"]:has(.it-start) footer { background: #f7f4ec; }
   body[data-page="intro"]:has(.it-start) footer .ft-brand b { color: #0f3d33; }
 }
+/* E3b 소개 화면 카드도 카드첩 카드 모양: 남색 바탕 · 등급 색 금속 테두리 · JIPGAM ✦ TIER 윗줄 · 큰 지수(등급 색) */
+@media (max-width: 720px) {
+  .iv-card { border: 3px solid var(--bc, #d2b274); background: var(--bg2, linear-gradient(155deg, #1c4152, #0e2635)); box-shadow: 0 10px 26px rgba(17, 45, 54, .22); color: #fff; }
+  .iv-card::before { display: none; }
+  .iv-card.g-S { --bc: #d2b274; --bg2: linear-gradient(155deg, #1c4152, #0e2635); --gl: #f2d694; }
+  .iv-card.g-A { --bc: #c3cbd4; --bg2: linear-gradient(145deg, #344154, #1d2d3a); --gl: #e6ebf0; }
+  .iv-card.g-B { --bc: #88acd0; --bg2: linear-gradient(145deg, #375679, #23374d); --gl: #b4d0ee; }
+  .iv-card.g-C { --bc: #8d98a8; --bg2: linear-gradient(145deg, #3b4757, #26303c); --gl: #c8d0db; }
+  .iv-card.g-D { --bc: #cfd6df; --bg2: linear-gradient(145deg, #4a5563, #313a46); --gl: #e3e8ee; }
+  .iv-back b { color: var(--gl); }
+  .iv-back small { color: #c5dcd7; font-weight: 800; letter-spacing: .04em; }
+  .iv-top { align-self: stretch; display: flex; justify-content: space-between; gap: 4px; font-size: 14px; font-weight: 850; letter-spacing: -.02em; color: #e9dcba; white-space: nowrap; }
+  .iv-front { padding: 12px 11px 0; gap: 3px; }
+  .iv-front strong { color: #fff; margin-top: 4px; }
+  .iv-place, .iv-unit { color: #c5dcd7; }
+  .iv-front em { color: var(--gl); }
+  .iv-badge { width: 40px; height: 40px; font-size: 24px; margin-top: 6px; }
+  .iv-front.g-S .iv-badge { background: #e7c873; color: #5a4210; }
+  .iv-front.g-A .iv-badge { background: #e1e6ec; color: #2f3944; } .iv-front.g-B .iv-badge { background: #b4d0ee; color: #1f4170; } .iv-front.g-C .iv-badge { background: #c8d0db; color: #2f3944; } .iv-front.g-D .iv-badge { background: #e3e8ee; color: #3b4450; }
+}
 @keyframes iv-open { from { transform: translateX(0) rotate(0deg); } to { transform: translateX(var(--x, 0px)) rotate(var(--r)); } }
 @media (max-width: 380px) { .iv-back { width: 112px; height: 186px; margin-left: -56px; } .iv-back b { font-size: 26px; } .iv-front { width: 164px; margin-left: -82px; } .iv-back.o.l { --x: -104px !important; } .iv-back.n.l { --x: -56px !important; } .iv-back.n.r { --x: 56px !important; } .iv-back.o.r { --x: 104px !important; } }
 @media (prefers-reduced-motion: reduce) { .iv-card { animation: none; } }

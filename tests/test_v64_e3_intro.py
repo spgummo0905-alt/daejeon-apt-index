@@ -34,3 +34,9 @@ def test_motion_once_with_reduced_motion_fallback_and_buttons_56():
     assert "min-height: 56px" in B and "iteration-count" not in B and "infinite" not in B
 def test_text_not_below_14px_and_no_external_files():
     assert not re.search(r"font-size:\s*(?:[0-9]|1[0-3])px", B) and "url(" not in B and "@import" not in B
+def test_intro_cards_use_the_album_card_look_navy_metal_border_top_line_big_index():
+    assert '<span class="iv-top"><span>JIPGAM</span><span>&#10022; {{ top.grade }} TIER</span></span>' in HTML and "<small>TIER</small>" in HTML
+    seg = B[B.index("/* E3b 소개 화면 카드도"):]
+    for k in ("border: 3px solid var(--bc, #d2b274)", "linear-gradient(155deg, #1c4152, #0e2635)", ".iv-card.g-A { --bc: #c3cbd4;", ".iv-front em { color: var(--gl); }"):
+        assert k in seg, k
+    assert "#d2b274" not in seg[seg.index(".iv-card.g-A"):seg.index(".iv-card.g-B")]      # A 는 금색 테두리가 아님
