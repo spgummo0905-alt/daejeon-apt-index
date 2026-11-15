@@ -5682,3 +5682,8 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .fm-pcard.done .fm-rail i { background: #0b6a4d; }
 .fm-pcard small { display: block; font-size: 14px; color: var(--text-2, #556); }
 @media (prefers-reduced-motion: reduce) { .fm-rail i { transition: none; } }
+
+/* C9b 글자 200%에서 남은 곳(운영 재측정): 상세 위쪽 가격 칸(최근 실거래·추정)과 후기 검색어 줄이 칸보다 넓어지던 것. 값·문구 변경 0 */
+.pb-prices { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.pb-p strong, .pb-p span, .pb-p small { overflow-wrap: anywhere; }
+.rv-q { overflow-wrap: anywhere; }
