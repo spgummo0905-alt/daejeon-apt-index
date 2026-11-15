@@ -214,6 +214,7 @@
       gl.append(li);
     });
     sec.querySelector("[data-album-empty]").hidden = got.length > 0;
+    const net = sec.querySelector("[data-album-empty-net]"); if (net) net.hidden = got.length > 0;   // 모은 카드가 없을 때만 함께 보임
     const beenN = got.filter(c => DJ.been(c)).length;   // 다녀온 곳 수 (현장 기록이 있는 카드)
     const bn = sec.querySelector("[data-album-been]");
     if (bn) { bn.hidden = !beenN; bn.textContent = beenN ? `그중 직접 다녀온 곳 ${beenN}곳 · 카드에 도장이 찍혀 있어요` : ""; }
