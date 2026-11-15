@@ -215,6 +215,19 @@
     });
     sec.querySelector("[data-album-empty]").hidden = got.length > 0;
     const net = sec.querySelector("[data-album-empty-net]"); if (net) net.hidden = got.length > 0;   // 모은 카드가 없을 때만 함께 보임
+    // 안내 띠 + 내 카드 모아보기: 모은 카드가 있을 때만. 타일은 실제로 모은 카드 중 등급마다 지수가 가장 높은 한 장(최대 3등급), 값은 기존 그대로
+    const note = sec.querySelector("[data-album-note]"); if (note) note.hidden = !got.length;
+    const best = sec.querySelector("[data-album-best]");
+    if (best) {
+      const bl = best.querySelector("[data-album-best-list]"); bl.replaceChildren();
+      const tops = GRADES.map(g => got.filter(c => c.g === g).sort((x, y) => (y.i ?? -1) - (x.i ?? -1))[0]).filter(Boolean).slice(0, 3);
+      tops.forEach(c => {
+        const li = el("li"), a = el("a", "best-tile g-" + c.g); a.href = DJ.href(c);
+        a.setAttribute("aria-label", `${c.g}등급 ${c.n} 카드 보기`);
+        a.append(el("span", "grade g-" + c.g, c.g), el("b", "", c.n)); li.append(a); bl.append(li);
+      });
+      best.hidden = !tops.length;
+    }
     const beenN = got.filter(c => DJ.been(c)).length;   // 다녀온 곳 수 (현장 기록이 있는 카드)
     const bn = sec.querySelector("[data-album-been]");
     if (bn) { bn.hidden = !beenN; bn.textContent = beenN ? `그중 직접 다녀온 곳 ${beenN}곳 · 카드에 도장이 찍혀 있어요` : ""; }
