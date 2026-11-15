@@ -224,6 +224,7 @@
       tops.forEach(c => {
         const li = el("li"), a = el("a", "best-tile g-" + c.g); a.href = DJ.href(c);
         a.setAttribute("aria-label", `${c.g}등급 ${c.n} 카드 보기`);
+        a.title = c.n;   // 타일 이름은 두 줄까지만 보이니 전체 이름은 길게 누르면 보이게
         a.append(el("span", "grade g-" + c.g, c.g), el("b", "", c.n)); li.append(a); bl.append(li);
       });
       best.hidden = !tops.length;
