@@ -5785,3 +5785,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .tc { aspect-ratio: auto; min-height: 0; }
 .tc-front { position: relative; inset: auto; }
 @media (max-width: 760px) { .tc-col { align-items: start; } .tc-why { margin: 0; } }
+
+/* D13 카드첩 카드 사진 가운데의 파란 위치 점은 숨김(사진은 그대로) */
+.ac-art .hc-pin, .ac-art .hc-photo.on .hc-pin { display: none; }
