@@ -56,6 +56,7 @@
         li.append(a); ul.append(li);
       });
       journal.hidden = !groups.size;
+      const vEmpty = document.querySelector("[data-visit-empty]"); if (vEmpty) vEmpty.hidden = !!groups.size;   // 방문 기록이 하나도 없을 때만 첫 임장 안내(기록이 생기면 사라짐)
       const jump = document.querySelector("[data-mj-history]"); if (jump) jump.hidden = !groups.size;
     }
 

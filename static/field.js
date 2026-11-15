@@ -41,12 +41,12 @@
   function paintSave() {
     if (!saveEl) return;
     const u = DJ.sync && DJ.sync.user, s = u && DJ.sync.state;
-    let t, bad = false;
+    let t, bad = false, ok = false;
     if (!u) t = "이 기기에 저장돼요 · 로그인하면 계정에도 보관할 수 있어요.";
     else if (s === "error") { t = "계정에는 보내지 못했어요. 이 기기에는 저장돼 있어요."; bad = true; }
     else if (pending || s === "busy") t = "이 기기에 저장됨 · 계정에 보내는 중…";
-    else t = "이 기기와 내 계정에 저장됐어요.";
-    saveEl.firstChild.textContent = t; saveEl.classList.toggle("bad", bad);
+    else { t = "이 기기와 내 계정에 저장됐어요."; ok = true; }   // 체크 표시는 이 문장(실제로 저장이 끝난 경우)일 때만
+    saveEl.firstChild.textContent = t; saveEl.classList.toggle("bad", bad); saveEl.classList.toggle("ok", ok);
     retryBtn.hidden = !bad;
     paintBar();
   }

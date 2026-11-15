@@ -5567,3 +5567,7 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .il-art { --il-soft: #eef2ee; --il-warm: #f6e7c8; --il-mute: #8b95a7; display: block; color: var(--text-2); line-height: 0; margin: 0 0 4px; }
 @media (prefers-color-scheme: dark) { .il-art { --il-soft: #1c2a26; --il-warm: #3a3d36; --il-mute: #7a8596; } }
 .il-art svg { display: block; max-width: 100%; height: auto; }
+
+/* C3 저장 완료 체크: 현장 모드 저장 줄이 '이 기기와 내 계정에 저장됐어요.'일 때만(.ok). 저장 중·실패·기기에만 저장에는 붙지 않음 */
+.fm-save.ok::before { content: ""; flex: none; width: 22px; height: 22px; border-radius: 50%; background: #dff3ea url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2313795b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 16px no-repeat; }
+@media (prefers-color-scheme: dark) { .fm-save.ok::before { background-color: #12332a; } }

@@ -70,6 +70,9 @@
 {% endif %}
 <div data-mg="visit">{% include "_course.html" %}</div>
 {# 임장 노트: 단지 페이지 '현장 모드'와 임장 코스에서 남긴 체크·호가·메모 #}
+<section class="panel" id="visit-empty" data-mg="visit" data-visit-empty hidden>
+  <div class="empty-start"><span class="il-art" aria-hidden="true"><svg viewBox="0 0 96 96" width="88" height="88" aria-hidden="true" focusable="false" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M48 14c-12 0-21 9-21 20 0 15 21 38 21 38s21-23 21-38c0-11-9-20-21-20z" fill="var(--il-warm)"/><circle cx="48" cy="34" r="7" fill="var(--il-soft)"/><path d="M26 84h44"/></svg></span><b>첫 임장을 기록해 보세요</b><p class="muted">단지 화면의 현장 모드에서 ‘오늘 다녀왔어요’를 누르면, 날짜별 방문 기록이 여기에 모여요.</p><a class="btn primary" href="index.html?stay=1">아파트 찾아보기</a></div>
+</section>
 <section class="panel" id="visit-history" data-mg="visit" data-visit-history hidden>
   <div class="panel-head"><h2>날짜별 방문 기록</h2><p class="muted">같은 단지도 방문할 때마다 따로 남긴 기록입니다. 단지를 눌러 지난 방문을 확인하세요.</p></div>
   <ul class="nt-list" data-visit-history-list></ul>
