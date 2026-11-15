@@ -250,7 +250,7 @@
     const beenN = got.filter(c => DJ.been(c)).length;   // 다녀온 곳 수 (현장 기록이 있는 카드)
     const bn = sec.querySelector("[data-album-been]");
     if (bn) { bn.hidden = !beenN; bn.textContent = beenN ? `그중 직접 다녀온 곳 ${beenN}곳 · 카드에 도장이 찍혀 있어요` : ""; }
-    // 모은 카드: 등급 높은 순, 같은 등급은 지수 순. 처음엔 12장, 더 보기로 24장씩
+    // 모은 카드: 최근에 모은 순. 처음엔 2장, 더 보기로 12장씩
     // 걸러 보기 칩: 등급별·다녀옴 개수는 모은 카드에서 바로 셈(수집 수와 항상 같음)
     const counts = { all: got.length, been: beenN };
     GRADES.forEach(g => { counts[g] = got.filter(c => c.g === g).length; });
@@ -266,7 +266,9 @@
     });
     const shownSet = got.filter(c => flt === "all" || (flt === "been" ? DJ.been(c) : c.g === flt));
     sec.querySelector("[data-album-shown]").textContent = got.length ? (flt === "all" ? "" : `${got.length.toLocaleString()}장 중 ${shownSet.length.toLocaleString()}장 보는 중`) : "";
-    const sorted = shownSet.slice().sort((x, y) => GRADES.indexOf(x.g) - GRADES.indexOf(y.g) || (y.i ?? -1) - (x.i ?? -1));
+    // D9: 최근에 모은 카드부터(모은 날짜가 늦은 순, 같은 날이면 나중에 담긴 순). 처음엔 두 장만 보이고 '더 보기'로 펼침
+    const order = Object.keys(a);
+    const sorted = shownSet.slice().sort((x, y) => String(a[y.s]).localeCompare(String(a[x.s])) || order.indexOf(y.s) - order.indexOf(x.s));
     const box = sec.querySelector("[data-album-cards]"), btn = sec.querySelector("[data-album-more]");
     box.replaceChildren();
     let shown = 0;
@@ -274,11 +276,12 @@
       sorted.slice(shown, shown + k).forEach(c => box.append(acCard(c)));
       shown = Math.min(sorted.length, shown + k);
       btn.hidden = shown >= sorted.length;
-      btn.textContent = `${Math.min(24, sorted.length - shown)}장 더 보기`;
+      btn.replaceChildren(document.createTextNode(`${sorted.length - shown}장 더 보기`));
+      btn.insertAdjacentHTML("beforeend", '<svg class="ic" aria-hidden="true"><use href="#i-chev-down"/></svg>');
     };
-    draw(12);
+    draw(2);
     if (more) btn.removeEventListener("click", more);
-    more = () => draw(24);
+    more = () => draw(12);
     btn.addEventListener("click", more);
     // 구(동)별: 모은 비율이 높은 곳부터. 한 동의 카드를 다 모으면 '다 모은 동'
     const areas = {};
