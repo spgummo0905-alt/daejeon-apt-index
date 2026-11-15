@@ -5756,3 +5756,8 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   body[data-page="cards"] header.site .rg, body[data-page="cards"] header.site .hd-end, body[data-page="cards"] .seg-nav, body[data-page="cards"] .rcd { display: none; }
   body[data-page="cards"] .hd-title { font-size: 15px; font-weight: 600; color: var(--muted); }
 }
+
+/* D9 내 카드 모아보기: 최근 두 장만 보이고 나머지는 '더 보기'(아래쪽 칩·수집 현황·안내가 바로 보이게) */
+.ac-page .album-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 48px; margin: 12px 0 0; border-radius: 16px; font-size: 15px; font-weight: 850; }
+.ac-page .album-more[hidden] { display: none; }
+.ac-page .album-more .ic { width: 20px; height: 20px; }
