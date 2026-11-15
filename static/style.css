@@ -5670,3 +5670,15 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 /* D1 카드첩 순서(시안 PDF/시제품): 맨 위에 '내가 모은 집들'과 모은 카드, 그 아래에 오늘의 비교 후보·임장 배지. 값·저장·계산 변경 0 */
 .page-hero .hero-lead { margin: 4px 0 0; font-size: 16px; color: var(--text-2, #556); }
 .album-filter { margin-top: 14px; }
+
+/* D2 현장 체크 진행 카드(시안): 위쪽에 '오늘의 현장 체크 n/N' + 막대. 체크 수만 보여 주고 저장 성공을 뜻하지 않음 */
+.fm-pcard { margin: 12px 0 4px; padding: 14px 16px; border-radius: 16px; background: var(--chip); }
+.fm-pcard[hidden] { display: none; }
+.fm-pcard-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.fm-pcard-h b { font-size: 16px; }
+.fm-pcard-h span { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-rail { display: block; height: 8px; margin: 10px 0 8px; border-radius: 999px; background: rgba(120, 140, 130, .28); overflow: hidden; }
+.fm-rail i { display: block; height: 100%; width: 0; border-radius: inherit; background: #13795b; transition: width 220ms var(--ux-ease, ease); }
+.fm-pcard.done .fm-rail i { background: #0b6a4d; }
+.fm-pcard small { display: block; font-size: 14px; color: var(--text-2, #556); }
+@media (prefers-reduced-motion: reduce) { .fm-rail i { transition: none; } }
