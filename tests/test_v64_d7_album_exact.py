@@ -42,7 +42,7 @@ def test_card_grid_uses_the_card_builder_and_pill_and_progress_use_existing_coun
     assert "`${got.length.toLocaleString()}장 수집`" in JS
     assert "pc.textContent = `${got.length.toLocaleString()} / ${all.length.toLocaleString()}장`" in JS
 def test_stamp_only_when_visited_otherwise_metal_name_only_for_s_and_a():
-    assert 'if (b) { bottom.append(el("span", "ac-stamp"' in JS and 'else bottom.append(el("span", "ac-metal", METAL[c.g] || ""));' in JS
+    assert 'if (b) { const st = el("span", "ac-stamp", "다녀옴");' in JS and 'else bottom.append(el("span", "ac-metal", METAL[c.g] || ""));' in JS
     assert 'const METAL = { S: "GOLD", A: "PLATINUM" };' in JS
 def test_chip_shows_only_the_label_and_count_goes_to_the_reader_label():
     assert 'el("button", "chip" + (flt === k ? " on" : ""), label)' in JS and "`${label} ${counts[k]}장`" in JS

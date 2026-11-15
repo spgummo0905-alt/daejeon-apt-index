@@ -5766,3 +5766,7 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 .ac-sec { margin-bottom: 8px; }
 .ac-page .ac-filter { margin: 0 0 4px; }
 .ac-page .album-shown { margin: 8px 0 0; }
+
+/* D11 다녀옴 도장: 시안처럼 두 줄로 좁게, 이름·지역 글자와 겹치지 않게 아래 줄 자리를 늘 확보 */
+.ac-bottom { min-height: 44px; padding-top: 12px; }
+.ac-stamp { padding: 4px 6px; margin: 0 0 2px 2px; line-height: 1.15; }
