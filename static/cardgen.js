@@ -556,6 +556,18 @@
         }
       }).catch(fallback);
     });
+    // 시안 B(휴대폰): 위치 지도·거리 줄은 '입지 보기'를 누르면 카드 안에서 펼침. 단추가 있을 때만 접음(없으면 전부 보임). 값 변경 없음
+    const locBtn = document.querySelector("[data-loc-toggle]");
+    if (locBtn) {
+      card.classList.add("loc-fold");
+      locBtn.addEventListener("click", () => {
+        const on = !card.classList.contains("loc-open");
+        card.classList.toggle("loc-open", on);
+        locBtn.setAttribute("aria-expanded", on ? "true" : "false");
+        const head = card.querySelector(".mc-lochead");
+        if (on && head) head.scrollIntoView({ block: "start", behavior: window.DJ && DJ.calm ? "auto" : "smooth" });
+      });
+    }
     // 최근 실거래: 그림 위 아이콘을 누르면 카드 안에서 펼침
     const toggle = card.querySelector("[data-deals-toggle]"), deals = document.getElementById("mc-deals");
     if (toggle && deals) toggle.addEventListener("click", () => {
