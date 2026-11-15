@@ -36,7 +36,7 @@
 
   // 저장 상태 한 줄: 이 기기에 저장 / 계정에 보내는 중 / 계정에도 저장 / 계정 저장 실패(기기에는 있음)를 실제 결과로만 구분 (저장 확인 전에는 '저장'이라고 쓰지 않음)
   let pending = false, saveEl = null, retryBtn = null;
-  let beenBtn = null, fmProg = [0, 0], bar = null;   // 고정 줄이 비춰 보는 값(진행·'다녀왔어요' 단추)
+  let beenBtn = null, fmProg = [0, 0], bar = null, pcard = null;   // 고정 줄이 비춰 보는 값(진행·'다녀왔어요' 단추)
   function saveMark() { pending = !!(DJ.sync && DJ.sync.user); paintSave(); }
   function paintSave() {
     if (!saveEl) return;
@@ -62,10 +62,22 @@
     const go = el("button", "btn primary fm-bar-go", "오늘 다녀왔어요"); go.type = "button"; go.dataset.fbGo = "";
     go.addEventListener("click", () => beenBtn && beenBtn.click());
     bar.append(st, retry, go);
-    body.after(bar); paintBar();
+    body.after(bar);
+    // 시안(D2): 위쪽 진행 카드 — 제목 · n/N · 막대. 값은 아래 체크리스트가 세는 fmProg 를 그대로 비춤(새 계산·저장 없음, 저장 성공 표시와 무관)
+    pcard = el("div", "fm-pcard"); pcard.dataset.fmPcard = ""; pcard.hidden = true;
+    const ph = el("div", "fm-pcard-h"), pt = el("b", "", "오늘의 현장 체크"), pn = el("span", "", "");
+    pn.dataset.fpN = ""; ph.append(pt, pn);
+    const rail = el("span", "fm-rail"), fill = el("i", ""); fill.dataset.fpFill = ""; rail.append(fill); rail.setAttribute("aria-hidden", "true");
+    pcard.append(ph, rail, el("small", "", "확인한 항목 수예요. 저장 상태는 아래 줄에 따로 표시해요."));
+    body.before(pcard);
+    paintBar();
   }
   function paintBar() {
     if (!bar) return;
+    if (pcard) {
+      const [n, all] = fmProg; pcard.hidden = !all;
+      if (all) { pcard.querySelector("[data-fp-n]").textContent = `${n}/${all}`; pcard.querySelector("[data-fp-fill]").style.width = Math.round(n / all * 100) + "%"; pcard.classList.toggle("done", n === all); }
+    }
     bar.querySelector("[data-fb-prog]").textContent = fmProg[1] ? `체크 ${fmProg[0]}/${fmProg[1]}` : "현장 기록";
     const sv = saveEl && saveEl.firstChild ? saveEl.firstChild.textContent : "";
     bar.querySelector("[data-fb-save]").textContent = sv;
