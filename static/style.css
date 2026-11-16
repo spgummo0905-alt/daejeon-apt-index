@@ -6064,3 +6064,13 @@ body[data-page="index"] .mc.g-S .mc-in::before, body[data-page="index"] .mc.g-A 
 body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::before { animation: none; }
 /* E6b 홈(폰): 시안 순서(검색 → 이어보기 → 이번 주말 → 최근 본 집 → 안내) 아래에 남아 있던 옛 '순위·테마·지도' 줄과 '지수 상위 카드' 묶음은 숨김(지우지 않음, 큰 화면은 그대로) */
 @media (max-width: 720px) { .hero-main .browse, .hero-main .hero-deck { display: none; } }
+
+/* E7 홈 헤더(좁은 폰 ≤380): 로고·지역·카드첩·검색·MY를 한 줄에. 글자 크기는 그대로, 둥근 버튼 사이 간격과 좌우 여백만 줄임 */
+@media (max-width: 380px) {
+  body[data-page="index"] header.site { flex-wrap: nowrap; padding-inline: 8px; gap: 4px; }
+  body[data-page="index"] header.site .brand { min-width: 0; flex: 0 1 auto; gap: 4px; }
+  body[data-page="index"] header.site .brand-word { font-size: 18px; }
+  body[data-page="index"] .rg { flex: 0 1 auto; min-width: 0; margin-left: auto; }
+  body[data-page="index"] .rg-btn { padding: 0 8px; max-width: 92px; }
+  body[data-page="index"] .hd-end { flex: none; gap: 4px; }
+}
