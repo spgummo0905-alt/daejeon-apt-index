@@ -347,8 +347,12 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
     <ul class="ob-sw">
       <li><span class="ob-ri"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></span><span class="ob-rt"><b>최근 본 집 이어보기</b><small>마지막으로 본 집을 홈에서 바로 이어 볼 수 있어요.</small></span><button type="button" class="ob-switch" role="switch" aria-checked="false" aria-label="최근 본 집 이어보기" data-ob-sw="resume"></button></li>
       <li><span class="ob-ri"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><span class="ob-rt"><b>본 단지를 카드첩에 모으기</b><small>살펴본 단지를 카드로 모아 카드첩에 쌓아요.</small></span><button type="button" class="ob-switch" role="switch" aria-checked="false" aria-label="본 단지를 카드첩에 모으기" data-ob-sw="collect"></button></li>
-      <li><span class="ob-ri"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span><span class="ob-rt"><b>새 소식 받기</b><small>관심 단지의 새 실거래와 시세 변화를 관심 화면에 표시해요.</small></span><button type="button" class="ob-switch" role="switch" aria-checked="false" aria-label="새 소식 받기" data-ob-sw="notify"></button></li>
+      <li><span class="ob-ri"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span><span class="ob-rt"><b>새 소식 받기</b><small>관심 단지의 새 실거래와 시세 변화를 관심 화면에 표시해요. 휴대폰 알림은 아래에서 켤 수 있어요.</small></span><button type="button" class="ob-switch" role="switch" aria-checked="false" aria-label="새 소식 받기" data-ob-sw="notify"></button></li>
     </ul>
+    <div class="ob-push" data-ob-push hidden>
+      <p class="ob-push-t" data-ob-push-t></p>
+      <button type="button" class="ob-pushbtn" data-ob-push-btn hidden>휴대폰 알림 켜기</button>
+    </div>
     <div class="ob-sum" data-ob-sum><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg><span><b>이런 설정으로 시작해요</b><small data-ob-l1></small><small data-ob-l2></small><a href="finder.html" data-ob-find hidden>이 조건으로 바로 찾기 ›</a></span></div>
     <p class="ob-err" data-ob-err role="alert" hidden>설정을 저장하지 못했어요. 브라우저 저장 공간을 확인하고 다시 시도해 주세요.</p>
   </div>
