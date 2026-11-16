@@ -40,4 +40,4 @@
 </section>
 {% endblock %}
 {% block scripts %}<script id="finder-cfg" type="application/json">{{ finder_cfg | safe }}</script>
-<script src="static/workplaces.js?v={{ v }}"></script><script src="static/findcond.js?v={{ v }}"></script>{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/housecard.js?v={{ v }}"></script><script src="static/map.js?v={{ v }}"></script>{% endblock %}
+<script src="static/workplaces.js?v={{ v }}"></script><script src="static/findcond.js?v={{ v }}"></script>{% if kakao_js_key %}<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_js_key }}&libraries=clusterer&autoload=false"></script>{% endif %}<script src="static/housecard.js?v={{ v }}"></script><script src="static/maplabels.js?v={{ v }}"></script><script src="static/map.js?v={{ v }}"></script>{% endblock %}

@@ -186,11 +186,25 @@
   const note = () => root.querySelector(".mp-note");
   function realPaint() {
     if (!km) return;
-    km.ov.forEach((o, s) => { const on = s === sel; o.el.classList.toggle("on", on); o.ov.setZIndex(on ? 9 : 1); });
+    km.ov.forEach((o, s) => { const on = s === sel; o.el.classList.toggle("on", on); o.ov.setZIndex(on ? 9 : 1); }); labelSoon();
   }
   function realShow() {   // 지금 조건(가격대·검색)에 맞는 단지만 지도에 둠
-    km.clus.clear(); km.clus.addMarkers(shown.map(c => km.ov.get(c.s).ov)); realPaint();
+    km.clus.clear(); km.clus.addMarkers(shown.map(c => km.ov.get(c.s).ov)); realPaint(); labelSoon();
   }
+  // 가격 핀 겹침 정리(static/maplabels.js): 지금 화면에서 겹치는 핀은 우선순위(선택 → S등급 → 집감 지수)가 높은 것만 크게, 나머지는 작은 점. 확대하면 다시 커짐
+  let labelT = 0;
+  function realLabels() {
+    if (!km || !DJ.pickLabels) return;
+    const proj = km.map.getProjection(), pts = [];
+    shown.forEach(c => {
+      const o = km.ov.get(c.s); if (!o || !o.el.isConnected) return;   // 묶음 안에 들어간 핀은 계산에서 뺌
+      const p = proj.containerPointFromCoords(new kakao.maps.LatLng(c.la, c.ln));
+      pts.push({ k: c.s, x: p.x, y: p.y, w: (c.pt || "").length * 9 + 26, h: 34, pr: (c.g === "S" ? 1000 : 0) + (c.i == null ? 0 : c.i), keep: c.s === sel, nopill: !c.pt });
+    });
+    const r = DJ.pickLabels(pts);
+    pts.forEach(p => { const el = km.ov.get(p.k).el; el.classList.toggle("dot", !r.pill.has(p.k)); el.classList.toggle("gone", r.hide.has(p.k)); });
+  }
+  const labelSoon = () => { clearTimeout(labelT); labelT = setTimeout(realLabels, 60); };
   function realFocus(c) {   // 고른 단지를 요약 시트에 가리지 않는 위쪽으로, 묶음에 숨지 않게 가까이
     const m = km.map, pos = new kakao.maps.LatLng(c.la, c.ln);
     if (m.getLevel() > 4) m.setLevel(4);
@@ -204,7 +218,7 @@
       styles: [34, 42, 50, 58].map((n, i) => ({ width: n + "px", height: n + "px", lineHeight: n + "px", borderRadius: n / 2 + "px", background: ["rgba(46,125,98,.94)", "rgba(19,121,91,.94)", "rgba(15,84,64,.94)", "rgba(15,61,51,.96)"][i], color: "#fff", textAlign: "center", fontWeight: "700", border: "2px solid #fff" })) });
     const ov = new Map();
     ALL.forEach(c => {
-      const el = document.createElement("button"); el.type = "button"; el.className = "mp-kp" + (c.g === "S" ? " g-S" : ""); el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); el.textContent = c.pt || c.n;
+      const el = document.createElement("button"); el.type = "button"; el.className = "mp-kp" + (c.g === "S" ? " g-S" : "") + (c.pt ? "" : " nopt"); el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); el.textContent = c.pt || "";   // 이름은 핀에 안 씀(겹침): 가격 없는 단지는 점, 이름은 누르면 아래 시트에
       el.addEventListener("click", e => { e.stopPropagation(); select(c.s); });
       ov.set(c.s, { el, ov: new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.la, c.ln), content: el, xAnchor: .5, yAnchor: 1, clickable: true }) });
     });
@@ -214,6 +228,7 @@
     map.setBounds(bounds);
     kakao.maps.event.addListener(map, "click", () => { if (sel) closeSheet(); });
     km = { map, clus, ov }; root.classList.add("mp-real"); realShow();
+    kakao.maps.event.addListener(map, "idle", labelSoon); kakao.maps.event.addListener(clus, "clustered", labelSoon);
     if (sel) { const c = ALL.find(x => x.s === sel); if (c) realFocus(c); }
     if (note()) note().hidden = true;
   }
