@@ -9,6 +9,7 @@
 - 로그에는 건수만 남기고 키·주소·회원 정보는 찍지 않습니다.
 
 python scripts/push_send.py site      # site/ 아래 지역별 complexes.json 을 읽음
+python scripts/push_send.py site --test   # 켠 기기에 시험 알림 한 통만 (수동 점검, 새 소식 기준은 안 건드림)
 """
 from __future__ import annotations
 
@@ -199,11 +200,44 @@ def vapid_keys(store: Store) -> tuple[str, str]:
     return pub, priv
 
 
+TEST_MAX_DEVICES = 5   # 시험 알림은 켠 기기가 이보다 많으면 보내지 않음(많은 사람에게 잘못 가지 않게)
+
+
+def test_message(base: str = "") -> dict:
+    """시험 알림 한 통 (수동 점검용). 새 소식이 아니라서 기준 상태는 건드리지 않음"""
+    return {"title": "집감 알림 시험", "body": "이 알림이 보이면 휴대폰 알림이 정상이에요. 새 소식이 생기면 하루 한 번 알려 드려요.",
+            "url": base + "my.html", "tag": "djdex-test"}
+
+
+def send_test(store: Store, subs: list[dict], pub: str, priv: str, base: str) -> tuple[int, int, int]:
+    """켠 기기에 시험 알림 한 통씩. (보냄, 끊긴 기기 정리, 실패). push_state 는 쓰지 않음"""
+    if len(subs) > TEST_MAX_DEVICES:
+        print(f"[알림] 시험 알림은 켠 기기가 {TEST_MAX_DEVICES}대 이하일 때만 보냅니다 (지금 {len(subs)}대): 보내지 않음")
+        return 0, 0, 0
+    data = json.dumps(test_message(base), ensure_ascii=False).encode()
+    sent = gone = fail = 0
+    for s in subs:
+        try:
+            code = push(store.s, s, data, pub, priv)
+        except Exception:
+            code = 0
+        if code in (200, 201, 202):
+            sent += 1
+        elif code in (404, 410):
+            store.delete("push_subs", endpoint="eq." + s["endpoint"])
+            gone += 1
+        else:
+            fail += 1
+    return sent, gone, fail
+
+
 def main(argv: list[str]) -> int:
     url, key = os.environ.get("SUPABASE_URL", ""), os.environ.get("SUPABASE_SECRET_KEY", "")
     if not url or not key:
         print("[알림] SUPABASE_SECRET_KEY 가 없어 건너뜁니다")
         return 0
+    test = "--test" in argv
+    argv = [a for a in argv if a != "--test"]
     site = Path(argv[0] if argv else "site")
     import tomllib
     base = tomllib.loads(Path("config.toml").read_text(encoding="utf-8")).get("site", {}).get("base_url", "")
@@ -220,6 +254,10 @@ def main(argv: list[str]) -> int:
         return 0
     if not subs:
         print("[알림] 알림을 켠 회원이 없습니다")
+        return 0
+    if test:
+        sent, gone, fail = send_test(store, subs, pub, priv, base)
+        print(f"[알림] 시험 알림 · 켠 기기 {len(subs)}대 · 보냄 {sent} · 끊긴 기기 정리 {gone} · 실패 {fail}")
         return 0
     users = sorted({s["user_id"] for s in subs})
     kv: dict[str, dict] = {u: {} for u in users}

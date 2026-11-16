@@ -5,6 +5,11 @@ name: push-run
 # Secrets: SUPABASE_URL, SUPABASE_SECRET_KEY
 on:
   workflow_dispatch:
+    inputs:
+      test:
+        description: "시험 알림 한 통만 보내기 (새 소식 기준은 건드리지 않음)"
+        type: boolean
+        default: false
 
 jobs:
   push:
@@ -28,4 +33,4 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-        run: python scripts/push_send.py site
+        run: python scripts/push_send.py site ${{ inputs.test && '--test' || '' }}
