@@ -6110,3 +6110,17 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 .mp-bandopt:focus-visible, .mp-bandbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
 .mp-bandopt:not([aria-selected="true"]):hover { background: var(--chip); }
 @media (prefers-reduced-motion: reduce) { .mp-caret { transition: none; } }
+
+/* E10 홈(폰) 아래쪽 정리: 시안 순서 아래의 옛 '지도로 보는 ○○ 아파트' 구역은 숨기고(지도는 아래 탭의 지도 화면), '전체 단지'는 접어서 버튼으로 펼침. 지우지 않음 · 큰 화면은 그대로 */
+.hm-listbtn { display: none; }
+@media (max-width: 720px) {
+  body[data-page="index"] #map { display: none; }
+  .jump a[href="#map"] { display: none; }
+  #list:not(.hm-open) { content-visibility: visible; contain-intrinsic-size: auto 0; }
+  #list:not(.hm-open) > *:not(.panel-head):not(.hm-listbtn) { display: none; }
+  #list:not(.hm-open) .panel-head .muted { display: none; }
+  .hm-listbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; margin-top: 12px; padding: 0 18px; border: 1.5px solid var(--accent); border-radius: 16px; background: var(--surface); color: var(--accent); font: 800 17px/1.2 inherit; font-family: inherit; cursor: pointer; }
+  .hm-listbtn[aria-expanded="true"] { margin: 0 0 14px; min-height: 48px; font-size: 16px; }
+  .hm-listbtn[aria-expanded="true"] .mp-caret { transform: rotate(-135deg); margin-top: 3px; }
+  .hm-listbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
+}
