@@ -6084,3 +6084,12 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
   .ob-pushbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
 }
 @media (prefers-color-scheme: dark) { .ob-push, .ob-pushbtn { color-scheme: light; } }
+
+/* F1 지도 핀 겹침 정리: 이름은 핀에서 빼고(누르면 시트), 겹치면 우선순위 낮은 핀은 작은 점으로(누를 칸은 44px 유지), 확대하면 다시 가격 핀 */
+.mp-kp.dot { width: 16px; min-width: 16px; height: 16px; min-height: 16px; padding: 0; overflow: hidden; text-indent: -9999px; border-radius: 50%; border: 2px solid var(--surface); background: var(--accent); box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+.mp-kp.dot::after { inset: -14px; }
+.mp-kp.dot.g-S { border-color: #fff1bf; background: #c99a2e; }
+.mp-kp.nopt.dot { background: var(--surface); border-color: var(--accent); }
+.mp-kp.dot.on { transform: scale(1.6); background: var(--accent); border-color: var(--surface); z-index: 9; }
+.mp-kp.gone { display: none; }
+@media (prefers-reduced-motion: reduce) { .mp-kp { transition: none; } }
