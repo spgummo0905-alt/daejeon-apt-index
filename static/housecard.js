@@ -99,7 +99,7 @@
   const box = document.querySelector("[data-hc-feature]");
   if (box) {
     const rec = DJ.recent().map(r => r && r.s).filter(Boolean), favs = DJ.favs();
-    const want = rec[0] || favs[0];
+    const want = DJ.prefs().resume === false ? null : (rec[0] || favs[0]);   // 빠른 설정에서 '최근 본 집 이어보기'를 끈 경우 빈 상태 안내가 보임
     if (want) DJ.data().then(d => {
       const c = d.bySlug[want]; if (!c) return;
       const tag = rec[0] === want ? "최근 살펴본 단지" : "관심 단지";

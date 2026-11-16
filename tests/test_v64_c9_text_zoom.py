@@ -3,6 +3,9 @@ import pathlib
 R = pathlib.Path(__file__).resolve().parent.parent
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 BLK = CSS[CSS.index("/* C9 글자 크기 키움 대응"):]
+_n3 = BLK.find("\n/* E3 지역 소개", 5)
+if _n3 > 0:
+    BLK = BLK[:_n3]   # 자기 블록만(뒤에 붙은 E3 소개 화면 블록은 검사 대상이 아님)
 def test_price_cells_cannot_widen_the_grid():
     assert ".mc-prices { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in BLK
     assert ".mc-prices > *, .mc-under .mc-price, .mc-est { min-width: 0; }" in BLK

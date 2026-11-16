@@ -5,6 +5,9 @@ HTML = (R / "templates/apt.html").read_text(encoding="utf8")
 JS = (R / "static/cardgen.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 BLK = CSS[CSS.index("/* C8 상세 시안 B"):]
+_n3 = BLK.find("\n/* E3 지역 소개", 5)
+if _n3 > 0:
+    BLK = BLK[:_n3]   # 자기 블록만(뒤에 붙은 E3 소개 화면 블록은 검사 대상이 아님)
 def test_two_tiles_exist_and_compare_link_is_unchanged_target():
     t = HTML[HTML.index("data-apt-tiles"):HTML.index("apt-cta-inline")]
     assert "data-loc-toggle" in t and 'aria-expanded="false"' in t and "입지 보기" in t

@@ -4,6 +4,9 @@ R = pathlib.Path(__file__).resolve().parent.parent
 BASE = (R / "templates/base.html").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* E2 홈 맨 위 헤더"):]
+_n3 = B.find("\n/* E3 지역 소개", 5)
+if _n3 > 0:
+    B = B[:_n3]   # 자기 블록만(뒤에 붙은 E3 소개 화면 블록은 검사 대상이 아님)
 def test_cards_button_exists_hidden_by_default_and_links_to_album():
     assert 'class="hd-cards" href="{{ root }}cards.html" aria-label="내 카드첩"' in BASE and ".hd-cards { display: none; }" in B
 def test_only_home_phone_is_restyled():

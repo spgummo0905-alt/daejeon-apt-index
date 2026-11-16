@@ -6,6 +6,9 @@ JS = (R / "static/housecard.js").read_text(encoding="utf8")
 APP = (R / "static/app.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* E1 홈(시안 A 구조"):]
+_n3 = B.find("\n/* E3 지역 소개", 5)
+if _n3 > 0:
+    B = B[:_n3]   # 자기 블록만(뒤에 붙은 E3 소개 화면 블록은 검사 대상이 아님)
 def test_order_matches_the_mockup_top_to_bottom():
     keys = ("hm-h1", "hm-sub", "data-search-go", "hm-quick", "hm-hero", "data-hc-feature", "hm-insight", "data-gates")
     o = [HTML.index(k) for k in keys]

@@ -16,4 +16,7 @@ def test_filter_chips_and_counts_untouched():
     assert "counts[k]}장`" in JS and "shownSet" in JS and "flt = k; album(d);" in JS
 def test_button_is_at_least_44px_and_not_below_14px_text():
     B = CSS[CSS.index("/* D9 내 카드 모아보기"):]
+    _n3 = B.find("\n/* E3 지역 소개", 5)
+    if _n3 > 0:
+        B = B[:_n3]   # 자기 블록만
     assert "min-height: 48px" in B and "font-size: 15px" in B and "animation" not in B and "url(" not in B

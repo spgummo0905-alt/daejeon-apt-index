@@ -4,6 +4,9 @@ R = pathlib.Path(__file__).resolve().parent.parent
 JS = (R / "static/field.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* D2 현장 체크 진행 카드"):]
+_n3 = B.find("\n/* E3 지역 소개", 5)
+if _n3 > 0:
+    B = B[:_n3]   # 자기 블록만(뒤에 붙은 E3 소개 화면 블록은 검사 대상이 아님)
 def test_card_reads_the_existing_check_count_only():
     assert "const [n, all] = fmProg; pcard.hidden = !all;" in JS
     assert "Math.round(n / all * 100)" in JS
