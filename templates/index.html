@@ -34,6 +34,13 @@ try {
 <section class="hero hero-main">
   <div class="hero-grid">
     <div class="hero-copy">
+      {# E5 설정 이어하기(시안 5·6번, 폰 전용): 빠른 설정을 안 끝낸 사람에게만. 닫으면 다시 안 뜸. static/onb-banner.js #}
+      <aside class="ob-banner" data-ob-banner hidden aria-label="맞춤 설정 안내">
+        <span class="ob-bn-art" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-filter"/></svg></span>
+        <span class="ob-bn-t"><b>3분만에 맞춤 설정 완료하기</b><small>내게 맞는 아파트를 더 정확하게 찾아드려요.</small></span>
+        <a class="ob-bn-go" href="intro.html?ob=1" data-ob-resume>이어하기 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <button type="button" class="ob-bn-x" data-ob-banner-x aria-label="맞춤 설정 안내 닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </aside>
       <p class="eyebrow">국토교통부 실거래 기준 · {{ meta.updated }} 업데이트</p>
       <h1 class="hm-seo">눈여겨본 아파트,<br>{% if regions | length > 1 %}<button type="button" class="rg-word" data-rg-open aria-haspopup="dialog" aria-expanded="false" aria-controls="rg-pop" title="지역 바꾸기">{{ region }}</button>{% else %}{{ region }}{% endif %}에서 <span class="hl">비교</span>해 보세요</h1>
       <p class="hm-h1">좋은 집의 가치를,<br>내 기준으로 발견해요.</p>
@@ -509,6 +516,6 @@ addEventListener("hashchange",function(){if(location.hash==="#map")go()})})();</
 {% endif %}
 {% if charts.map or kakao_js_key %}<script src="static/cliffs.js?v={{ v }}"></script>{% endif %}
 <script src="static/housecard.js?v={{ v }}"></script>
-<script src="static/home.js?v={{ v }}"></script>
+<script src="static/home.js?v={{ v }}"></script><script src="static/onb-banner.js?v={{ v }}" defer></script>
 <script src="static/board.js?v={{ v }}"></script>
 {% endblock %}
