@@ -209,6 +209,8 @@ try {
 {# 검색·정렬이 되는 전체 단지 목록은 지도 바로 뒤(예전엔 맨 아래, 모바일 약 8,300px). 동네 온도 이하 구역은 그 뒤 #}
 <section id="list" class="panel">
   <div class="panel-head"><h2>전체 단지</h2><p class="muted">열 이름을 누르면 정렬 기준이 바뀝니다.</p></div>
+  {# E10 홈(폰): 긴 목록은 접어 두고 버튼으로 펼침. #list 링크·구/동 선택·'이 동네 단지 모두 보기'는 자동으로 펼침 (table.js). 큰 화면은 그대로 #}
+  <button type="button" class="hm-listbtn" data-hm-list aria-expanded="false" aria-controls="table-wrap-box"><span data-hm-list-t>전체 단지 {{ "{:,}".format(meta.n_complexes) }}곳 보기</span><i class="mp-caret" aria-hidden="true"></i></button>
   <div class="controls">
     {% if area_groups %}
     <label class="select-pill" id="gu-select-wrap"><span class="sr-only">{{ unit }} 고르기</span>
@@ -232,7 +234,7 @@ try {
     <button class="chip" type="button" data-type="villa" title="거래가 드문 소규모, 한 동짜리 나홀로, 원룸 위주 단지">소규모·원룸형 <span class="cnt">{{ "{:,}".format(meta.n_small) }}</span></button>
   </div>
   {% endif %}
-  <div class="table-wrap">
+  <div class="table-wrap" id="table-wrap-box">
   {# 처음엔 상위 30곳만 HTML에 (첫 화면을 가볍게). 나머지는 단지 자료(complexes.json·small.json)로 table.js 가 그림 #}
   <table id="complex-table" data-lazy data-years="{{ years | join(',') }}">
     <thead><tr>
@@ -516,6 +518,6 @@ addEventListener("hashchange",function(){if(location.hash==="#map")go()})})();</
 {% endif %}
 {% if charts.map or kakao_js_key %}<script src="static/cliffs.js?v={{ v }}"></script>{% endif %}
 <script src="static/housecard.js?v={{ v }}"></script>
-<script src="static/home.js?v={{ v }}"></script><script src="static/onb-banner.js?v={{ v }}" defer></script>
+<script src="static/home.js?v={{ v }}"></script><script src="static/home-fold.js?v={{ v }}" defer></script><script src="static/onb-banner.js?v={{ v }}" defer></script>
 <script src="static/board.js?v={{ v }}"></script>
 {% endblock %}

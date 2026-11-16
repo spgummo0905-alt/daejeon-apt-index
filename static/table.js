@@ -69,7 +69,10 @@
     if (select) select.addEventListener("change", () => setArea(select.value));
     const search = document.getElementById("search");
     // 다른 곳(지역 카드, 동네 온도 지도)에서 '이 지역 단지 보기'를 누르면 목록을 그 지역으로 거르고 내려갑니다.
+    const openList = () => { const l = document.getElementById("list"); if (l) { l.classList.add("hm-open"); const b = l.querySelector("[data-hm-list]"); if (b) { b.setAttribute("aria-expanded", "true"); b.querySelector("[data-hm-list-t]").textContent = "접기"; } } };
+    DJ.openList = openList;
     DJ.showArea = function (area, dong) {
+      openList();
       setArea(area);
       if (search) { search.value = dong && dong !== area ? dong : ""; search.dispatchEvent(new Event("input")); }
       document.getElementById("list").scrollIntoView({ behavior: DJ.calm ? "auto" : "smooth" });
@@ -77,6 +80,7 @@
     // 검색에서 동·구를 고르고 오면 (index.html?area=서구&dong=둔산동#list) 그 동네로 걸러서 보여줍니다
     const qs = new URLSearchParams(location.search);
     if (qs.get("area") || qs.get("dong")) {
+      openList();
       const v = qs.get("dong") || "";
       setArea(qs.get("area") || "");
       if (search && v) { search.value = v; q = v.toLowerCase(); reset(); }
