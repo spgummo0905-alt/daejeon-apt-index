@@ -6093,3 +6093,20 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 .mp-kp.dot.on { transform: scale(1.6); background: var(--accent); border-color: var(--surface); z-index: 9; }
 .mp-kp.gone { display: none; }
 @media (prefers-reduced-motion: reduce) { .mp-kp { transition: none; } }
+
+/* F2 지도 가격대: 칩 여러 개 대신 버튼 하나를 누르면 목록이 펼쳐짐(잘림 없음). 좁은 폰에서는 개수·'지도에 없는 단지'가 아래줄로 */
+.mp-bar { flex-wrap: wrap; row-gap: 4px; position: relative; z-index: 30; }
+.mp-chips { position: relative; overflow: visible; flex: 0 0 auto; }
+.mp-bandbtn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 16px; border: 0; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.mp-bandbtn.on { background: var(--accent); color: var(--on-accent); }
+.mp-caret { width: 8px; height: 8px; margin-top: -3px; border-right: 2.4px solid currentColor; border-bottom: 2.4px solid currentColor; transform: rotate(45deg); transition: transform 120ms ease; }
+.mp-bandbtn[aria-expanded="true"] .mp-caret { transform: rotate(-135deg); margin-top: 3px; }
+.mp-bandlist { position: absolute; left: 0; top: calc(100% + 6px); z-index: 40; min-width: 220px; padding: 6px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 14px 34px rgba(15, 25, 40, .22); display: grid; gap: 2px; }
+.mp-bandlist[hidden] { display: none; }
+.mp-bandopt { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0 14px; border: 0; border-radius: 12px; background: none; color: var(--text); font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; font-family: inherit; }
+.mp-bandopt em { font-style: normal; font-size: 15px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mp-bandopt[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+.mp-bandopt[aria-selected="true"] em { color: inherit; opacity: .9; }
+.mp-bandopt:focus-visible, .mp-bandbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
+.mp-bandopt:not([aria-selected="true"]):hover { background: var(--chip); }
+@media (prefers-reduced-motion: reduce) { .mp-caret { transition: none; } }
