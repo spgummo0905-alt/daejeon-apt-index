@@ -30,7 +30,7 @@
   /* 모션: 빠르게 반응하고 살짝 튕기며 멈춤 */
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
-  --t-fast: 160ms; --t-med: 260ms; --t-slow: 520ms;
+  --t-fast: 120ms; --t-med: 220ms; --t-slow: 300ms;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -1226,7 +1226,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pd1 a::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,236,170,.45) 50%, transparent 65%);
   transform: translateX(-120%); pointer-events: none; }
 .rank-panel.play .pd-step { animation: step-up 560ms var(--ease-spring) both; animation-delay: calc(var(--i) * 110ms); }
-.rank-panel.play .pd a { animation: drop-in 520ms var(--ease-spring) both; animation-delay: calc(var(--i) * 110ms + 140ms); }
+.rank-panel.play .pd a { animation: drop-in 300ms var(--ease-spring) both; animation-delay: calc(var(--i) * 110ms + 140ms); }
 .rank-panel.play .pd1 a::after { animation: shine 1100ms var(--ease-out) 700ms both; }
 .rank-panel.play .rank-list li { animation: card-in 360ms var(--ease-out) both; animation-delay: calc(var(--i) * 45ms + 300ms); }
 @keyframes step-up { from { transform: scaleY(0); } to { transform: scaleY(1); } }
@@ -1640,7 +1640,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .pay { margin-top: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .pay > summary { display: flex; align-items: center; gap: 8px; padding: 14px 16px; cursor: pointer; font-weight: 750; list-style: none; }
 .pay > summary::-webkit-details-marker { display: none; }
-.pay > summary::after { content: "›"; margin-left: auto; color: var(--muted); transition: transform 160ms var(--ease-out); }
+.pay > summary::after { content: "›"; margin-left: auto; color: var(--muted); transition: transform 120ms var(--ease-out); }
 .pay[open] > summary::after { transform: rotate(90deg); }
 .pay > summary .ic { color: var(--accent); }
 .pay-body { padding: 0 16px 16px; }
@@ -1670,7 +1670,7 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .ki-more { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
 .ki-more > summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--text-2); list-style: none; padding: 6px 0; }
 .ki-more > summary::-webkit-details-marker { display: none; }
-.ki-more > summary::after { content: " ›"; display: inline-block; transition: transform 160ms var(--ease-out); }
+.ki-more > summary::after { content: " ›"; display: inline-block; transition: transform 120ms var(--ease-out); }
 .ki-more[open] > summary::after { transform: rotate(90deg); }
 .ki-more .ki-sub { margin-top: 8px; }
 .mc-stats > div { display: grid; grid-template-columns: 116px minmax(0, 1fr) 30px; gap: 3px 10px; align-items: center; }
@@ -1714,9 +1714,9 @@ body[data-page="intro"] .toast { background: #f4f6fb; color: #0a1428; box-shadow
 .sheet-back.on { opacity: 1; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 91; max-width: 520px; margin: 0 auto; padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
   border-radius: 22px 22px 0 0; background: var(--surface); color: var(--text); box-shadow: 0 -10px 40px rgba(0,0,0,.25);
-  transform: translateY(100%); transition: transform 260ms var(--ease-out); }
+  transform: translateY(100%); transition: transform 300ms var(--ease-out); }
 .sheet.on { transform: none; }
-@media (min-width: 720px) { .sheet { bottom: 50%; border-radius: 22px; transform: translateY(60%); opacity: 0; transition: transform 260ms var(--ease-out), opacity 200ms; }
+@media (min-width: 720px) { .sheet { bottom: 50%; border-radius: 22px; transform: translateY(60%); opacity: 0; transition: transform 300ms var(--ease-out), opacity 200ms; }
   .sheet.on { transform: translateY(50%); opacity: 1; } }
 .sheet-grab { width: 40px; height: 4px; margin: 0 auto 12px; border-radius: 10px; background: var(--axis); }
 .sheet h3 { margin: 0 0 2px; font-size: 18px; }
@@ -3210,7 +3210,7 @@ body[data-page="my"] main > .panel, body[data-page="my"] main > section { scroll
 .acct-wrap { position: relative; display: inline-flex; }
 .acct-pop { position: absolute; z-index: 95; top: calc(100% + 10px); right: 0; width: 340px; padding: 18px; border-radius: 20px; text-align: left;
   background: var(--surface); border: 1px solid var(--border); box-shadow: 0 24px 64px rgba(8,12,20,.28); color: var(--text);
-  opacity: 0; transform: translateY(-6px); transition: opacity 160ms var(--ease-out), transform 200ms var(--ease-out); }
+  opacity: 0; transform: translateY(-6px); transition: opacity 120ms var(--ease-out), transform 200ms var(--ease-out); }
 .acct-pop.on { opacity: 1; transform: none; }
 .acct-pop [hidden] { display: none !important; }
 .ap-kicker { margin: 0 0 4px; font-size: 13px; font-weight: 800; letter-spacing: .04em; color: var(--accent); }
@@ -6012,8 +6012,8 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .ob-ri { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: #e6f2e8; color: #133f36; } .ob-ri .ic { width: 22px; height: 22px; }
   .ob-rt { flex: 1; min-width: 0; display: grid; gap: 2px; } .ob-rt b { font-size: 16px; line-height: 1.3; } .ob-rt small { font-size: 14px; line-height: 1.4; color: #5f6f69; }
   .ob-switch { flex: none; position: relative; width: 52px; height: 44px; border: 0; background: none; cursor: pointer; padding: 0; }
-  .ob-switch::before { content: ""; position: absolute; left: 0; top: 10px; width: 52px; height: 28px; border-radius: 28px; background: #b9c4bd; transition: background 160ms ease; }
-  .ob-switch::after { content: ""; position: absolute; left: 3px; top: 13px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform 160ms ease; }
+  .ob-switch::before { content: ""; position: absolute; left: 0; top: 10px; width: 52px; height: 28px; border-radius: 28px; background: #b9c4bd; transition: background 120ms ease; }
+  .ob-switch::after { content: ""; position: absolute; left: 3px; top: 13px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform 120ms ease; }
   .ob-switch.on::before { background: #206c56; } .ob-switch.on::after { transform: translateX(24px); }
   .ob-sum { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 14px; border-radius: 16px; background: #e9f3e8; }
   .ob-sum .ic { flex: none; box-sizing: content-box; width: 22px; height: 22px; padding: 7px; border-radius: 50%; background: #fff9dd; color: #b48c3f; }
@@ -6056,3 +6056,11 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .ob-bn-art { background: #0e2a22; color: #59e3ad; } .ob-bn-t small { color: #a9cdbd; } .ob-bn-x { color: #a9cdbd; }
   .ob-bn-go { background: #59e3ad; color: #0b2a21; }
 }
+
+/* E6 움직임 정리: 누름 120ms · 창 300ms로 맞춤(위쪽 변수·시간), 홈에서 끝없이 반짝이는 효과는 멈춤(처음부터 보이는 모양은 그대로) */
+body[data-page="index"] .grade.big.g-S::after, body[data-page="index"] .grade.big.g-A::after,
+body[data-page="index"] .gcard.g-S::before, body[data-page="index"] .gcard.g-A::before, body[data-page="index"] .gcard.g-S::after,
+body[data-page="index"] .mc.g-S .mc-in::before, body[data-page="index"] .mc.g-A .mc-in::before,
+body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::before { animation: none; }
+/* E6b 홈(폰): 시안 순서(검색 → 이어보기 → 이번 주말 → 최근 본 집 → 안내) 아래에 남아 있던 옛 '순위·테마·지도' 줄과 '지수 상위 카드' 묶음은 숨김(지우지 않음, 큰 화면은 그대로) */
+@media (max-width: 720px) { .hero-main .browse, .hero-main .hero-deck { display: none; } }
