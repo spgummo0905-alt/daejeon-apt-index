@@ -6027,3 +6027,32 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
 @media (prefers-color-scheme: dark) {
   .iv-hero, .iv-feat, .ob { color-scheme: light; }
 }
+
+
+/* E5 홈 '맞춤 설정 이어하기' 배너(시안 5·6번, 폰만). 설정을 끝냈거나 닫으면 안 보임 */
+.ob-banner { display: none; }
+@media (max-width: 720px) {
+  .ob-banner:not([hidden]) { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 6px 10px 12px; border-radius: 18px; background: #e9f3e8; border: 1px solid #cfe2cf; color: #0f3d33; position: relative; z-index: 1; }
+  .ob-bn-art { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #fff; color: #206c56; }
+  .ob-bn-art svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ob-bn-t { flex: 1; min-width: 0; display: grid; gap: 2px; } .ob-bn-t b { font-size: 16px; line-height: 1.3; } .ob-bn-t small { font-size: 14px; line-height: 1.4; color: #3f5f54; }
+  .ob-bn-go { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: #133f36; color: #fff; font-size: 15px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+  .ob-bn-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .ob-bn-x { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: #4f5f59; cursor: pointer; }
+  .ob-bn-x svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .ob-bn-go:focus-visible, .ob-bn-x:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
+}
+/* E5b: 좁은 폰(≤360)은 글자+닫기를 윗줄, 이어하기 버튼을 아랫줄로(겹침 없이) · 어두운 설정에서는 배너도 어둡게 */
+@media (max-width: 360px) {
+  .ob-banner:not([hidden]) { flex-wrap: wrap; align-items: flex-start; padding: 8px 4px 10px 12px; }
+  .ob-bn-art { display: none; }
+  .ob-bn-t { flex: 1 1 0; min-width: 0; padding-top: 4px; order: 1; }
+  .ob-bn-t small { display: none; }
+  .ob-bn-x { order: 2; margin-top: -2px; }
+  .ob-bn-go { order: 3; flex: 1 1 100%; justify-content: center; margin: 0 8px 0 0; }
+}
+@media (prefers-color-scheme: dark) {
+  .ob-banner:not([hidden]) { background: #12332a; border-color: #2c5a4b; color: #d7f1e6; }
+  .ob-bn-art { background: #0e2a22; color: #59e3ad; } .ob-bn-t small { color: #a9cdbd; } .ob-bn-x { color: #a9cdbd; }
+  .ob-bn-go { background: #59e3ad; color: #0b2a21; }
+}

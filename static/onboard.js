@@ -67,10 +67,10 @@
     const dpNow = DJ.prefs().dp, dp = st.sw.notify ? (dpNow === 0 || dpNow == null ? 500 : dpNow) : 0;
     const want = { budget: st.budget ? +st.budget : 0, py: st.py ? +st.py : 0, goals: [...st.goals] };
     DJ.setPref("want", want); DJ.setPref("region", st.region);
-    DJ.setPref("resume", st.sw.resume); DJ.setPref("collect", st.sw.collect); DJ.setPref("dp", dp);
+    DJ.setPref("resume", st.sw.resume); DJ.setPref("collect", st.sw.collect); DJ.setPref("dp", dp); DJ.setPref("onb", 1);
     const p = DJ.prefs(), w = p.want || {};
     const ok = w.budget === want.budget && w.py === want.py && JSON.stringify(w.goals) === JSON.stringify(want.goals)
-      && p.region === st.region && p.resume === st.sw.resume && p.collect === st.sw.collect && p.dp === dp;
+      && p.region === st.region && p.resume === st.sw.resume && p.collect === st.sw.collect && p.dp === dp && p.onb === 1;
     if (!ok) { $("[data-ob-err]").hidden = false; return; }
     const pick = $$("[data-ob-group=region] .ob-chip").find(b => b.dataset.v === st.region);
     const url = pick && pick.dataset.url;
@@ -78,6 +78,7 @@
   }
 
   openers.forEach(b => b.addEventListener("click", open));
+  if (/[?&]ob=1(&|$)/.test(location.search) && openers[0]) openers[0].click();   // 홈의 '이어하기'로 오면 바로 빠른 설정
   $$("[data-ob-group]").forEach(g => g.addEventListener("click", e => {
     const b = e.target.closest(".ob-chip"); if (!b) return;
     const k = g.dataset.obGroup, v = b.dataset.v;
