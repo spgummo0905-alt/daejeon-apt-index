@@ -102,3 +102,37 @@ def test_setup_sql_and_prefs_row():
     assert "revoke all on public.push_subs, public.push_state, public.push_keys from anon, authenticated" in sql
     assert "data-push-seg" in (root / "templates" / "_prefs.html").read_text(encoding="utf-8")
     assert 'addEventListener("push"' in (root / "static" / "sw.js").read_text(encoding="utf-8")
+
+
+def test_test_message_has_no_news_and_uses_own_tag():
+    m = ps.test_message("https://www.jipgam.kr/")
+    assert m["title"] == "집감 알림 시험" and m["tag"] == "djdex-test" and m["url"] == "https://www.jipgam.kr/my.html"
+    for bad in ("거래", "신고가", "시세"):
+        assert bad not in m["title"]
+
+
+class _Store:
+    def __init__(self): self.s = object(); self.deleted = []
+    def delete(self, path, **kw): self.deleted.append(kw)
+
+
+def test_send_test_refuses_when_too_many_devices_and_counts_results(monkeypatch):
+    calls = []
+    codes = iter([201, 410, 500, 0])
+    def fake(session, sub, data, pub, priv):
+        calls.append(sub["endpoint"]); c = next(codes)
+        if c == 0: raise RuntimeError("x")
+        return c
+    monkeypatch.setattr(ps, "push", fake)
+    many = [{"endpoint": f"e{i}", "p256dh": "", "auth": ""} for i in range(ps.TEST_MAX_DEVICES + 1)]
+    assert ps.send_test(_Store(), many, "p", "k", "b/") == (0, 0, 0) and calls == []
+    st = _Store(); four = many[:4]
+    assert ps.send_test(st, four, "p", "k", "b/") == (1, 1, 2) and st.deleted == [{"endpoint": "eq.e1"}]
+
+
+def test_main_test_mode_never_writes_news_state(tmp_path, monkeypatch):
+    src = (Path(__file__).resolve().parents[1] / "scripts" / "push_send.py").read_text(encoding="utf-8")
+    seg = src[src.index("    if test:"):src.index("    users = sorted(")]
+    assert "send_test(" in seg and "push_state" not in seg and "return 0" in seg
+    wf = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "push-run.yml").read_text(encoding="utf-8")
+    assert "inputs.test && '--test'" in wf and "type: boolean" in wf
