@@ -51,7 +51,7 @@
     $("[data-ob-next]").textContent = n === 1 ? "다음" : "집감 시작하기";
     $("[data-ob-skip]").hidden = n === 1;
     $("[data-ob-err]").hidden = true;
-    if (n === 2) summary();
+    if (n === 2) { summary(); paintPush(); }
     const h = $("#ob-h" + n); if (h) h.focus({ preventScroll: true });
     root.scrollTop = 0;
   }
@@ -76,6 +76,42 @@
     const url = pick && pick.dataset.url;
     if (st.region !== root.dataset.region && url && /^(https:\/\/www\.jipgam\.kr\/|\/)/.test(url)) location.href = url; else home();
   }
+
+  // 휴대폰 알림(웹 푸시): 내 설정의 '새 소식 휴대폰 알림'과 같은 방법(prefs.js). 자동으로 켜지 않고, 이 버튼을 직접 눌렀을 때만 허용을 묻고 등록함.
+  // 로그인 전이면 안내만(알림 주소는 계정에 저장). 아이폰은 홈 화면에 추가한 앱에서만.
+  const pushBox = $("[data-ob-push]"), pushT = $("[data-ob-push-t]"), pushB = $("[data-ob-push-btn]");
+  const can = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const signedIn = () => !!(window.DJ && DJ.sb && DJ.sync && DJ.sync.user);
+  const rpc = async (fn, body, signed) => DJ.sb.call("/rest/v1/rpc/" + fn, { method: "POST", body: body || {} }, signed ? await DJ.sb.token() : null);
+  const b64 = s => { const b = atob((s + "=".repeat((4 - s.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+  async function paintPush() {
+    pushB.hidden = true; pushBox.hidden = false;
+    if (!signedIn()) { pushT.textContent = "휴대폰 알림은 카카오 로그인 뒤 ‘내 설정’에서 켤 수 있어요."; return; }
+    if (ios && !standalone && !can) { pushT.textContent = "아이폰은 공유 버튼 → ‘홈 화면에 추가’로 연 앱에서 휴대폰 알림을 켤 수 있어요."; return; }
+    if (!can) { pushBox.hidden = true; return; }
+    let key = null; try { key = await rpc("push_key"); } catch (e) { key = null; }
+    if (!key) { pushBox.hidden = true; return; }
+    pushBox.dataset.key = key;
+    let on = false;
+    try { const r = await navigator.serviceWorker.ready, s = await r.pushManager.getSubscription(); on = !!s && Notification.permission === "granted" && !!(await rpc("push_sub_has", { ep: s.endpoint }, true)); } catch (e) { /* 모름: 꺼진 것으로 */ }
+    pushT.textContent = on ? "휴대폰 알림이 켜져 있어요. 하루 한 번만 알려 드려요." : "관심 단지에 새 소식이 생기면 하루 한 번 휴대폰으로 알려 드려요.";
+    pushB.hidden = on;
+  }
+  pushB.addEventListener("click", async () => {
+    if (pushB.dataset.busy) return; pushB.dataset.busy = "1";
+    try {
+      if (await Notification.requestPermission() !== "granted") { pushT.textContent = "알림이 꺼져 있어요. 휴대폰(브라우저) 설정에서 이 사이트 알림을 허용한 뒤 다시 눌러 주세요."; return; }
+      const reg = await navigator.serviceWorker.ready;
+      const s = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(pushBox.dataset.key) });
+      const j = s.toJSON();
+      await rpc("push_sub_put", { ep: j.endpoint, pk: j.keys.p256dh, ak: j.keys.auth }, true);
+      if (await rpc("push_sub_has", { ep: s.endpoint }, true)) { pushT.textContent = "휴대폰 알림을 켰어요. 하루 한 번만 알려 드려요. 끄는 곳은 ‘내 설정’이에요."; pushB.hidden = true; }
+      else pushT.textContent = "알림을 저장하지 못했어요. 잠시 뒤 ‘내 설정’에서 다시 켜 주세요.";
+    } catch (err) { pushT.textContent = "알림을 켜지 못했어요. 잠시 뒤 ‘내 설정’에서 다시 켜 주세요."; }
+    finally { delete pushB.dataset.busy; }
+  });
+  document.addEventListener("dj:auth", () => { if (st.step === 2) paintPush(); });
 
   openers.forEach(b => b.addEventListener("click", open));
   if (/[?&]ob=1(&|$)/.test(location.search) && openers[0]) openers[0].click();   // 홈의 '이어하기'로 오면 바로 빠른 설정

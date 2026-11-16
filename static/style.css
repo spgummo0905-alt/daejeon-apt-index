@@ -6074,3 +6074,13 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
   body[data-page="index"] .rg-btn { padding: 0 8px; max-width: 92px; }
   body[data-page="index"] .hd-end { flex: none; gap: 4px; }
 }
+
+/* E8 빠른 설정 2/2 '휴대폰 알림' 줄(폰만): 자동으로 켜지 않고 버튼을 직접 눌러야 허용을 물음 */
+.ob-push { display: none; }
+@media (max-width: 720px) {
+  .ob-push:not([hidden]) { display: grid; gap: 8px; margin-top: 14px; padding: 14px; border-radius: 16px; background: #fff; border: 1px solid #e4ded0; }
+  .ob-push-t { margin: 0; font-size: 15px; line-height: 1.5; color: #3f5f54; }
+  .ob-pushbtn { min-height: 48px; padding: 0 18px; border: 1.5px solid #133f36; border-radius: 999px; background: #fff; color: #133f36; font-size: 16px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .ob-pushbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
+}
+@media (prefers-color-scheme: dark) { .ob-push, .ob-pushbtn { color-scheme: light; } }

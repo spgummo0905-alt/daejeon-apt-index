@@ -13,7 +13,7 @@ def test_order_hero_then_feature_then_overlay_and_script_loaded_only_on_region_i
     assert '{% if not landing %}<script src="{{ root }}static/resume.js?v={{ v }}" defer></script><script src="{{ root }}static/onboard.js?v={{ v }}" defer></script>{% endif %}' in HTML
 def test_mockup_copy_screens_1_to_4():
     for k in ("시작하기", "나중에", "이런 점이 편해요", "쉽고 정확한 탐색", "똑똑한 비교", "편리한 임장 준비", "살펴본 집이 카드로 쌓여요", "어떤 집을 찾고 있나요?", "지역", "예산", "평형", "목적", "20평대", "30평대", "40평대 이상", "실거주", "아이 키우기", "역세권", "투자", "갈아타기", "기타",
-              "더 정확하게 찾을 수 있게 도와드릴게요", "최근 본 집 이어보기", "관심 단지의 새 실거래와 시세 변화를 관심 화면에 표시해요.", "이런 설정으로 시작해요", "집감 시작하기", "지금은 건너뛰기", "다음"):
+              "더 정확하게 찾을 수 있게 도와드릴게요", "최근 본 집 이어보기", "관심 단지의 새 실거래와 시세 변화를 관심 화면에 표시해요. 휴대폰 알림은 아래에서 켤 수 있어요.", "이런 설정으로 시작해요", "집감 시작하기", "지금은 건너뛰기", "다음"):
         assert k in HTML or k in JS, k
 def test_stacked_cards_are_real_top_ranked_complexes_not_made_up():
     seg = HTML[HTML.index('class="ac-cards iv-cards"'):HTML.index('class="iv-cap">실제 단지 예시 &middot;')]

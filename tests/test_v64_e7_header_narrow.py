@@ -3,6 +3,8 @@ import pathlib, re
 R = pathlib.Path(__file__).resolve().parent.parent
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* E7 홈 헤더"):]
+_n = B.find("\n/* E8", 5)
+if _n > 0: B = B[:_n]      # 자기 블록만(뒤에 붙는 블록의 글자 크기를 잘못 잡지 않게)
 def test_narrow_phone_header_stays_one_row_without_shrinking_taps_or_text():
     assert "@media (max-width: 380px) {" in B
     assert 'body[data-page="index"] header.site { flex-wrap: nowrap; padding-inline: 8px; gap: 4px; }' in B
