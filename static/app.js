@@ -332,6 +332,7 @@
   // 새로 모은 카드면 그 지역에서 몇 장째인지, 이미 있던 카드면 0
   DJ.collect = function (s) {
     if (DJ.locked()) return 0;
+    if (DJ.prefs().collect === false) return 0;   // 빠른 설정에서 '카드첩에 모으기'를 끈 경우(이미 모은 카드는 그대로)
     const a = DJ.album();
     if (a[s]) return 0;
     a[s] = DJ.today();

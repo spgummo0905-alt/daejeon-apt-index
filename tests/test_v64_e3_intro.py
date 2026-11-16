@@ -10,7 +10,7 @@ def test_order_title_sentence_fan_caption_buttons():
     o = [HTML.index(k) for k in ('class="iv-k"', 'class="iv-h"', 'class="iv-s"', 'class="iv-fan"', 'class="iv-cap"', 'class="iv-cta"')]
     assert o == sorted(o)
 def test_copy_from_the_direction_brief():
-    for k in ("임장 전에, 카드 한 장.", "실거래·입지·임장 정보를 S부터 D까지 등급 카드로 정리했어요.", "우리 동네 카드 보기", "지도로 보기", "아파트 임장 지수", "실제 단지 예시"):
+    for k in ("임장 전에, 카드 한 장.", "실거래·입지·임장 정보를 S부터 D까지 등급 카드로 정리했어요.", "시작하기", "나중에", "아파트 임장 지수", "실제 단지 예시"):
         assert k in HTML, k
 def test_five_grades_back_cards_show_letters_only_front_card_uses_real_values():
     assert '[("D", -10, -116), ("C", -5, -64), ("B", 5, 64), ("A", 10, 116)]' in HTML

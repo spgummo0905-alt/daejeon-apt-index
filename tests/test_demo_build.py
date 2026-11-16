@@ -201,7 +201,7 @@ def test_intro_page_and_first_visit(tmp_path):
     hot = json.loads(intro.split("data-hot-json>")[1].split("</script>")[0])
     assert 1 <= len(hot) <= 5 and all({"d", "j", "t", "h", "n3"} <= set(h) for h in hot)
     assert [h["t"] for h in hot] == sorted((h["t"] for h in hot), reverse=True)
-    assert 'sessionStorage.setItem("dj-intro","1")' in intro and 'it-skip' not in intro and '건너뛰기' not in intro
+    assert 'sessionStorage.setItem("dj-intro","1")' in intro and 'it-skip' not in intro and '건너뛰기' not in intro.split('<div class="ob" data-ob')[0] and intro.count('건너뛰기') == 1   # 예전 건너뛰기 링크는 없음. 시안 4번의 '지금은 건너뛰기'는 빠른 설정 창 안에만(E4)
     # 첫 화면: 들어올 때마다 인트로로 (같은 창에서 이미 봤거나 로봇·사이트 안 이동 제외), 모든 화면 아래에 '서비스 소개'
     index = (out / "index.html").read_text(encoding="utf-8")
     assert 'location.replace("intro.html")' in index and "yeti" in index and 'sessionStorage.getItem("dj-intro")' in index
