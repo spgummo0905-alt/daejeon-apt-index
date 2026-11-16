@@ -283,7 +283,7 @@
       if (sel) { const s = sel, was = DJ.isFav(s), now = DJ.toggleFav(s); paintFav(s); const c = ALL.find(x => x.s === s);
         if (now && !was && DJ.toastUndo) DJ.toastUndo((c ? c.n : "단지") + " 후보에 담았어요", "", () => { if (DJ.isFav(s)) DJ.toggleFav(s); if (sel === s) paintFav(s); }); }
     }
-    else if (b.dataset.band != null) { band = +b.dataset.band; $$("[data-band]").forEach(x => x.setAttribute("aria-pressed", +x.dataset.band === band)); build(); }
+    else if (b.dataset.band != null) { band = +b.dataset.band; paintBand(); bandOpen(false); bandBtn.focus({ preventScroll: true }); build(); }
     else if (b.dataset.s && listBox.contains(b)) select(b.dataset.s, { focus: true });
   });
   $("[data-mp-q]").addEventListener("input", e => { q = e.target.value; build(); });
@@ -292,8 +292,36 @@
   addEventListener("popstate", () => { if (sel) { sel = null; sheet.classList.remove("open"); apply(); realPaint(); } });
   addEventListener("resize", () => { if (vb) { fit(); apply(); } if (km) km.map.relayout(); });
 
+  // 가격대: 칩 여러 개를 옆으로 늘어놓으면 잘려서, 버튼 하나(지금 고른 가격대)를 누르면 목록이 펼쳐짐. 목록에는 지금 검색·찾기 조건에서 가격대별 단지 수
   const chips = $("[data-mp-chips]");
-  BANDS.forEach((b, i) => { const x = document.createElement("button"); x.type = "button"; x.className = "chip"; x.dataset.band = i; x.setAttribute("aria-pressed", i === 0); x.textContent = b[0]; chips.append(x); });
+  const bandBtn = document.createElement("button"); bandBtn.type = "button"; bandBtn.className = "chip mp-bandbtn"; bandBtn.setAttribute("aria-haspopup", "listbox"); bandBtn.setAttribute("aria-expanded", "false");
+  const bandList = document.createElement("div"); bandList.className = "mp-bandlist"; bandList.setAttribute("role", "listbox"); bandList.setAttribute("aria-label", "가격대 (84㎡ 기준)"); bandList.hidden = true;
+  BANDS.forEach((b, i) => { const x = document.createElement("button"); x.type = "button"; x.className = "mp-bandopt"; x.setAttribute("role", "option"); x.dataset.band = i; x.append(Object.assign(document.createElement("span"), { textContent: b[0] }), Object.assign(document.createElement("em"), { textContent: "" })); bandList.append(x); });
+  chips.append(bandBtn, bandList);
+  function paintBand() {
+    bandBtn.replaceChildren(Object.assign(document.createElement("span"), { textContent: "가격 " + BANDS[band][0] }), Object.assign(document.createElement("i"), { className: "mp-caret" }));
+    bandBtn.classList.toggle("on", band > 0);
+    [...bandList.children].forEach(x => x.setAttribute("aria-selected", String(+x.dataset.band === band)));
+  }
+  function bandCounts() {   // 가격대만 빼고 지금 검색·찾기 조건을 그대로 적용한 단지 수
+    const nq = norm(q);
+    const base = c => (!nq || norm(c.n + c.gu + c.d).includes(nq)) && (!cond || cond.pass(c));
+    [...bandList.children].forEach(x => { const lim = BANDS[+x.dataset.band][1]; x.lastChild.textContent = ALL.filter(c => base(c) && (!lim || (c.p != null && c.p <= lim))).length + "곳"; });
+  }
+  function bandOpen(on) {
+    if (on) bandCounts();
+    bandList.hidden = !on; bandBtn.setAttribute("aria-expanded", String(on));
+    if (on) { const cur = bandList.querySelector('[aria-selected="true"]'); if (cur) cur.focus({ preventScroll: true }); }
+  }
+  bandBtn.addEventListener("click", e => { e.stopPropagation(); bandOpen(bandList.hidden); });
+  bandList.addEventListener("keydown", e => {
+    const o = [...bandList.children], i = o.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); o[(i + (e.key === "ArrowDown" ? 1 : o.length - 1)) % o.length].focus(); }
+    else if (e.key === "Escape") { e.stopPropagation(); bandOpen(false); bandBtn.focus(); }
+    else if (e.key === "Tab") bandOpen(false);
+  });
+  document.addEventListener("click", e => { if (!bandList.hidden && !chips.contains(e.target)) bandOpen(false); });
+  paintBand();
 
   DJ.data().then(d => {
     ALL = d.complexes.filter(c => c.la != null && c.ln != null); NOXY = d.complexes.filter(c => c.la == null || c.ln == null);
