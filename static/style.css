@@ -6124,3 +6124,6 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
   .hm-listbtn[aria-expanded="true"] .mp-caret { transform: rotate(-135deg); margin-top: 3px; }
   .hm-listbtn:focus-visible { outline: 3px solid #2f6fe4; outline-offset: 2px; }
 }
+
+/* E11 아래 탭 MY: 새 소식이 있을 때만 빨간 점(숫자 없음). 무슨 소식인지는 MY 화면 맨 위 '새 소식'에서 */
+.tabbar .fav-count.dot { width: 10px; min-width: 10px; height: 10px; padding: 0; border-radius: 50%; overflow: hidden; text-indent: -999px; line-height: 10px; top: 4px; left: calc(50% + 8px); box-shadow: 0 0 0 2px var(--surface); }
