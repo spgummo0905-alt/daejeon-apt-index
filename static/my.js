@@ -132,6 +132,7 @@
         ul.append(li);
       });
       nbx.hidden = !notes.length;
+      const vEmpty2 = document.querySelector("[data-visit-empty]"); if (vEmpty2 && notes.length) vEmpty2.hidden = true;   // '다녀왔어요' 날짜·메모·호가·사진 같은 현장 기록(임장 노트)이 있으면 '첫 임장을 기록해 보세요' 안내는 숨김
       visitCompare(notes, eok);
     }
 
@@ -173,8 +174,7 @@
     // 바로가기 수 (관심 단지·코스·노트·최근 본)
     const mj = (k, n) => { const b = document.querySelector(`[data-mj="${k}"]`); if (b) b.textContent = n ? " " + n : ""; };
     mj("favs", favs.length);
-    mj("course", DJ.courseStops(d).stops.length);
-    mj("recent", recent.length);
+    mj("recent", recent.length);   // '임장' 탭 숫자(course)는 아래에서 직접 짠 코스 + 다녀온 단지로 계산(저절로 생긴 코스는 세지 않음)
     const nt = document.querySelector("[data-notes]"), na = document.querySelector("[data-mj-notes]");
     if (nt && na) { na.hidden = nt.hidden; mj("notes", nt.querySelectorAll("[data-notes-list] > li").length); }
     if (favs.length > 1) favBox.classList.add("fav-rail");   // 휴대폰은 옆으로 넘기기
@@ -189,6 +189,9 @@
     // 임장 코스: 직접 짠 코스만 셈(관심 단지에서 저절로 생긴 코스는 '관심 단지'와 겹치므로 0). 아래 안내 문구의 '임장 코스 N곳'과 같은 기준
     const cs0 = DJ.load("course", {}), stops0 = DJ.courseStops(d).stops.length, courseN = (cs0 && !cs0.auto && Array.isArray(cs0.list) && cs0.list.length && stops0) ? stops0 : 0;
     if (ms("favs")) { ms("favs").textContent = favs.length; ms("course").textContent = courseN; ms("visits").textContent = beenN; }
+    // 탭 '임장' 옆 숫자: 그 칸 안에 실제로 있는 것(직접 짠 코스 곳 수 + 다녀온 단지 수). 없으면 숫자 없음. 안내만 있는 빈 칸에 숫자가 뜨던 문제
+    mj("course", courseN + beenN);
+    const tabV = document.querySelector('[data-mg-btn="visit"]'); if (tabV) tabV.title = (courseN + beenN) ? `직접 짠 임장 코스 ${courseN}곳 · 다녀온 집 ${beenN}곳` : "";
     const GO = { favs: ["favs", ["my-favs"], "관심 단지 목록 보기"], course: ["visit", ["course"], "임장 코스 보기"], visits: ["visit", ["visit-history", "notes", "course"], "다녀온 집 기록 보기"] };
     document.querySelectorAll("[data-my-stats] > div").forEach(c => {
       const k = c.querySelector("dd") && c.querySelector("dd").dataset.ms, g = GO[k], dt = c.querySelector("dt");
