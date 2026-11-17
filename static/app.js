@@ -141,12 +141,15 @@
   // 메뉴의 '관심 단지' 옆 숫자. 새 소식이 있는 관심 단지가 있으면 그 수를 빨간 숫자로
   DJ.paintFavCount = function () {
     const n = DJ.favs().length, news = n ? load("watchN", 0) : 0;
+    // 아래 탭(MY)의 숫자는 '새 소식'만(빨강). 담아 둔 관심 단지 수는 무슨 숫자인지 알 수 없어서 탭에서는 뺌 (위쪽 메뉴·MY 화면에는 글자와 함께 있음)
     document.querySelectorAll("[data-fav-count]").forEach(b => {
-      const k = news || n;
+      const tab = !!b.closest(".tabbar"), k = tab ? news : (news || n);
       b.hidden = !k;
-      b.textContent = k > 99 ? "99+" : k;
-      b.classList.toggle("news", !!news);
-      b.title = news ? `관심 단지 새 소식 ${news}곳` : "";
+      const num = k > 99 ? "99+" : String(k), sr = document.createElement("span");
+      sr.className = "sr-only"; sr.textContent = news ? ` 관심 단지 새 소식 ${news}곳` : ` 담아 둔 관심 단지 ${n}곳`;
+      b.replaceChildren(document.createTextNode(num), sr);
+      b.classList.toggle("news", !!news); b.classList.toggle("dot", tab);   // 탭에서는 숫자 대신 빨간 점(무슨 숫자인지 모르는 문제)
+      b.title = news ? `관심 단지 새 소식 ${news}곳` : `담아 둔 관심 단지 ${n}곳`;
     });
   };
 
