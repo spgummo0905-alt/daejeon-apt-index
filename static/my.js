@@ -202,6 +202,7 @@
       }
     });
     document.querySelectorAll("[data-my-stats] > div").forEach(c => { const dd = c.querySelector("dd"); c.classList.toggle("zero", !!dd && dd.textContent === "0"); });   // 비어 있는 단계는 흐리게(상태 구분용, 값은 그대로)
+    const stBox = document.querySelector("[data-my-stats]"); if (stBox) stBox.classList.toggle("none", !favs.length && !courseN && !beenN);   // 세 숫자가 모두 0이면(첫 방문) 숫자 칸을 접음: 눌러 갈 곳이 없고 아래 빈 상태 안내가 다음 행동을 알려 줌(칸은 지우지 않음)
     const nx = document.querySelector("[data-my-next]");
     if (nx) {
       const stops = DJ.courseStops(d).stops.length, cs = DJ.load("course", {}), own = !!(cs && !cs.auto && Array.isArray(cs.list) && cs.list.length && stops);   // 직접 짠 코스만 '코스 있음'(관심 단지에서 저절로 생긴 코스는 아님)
