@@ -2,6 +2,7 @@
 import pathlib
 CSS = (pathlib.Path(__file__).resolve().parent.parent / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* G3 브라우저"):]
+B = B[:B.index("\n/* ", 5)] if "\n/* " in B[5:] else B   # G3 블록만(뒤 블록 제외)
 
 def test_selection_uses_brand_accent_and_keeps_text_color():
     assert "::selection { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); color: var(--text); }" in B

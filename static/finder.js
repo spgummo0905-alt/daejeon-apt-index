@@ -70,6 +70,18 @@
     py: [], age: "", stn: 0, sch: 0, must: [], sort: "i", here: null });
   const savedSurvey = DJ.load("survey", {});
   const S = Object.assign(blank(), savedSurvey);
+  // 빠른 설정에서 고른 예산·평형(·아이 키우기)을 찾기 첫 방문에만 미리 채움: 찾기를 한 번이라도 연 기기(저장된 조건이 있는 기기)는 건드리지 않고, 주소로 온 조건이 있으면 그쪽이 우선. 읽기만 하며 새로 저장하는 값은 없음
+  let prefilled = false;
+  (function () {
+    if (Object.keys(savedSurvey).length || /[?&](budget|py|gu|age|stn|sch|must)=/.test(location.search)) return;
+    let w = null; try { w = DJ.prefs().want; } catch (e) { return; }
+    if (!w || typeof w !== "object") return;
+    const b = +w.budget, py = String(w.py || "");
+    if (BUDGETS.includes(b)) { S.bmode = "price"; S.budget = b; prefilled = true; }
+    const ids = py === "40" ? ["40", "50"] : [py];
+    if (py && ids.every(id => PY.some(x => x.id === id))) { S.py = ids; prefilled = true; }
+    if (Array.isArray(w.goals) && w.goals.includes("아이 키우기") && prefilled) S.must = ["edu"];
+  })();
   // 이전 버전에 직장 조건이 있던 이용자는 선택한 내용을 그대로 이어 봅니다.
   if (!("commute" in savedSurvey) && DJWorkplaces.active(savedSurvey, cfg.workplaces || []).length) S.commute = "work";
   const save = () => DJ.save("survey", S);
@@ -449,7 +461,8 @@
     const hint = el("p", "sv-qhint", "예산은 가격 구간, 평형과 지역은 여러 개를 고를 수 있어요. 직장·연식·역·학교는 아래 ‘더 자세한 조건’에서 고르세요.");
     const clear = el("button", "sv-quick-clear", "조건 모두 지우기"); clear.type = "button"; clear.hidden = idle; clear.addEventListener("click", reset);
     const dock = el("div", "sv-quick-dock" + (idle || !n ? " idle" : "")); dock.append(go);   // 조건을 고른 뒤에만 화면 아래에 붙음(고르기 전에는 칩을 덮지 않게 제자리)
-    quickBox.replaceChildren(grp("예산", bud), grp("평형", py), grp(UNIT === "구" ? "지역(구)" : "지역", gu), clear, hint, dock);
+    const pre = el("p", "sv-prefill", "빠른 설정에서 고른 조건으로 시작했어요. 바꾸거나 아래에서 지울 수 있어요."); pre.hidden = !prefilled;
+    quickBox.replaceChildren(pre, grp("예산", bud), grp("평형", py), grp(UNIT === "구" ? "지역(구)" : "지역", gu), clear, hint, dock);
   }
 
   // ---------- 고른 조건 꼬리표 ----------
