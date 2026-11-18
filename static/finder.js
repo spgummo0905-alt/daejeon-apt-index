@@ -448,7 +448,7 @@
     if (!idle && n) go.href = "#results";
     const hint = el("p", "sv-qhint", "예산은 가격 구간, 평형과 지역은 여러 개를 고를 수 있어요. 직장·연식·역·학교는 아래 ‘더 자세한 조건’에서 고르세요.");
     const clear = el("button", "sv-quick-clear", "조건 모두 지우기"); clear.type = "button"; clear.hidden = idle; clear.addEventListener("click", reset);
-    const dock = el("div", "sv-quick-dock"); dock.append(go);   // 대표 버튼은 화면 아래에 붙어 항상 보임
+    const dock = el("div", "sv-quick-dock" + (idle || !n ? " idle" : "")); dock.append(go);   // 조건을 고른 뒤에만 화면 아래에 붙음(고르기 전에는 칩을 덮지 않게 제자리)
     quickBox.replaceChildren(grp("예산", bud), grp("평형", py), grp(UNIT === "구" ? "지역(구)" : "지역", gu), clear, hint, dock);
   }
 

@@ -4,6 +4,7 @@ R = pathlib.Path(__file__).resolve().parent.parent
 JS = (R / "static/map.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* F2 지도 가격대"):]
+B = B[:B.index("\n/* ", 5)] if "\n/* " in B[5:] else B   # F2 블록만(뒤 블록 제외)
 def test_one_button_opens_a_listbox_with_all_bands_and_old_chip_row_is_gone():
     assert 'bandBtn.setAttribute("aria-haspopup", "listbox")' in JS and 'bandList.setAttribute("role", "listbox")' in JS and 'x.setAttribute("role", "option")' in JS
     assert "BANDS.forEach((b, i) => { const x = document.createElement(\"button\"); x.type = \"button\"; x.className = \"chip\"" not in JS

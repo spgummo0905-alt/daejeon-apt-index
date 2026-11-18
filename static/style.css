@@ -6128,6 +6128,14 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 /* E11 아래 탭 MY: 새 소식이 있을 때만 빨간 점(숫자 없음). 무슨 소식인지는 MY 화면 맨 위 '새 소식'에서 */
 .tabbar .fav-count.dot { width: 10px; min-width: 10px; height: 10px; padding: 0; border-radius: 50%; overflow: hidden; text-indent: -999px; line-height: 10px; top: 4px; left: calc(50% + 8px); box-shadow: 0 0 0 2px var(--surface); }
 
+/* G1 찾기·임장 위쪽 칩 줄은 옆으로 잘리지 않게 한 줄에 다 보임(칩 3~4개, 좁은 폰은 여백만 줄임). 찾기 아래 큰 버튼은 조건을 고른 뒤에만 아래에 붙음(고르기 전에는 칩을 덮지 않음) */
+@media (max-width: 720px) {
+  .seg-nav { gap: 6px; overflow-x: visible; }
+  .seg-nav a { flex: 1 1 auto; justify-content: center; padding: 0 10px; white-space: nowrap; }
+}
+@media (max-width: 340px) { .seg-nav a { padding: 0 6px; font-size: 14px; } .seg-nav { gap: 4px; } }
+.sv-quick-dock.idle { position: static; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
+@media (max-width: 340px) { .sv-qg .sv-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* G3 브라우저 기본 부분도 집감 색으로: 글자를 끌어 선택할 때의 파랑을 브랜드 초록으로, 입력 줄의 깜박이는 막대도 같은 색. 글자색은 그대로라 대비는 유지 */
 ::selection { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); color: var(--text); }
 input, textarea { caret-color: var(--accent); }
