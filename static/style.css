@@ -6142,3 +6142,7 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 /* G3 브라우저 기본 부분도 집감 색으로: 글자를 끌어 선택할 때의 파랑을 브랜드 초록으로, 입력 줄의 깜박이는 막대도 같은 색. 글자색은 그대로라 대비는 유지 */
 ::selection { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); color: var(--text); }
 input, textarea { caret-color: var(--accent); }
+
+/* H1 찾기: 빠른 설정에서 고른 조건을 처음 열 때 미리 채우고, 그렇다고 한 줄로 알림(조용한 안내 글, 상자 없음) */
+.sv-prefill { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+.sv-prefill[hidden] { display: none; }
