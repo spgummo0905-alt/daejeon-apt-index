@@ -1433,6 +1433,7 @@ def test_mobile_chip_rows_are_tidy_grids():
     from pathlib import Path
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text(encoding="utf-8")
     tail = css[css.index("/* 휴대폰: 구·면적 칩을 폭이 같은 격자로"):]
+    tail = tail[:tail.index("\n/* G1", 5)] if "\n/* G1" in tail else tail   # 뒤 블록(G1 칩 줄)은 제외
     assert ".controls > #gu-filter { flex: 1 1 100%; }" in tail      # 가로 배치 칸 안에서 폭 전체를 써야 격자가 줄어들지 않음
     assert "#gu-filter, [data-area-filter] { display: grid;" in tail
     assert ".chips.trade-area { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tail
