@@ -6139,3 +6139,6 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 /* G2 MY: 관심·코스·다녀온 집이 모두 0이면 숫자 세 칸을 접음(기록이 생기면 바로 나타남). 폰의 '최근 본' 동그라미는 MY 탭 안의 '최근·설정'과 같은 내용이라 MY에서만 뺌 */
 .my-stats.none { display: none; }
 @media (max-width: 720px) { body[data-page="my"] .rcd { display: none; } }
+/* G3 브라우저 기본 부분도 집감 색으로: 글자를 끌어 선택할 때의 파랑을 브랜드 초록으로, 입력 줄의 깜박이는 막대도 같은 색. 글자색은 그대로라 대비는 유지 */
+::selection { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); color: var(--text); }
+input, textarea { caret-color: var(--accent); }
