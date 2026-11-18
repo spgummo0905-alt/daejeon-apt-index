@@ -6136,3 +6136,6 @@ body[data-page="index"] .mcard.g-S::before, body[data-page="index"] .mcard.g-A::
 @media (max-width: 340px) { .seg-nav a { padding: 0 6px; font-size: 14px; } .seg-nav { gap: 4px; } }
 .sv-quick-dock.idle { position: static; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
 @media (max-width: 340px) { .sv-qg .sv-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* G2 MY: 관심·코스·다녀온 집이 모두 0이면 숫자 세 칸을 접음(기록이 생기면 바로 나타남). 폰의 '최근 본' 동그라미는 MY 탭 안의 '최근·설정'과 같은 내용이라 MY에서만 뺌 */
+.my-stats.none { display: none; }
+@media (max-width: 720px) { body[data-page="my"] .rcd { display: none; } }
