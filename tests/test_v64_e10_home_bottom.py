@@ -6,6 +6,7 @@ FOLD = (R / "static/home-fold.js").read_text(encoding="utf8")
 TBL = (R / "static/table.js").read_text(encoding="utf8")
 CSS = (R / "static/style.css").read_text(encoding="utf8")
 B = CSS[CSS.index("/* E10 홈(폰)"):]
+B = B[:B.index("\n/* E11", 5)] if "\n/* E11" in B else B   # E10 블록만(뒤 블록 제외)
 def test_markup_kept_and_button_added_inside_list_section_before_table():
     assert 'id="map"' in IDX and '<section id="list"' in IDX                       # 지우지 않음
     s = IDX[IDX.index('<section id="list"'):]
