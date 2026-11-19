@@ -14,7 +14,7 @@ def test_order_matches_the_mockup_top_to_bottom():
     o = [HTML.index(k) for k in keys]
     assert o == sorted(o)
 def test_mockup_copy_and_four_icons():
-    for k in ("좋은 집의 가치를,", "내 기준으로 발견해요.", "실거래·입지·임장 기록까지, 한눈에 살펴보세요.", "단지·지역·예산으로 찾아보기", "집 찾기", "지도", "임장 코스", "내 카드", "WEEKEND PLAN", "최근 눈여겨본 집", "모두 보기 →", "오늘의 집 찾기, 여기서 이어가세요.", "실제 방문 기록은 완료한 뒤에만 남아요."):
+    for k in ("좋은 집의 가치를,", "내 기준으로 발견해요.", "실거래·입지·임장 기록까지, 한눈에 살펴보세요.", "단지·지역·예산으로 찾아보기", "집 찾기", "지도", "임장 코스", "내 카드", "주말 임장 준비", "최근 눈여겨본 집", "모두 보기 →", "오늘의 집 찾기, 여기서 이어가세요.", "실제 방문 기록은 완료한 뒤에만 남아요."):
         assert k in HTML, k
     assert HTML.count('class="hm-quick"') == 1 and HTML[HTML.index('class="hm-quick"'):HTML.index('data-hm-hero')].count("<a href") == 4
 def test_page_still_has_one_real_h1_for_search_and_screen_readers_and_entries_kept():

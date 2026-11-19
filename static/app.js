@@ -1726,7 +1726,7 @@
     if (pj && hh) {
       const n = pj.slugs.length, region = document.body.dataset.region;
       const went = window.DJVisitLog ? new Set(DJVisitLog.list({ region, projectId: pj.id }).map(x => x.slug).filter(x => pj.slugs.includes(x))).size : 0;
-      hh.querySelector("[data-hm-k]").textContent = "WEEKEND PLAN · 임장 이어하기";
+      hh.querySelector("[data-hm-k]").textContent = "주말 임장 이어하기";
       hh.querySelector("[data-hm-h]").replaceChildren(`이번 주말, 집 ${n}곳을`, el("br"), "직접 살펴보세요.");
       hh.querySelector("[data-hm-small]").textContent = `${pj.name} · 후보 ${n}곳${went ? ` · 다녀온 ${went}곳` : ""}`;
       hh.querySelector("[data-hm-btn-t]").textContent = "임장 준비 이어가기";

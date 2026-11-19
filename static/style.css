@@ -6146,3 +6146,16 @@ input, textarea { caret-color: var(--accent); }
 /* H1 찾기: 빠른 설정에서 고른 조건을 처음 열 때 미리 채우고, 그렇다고 한 줄로 알림(조용한 안내 글, 상자 없음) */
 .sv-prefill { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .sv-prefill[hidden] { display: none; }
+
+/* I2 조용한 색: 홈 빠른 메뉴 4칸은 파스텔 4색 대신 한 가지 면, 순위 1·2·3위는 금·은·동 입체 메달 대신 평평한 번호 원, 오르내림은 붉은·푸른 글자 대신 진한 글자 + ▲▼ 표시(기준·기간 문구는 그대로) */
+@media (max-width: 720px) {
+  .hm-quick a:nth-child(n) .hm-qi { background: #e6f2e8; }
+}
+.pd-medal, .pd1 .pd-medal, .pd2 .pd-medal, .pd3 .pd-medal { background: var(--chip); color: var(--text); box-shadow: none; border: 1px solid var(--border); }
+.pd.t-up .pd-val, .pd.t-down .pd-val, .rl-val.t-up, .rl-val.t-down { color: var(--text); }
+.pd.t-up .pd-val::before, .rl-val.t-up::before { content: "▲"; margin-right: 2px; font-size: .5em; color: var(--pos); vertical-align: .12em; }
+.pd.t-down .pd-val::before, .rl-val.t-down::before { content: "▼"; margin-right: 2px; font-size: .5em; color: var(--neg); vertical-align: .12em; }
+@media (prefers-color-scheme: dark) { .hm-quick a:nth-child(n) .hm-qi { background: #12332a !important; } }
+.pd-val { white-space: nowrap; }
+/* 시상대 받침도 평평하게: 높이 차이(96·64·40)만 순서를 보여 줌 */
+.pd1 .pd-step, .pd2 .pd-step, .pd3 .pd-step { background: var(--chip); border: 1px solid var(--border); border-top: 0; }
