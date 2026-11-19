@@ -13,7 +13,8 @@
   const body = sheet.querySelector("[data-fm-body]");
   let v = DJ.visit(slug), built = false, back = null;
 
-  const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
+  const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");   // 내가 들은 호가: 입력한 값 그대로 2자리
+  const eokRef = m => (m >= 10000 ? (+(m / 10000).toFixed(1)) + "억" : Math.round(m).toLocaleString() + "만");   // 추정 시세: 다른 화면과 같은 1자리
   const dist = m => (m < 1000 ? Math.round(m) + "m" : (m / 1000).toFixed(1) + "km");
   const walk = m => DJ.walkMin(m);   // 직선거리 → 걸어서 몇 분 (app.js 공통 계산)
   const meters = (a1, o1, a2, o2) => {
@@ -267,7 +268,7 @@
     const form = el("form", "fm-qform");
     const py = el("select");
     py.setAttribute("aria-label", "평형");
-    if (tp.length) tp.forEach(([p, price]) => { const o = el("option", "", `${p}평 · 시세 ${eok(price)}`); o.value = p; py.append(o); });
+    if (tp.length) tp.forEach(([p, price]) => { const o = el("option", "", `${p}평 · 시세 ${eokRef(price)}`); o.value = p; py.append(o); });
     else { const o = el("option", "", "평형"); o.value = ""; py.append(o); py.hidden = true; }
     const fl = el("input"); fl.type = "number"; fl.inputMode = "numeric"; fl.min = "1"; fl.max = "99"; fl.placeholder = "층"; fl.setAttribute("aria-label", "층");
     const q = el("input"); q.type = "text"; q.inputMode = "decimal"; q.placeholder = "호가 (억, 예: 7.9)"; q.setAttribute("aria-label", "호가 (억 원)");

@@ -256,7 +256,7 @@ try {
         <span class="grade g-{{ r.grade }}">{{ r.grade }}</span> {{ r.index | score }}</td>
       <td class="col-place">{{ r | place }}</td>
       <td data-v="{{ r.build_year or '' }}" class="col-year">{{ r.build_year or "-" }}</td>
-      <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | price }}</td>
+      <td data-v="{{ '' if r.price_ref is nan else r.price_ref }}">{{ r.price_ref | eok }}</td>
       {% for n in years %}{% set v = r["cagr_%dy" % n] %}
       <td data-v="{{ '' if v is nan else v }}" class="{{ '' if v is nan else ('pos' if v > 0 else 'neg' if v < 0 else '') }}">{{ v | pct }}</td>
       {% endfor %}
