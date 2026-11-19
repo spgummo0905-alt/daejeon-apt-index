@@ -514,7 +514,7 @@ def build(table: pd.DataFrame, hist: pd.DataFrame, trades: pd.DataFrame, meta: d
     tops = [
         {"title": "종합 지수 상위 5곳", "tab": "지수 TOP", "items": top(main_t.dropna(subset=["index"]), "index"),
          "value": lambda r: f"{r['index']:.0f}점"},
-        {"title": f"{years[0]}년 수익률 상위 5곳", "tab": "수익률 TOP", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
+        {"title": f"{years[0]}년 연평균 가격 변동률 상위 5곳", "tab": "변동률 TOP", "items": top(main_t.dropna(subset=[f"cagr_{years[0]}y"]), f"cagr_{years[0]}y"),
          "value": lambda r, k=f"cagr_{years[0]}y": fmt_pct(r[k])},
     ]
     dips = [by_id[cid] for cid in main_t[main_t.get("from_peak", pd.Series(dtype=float)) <= -0.10]
@@ -957,7 +957,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
     highs = main_t[main_t.get("new_high_recent", pd.Series(False, index=main_t.index)).fillna(False).astype(bool)]
     highs = highs.sort_values(["last_date", "last_price"], ascending=False).head(10) if not highs.empty else highs
     ranks = [
-        {"key": "up", "tab": "가격 상승", "title": "1년 전보다 가격이 오른 단지",
+        {"key": "up", "tab": "변동 · 오른 곳", "title": "1년 전과 비교해 가격이 오른 단지 (변동률 순)",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
          "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "up") for c, v in up.items()]},
         {"key": "high", "tab": "최근 신고가", "title": "최근 90일 신고가 단지",
@@ -971,7 +971,7 @@ def _month_view(trades, main_t, rows, by_id, meta, cfg) -> dict:
          "note": "단지마다 가장 비싼 한 건 · 실제 거래금액 그대로 (84㎡ 환산 아님)",
          "items": [item(r["complex_id"], eok(r["price"]), f"{r['area']:.0f}㎡ · {pd.Timestamp(r['date']):%m.%d}")
                    for _, r in deals.iterrows()]},
-        {"key": "down", "tab": "가격 하락", "title": "1년 전보다 가격이 내린 단지",
+        {"key": "down", "tab": "변동 · 내린 곳", "title": "1년 전과 비교해 가격이 내린 단지 (변동률 순)",
          "note": "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교 (두 기간 모두 거래 3건 이상)",
          "items": [item(c, f"{v * 100:+.1f}%", f"84㎡ 환산 {eok(main_t.at[c, 'price_ref'])}", "down") for c, v in down.items()]},
     ]

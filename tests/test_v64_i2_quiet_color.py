@@ -20,7 +20,7 @@ def test_up_down_marked_with_triangles_and_neutral_text_and_rank_basis_words_sta
     assert ".pd.t-up .pd-val, .pd.t-down .pd-val, .rl-val.t-up, .rl-val.t-down { color: var(--text); }" in B
     assert 'content: "▲"' in B and 'content: "▼"' in B and ".pd-val { white-space: nowrap; }" in B
     s = r("djdex/site.py")
-    for k in ("1년 전보다 가격이 오른 단지", "1년 전보다 가격이 내린 단지", "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교"): assert k in s
+    for k in ("1년 전과 비교해 가격이 오른 단지 (변동률 순)", "1년 전과 비교해 가격이 내린 단지 (변동률 순)", "최근 6개월 ㎡당 중간 가격을 1년 전 같은 기간과 비교"): assert k in s
 
 def test_podium_steps_are_flat_too_and_keep_their_height_order():
     assert ".pd1 .pd-step, .pd2 .pd-step, .pd3 .pd-step { background: var(--chip); border: 1px solid var(--border); border-top: 0; }" in B and "gradient" not in B

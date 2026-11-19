@@ -839,7 +839,7 @@ def test_home_is_lighter_and_tops_live_on_rank(tmp_path):
     body = tbl[tbl.index("<tbody>"):tbl.index("</tbody>")]
     assert body.count("<tr") - body.count('data-small="1"') == 30
     rank = (out / "rank.html").read_text(encoding="utf-8")
-    assert 'id="top"' in rank and "지수·수익률 순위" in rank and 'role="tab"' in rank
+    assert 'id="top"' in rank and "지수·변동률 순위" in rank and 'role="tab"' in rank
     assert 'class="ki-more"' in "".join(p.read_text(encoding="utf-8") for p in list((out / "apt").glob("*.html"))[:20])
 
 
