@@ -5826,8 +5826,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .hm-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 13px; padding: 0 14px; border-radius: 13px; background: #133f36; color: #fff; font-size: 14px; font-weight: 900; text-decoration: none; }
   .hm-btn:hover { text-decoration: none; }
   .hm-btn .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  .hm-art { position: absolute; right: -18px; bottom: -5px; width: 215px; height: 158px; z-index: 1; }
-  .hm-art svg { display: block; width: 100%; height: 100%; }
   .hc-home .hc-sec-h { margin-top: 22px; }
   .hm-insight { display: flex; align-items: center; gap: 12px; margin-top: 13px; padding: 15px; border-radius: 16px; background: #e9f3e8; color: #183a31; }
   .hm-insight .ic { flex: none; box-sizing: content-box; width: 24px; height: 24px; padding: 8px; border-radius: 50%; background: #fff9dd; color: #b48c3f; }
@@ -5836,7 +5834,7 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .hm-insight small { font-size: 14px; line-height: 1.45; color: #4d6b60; }
   .hero-main .resume, .hero-main .gates { display: none !important; }
 }
-@media (max-width: 360px) { .hm-art { width: 180px; height: 133px; } .hm-h1 { font-size: 26px; } .hm-quick a { font-size: 13px; } }
+@media (max-width: 360px) { .hm-h1 { font-size: 26px; } .hm-quick a { font-size: 13px; } }
 .rcd { z-index: 5; }
 @media (max-width: 720px) { body[data-page="index"] .hc-home { padding-right: 0; } }
 @media (prefers-color-scheme: dark) {
@@ -5846,7 +5844,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .hm-k, .hm-small { color: #a9cdbd; } .hm-h { color: #f0efec; }
   .hm-btn { background: #59e3ad; color: #0b2a21; }
   .hm-insight { background: #12332a; color: #d7f1e6; box-shadow: inset 0 0 0 1px #2c5a4b; } .hm-insight small { color: #a9cdbd; } .hm-insight .ic { background: #3a3417; }
-  .hm-art { opacity: .75; }
 }
 
 /* E2 홈 맨 위 헤더(시안 A, 폰·홈만): 로고+집감 · 지역 알약 · 검색 · 카드첩 둥근 버튼. 다른 화면·큰 화면은 그대로 */
@@ -5879,8 +5876,6 @@ a.hc-my:active { transform: scale(.98); transition: transform var(--ux-press) va
   .iv-h { margin: 8px 0 0; font-size: 34px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; color: #0f3d33; }
   .iv-s { margin: 10px 0 0; max-width: 330px; font-size: 16px; font-weight: 500; line-height: 1.5; color: #4f5f59; }
   .iv-fan { position: relative; height: 300px; margin: 14px -20px 0; overflow: hidden; }
-  .iv-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 130px; }
-  .iv-ground svg { display: block; width: 100%; height: 100%; }
   .iv-card { position: absolute; left: 50%; bottom: 44px; display: flex; flex-direction: column; align-items: center; border-radius: 18px; background: #fff; border: 1px solid #e7e1d3; box-shadow: 0 10px 24px rgba(15, 61, 51, .14); overflow: hidden; text-decoration: none; color: #0f3d33; transform-origin: 50% 100%; transform: translateX(var(--x, 0px)) rotate(var(--r)); animation: iv-open 650ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i) * 40ms); }
   .iv-card::before { content: ""; align-self: stretch; height: 8px; background: var(--gc, #c9a24a); flex: none; }
   .iv-back { width: 128px; height: 196px; margin-left: -64px; padding: 0 0 18px; justify-content: flex-end; --gk: #8a6a1f; }
@@ -6146,3 +6141,6 @@ input, textarea { caret-color: var(--accent); }
 /* H1 찾기: 빠른 설정에서 고른 조건을 처음 열 때 미리 채우고, 그렇다고 한 줄로 알림(조용한 안내 글, 상자 없음) */
 .sv-prefill { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .sv-prefill[hidden] { display: none; }
+
+/* I1 건물·해·나무 그림 제거(가짜 건물 그림 금지, 흔한 템플릿 그림): 소개 화면은 카드가 주인공, 홈 '이번 주말' 카드는 글이 폭 전체를 씀. 위성사진·등급 카드만 그림으로 남김 */
+@media (max-width: 720px) { .hm-hero-copy { max-width: none; } }
