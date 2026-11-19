@@ -1,4 +1,4 @@
-"""D7: 카드첩을 시안 A 구조 그대로. 위에서 아래로 MY COLLECTION · 제목+책 아이콘 · 민트 띠 · 내 카드 모아보기+알약 · 카드 2열 · 칩 · 수집 현황 · 방패 박스, 그 아래 '더 보기'에 기존 기능.
+"""D7: 카드첩을 시안 A 구조 그대로. 위에서 아래로 내 카드첩 · 제목+책 아이콘 · 민트 띠 · 내 카드 모아보기+알약 · 카드 2열 · 칩 · 수집 현황 · 방패 박스, 그 아래 '더 보기'에 기존 기능.
 값(지수·등급·이름·지역·수집 수)과 다녀옴 도장 조건(DJ.been)·저장은 기존 그대로."""
 import pathlib, re
 R = pathlib.Path(__file__).resolve().parent.parent
@@ -15,7 +15,7 @@ def test_mint_strip_and_more_section_have_their_own_names_and_start_hidden_or_be
     assert '<section class="panel ac-more" aria-labelledby="album-more-title" hidden>' in HTML
     assert '<span class="ac-book" aria-hidden="true">' in HTML and '<span class="ac-pill" data-album-total>' in HTML
 def test_mockup_copy_is_used_verbatim():
-    for k in ("MY COLLECTION", "<h1>내가 모은 집들</h1>", "직접 살펴본 단지가 기록으로 남습니다.", "수집한 기록이 차곡차곡", "방문 도장은 실제 임장 기록에만", ">내 카드 모아보기</h2>", "수집 현황", "수집과 실제 방문 기록은 구분해요."):
+    for k in ("내 카드첩</p>", "<h1>내가 모은 집들</h1>", "직접 살펴본 단지가 기록으로 남습니다.", "수집한 기록이 차곡차곡", "방문 도장은 실제 임장 기록에만", ">내 카드 모아보기</h2>", "수집 현황", "수집과 실제 방문 기록은 구분해요."):
         assert k in HTML, k
 def test_things_not_in_the_mockup_are_hidden_not_deleted():
     assert ".ac-more[hidden] { display: none; }" in B
