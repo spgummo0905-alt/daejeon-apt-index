@@ -1524,7 +1524,7 @@ def test_detail_price_board_separates_real_and_estimated_and_shows_thin_notice()
     apt = (Path(__file__).resolve().parent.parent / "templates" / "apt.html").read_text(encoding="utf-8")
     board = apt[apt.index('<section class="pb"'):apt.index("</section>", apt.index('<section class="pb"'))]
     assert 'class="pb-p pb-real"' in board and 'class="pb-p pb-est"' in board and board.index("pb-real") < board.index("pb-est")
-    assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | price }}" in board
+    assert "추정 · 비교용" in board and "실거래" in board and "{{ lead.price | price }}" in board and "{{ c.price_ref | eok }}" in board
     assert '<p class="pb-fit" data-mc-fit hidden></p>' in board
     assert "{% if thin_n is not none %}" in board and "가격 근거 {{ thin_n }}건" in board
     # C5: 요약 카드(.pb)와 금박 원본 카드(.mc)는 한 장의 '디지털 집 신분증'. h1 은 문서에 하나뿐이고 그 카드 안(이름 칸)에 있으며, 카드는 5개 범주 줄보다 앞

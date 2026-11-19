@@ -100,7 +100,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
             <span class="gstat-val">{{ v | score }}</span></div>
         {% endfor %}
         </div>
-        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | price }}</span></div>
+        <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 1위</span><span>84㎡ {{ top.price_ref | eok }}</span></div>
       </a>
       <p class="it-fan-tag">실제 단지 예시 · 해당 지역 종합 지수 1위 · {{ meta.updated or meta.asof }} 기준</p>
     </div>
@@ -131,7 +131,7 @@ document.addEventListener("click",function(e){var a=e.target.closest&&e.target.c
               <span class="gstat-val">{{ v | score }}</span></div>
           {% endfor %}
           </div>
-          <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 {{ c2.rank }}위</span><span>84㎡ {{ c2.price_ref | price }}</span></div>
+          <div class="gcard-foot"><span>{{ "{:,}".format(meta.n_ranked) }}곳 중 {{ c2.rank }}위</span><span>84㎡ {{ c2.price_ref | eok }}</span></div>
         </a>
         <span class="it-pin p1" aria-hidden="true">1</span><span class="it-pin p2" aria-hidden="true">2</span>
         <span class="it-pin p3" aria-hidden="true">3</span><span class="it-pin p4" aria-hidden="true">4</span>

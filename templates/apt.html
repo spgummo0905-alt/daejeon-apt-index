@@ -3,7 +3,7 @@
 {% block og_title %}{{ c.name }} · 지수 {{ c.index | score }}{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} | 집감{% endblock %}
 {% block og_image %}{% if og_card %}static/og/apt/{{ c.slug }}.jpg{% else %}{{ site.og_image or 'static/og/daejeon.jpg' }}{% endif %}{% endblock %}
 {% block og_alt %}{{ c.name }} {{ c.index | score }}점{% if c.grade != "-" %} {{ c.grade }}등급{% endif %} · 집감 {{ region }}{% endblock %}
-{% block description %}{{ region }} {{ c | place }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | price }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 평균 상승 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} {{ c.location_top | share }}{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
+{% block description %}{{ region }} {{ c | place }} {{ c.name }}{% if c.build_year %} ({{ c.build_year }}년){% endif %}. 전용 {{ ref_area }}㎡ 환산 {{ c.price_ref | eok }}{% if c["cagr_%dy" % years[0]] is not nan %}, {{ years[0] }}년 평균 상승 {{ c["cagr_%dy" % years[0]] | pct }}{% endif %}{% if c.location_top is not nan %}, 입지 {{ region }} {{ c.location_top | share }}{% endif %}.{% if c.rank %} {{ n_total }}개 단지 중 {{ c.rank }}위{% endif %} ({{ meta.asof }} 실거래 기준).{% endblock %}
 {% block jsonld %}
 {% set _ld = {"@context": "https://schema.org", "@graph": [
   {"@type": "BreadcrumbList", "itemListElement": [
@@ -68,7 +68,7 @@
     <div class="mc-prices">
       {% if lead %}{% set t0 = lead %}<button class="mc-price" type="button" data-deals-toggle aria-expanded="false" aria-controls="mc-deals" aria-label="{% if t0.high %}신고가 {% endif %}{{ t0.price | price }} 실거래 {{ t0.date.strftime('%m.%d') }} {{ t0.area | int }}㎡ 전용 기준, 거래 내역 펼치기">
         {% if t0.high %}<i class="mc-hi">신고가</i>{% endif %}<b>{{ t0.price | price }}</b><span class="mc-pr-l">실거래 {{ t0.date.strftime("%m.%d") }}<span class="mc-caret" aria-hidden="true"></span></span><span class="mc-pr-a">{{ ar(c, t0.area) }} 거래</span></button>{% endif %}
-      {% if c.price_ref is not nan %}<div class="mc-est"><small>84㎡로 맞추면</small><b>{{ c.price_ref | price }}</b><span>{{ ref_area }}㎡ 추정</span></div>{% endif %}
+      {% if c.price_ref is not nan %}<div class="mc-est"><small>84㎡로 맞추면</small><b>{{ c.price_ref | eok }}</b><span>{{ ref_area }}㎡ 추정</span></div>{% endif %}
     </div>
     {% if lead and c.price_ref is not nan and (lead.area | int) != (ref_area | int) %}<p class="mc-pnote">거래한 면적과 추정 면적이 달라 바로 견줄 수 없어요</p>{% endif %}
     <div class="mc-badges"><div class="mc-medals">
@@ -137,7 +137,7 @@
     </div>
     <div class="pb-p pb-est">
       <span class="pb-k">추정 · 비교용</span>
-      <strong>{% if c.price_ref is not nan %}{{ c.price_ref | price }}{% else %}-{% endif %}</strong>
+      <strong>{% if c.price_ref is not nan %}{{ c.price_ref | eok }}{% else %}-{% endif %}</strong>
       {% if c.price_ref is nan %}<span class="pb-s">최근 거래가 적어 계산하지 않았어요</span>
       {% else %}<span class="pb-s pb-area">전용 {{ ref_area }}㎡<i>환산 기준 면적</i></span><span class="pb-s">최근 매매 시세로 계산</span>{% endif %}
     </div>
@@ -167,7 +167,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
 <nav class="cat" id="catalog" aria-label="이 단지 정보 범주">
   <a class="cat-row" href="#price"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-coin"/></svg></span>
     <span class="cat-tx"><b>가격</b><span>시세, 최근 거래, 층별 가격</span></span>
-    <span class="cat-v">{% if c.price_ref is not nan %}{{ ref_area }}㎡ {{ c.price_ref | price }}{% else %}거래 보기{% endif %}</span></a>
+    <span class="cat-v">{% if c.price_ref is not nan %}{{ ref_area }}㎡ {{ c.price_ref | eok }}{% else %}거래 보기{% endif %}</span></a>
   {% if c.ki %}<a class="cat-row" href="#info"><span class="cat-ic" aria-hidden="true"><svg class="ic"><use href="#i-home"/></svg></span>
     <span class="cat-tx"><b>집과 건물</b><span>세대수, 주차, 관리비, 준공 연도</span></span>
     <span class="cat-v">{% if c.ki.hh %}{{ "{:,}".format(c.ki.hh) }}세대{% elif c.build_year %}{{ c.build_year }}년{% else %}정보 보기{% endif %}</span></a>{% endif %}
@@ -218,7 +218,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
 <section class="cards" tabindex="0" aria-label="주요 지표">
   <div class="card">
     <span class="label">전용 {{ ref_area }}㎡ 기준 가격</span>
-    <span class="value">{{ c.price_ref | price }}</span>
+    <span class="value">{{ c.price_ref | eok }}</span>
     <span class="muted">{% if c.price_ref is nan %}최근 거래가 적어 계산하지 않음{% else %}{{ c.price_basis }}, ㎡당 중간 가격으로 환산한 비교용 추정치{% endif %}</span>
     {% if thin_n is not none %}<span class="thin-note" role="note">거래 {{ thin_n }}건으로 계산해 값이 달라질 수 있어요. 최근 거래 내역도 함께 확인해 보세요.</span>{% endif %}
   </div>
@@ -562,7 +562,7 @@ if(s.budget>0&&hb){var f=document.querySelector("[data-mc-fit]");if(f){f.hidden=
   <div class="neighbor-grid">
   {% for r in neighbors %}
     <a class="neighbor" href="{{ r.slug }}.html"><span class="grade g-{{ r.grade }}">{{ r.grade }}</span>
-      <span class="top-name">{{ r.name }}</span><span class="top-val">{{ r.index | score }}점 · {{ r.price_ref | price }}</span></a>
+      <span class="top-name">{{ r.name }}</span><span class="top-val">{{ r.index | score }}점 · {{ r.price_ref | eok }}</span></a>
   {% endfor %}
   </div>
 </section>

@@ -7,7 +7,8 @@
   const { el } = DJ;
   const title = document.querySelector("[data-sh-title]"), lead = document.querySelector("[data-sh-lead]");
   const t = new URLSearchParams(location.search).get("t") || "";
-  const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");
+  const eok = m => (m >= 10000 ? (+(m / 10000).toFixed(2)) + "억" : Math.round(m).toLocaleString() + "만");   // 내가 들은 호가: 입력한 값 그대로 2자리
+  const eokRef = m => (m >= 10000 ? (+(m / 10000).toFixed(1)) + "억" : Math.round(m).toLocaleString() + "만");   // 84㎡ 추정 시세: 다른 화면과 같은 1자리
   const day = d => (d ? d.slice(5).replace("-", ".") : "");
   const fail = msg => { title.textContent = "기록을 볼 수 없어요"; lead.textContent = msg; };
   if (!DJ.sb) { fail("이 사이트에서는 함께 보기를 쓸 수 없어요."); return; }
@@ -74,7 +75,7 @@
       rest.forEach(s => {
         const c = d.bySlug[s], li = el("li", ""), a = el("a", "");
         a.href = DJ.href(c);
-        a.append(el("span", "grade g-" + c.g, c.g), el("b", "", c.n), el("span", "muted", DJ.place(c) + (c.p ? ` · 84㎡ ${eok(c.p)}` : "")));
+        a.append(el("span", "grade g-" + c.g, c.g), el("b", "", c.n), el("span", "muted", DJ.place(c) + (c.p ? ` · 84㎡ ${eokRef(c.p)}` : "")));
         li.append(a); ul.append(li);
       });
       sec.append(ul);
