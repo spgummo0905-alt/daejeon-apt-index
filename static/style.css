@@ -6144,3 +6144,15 @@ input, textarea { caret-color: var(--accent); }
 
 /* I1 건물·해·나무 그림 제거(가짜 건물 그림 금지, 흔한 템플릿 그림): 소개 화면은 카드가 주인공, 홈 '이번 주말' 카드는 글이 폭 전체를 씀. 위성사진·등급 카드만 그림으로 남김 */
 @media (max-width: 720px) { .hm-hero-copy { max-width: none; } }
+/* I2 조용한 색: 홈 빠른 메뉴 4칸은 파스텔 4색 대신 한 가지 면, 순위 1·2·3위는 금·은·동 입체 메달 대신 평평한 번호 원, 오르내림은 붉은·푸른 글자 대신 진한 글자 + ▲▼ 표시(기준·기간 문구는 그대로) */
+@media (max-width: 720px) {
+  .hm-quick a:nth-child(n) .hm-qi { background: #e6f2e8; }
+}
+.pd-medal, .pd1 .pd-medal, .pd2 .pd-medal, .pd3 .pd-medal { background: var(--chip); color: var(--text); box-shadow: none; border: 1px solid var(--border); }
+.pd.t-up .pd-val, .pd.t-down .pd-val, .rl-val.t-up, .rl-val.t-down { color: var(--text); }
+.pd.t-up .pd-val::before, .rl-val.t-up::before { content: "▲"; margin-right: 2px; font-size: .5em; color: var(--pos); vertical-align: .12em; }
+.pd.t-down .pd-val::before, .rl-val.t-down::before { content: "▼"; margin-right: 2px; font-size: .5em; color: var(--neg); vertical-align: .12em; }
+@media (prefers-color-scheme: dark) { .hm-quick a:nth-child(n) .hm-qi { background: #12332a !important; } }
+.pd-val { white-space: nowrap; }
+/* 시상대 받침도 평평하게: 높이 차이(96·64·40)만 순서를 보여 줌 */
+.pd1 .pd-step, .pd2 .pd-step, .pd3 .pd-step { background: var(--chip); border: 1px solid var(--border); border-top: 0; }
