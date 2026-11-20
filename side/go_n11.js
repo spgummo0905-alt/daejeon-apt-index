@@ -6,7 +6,7 @@ let html=SPEC.html.trim().replace(/\{\{IMG:([a-z0-9-]+)\|([^}]*)\}\}/g,(m,n,cap)
 // 1) 해당 임시저장 글 열기 (있으면)
 if(SPEC.draft){ const c=[...document.querySelectorAll('a.action')].find(e=>e.innerText.trim()==='임시저장').parentElement; [...c.querySelectorAll('a,button')].find(e=>/^\d+$/.test(e.innerText.trim()))?.click(); await sleep(1200);
   const it=[...document.querySelectorAll('a,button,li,div,span')].filter(e=>e.children.length<=2 && new RegExp(SPEC.draft).test(e.innerText||'')); if(it.length){ it[it.length-1].click(); await sleep(2500);} }
-await sleep(3500);
+await sleep(300);
 // 2) 기본모드에서 본문
 const hb=[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.innerText.trim().startsWith('HTML')); if(hb){ hb.click(); await sleep(300); document.getElementById('editor-mode-kakao')?.click(); await sleep(900); }
 const ed=tinymce.activeEditor; ed.setContent(html); ed.fire('change'); ed.fire('input'); ed.save(); ed.setDirty(true); await sleep(400);
@@ -22,7 +22,7 @@ const catOk=document.body.innerText.split('본문2')[0].includes(SPEC.cat);
 const nimg=(ed.getContent().match(/\[##_Image/g)||[]).length, ntag=[...document.querySelectorAll('[class*=tag] span')].filter(e=>e.innerText.startsWith('#')&&e.innerText.length>1).length;
 if(!catOk || ed.getContent().length<1500 || !/<script/i.test(ed.getContent()) || ntag<5) return ['STOP', catOk, ed.getContent().length, ntag, nimg];
 await sleep(1500);
-const probe=html.replace(/<[^>]+>/g,'').slice(0,30);
+const probe=html.replace(/\[##_[^\]]*_##\]/g,'').replace(/<[^>]+>/g,'').trim().slice(0,30);
 for(let k=0;k<3 && !ed.getBody().innerText.includes(probe.slice(0,20));k++){ ed.setContent(html); ed.fire('change'); ed.fire('input'); ed.save(); ed.setDirty(true); await sleep(1500); }
 if(!ed.getBody().innerText.includes(probe.slice(0,20))) return ['STOP body not kept'];
 // 6) 발행 레이어
@@ -40,3 +40,5 @@ if(SPEC.day){ [...document.querySelectorAll('button.btn_date')].find(b=>b.innerT
 const pub=[...document.querySelectorAll('button')].filter(b=>b.offsetParent).map(b=>b.innerText.trim()).filter(x=>/발행|예약/.test(x));
 return ['READY', t.value, ed.getContent().length, 'script '+(/<script/i.test(ed.getContent())), 'tag '+ntag, document.getElementById('open20').checked, u?.value, when, pub];
 };
+
+window.__run=async(key,f)=>{window.__KEY=key;const u=await window.__up([f]);const g=await window.__go();if(g[0]==='READY'){await new Promise(r=>setTimeout(r,800));document.getElementById('publish-btn').click();}return JSON.stringify([u,g]);};
