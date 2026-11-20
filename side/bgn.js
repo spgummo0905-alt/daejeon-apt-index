@@ -1,0 +1,11 @@
+window.__S=1568/innerWidth;
+window.__c=e=>{const r=e.getBoundingClientRect();return [Math.round((r.x+r.width/2)*__S),Math.round((r.y+r.height/2)*__S)]};
+window.__btn=t=>[...document.querySelectorAll('[role=button],button')].find(b=>b.offsetParent&&((b.getAttribute('aria-label')||'').startsWith(t)||(b.innerText||'').trim().startsWith(t)));
+window.__set=async(key,links)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+ const B=await (await fetch('https://raw.githubusercontent.com/spgummo0905-alt/daejeon-apt-index/'+window.__SHA+'/side/n11b.json')).json();const sp=B[key];window.__SP=sp;
+ let h=sp.html.replace(/\{\{LINK:([^}]+)\}\}/g,(m,k)=>links[k]||m); if(/\{\{LINK/.test(h)) return 'MISSING LINK';
+ const cm=[...document.querySelectorAll('.CodeMirror')].find(e=>e.offsetParent)?.CodeMirror; if(!cm) return 'NO CM';
+ cm.setValue(h); const t=document.querySelector('input[aria-label="제목"], input[placeholder="제목"]'); t.focus(); t.select(); document.execCommand('insertText',false,sp.en); await sleep(500);
+ return 'OK '+cm.getValue().length+' '+t.value;};
+window.__lab=()=>{const ta=document.querySelector('textarea[aria-label="쉼표로 라벨을 구분하세요."]'); if(!ta||!ta.offsetParent){__btn('라벨')?.click();} const t2=document.querySelector('textarea[aria-label="쉼표로 라벨을 구분하세요."]'); t2.focus(); t2.select(); return 'focused';};
+window.__desc=()=>{let e=[...document.querySelectorAll('textarea')].find(e=>/검색 설명/.test(e.getAttribute('aria-label')||'')); if(!e||!e.offsetParent){__btn('검색 설명')?.click();} e=[...document.querySelectorAll('textarea')].find(e=>/검색 설명/.test(e.getAttribute('aria-label')||'')); e.focus(); e.select(); return 'focused';};
