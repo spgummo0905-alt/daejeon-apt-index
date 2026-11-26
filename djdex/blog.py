@@ -165,7 +165,8 @@ def build(cfg, out_dir: Path, base: str, src: Path = CONTENT) -> list[dict]:
     img_dst = Path(out_dir) / "static" / "blog"
     img_dst.mkdir(parents=True, exist_ok=True)
     common = dict(base=base, naver=cfg.site.get("naver_site_verification", ""),
-                  google=cfg.site.get("google_site_verification", ""))
+                  google=cfg.site.get("google_site_verification", ""),
+                  ga=cfg.site.get("ga_measurement_id", ""))
 
     for p in posts:
         p["url"] = f"{base}{FOLDER}/{p['slug']}"

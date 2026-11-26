@@ -240,7 +240,7 @@ def _write_about(cfg, out_dir: Path, base: str, rows: list[dict]) -> None:
     html = env.get_template("about.html").render(
         base=base, regions=rows, total=f"{total:,}", schema=schema,
         today=datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y.%m.%d"),
-        naver=cfg.site.get("naver_site_verification", ""), google=cfg.site.get("google_site_verification", ""))
+        naver=cfg.site.get("naver_site_verification", ""), google=cfg.site.get("google_site_verification", ""), ga=cfg.site.get("ga_measurement_id", ""))
     (out_dir / "about.html").write_text(html, encoding="utf-8")
 
 

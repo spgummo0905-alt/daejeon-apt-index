@@ -24,6 +24,8 @@
 <meta name="twitter:card" content="summary_large_image">
 {% endif %}
 {% if site.naver_site_verification %}<meta name="naver-site-verification" content="{{ site.naver_site_verification }}">{% endif %}
+{% if site.ga_measurement_id and not demo %}<script async src="https://www.googletagmanager.com/gtag/js?id={{ site.ga_measurement_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","{{ site.ga_measurement_id }}");</script>{% endif %}
 {% if site.google_site_verification %}<meta name="google-site-verification" content="{{ site.google_site_verification }}">{% endif %}
 {# 광고는 글을 읽는 화면에만(단지 상세·랭킹·테마·역별·산출 방법). 찾기·비교·지도·MY·홈 같은 쓰는 화면과 앱 안 화면은 빠르고 방해 없게 뺀다. 목록을 늘리면 tests/test_v63_ads_pages.py 도 함께 고친다. #}
 {% set _ad_pages = ["apt", "rank", "themes", "stations", "methodology"] %}

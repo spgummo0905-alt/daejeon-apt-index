@@ -3,6 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% if naver %}<meta name="naver-site-verification" content="{{ naver }}">{% endif %}
 {% if google %}<meta name="google-site-verification" content="{{ google }}">{% endif %}
+{% if ga %}<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","{{ ga }}");</script>{% endif %}
 <meta name="theme-color" content="#13294b">
 <meta property="og:site_name" content="집감">
 <meta property="og:locale" content="ko_KR">
