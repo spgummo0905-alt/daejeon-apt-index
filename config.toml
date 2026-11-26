@@ -23,6 +23,8 @@ google_site_verification = "ih0mjE1xK4FiqFC_zBSPhggbr7LM-IztpDvm3yzQGyU"
 adsense_client = ""
 # 방문 통계(Cloudflare Web Analytics) 토큰. 비워 두면 통계 코드와 처리방침 안내를 넣지 않습니다.
 cf_beacon_token = "c317ca59ed1c4a5e995aadd0b450215a"
+# 구글 애널리틱스 4 측정 ID(G-…). 넣으면 모든 화면에 gtag 코드를 넣고 처리방침에 안내를 넣습니다. 비우면 아무것도 넣지 않습니다.
+ga_measurement_id = "G-BWGV8H75XR"
 # 위쪽 지역 고르기 (각 지역 사이트 주소). 지역마다 폴더 하나 (대전 /daejeon/, 세종은 config.sejong.toml 로 /sejong/ …).
 # 맨 앞 주소(www.jipgam.kr/)는 이 목록으로 지역 고르기 화면을 만듭니다 (python -m djdex landing).
 # group 은 고르기 창에서 묶는 권역(적힌 순서대로), desc 는 이름 아래 한 줄, badge 는 이름 옆 작은 표시.
